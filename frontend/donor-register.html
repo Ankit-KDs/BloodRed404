@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RED404 - Donor Registration</title>
+  <link rel="stylesheet" href="css/common.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="auth-body">
+
+  <div class="auth-particles" id="authParticles"></div>
+
+  <div class="auth-page-container">
+
+    <!-- Left Panel -->
+    <div class="auth-left-panel">
+      <a href="index.html" class="auth-logo">
+        <i class="fas fa-tint"></i>
+        RED<span>404</span>
+      </a>
+      <div class="auth-left-content">
+        <div class="blood-drop-anim">
+          <div class="big-drop">
+            <i class="fas fa-tint"></i>
+            <div class="drop-ripple r1"></div>
+            <div class="drop-ripple r2"></div>
+            <div class="drop-ripple r3"></div>
+          </div>
+        </div>
+        <h2>Join the Network</h2>
+        <p>Register as a blood donor and become part of a life-saving community. Your single donation can save up to 3 lives.</p>
+        <div class="auth-features">
+          <div class="af-item">
+            <i class="fas fa-bell"></i>
+            <span>Real-time alerts when blood needed nearby</span>
+          </div>
+          <div class="af-item">
+            <i class="fas fa-route"></i>
+            <span>Navigation to hospital provided automatically</span>
+          </div>
+          <div class="af-item">
+            <i class="fas fa-shield-alt"></i>
+            <span>Your data is safe and private</span>
+          </div>
+          <div class="af-item">
+            <i class="fas fa-medal"></i>
+            <span>Earn badges for each donation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel - Form -->
+    <div class="auth-right-panel">
+      <div class="auth-form-container">
+        <div class="form-header">
+          <h2>Donor Registration</h2>
+          <p>Fill in your details to join RED404</p>
+          <div class="form-progress-bar">
+            <div class="fpb-step active" data-step="1">Personal</div>
+            <div class="fpb-line"></div>
+            <div class="fpb-step" data-step="2">Medical</div>
+            <div class="fpb-line"></div>
+            <div class="fpb-step" data-step="3">Location</div>
+          </div>
+        </div>
+
+        <form id="donorRegisterForm" novalidate>
+
+          <!-- Step 1: Personal Info -->
+          <div class="form-step active" id="step1">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">First Name <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="fas fa-user input-icon"></i>
+                  <input type="text" id="firstName" name="firstName" placeholder="John" required/>
+                  <span class="input-focus-line"></span>
+                </div>
+                <span class="field-error" id="firstNameErr"></span>
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="fas fa-user input-icon"></i>
+                  <input type="text" id="lastName" name="lastName" placeholder="Doe" required/>
+                  <span class="input-focus-line"></span>
+                </div>
+                <span class="field-error" id="lastNameErr"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address <span class="req">*</span></label>
+              <div class="input-wrap">
+                <i class="fas fa-envelope input-icon"></i>
+                <input type="email" id="email" name="email" placeholder="john@example.com" required/>
+                <span class="input-focus-line"></span>
+              </div>
+              <span class="field-error" id="emailErr"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number <span class="req">*</span></label>
+              <div class="input-wrap">
+                <i class="fas fa-phone input-icon"></i>
+                <span class="phone-prefix">+91</span>
+                <input type="tel" id="phone" name="phone" placeholder="98765 43210" required class="with-prefix"/>
+                <span class="input-focus-line"></span>
+              </div>
+              <span class="field-error" id="phoneErr"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="dob">Date of Birth <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="fas fa-calendar input-icon"></i>
+                  <input type="date" id="dob" name="dob" required/>
+                  <span class="input-focus-line"></span>
+                </div>
+                <span class="field-error" id="dobErr"></span>
+              </div>
+              <div class="form-group">
+                <label>Gender <span class="req">*</span></label>
+                <div class="gender-options">
+                  <label class="gender-opt">
+                    <input type="radio" name="gender" value="male"/>
+                    <span class="gender-btn"><i class="fas fa-mars"></i> Male</span>
+                  </label>
+                  <label class="gender-opt">
+                    <input type="radio" name="gender" value="female"/>
+                    <span class="gender-btn"><i class="fas fa-venus"></i> Female</span>
+                  </label>
+                  <label class="gender-opt">
+                    <input type="radio" name="gender" value="other"/>
+                    <span class="gender-btn"><i class="fas fa-genderless"></i> Other</span>
+                  </label>
+                </div>
+                <span class="field-error" id="genderErr"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password <span class="req">*</span></label>
+              <div class="input-wrap">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" id="password" name="password" placeholder="Create strong password" required/>
+                <button type="button" class="toggle-pass" onclick="togglePassword('password','eyeIcon1')">
+                  <i class="fas fa-eye" id="eyeIcon1"></i>
+                </button>
+                <span class="input-focus-line"></span>
+              </div>
+              <div class="password-strength" id="passStrength">
+                <div class="strength-bar">
+                  <div class="strength-fill" id="strengthFill"></div>
+                </div>
+                <span class="strength-text" id="strengthText">Enter password</span>
+              </div>
+              <span class="field-error" id="passwordErr"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPass">Confirm Password <span class="req">*</span></label>
+              <div class="input-wrap">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" id="confirmPass" name="confirmPass" placeholder="Repeat password" required/>
+                <button type="button" class="toggle-pass" onclick="togglePassword('confirmPass','eyeIcon2')">
+                  <i class="fas fa-eye" id="eyeIcon2"></i>
+                </button>
+                <span class="input-focus-line"></span>
+              </div>
+              <span class="field-error" id="confirmPassErr"></span>
+            </div>
+
+            <button type="button" class="btn-next" onclick="nextStep(1)">
+              Continue <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Step 2: Medical Info -->
+          <div class="form-step" id="step2">
+            <div class="form-group">
+              <label>Blood Type <span class="req">*</span></label>
+              <div class="blood-type-grid">
+                <label class="bt-option"><input type="radio" name="bloodType" value="A+"/><span>A+</span></label>
+                <label class="bt-option"><input type="radio" name="bloodType" value="A-"/><span>A-</span></label>
+                <label class="bt-option"><input type="radio" name="bloodType" value="B+"/><span>B+</span></label>
+                <label class="bt-option"><input type="radio" name="bloodType" value="B-"/><span>B-</span></label>
+                <label class="bt-option"><input type="radio" name="bloodType" value="AB+"/><span>AB+</span></label>
+                <label class="bt-option"><input type="radio" name="bloodType" value="AB-"/><span>AB-</span></label>
+                <label class="bt-option"><input type="radio" name="bloodType" value="O+"/><span>O+</span></label>
+                <label class="bt-option"><input type="radio" name="bloodType" value="O-"/><span>O-</span></label>
+              </div>
+              <span class="field-error" id="bloodTypeErr"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="weight">Weight (kg) <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="fas fa-weight input-icon"></i>
+                  <input type="number" id="weight" name="weight" placeholder="60" min="45" max="200" required/>
+                  <span class="input-focus-line"></span>
+                </div>
+                <span class="field-error" id="weightErr"></span>
+              </div>
+              <div class="form-group">
+                <label for="lastDonation">Last Donation Date</label>
+                <div class="input-wrap">
+                  <i class="fas fa-calendar-check input-icon"></i>
+                  <input type="date" id="lastDonation" name="lastDonation"/>
+                  <span class="input-focus-line"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Medical Conditions</label>
+              <div class="checkbox-group">
+                <label class="check-opt">
+                  <input type="checkbox" name="conditions" value="none" id="condNone"/>
+                  <span class="checkmark"></span> No known conditions
+                </label>
+                <label class="check-opt">
+                  <input type="checkbox" name="conditions" value="diabetes"/>
+                  <span class="checkmark"></span> Diabetes
+                </label>
+                <label class="check-opt">
+                  <input type="checkbox" name="conditions" value="hypertension"/>
+                  <span class="checkmark"></span> Hypertension
+                </label>
+                <label class="check-opt">
+                  <input type="checkbox" name="conditions" value="heart"/>
+                  <span class="checkmark"></span> Heart condition
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="availability">Donation Availability <span class="req">*</span></label>
+              <div class="input-wrap">
+                <i class="fas fa-clock input-icon"></i>
+                <select id="availability" name="availability" required>
+                  <option value="">Select availability</option>
+                  <option value="always">Always Available (Emergency)</option>
+                  <option value="weekdays">Weekdays Only</option>
+                  <option value="weekends">Weekends Only</option>
+                  <option value="scheduled">By Appointment Only</option>
+                </select>
+                <span class="input-focus-line"></span>
+              </div>
+              <span class="field-error" id="availabilityErr"></span>
+            </div>
+
+            <div class="form-group">
+              <label>Notification Preference</label>
+              <div class="toggle-group">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="smsNotif" checked/>
+                  <span class="toggle-slider"></span>
+                  SMS Notifications
+                </label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="pushNotif" checked/>
+                  <span class="toggle-slider"></span>
+                  Push Notifications
+                </label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="emailNotif"/>
+                  <span class="toggle-slider"></span>
+                  Email Notifications
+                </label>
+              </div>
+            </div>
+
+            <div class="form-nav-btns">
+              <button type="button" class="btn-back" onclick="prevStep(2)">
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+              <button type="button" class="btn-next" onclick="nextStep(2)">
+                Continue <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: Location -->
+          <div class="form-step" id="step3">
+            <div class="form-group">
+              <label for="address">Street Address <span class="req">*</span></label>
+              <div class="input-wrap">
+                <i class="fas fa-map-marker-alt input-icon"></i>
+                <input type="text" id="address" name="address" placeholder="123 Main Street" required/>
+                <span class="input-focus-line"></span>
+              </div>
+              <span class="field-error" id="addressErr"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="city">City <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="fas fa-city input-icon"></i>
+                  <input type="text" id="city" name="city" placeholder="Mumbai" required/>
+                  <span class="input-focus-line"></span>
+                </div>
+                <span class="field-error" id="cityErr"></span>
+              </div>
+              <div class="form-group">
+                <label for="state">State <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="fas fa-map input-icon"></i>
+                  <select id="state" name="state" required>
+                    <option value="">Select State</option>
+                    <option>Maharashtra</option>
+                    <option>Delhi</option>
+                    <option>Karnataka</option>
+                    <option>Tamil Nadu</option>
+                    <option>Uttar Pradesh</option>
+                    <option>West Bengal</option>
+                    <option>Gujarat</option>
+                    <option>Rajasthan</option>
+                    <option>Other</option>
+                  </select>
+                  <span class="input-focus-line"></span>
+                </div>
+                <span class="field-error" id="stateErr"></span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pincode">PIN Code <span class="req">*</span></label>
+                <div class="input-wrap">
+                  <i class="fas fa-mail-bulk input-icon"></i>
+                  <input type="text" id="pincode" name="pincode" placeholder="400001" maxlength="6" required/>
+                  <span class="input-focus-line"></span>
+                </div>
+                <span class="field-error" id="pincodeErr"></span>
+              </div>
+              <div class="form-group">
+                <label for="zone">Zone</label>
+                <div class="input-wrap">
+                  <i class="fas fa-layer-group input-icon"></i>
+                  <input type="text" id="zone" name="zone" placeholder="Auto-detected" readonly/>
+                  <span class="input-focus-line"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="location-detect-btn" id="locationDetect">
+              <button type="button" onclick="detectLocation()">
+                <i class="fas fa-crosshairs"></i>
+                Auto-Detect My Location
+              </button>
+              <span class="location-status" id="locationStatus"></span>
+            </div>
+
+            <div class="location-coords" id="coordsDisplay" style="display:none;">
+              <div class="coord-item">
+                <i class="fas fa-compass"></i>
+                <span>Lat: <strong id="latDisplay">--</strong></span>
+              </div>
+              <div class="coord-item">
+                <i class="fas fa-compass"></i>
+                <span>Lng: <strong id="lngDisplay">--</strong></span>
+              </div>
+            </div>
+
+            <div class="form-group terms-group">
+              <label class="check-opt">
+                <input type="checkbox" id="terms" name="terms" required/>
+                <span class="checkmark"></span>
+                I agree to the <a href="#" class="text-red">Terms of Service</a> and <a href="#" class="text-red">Privacy Policy</a>
+              </label>
+              <span class="field-error" id="termsErr"></span>
+            </div>
+
+            <div class="form-nav-btns">
+              <button type="button" class="btn-back" onclick="prevStep(3)">
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+              <button type="submit" class="btn-submit" id="submitBtn">
+                <span class="btn-text">
+                  <i class="fas fa-heart"></i> Register as Donor
+                </span>
+                <span class="btn-loader" style="display:none;">
+                  <i class="fas fa-spinner fa-spin"></i> Registering...
+                </span>
+              </button>
+            </div>
+          </div>
+
+        </form>
+
+        <div class="auth-switch">
+          Already a donor? <a href="donor-login.html">Login here</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal-overlay" id="successModal" style="display:none;">
+    <div class="modal-box success-modal">
+      <div class="success-anim">
+        <div class="success-circle">
+          <i class="fas fa-check"></i>
+        </div>
+        <div class="success-rings r1"></div>
+        <div class="success-rings r2"></div>
+      </div>
+      <h3>Registration Successful!</h3>
+      <p>Welcome to RED404! You are now part of our life-saving network. You'll receive notifications when nearby hospitals need your blood type.</p>
+      <a href="donor-login.html" class="btn btn-primary">Go to Login</a>
+    </div>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

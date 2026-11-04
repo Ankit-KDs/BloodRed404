@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RED404 - Real-Time Blood Donation System</title>
+  <link rel="stylesheet" href="css/common.css"/>
+  <link rel="stylesheet" href="css/home.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- Animated Background Particles -->
+  <div class="particles-container" id="particles"></div>
+
+  <!-- Blood Drop Floating Elements -->
+  <div class="floating-drops" id="floatingDrops"></div>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <div class="logo-icon">
+          <i class="fas fa-tint"></i>
+          <div class="pulse-ring"></div>
+        </div>
+        <span class="logo-text">RED<span class="logo-404">404</span></span>
+      </div>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home" class="nav-link active">Home</a></li>
+        <li><a href="#about" class="nav-link">About</a></li>
+        <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
+        <li><a href="#stats" class="nav-link">Stats</a></li>
+        <li><a href="#zones" class="nav-link">Zones</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="donor-login.html" class="btn btn-outline">Donor Login</a>
+        <a href="hospital-login.html" class="btn btn-primary">Hospital Login</a>
+      </div>
+
+      <div class="hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== HERO SECTION ========== -->
+  <section class="hero-section" id="home">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>Live Blood Network Active</span>
+      </div>
+
+      <h1 class="hero-title">
+        <span class="title-line">Every Drop</span>
+        <span class="title-line highlight">Saves A Life</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        RED404 connects blood donors with hospitals in real-time using 
+        intelligent zone-based algorithms. When seconds matter, we deliver.
+      </p>
+
+      <div class="hero-cta">
+        <a href="donor-register.html" class="btn btn-hero-primary">
+          <i class="fas fa-heart"></i>
+          Become a Donor
+          <span class="btn-glow"></span>
+        </a>
+        <a href="hospital-register.html" class="btn btn-hero-secondary">
+          <i class="fas fa-hospital"></i>
+          Register Hospital
+        </a>
+      </div>
+
+      <div class="hero-stats-bar">
+        <div class="stat-item">
+          <span class="stat-num" data-target="12580">0</span>
+          <span class="stat-label">Active Donors</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="348">0</span>
+          <span class="stat-label">Hospitals</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="9247">0</span>
+          <span class="stat-label">Lives Saved</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="24">0</span>
+          <span class="stat-label">Zones Active</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="hero-visual">
+      <div class="city-map-container">
+        <div class="map-pulse-center">
+          <div class="center-dot"></div>
+          <div class="pulse-wave w1"></div>
+          <div class="pulse-wave w2"></div>
+          <div class="pulse-wave w3"></div>
+        </div>
+        <!-- Zone rings -->
+        <div class="zone-ring z5km">
+          <span class="zone-label">Zone 1 · 5km</span>
+        </div>
+        <div class="zone-ring z10km">
+          <span class="zone-label">Zone 2 · 10km</span>
+        </div>
+        <div class="zone-ring z20km">
+          <span class="zone-label">Zone 3 · 20km</span>
+        </div>
+
+        <!-- Donor nodes -->
+        <div class="donor-node dn1" style="top:20%;left:55%">
+          <i class="fas fa-user"></i>
+          <div class="node-ping"></div>
+        </div>
+        <div class="donor-node dn2" style="top:35%;left:70%">
+          <i class="fas fa-user"></i>
+          <div class="node-ping"></div>
+        </div>
+        <div class="donor-node dn3" style="top:60%;left:65%">
+          <i class="fas fa-user"></i>
+          <div class="node-ping"></div>
+        </div>
+        <div class="donor-node dn4" style="top:70%;left:40%">
+          <i class="fas fa-user"></i>
+          <div class="node-ping"></div>
+        </div>
+        <div class="donor-node dn5" style="top:25%;left:35%">
+          <i class="fas fa-user"></i>
+          <div class="node-ping"></div>
+        </div>
+
+        <!-- Hospital icon center -->
+        <div class="hospital-node">
+          <i class="fas fa-hospital-alt"></i>
+          <span>Hospital</span>
+        </div>
+
+        <!-- SVG connection lines -->
+        <svg class="connection-lines" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <line class="conn-line" x1="200" y1="200" x2="270" y2="88"/>
+          <line class="conn-line" x1="200" y1="200" x2="332" y2="148"/>
+          <line class="conn-line" x1="200" y1="200" x2="312" y2="252"/>
+          <line class="conn-line" x1="200" y1="200" x2="192" y2="296"/>
+          <line class="conn-line" x1="200" y1="200" x2="148" y2="112"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="hero-scroll-hint">
+      <span>Scroll to explore</span>
+      <div class="scroll-arrow">
+        <i class="fas fa-chevron-down"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== BLOOD TYPES TICKER ========== -->
+  <div class="blood-ticker">
+    <div class="ticker-label">
+      <i class="fas fa-tint"></i> Blood Types We Cover:
+    </div>
+    <div class="ticker-track">
+      <div class="ticker-content">
+        <span class="blood-tag a-pos">A+</span>
+        <span class="blood-tag a-neg">A-</span>
+        <span class="blood-tag b-pos">B+</span>
+        <span class="blood-tag b-neg">B-</span>
+        <span class="blood-tag ab-pos">AB+</span>
+        <span class="blood-tag ab-neg">AB-</span>
+        <span class="blood-tag o-pos">O+</span>
+        <span class="blood-tag o-neg">O-</span>
+        <span class="blood-tag a-pos">A+</span>
+        <span class="blood-tag a-neg">A-</span>
+        <span class="blood-tag b-pos">B+</span>
+        <span class="blood-tag b-neg">B-</span>
+        <span class="blood-tag ab-pos">AB+</span>
+        <span class="blood-tag ab-neg">AB-</span>
+        <span class="blood-tag o-pos">O+</span>
+        <span class="blood-tag o-neg">O-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ABOUT SECTION ========== -->
+  <section class="about-section" id="about">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">About RED404</span>
+        <h2 class="section-title">What Makes Us <span class="text-red">Different?</span></h2>
+        <p class="section-desc">
+          A next-generation blood donation network powered by intelligent 
+          algorithms, real-time notifications, and zone-based emergency dispatch.
+        </p>
+      </div>
+
+      <div class="about-cards">
+        <div class="about-card" data-delay="0">
+          <div class="card-icon">
+            <i class="fas fa-map-marked-alt"></i>
+            <div class="icon-glow"></div>
+          </div>
+          <h3>Zone-Based Dispatch</h3>
+          <p>City divided into intelligent zones. Nearest donors are prioritized in emergencies using Haversine distance calculation.</p>
+          <div class="card-tag">Haversine Algorithm</div>
+        </div>
+
+        <div class="about-card" data-delay="100">
+          <div class="card-icon">
+            <i class="fas fa-route"></i>
+            <div class="icon-glow"></div>
+          </div>
+          <h3>Optimal Routing</h3>
+          <p>Dijkstra's shortest path algorithm calculates the fastest route from donor to hospital in real-time traffic conditions.</p>
+          <div class="card-tag">Dijkstra's Algorithm</div>
+        </div>
+
+        <div class="about-card" data-delay="200">
+          <div class="card-icon">
+            <i class="fas fa-bell"></i>
+            <div class="icon-glow"></div>
+          </div>
+          <h3>Instant Notifications</h3>
+          <p>Real-time push notifications alert nearby donors immediately when hospitals request blood. Response in seconds.</p>
+          <div class="card-tag">Real-Time System</div>
+        </div>
+
+        <div class="about-card" data-delay="300">
+          <div class="card-icon">
+            <i class="fas fa-network-wired"></i>
+            <div class="icon-glow"></div>
+          </div>
+          <h3>DSA-Powered</h3>
+          <p>Graph traversal, priority queues, BFS/DFS for zone searches, and hash maps for O(1) donor lookups.</p>
+          <div class="card-tag">Advanced DSA</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="how-section" id="how-it-works">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">Process Flow</span>
+        <h2 class="section-title">How <span class="text-red">RED404</span> Works</h2>
+      </div>
+
+      <div class="steps-container">
+        <div class="steps-line"></div>
+
+        <div class="step-item" data-step="1">
+          <div class="step-icon-wrap">
+            <div class="step-number">01</div>
+            <div class="step-icon"><i class="fas fa-user-plus"></i></div>
+          </div>
+          <div class="step-content">
+            <h3>Donor Registers</h3>
+            <p>Donors register with name, blood type, location, and contact info. Their coordinates are indexed into zone buckets.</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="2">
+          <div class="step-icon-wrap">
+            <div class="step-number">02</div>
+            <div class="step-icon"><i class="fas fa-hospital"></i></div>
+          </div>
+          <div class="step-content">
+            <h3>Hospital Raises Request</h3>
+            <p>When blood is needed, hospital triggers a request specifying blood type and urgency level from their dashboard.</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="3">
+          <div class="step-icon-wrap">
+            <div class="step-number">03</div>
+            <div class="step-icon"><i class="fas fa-search-location"></i></div>
+          </div>
+          <div class="step-content">
+            <h3>Zone Search Begins</h3>
+            <p>Haversine algorithm scans Zone 1 (0–5km) first, then Zone 2 (5–10km), expanding outward using BFS-like zone traversal.</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="4">
+          <div class="step-icon-wrap">
+            <div class="step-number">04</div>
+            <div class="step-icon"><i class="fas fa-bell"></i></div>
+          </div>
+          <div class="step-content">
+            <h3>Notification Sent</h3>
+            <p>Eligible donors receive real-time push notifications on their phones with blood type, hospital name, and distance.</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="5">
+          <div class="step-icon-wrap">
+            <div class="step-number">05</div>
+            <div class="step-icon"><i class="fas fa-route"></i></div>
+          </div>
+          <div class="step-content">
+            <h3>Route Provided</h3>
+            <p>On acceptance, Dijkstra's algorithm calculates the optimal route. Donor receives turn-by-turn navigation to the hospital.</p>
+          </div>
+        </div>
+
+        <div class="step-item" data-step="6">
+          <div class="step-icon-wrap">
+            <div class="step-number">06</div>
+            <div class="step-icon"><i class="fas fa-heartbeat"></i></div>
+          </div>
+          <div class="step-content">
+            <h3>Life Saved</h3>
+            <p>Donor arrives, donates blood, and the request is fulfilled. System updates donor history, badges, and stats.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STATS SECTION ========== -->
+  <section class="stats-section" id="stats">
+    <div class="stats-bg-animation">
+      <div class="ecg-line"></div>
+    </div>
+    <div class="section-container">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-tint"></i></div>
+          <div class="stat-count" data-target="12580">0</div>
+          <div class="stat-text">Registered Donors</div>
+          <div class="stat-bar"><div class="bar-fill" style="width:87%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-hospital-alt"></i></div>
+          <div class="stat-count" data-target="348">0</div>
+          <div class="stat-text">Partner Hospitals</div>
+          <div class="stat-bar"><div class="bar-fill" style="width:65%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-heart"></i></div>
+          <div class="stat-count" data-target="9247">0</div>
+          <div class="stat-text">Lives Saved</div>
+          <div class="stat-bar"><div class="bar-fill" style="width:92%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-clock"></i></div>
+          <div class="stat-count" data-target="8">0</div>
+          <div class="stat-text">Avg. Response (min)</div>
+          <div class="stat-bar"><div class="bar-fill" style="width:45%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-map"></i></div>
+          <div class="stat-count" data-target="24">0</div>
+          <div class="stat-text">Active Zones</div>
+          <div class="stat-bar"><div class="bar-fill" style="width:75%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="stat-count" data-target="98">0</div>
+          <div class="stat-text">% Success Rate</div>
+          <div class="stat-bar"><div class="bar-fill" style="width:98%"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ZONES SECTION ========== -->
+  <section class="zones-section" id="zones">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">Zone System</span>
+        <h2 class="section-title">Smart <span class="text-red">Zone-Based</span> Coverage</h2>
+        <p class="section-desc">The city is divided into concentric zones. Emergency requests escalate outward until fulfilled.</p>
+      </div>
+
+      <div class="zones-layout">
+        <div class="zone-diagram">
+          <div class="zd-ring zd-z3">
+            <span class="zd-label">Zone 3 · 10-20km</span>
+            <div class="zd-ring zd-z2">
+              <span class="zd-label">Zone 2 · 5-10km</span>
+              <div class="zd-ring zd-z1">
+                <span class="zd-label">Zone 1 · 0-5km</span>
+                <div class="zd-center">
+                  <i class="fas fa-hospital-alt"></i>
+                  <span>Hospital</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Animated donor dots -->
+          <div class="zd-donor" style="top:10%;left:50%"><i class="fas fa-user"></i></div>
+          <div class="zd-donor" style="top:50%;left:90%"><i class="fas fa-user"></i></div>
+          <div class="zd-donor" style="top:85%;left:60%"><i class="fas fa-user"></i></div>
+          <div class="zd-donor" style="top:70%;left:15%"><i class="fas fa-user"></i></div>
+          <div class="zd-donor" style="top:30%;left:10%"><i class="fas fa-user"></i></div>
+          <div class="zd-donor" style="top:20%;left:75%"><i class="fas fa-user"></i></div>
+          <div class="zd-donor" style="top:75%;left:80%"><i class="fas fa-user"></i></div>
+        </div>
+
+        <div class="zones-info">
+          <div class="zone-info-card z1-card">
+            <div class="zone-badge">Zone 1</div>
+            <h3>0 – 5 km</h3>
+            <p>First priority zone. Donors here receive immediate alerts. Response time under 5 minutes.</p>
+            <div class="zone-features">
+              <span><i class="fas fa-check"></i> First to be notified</span>
+              <span><i class="fas fa-check"></i> Highest priority</span>
+              <span><i class="fas fa-check"></i> Real-time tracking</span>
+            </div>
+          </div>
+
+          <div class="zone-info-card z2-card">
+            <div class="zone-badge">Zone 2</div>
+            <h3>5 – 10 km</h3>
+            <p>Secondary zone activated if Zone 1 has insufficient donors. Expanded search within 5 minutes.</p>
+            <div class="zone-features">
+              <span><i class="fas fa-check"></i> Secondary fallback</span>
+              <span><i class="fas fa-check"></i> Auto-escalation</span>
+              <span><i class="fas fa-check"></i> Route optimized</span>
+            </div>
+          </div>
+
+          <div class="zone-info-card z3-card">
+            <div class="zone-badge">Zone 3</div>
+            <h3>10 – 20 km</h3>
+            <p>Tertiary zone for critical shortages. All available donors in the extended area are alerted.</p>
+            <div class="zone-features">
+              <span><i class="fas fa-check"></i> Emergency fallback</span>
+              <span><i class="fas fa-check"></i> Maximum coverage</span>
+              <span><i class="fas fa-check"></i> Multi-hospital sync</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== DSA SECTION ========== -->
+  <section class="dsa-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">Under The Hood</span>
+        <h2 class="section-title">Algorithms <span class="text-red">Powering</span> RED404</h2>
+      </div>
+      <div class="dsa-grid">
+        <div class="dsa-card">
+          <div class="dsa-icon"><i class="fas fa-globe"></i></div>
+          <h4>Haversine Formula</h4>
+          <p>Calculates great-circle distances between GPS coordinates for accurate zone assignment.</p>
+          <code>d = 2r·arcsin(√(sin²(Δφ/2)+cos φ₁·cos φ₂·sin²(Δλ/2)))</code>
+        </div>
+        <div class="dsa-card">
+          <div class="dsa-icon"><i class="fas fa-project-diagram"></i></div>
+          <h4>Dijkstra's Shortest Path</h4>
+          <p>Finds the shortest weighted path from donor to hospital through the city road graph.</p>
+          <code>Priority Queue + Relaxation</code>
+        </div>
+        <div class="dsa-card">
+          <div class="dsa-icon"><i class="fas fa-sitemap"></i></div>
+          <h4>BFS Zone Traversal</h4>
+          <p>Breadth-first search expands zone-by-zone outward from hospital when searching for donors.</p>
+          <code>Queue-based Level Traversal</code>
+        </div>
+        <div class="dsa-card">
+          <div class="dsa-icon"><i class="fas fa-sort-amount-down"></i></div>
+          <h4>Priority Queue</h4>
+          <p>Donors sorted by distance and compatibility. Nearest eligible donor served first (min-heap).</p>
+          <code>Min-Heap O(log n)</code>
+        </div>
+        <div class="dsa-card">
+          <div class="dsa-icon"><i class="fas fa-hashtag"></i></div>
+          <h4>Hash Map Lookup</h4>
+          <p>O(1) blood type to donor list mapping. Instantly retrieves all donors of a specific blood type.</p>
+          <code>HashMap&lt;BloodType, List&lt;Donor&gt;&gt;</code>
+        </div>
+        <div class="dsa-card">
+          <div class="dsa-icon"><i class="fas fa-layer-group"></i></div>
+          <h4>Stack & Queue</h4>
+          <p>Request history stack for undo operations. Notification queue for batch donor alerting.</p>
+          <code>LIFO Stack + FIFO Queue</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CTA SECTION ========== -->
+  <section class="cta-section">
+    <div class="cta-bg">
+      <div class="cta-drop d1"></div>
+      <div class="cta-drop d2"></div>
+      <div class="cta-drop d3"></div>
+    </div>
+    <div class="section-container">
+      <div class="cta-content">
+        <h2>Ready to Save Lives?</h2>
+        <p>Join RED404 today. Every registration counts. Every donation matters.</p>
+        <div class="cta-buttons">
+          <a href="donor-register.html" class="btn btn-cta-primary">
+            <i class="fas fa-heart"></i> Register as Donor
+          </a>
+          <a href="hospital-register.html" class="btn btn-cta-secondary">
+            <i class="fas fa-hospital"></i> Register Hospital
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer" id="contact">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <i class="fas fa-tint"></i>
+          RED<span>404</span>
+        </div>
+        <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
+        <div class="footer-social">
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-linkedin"></i></a>
+          <a href="#"><i class="fab fa-github"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="donor-register.html"><i class="fas fa-chevron-right"></i> Donor Register</a></li>
+          <li><a href="donor-login.html"><i class="fas fa-chevron-right"></i> Donor Login</a></li>
+          <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
+          <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4>Algorithms</h4>
+        <ul>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Haversine</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Dijkstra's</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> BFS Zones</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Priority Queue</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h4>Contact</h4>
+        <p><i class="fas fa-envelope"></i> support@red404.org</p>
+        <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+        <p><i class="fas fa-map-marker-alt"></i> India</p>
+        <div class="emergency-tag">
+          <i class="fas fa-exclamation-circle"></i>
+          Emergency: 1800-RED-404
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
+    </div>
+  </footer>
+
+  <script src="js/common.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

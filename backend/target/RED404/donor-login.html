@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RED404 - Donor Login</title>
+  <link rel="stylesheet" href="css/common.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="auth-body">
+
+  <div class="auth-particles" id="authParticles"></div>
+
+  <div class="auth-page-container login-layout">
+
+    <!-- Left Panel -->
+    <div class="auth-left-panel">
+      <a href="index.html" class="auth-logo">
+        <i class="fas fa-tint"></i>
+        RED<span>404</span>
+      </a>
+      <div class="auth-left-content">
+        <div class="login-illustration">
+          <div class="heart-beat-container">
+            <svg viewBox="0 0 200 200" class="ecg-svg">
+              <polyline class="ecg-path" points="0,100 30,100 40,60 50,140 60,100 80,100 90,40 100,160 110,100 130,100 140,80 150,120 160,100 200,100"/>
+            </svg>
+            <div class="heartbeat-icon">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+          </div>
+        </div>
+        <h2>Welcome Back, Hero!</h2>
+        <p>Every login could be the moment you save someone's life. The network is waiting for you.</p>
+        <div class="auth-features">
+          <div class="af-item">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>View your donation history</span>
+          </div>
+          <div class="af-item">
+            <i class="fas fa-bell"></i>
+            <span>Manage notification settings</span>
+          </div>
+          <div class="af-item">
+            <i class="fas fa-star"></i>
+            <span>Track your impact & badges</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right-panel">
+      <div class="auth-form-container login-form-container">
+        <div class="form-header">
+          <div class="login-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <h2>Donor Login</h2>
+          <p>Sign in to your RED404 account</p>
+        </div>
+
+        <form id="donorLoginForm" novalidate>
+
+          <div class="form-group">
+            <label for="loginEmail">Email or Phone <span class="req">*</span></label>
+            <div class="input-wrap">
+              <i class="fas fa-user input-icon"></i>
+              <input type="text" id="loginEmail" name="loginEmail" placeholder="Email or phone number" required/>
+              <span class="input-focus-line"></span>
+            </div>
+            <span class="field-error" id="loginEmailErr"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">Password <span class="req">*</span></label>
+            <div class="input-wrap">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" required/>
+              <button type="button" class="toggle-pass" onclick="togglePassword('loginPassword','loginEye')">
+                <i class="fas fa-eye" id="loginEye"></i>
+              </button>
+              <span class="input-focus-line"></span>
+            </div>
+            <span class="field-error" id="loginPasswordErr"></span>
+          </div>
+
+          <div class="form-options">
+            <label class="check-opt small">
+              <input type="checkbox" id="rememberMe"/>
+              <span class="checkmark"></span>
+              Remember me
+            </label>
+            <a href="#" class="forgot-link" onclick="showForgotModal()">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn-submit full-width">
+            <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Login</span>
+            <span class="btn-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Signing in...</span>
+          </button>
+
+          <div class="divider"><span>OR</span></div>
+
+          <div class="social-login">
+            <button type="button" class="social-btn google-btn">
+              <i class="fab fa-google"></i> Continue with Google
+            </button>
+          </div>
+
+        </form>
+
+        <div class="auth-switch">
+          New donor? <a href="donor-register.html">Register here</a>
+        </div>
+
+        <div class="auth-switch">
+          Are you a hospital? <a href="hospital-login.html">Hospital Login</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgotModal" style="display:none;">
+    <div class="modal-box">
+      <button class="modal-close" onclick="hideForgotModal()"><i class="fas fa-times"></i></button>
+      <h3><i class="fas fa-key"></i> Reset Password</h3>
+      <p>Enter your registered email to receive a reset link.</p>
+      <div class="form-group">
+        <div class="input-wrap">
+          <i class="fas fa-envelope input-icon"></i>
+          <input type="email" id="resetEmail" placeholder="Enter your email"/>
+          <span class="input-focus-line"></span>
+        </div>
+      </div>
+      <button class="btn-submit" onclick="sendResetLink()">
+        <i class="fas fa-paper-plane"></i> Send Reset Link
+      </button>
+    </div>
+  </div>
+
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
