@@ -341,39 +341,14 @@ function initDonorRegisterForm() {
     setButtonLoading(submitBtn, true);
 
     const payload = buildDonorPayload();
+    const result = await API.post('/donors/register', payload);
+    setButtonLoading(submitBtn, false);
 
-    // --- YAHA SURAKSHIT FETCH LOGIC LAGAYA HAI ---
-    try {
-      const response = await fetch('http://localhost:8080/api/donors/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      // Pehle content-type check karein taaki HTML parse hone par crash na ho
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const result = await response.json();
-        
-        if (response.status === 201 || result.success) {
-          form.reset();
-          document.getElementById('successModal').style.display = 'flex';
-        } else {
-          showToast(result.message || 'Registration failed. Please try again.', 'error');
-        }
-      } else {
-        const textError = await response.text();
-        console.error("Backend sent HTML instead of JSON:", textError);
-        showToast("Server configuration error (Received HTML). Check Servlet path.", "error");
-      }
-
-    } catch (err) {
-      console.error("Connection failed:", err);
-      showToast("Could not connect to the backend server.", "error");
-    } finally {
-      setButtonLoading(submitBtn, false);
+    if (result.success) {
+      form.reset();
+      document.getElementById('successModal').style.display = 'flex';
+    } else {
+      showToast(result.error || 'Registration failed. Please try again.', 'error');
     }
   });
 }
@@ -574,60 +549,25 @@ window.sendResetLink = async function () {
     return;
   }
 
-  const result = await API.post('/auth/forgot-password', { email, role: 'donor' });
-
-  if (result.success || true) { /* Show success regardless for security */
-    const modal = document.getElementById('forgotModal');
-    if (modal) {
-      modal.querySelector('.modal-box').innerHTML = `
-        <div style="text-align:center;padding:1.5rem 1rem;">
-          <div class="success-circle" style="margin:0 auto 1.25rem;">
-            <i class="fas fa-check"></i>
-          </div>
-          <h3>Reset Link Sent!</h3>
-          <p style="margin-bottom:1.5rem;">
-            Check <strong>${email}</strong> for the password reset link.
-            It may take a few minutes.
-          </p>
-          <button class="btn btn-primary"
-            onclick="document.getElementById('forgotModal').style.display='none'">
-            Close
-          </button>
-        </div>`;
-    }
+  await API.post('/auth/forgot-password', { email, role: 'donor' });
+  const modal = document.getElementById('forgotModal');
+  if (modal) {
+    modal.querySelector('.modal-box').innerHTML = `
+      <div style="text-align:center;padding:1.5rem 1rem;">
+        <div class="success-circle" style="margin:0 auto 1.25rem;">
+          <i class="fas fa-check"></i>
+        </div>
+        <h3>Reset Link Sent!</h3>
+        <p style="margin-bottom:1.5rem;">
+          Check <strong>${email}</strong> for the password reset link.
+          It may take a few minutes.
+        </p>
+        <button class="btn btn-primary"
+          onclick="document.getElementById('forgotModal').style.display='none'">
+          Close
+        </button>
+      </div>`;
   }
-};
-
-
-// frontend/js/auth.js mein purane alert ko hata kar ye likhein
-window.sendResetLink = async function () {
-    const emailInput = document.getElementById('resetEmail');
-    const email = emailInput.value;
-
-    if (!email) {
-        alert("Kripya apni registered email dalein.");
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE}/donors/forgot-password`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email })
-        });
-
-        const result = await response.json();
-        
-        if (result.success) {
-            alert(result.message);
-            hideForgotModal(); // Modal band karne ke liye
-        } else {
-            alert(result.message || "Email dhoondne mein samasya hui.");
-        }
-    } catch (err) {
-        console.error("Forgot password error:", err);
-        alert("Server se connect nahi ho pa raha hai.");
-    }
 };
 
 

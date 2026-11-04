@@ -3,246 +3,120 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
-         version="6.0">
-
-    <!-- ============================================ -->
-    <!-- APPLICATION INFO                             -->
-    <!-- ============================================ -->
+         version="6.0"
+         metadata-complete="true">
 
     <display-name>RED404 - Blood Donation System</display-name>
-    <description>
-        RED404 Real-Time Blood Donation System
-        Backend API - Java Servlet + MySQL
-    </description>
-
-    <!-- ============================================ -->
-    <!-- WELCOME FILE                                 -->
-    <!-- ============================================ -->
+    <description>RED404 Real-Time Blood Donation System (MVC)</description>
 
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
 
-    <!-- ============================================ -->
-    <!-- DONOR SERVLET                                -->
-    <!-- ============================================ -->
+    <servlet>
+        <servlet-name>DonorServlet</servlet-name>
+        <servlet-class>com.red404.controller.DonorServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DonorServlet</servlet-name>
+        <url-pattern>/api/donors/*</url-pattern>
+    </servlet-mapping>
 
     <servlet>
-    <servlet-name>DonorServlet</servlet-name>
-    <servlet-class>com.red404.DonorServlet</servlet-class>
-    <load-on-startup>1</load-on-startup>
-</servlet>
-<servlet-mapping>
-    <servlet-name>DonorServlet</servlet-name>
-    <url-pattern>/api/donors/*</url-pattern>
-</servlet-mapping>
-
-    <!-- ============================================ -->
-    <!-- HOSPITAL SERVLET                             -->
-    <!-- ============================================ -->
-
-    <servlet>
-    <servlet-name>HospitalServlet</servlet-name>
-    <servlet-class>com.red404.HospitalServlet</servlet-class>
-    <load-on-startup>2</load-on-startup>
-</servlet>
-<servlet-mapping>
-    <servlet-name>HospitalServlet</servlet-name>
-    <url-pattern>/api/hospitals/*</url-pattern>
-</servlet-mapping>
-
-    <!-- ============================================ -->
-    <!-- BLOOD REQUEST SERVLET                        -->
-    <!-- ============================================ -->
+        <servlet-name>HospitalServlet</servlet-name>
+        <servlet-class>com.red404.controller.HospitalServlet</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HospitalServlet</servlet-name>
+        <url-pattern>/api/hospitals/*</url-pattern>
+    </servlet-mapping>
 
     <servlet>
         <servlet-name>BloodRequestServlet</servlet-name>
-        <servlet-class>com.red404.BloodRequestServlet</servlet-class>
+        <servlet-class>com.red404.controller.BloodRequestServlet</servlet-class>
         <load-on-startup>3</load-on-startup>
     </servlet>
-
     <servlet-mapping>
         <servlet-name>BloodRequestServlet</servlet-name>
         <url-pattern>/api/requests/*</url-pattern>
+        <url-pattern>/api/blood-requests/*</url-pattern>
     </servlet-mapping>
 
-    <!-- ============================================ -->
-    <!-- SESSION CONFIGURATION                        -->
-    <!-- ============================================ -->
+    <servlet>
+        <servlet-name>AuthServlet</servlet-name>
+        <servlet-class>com.red404.controller.AuthServlet</servlet-class>
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AuthServlet</servlet-name>
+        <url-pattern>/api/auth/*</url-pattern>
+    </servlet-mapping>
 
     <session-config>
-        <!-- Session timeout in minutes -->
         <session-timeout>30</session-timeout>
         <cookie-config>
             <name>RED404_SESSION</name>
             <http-only>true</http-only>
-            <secure>false</secure> <!-- Set true in production with HTTPS -->
+            <secure>false</secure>
         </cookie-config>
         <tracking-mode>COOKIE</tracking-mode>
     </session-config>
 
-    <!-- ============================================ -->
-    <!-- CORS FILTER                                  -->
-    <!-- ============================================ -->
-
     <filter>
         <filter-name>CORSFilter</filter-name>
-        <filter-class>src.com.red404.CORSFilter</filter-class>
+        <filter-class>com.red404.controller.CORSFilter</filter-class>
     </filter>
-
     <filter-mapping>
         <filter-name>CORSFilter</filter-name>
         <url-pattern>/api/*</url-pattern>
     </filter-mapping>
 
-    <!-- ============================================ -->
-    <!-- ERROR PAGES                                  -->
-    <!-- ============================================ -->
-
-    <!-- 400 Bad Request -->
     <error-page>
         <error-code>400</error-code>
         <location>/error.html</location>
     </error-page>
-
-    <!-- 401 Unauthorized -->
     <error-page>
         <error-code>401</error-code>
         <location>/error.html</location>
     </error-page>
-
-    <!-- 403 Forbidden -->
     <error-page>
         <error-code>403</error-code>
         <location>/error.html</location>
     </error-page>
-
-    <!-- 404 Not Found → RED404 😉 -->
     <error-page>
         <error-code>404</error-code>
         <location>/error.html</location>
     </error-page>
-
-    <!-- 500 Internal Server Error -->
     <error-page>
         <error-code>500</error-code>
         <location>/error.html</location>
     </error-page>
-
-    <!-- General Exception -->
     <error-page>
         <exception-type>java.lang.Exception</exception-type>
         <location>/error.html</location>
     </error-page>
 
-    <!-- ============================================ -->
-    <!-- MIME TYPE MAPPINGS                           -->
-    <!-- ============================================ -->
-
     <mime-mapping>
         <extension>json</extension>
         <mime-type>application/json</mime-type>
     </mime-mapping>
-
-    <mime-mapping>
-        <extension>html</extension>
-        <mime-type>text/html</mime-type>
-    </mime-mapping>
-
-    <mime-mapping>
-        <extension>css</extension>
-        <mime-type>text/css</mime-type>
-    </mime-mapping>
-
     <mime-mapping>
         <extension>js</extension>
         <mime-type>application/javascript</mime-type>
     </mime-mapping>
 
-    <mime-mapping>
-        <extension>png</extension>
-        <mime-type>image/png</mime-type>
-    </mime-mapping>
-
-    <mime-mapping>
-        <extension>jpg</extension>
-        <mime-type>image/jpeg</mime-type>
-    </mime-mapping>
-
-    <mime-mapping>
-        <extension>ico</extension>
-        <mime-type>image/x-icon</mime-type>
-    </mime-mapping>
-
-    <!-- ============================================ -->
-    <!-- SECURITY CONSTRAINTS (Basic)                 -->
-    <!-- ============================================ -->
-
-    <security-constraint>
-        <web-resource-collection>
-            <web-resource-name>API Protection</web-resource-name>
-            <url-pattern>/api/*</url-pattern>
-            <http-method>DELETE</http-method>
-        </web-resource-collection>
-        <!-- Add auth-constraint here in production -->
-    </security-constraint>
-
-    <!-- ============================================ -->
-    <!-- CONTEXT PARAMETERS                           -->
-    <!-- ============================================ -->
-
-    <!-- App Name -->
     <context-param>
         <param-name>appName</param-name>
         <param-value>RED404</param-value>
     </context-param>
-
-    <!-- App Version -->
     <context-param>
         <param-name>appVersion</param-name>
         <param-value>1.0.0</param-value>
     </context-param>
-
-    <!-- Default Search Radius (km) -->
     <context-param>
         <param-name>defaultSearchRadius</param-name>
         <param-value>10</param-value>
     </context-param>
-
-    <!-- Critical Zone Radius (km) -->
-    <context-param>
-        <param-name>criticalZoneRadius</param-name>
-        <param-value>5</param-value>
-    </context-param>
-
-    <!-- High Zone Radius (km) -->
-    <context-param>
-        <param-name>highZoneRadius</param-name>
-        <param-value>10</param-value>
-    </context-param>
-
-    <!-- Medium Zone Radius (km) -->
-    <context-param>
-        <param-name>mediumZoneRadius</param-name>
-        <param-value>20</param-value>
-    </context-param>
-
-    <!-- Low Zone Radius (km) -->
-    <context-param>
-        <param-name>lowZoneRadius</param-name>
-        <param-value>50</param-value>
-    </context-param>
-
-    <!-- Min Donation Gap Days -->
-    <context-param>
-        <param-name>minDonationGapDays</param-name>
-        <param-value>90</param-value>
-    </context-param>
-
-    <!-- Admin Email -->
-    <context-param>
-        <param-name>adminEmail</param-name>
-        <param-value>admin@red404.com</param-value>
-    </context-param>
-
 </web-app>

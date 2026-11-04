@@ -860,24 +860,43 @@ const Auth = {
 
 /* ==================== API HELPER ==================== */
 const API = {
-  baseUrl: 'http://localhost:8080/RED404/api',
+  baseUrl: (() => {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const ctx = parts[0] && !parts[0].includes('.') ? '/' + parts[0] : '';
+    return window.location.origin + ctx + '/api';
+  })(),
 
   async request(endpoint, options = {}) {
     const session = Auth.getSession();
+    const token = Store.get('donorToken') || Store.get('hospitalToken');
     const headers = {
       'Content-Type': 'application/json',
+      Accept: 'application/json',
       ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     };
 
     try {
-      const res  = await fetch(`${this.baseUrl}${endpoint}`, { ...options, headers });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || `HTTP ${res.status}`);
+      const res  = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        throw new Error(text ? 'Server returned a non-JSON response' : `HTTP ${res.status}`);
       }
-      return { success: true, data };
+      const json = await res.json();
+      if (!res.ok || json.success === false) {
+        throw new Error(json.message || `HTTP ${res.status}`);
+      }
+      return {
+        success: true,
+        message: json.message,
+        data: json.data !== undefined ? json.data : json,
+      };
     } catch (err) {
       return { success: false, error: err.message };
     }

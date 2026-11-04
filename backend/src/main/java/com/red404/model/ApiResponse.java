@@ -1,4 +1,4 @@
-package com.red404;
+package com.red404.model;
 
 public class ApiResponse {
     private boolean success;

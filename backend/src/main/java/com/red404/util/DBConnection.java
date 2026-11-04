@@ -1,4 +1,4 @@
-package com.red404;
+package com.red404.util;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
