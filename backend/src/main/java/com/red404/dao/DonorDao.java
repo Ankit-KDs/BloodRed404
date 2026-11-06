@@ -1,8 +1,5 @@
 package com.red404.dao;
 
-import com.red404.util.DBConnection;
-import com.red404.util.DistanceCalculator;
-
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -13,6 +10,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.red404.util.DBConnection;
+import com.red404.util.DistanceCalculator;
 
 public class DonorDao {
 

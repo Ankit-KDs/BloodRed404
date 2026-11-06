@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS red404;
-USE red404;
+-- RED404 Schema (auto-initialized by Spring Boot)
+-- Database is configured in application.properties
 
 CREATE TABLE IF NOT EXISTS donors (
     id INT AUTO_INCREMENT PRIMARY KEY,

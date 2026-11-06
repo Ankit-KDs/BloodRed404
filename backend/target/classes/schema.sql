@@ -1,0 +1,86 @@
+-- RED404 Schema (auto-initialized by Spring Boot)
+-- Database is configured in application.properties
+
+CREATE TABLE IF NOT EXISTS donors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    dob DATE NULL,
+    gender VARCHAR(20),
+    password VARCHAR(255) NOT NULL,
+    blood_type VARCHAR(5) NOT NULL,
+    weight DOUBLE,
+    last_donation DATE NULL,
+    availability VARCHAR(40) DEFAULT 'Available',
+    address VARCHAR(255),
+    city VARCHAR(80),
+    state VARCHAR(80),
+    pincode VARCHAR(10),
+    latitude DOUBLE NULL,
+    longitude DOUBLE NULL,
+    zone VARCHAR(80),
+    sms_notif BOOLEAN DEFAULT TRUE,
+    push_notif BOOLEAN DEFAULT TRUE,
+    email_notif BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS hospitals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hospital_name VARCHAR(180) NOT NULL,
+    registration_no VARCHAR(80) NOT NULL,
+    hospital_type VARCHAR(40),
+    beds INT DEFAULT 0,
+    blood_bank_license VARCHAR(80),
+    hospital_email VARCHAR(150) NOT NULL UNIQUE,
+    hospital_phone VARCHAR(20),
+    website VARCHAR(150),
+    services TEXT,
+    admin_name VARCHAR(150),
+    admin_designation VARCHAR(80),
+    admin_phone VARCHAR(20),
+    admin_email VARCHAR(150),
+    password VARCHAR(255) NOT NULL,
+    emergency_contact VARCHAR(20),
+    address VARCHAR(255),
+    landmark VARCHAR(150),
+    city VARCHAR(80),
+    state VARCHAR(80),
+    pincode VARCHAR(10),
+    latitude DOUBLE NULL,
+    longitude DOUBLE NULL,
+    zone VARCHAR(80),
+    operating_hours VARCHAR(40) DEFAULT '24x7',
+    zone_radius INT DEFAULT 10,
+    sms_notif BOOLEAN DEFAULT TRUE,
+    push_notif BOOLEAN DEFAULT TRUE,
+    email_notif BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS blood_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hospital_id INT NOT NULL,
+    patient_name VARCHAR(150),
+    blood_type VARCHAR(5) NOT NULL,
+    units_requested INT DEFAULT 1,
+    urgency_level VARCHAR(20) DEFAULT 'HIGH',
+    required_before DATE NULL,
+    status VARCHAR(20) DEFAULT 'Active',
+    latitude DOUBLE NULL,
+    longitude DOUBLE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_br_hospital FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
+);
+
+CREATE TABLE IF NOT EXISTS donations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    donor_id INT NOT NULL,
+    hospital_id INT NULL,
+    blood_type VARCHAR(5),
+    units INT DEFAULT 1,
+    donation_date DATE,
+    status VARCHAR(20) DEFAULT 'COMPLETED',
+    CONSTRAINT fk_don_donor FOREIGN KEY (donor_id) REFERENCES donors(id)
+);
