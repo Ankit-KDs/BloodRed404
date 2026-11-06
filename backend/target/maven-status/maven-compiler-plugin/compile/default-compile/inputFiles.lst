@@ -14,4 +14,5 @@ C:\Desktop\Red404_projectt_firstOne\backend\src\main\java\com\red404\config\Cors
 C:\Desktop\Red404_projectt_firstOne\backend\src\main\java\com\red404\controller\DonorController.java
 C:\Desktop\Red404_projectt_firstOne\backend\src\main\java\com\red404\dao\DonorDao.java
 C:\Desktop\Red404_projectt_firstOne\backend\src\main\java\com\red404\util\JsonUtil.java
+C:\Desktop\Red404_projectt_firstOne\backend\src\main\java\com\red404\config\DatabaseSchemaMigrator.java
 C:\Desktop\Red404_projectt_firstOne\backend\src\main\java\com\red404\model\BloodRequest.java

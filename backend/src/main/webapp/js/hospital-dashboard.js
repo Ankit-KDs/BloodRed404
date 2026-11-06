@@ -85,11 +85,11 @@ function showHospPage(page) {
 /* ==================== HOSPITAL STATS ==================== */
 function initHospitalStats() {
   const stats = {
-    'hsc-total-requests': { value: 142, target: 142 },
-    'hsc-fulfilled':      { value: 138, target: 138 },
-    'hsc-donors-notif':   { value: 1247, target: 1247 },
-    'hsc-avg-response':   { value: 8,   target: 8    },
-    'hsc-zones-covered':  { value: 3,   target: 3    },
+    'hsc-total-requests': { value: 0, target: 0 },
+    'hsc-fulfilled':      { value: 0, target: 0 },
+    'hsc-donors-notif':   { value: 0, target: 0 },
+    'hsc-avg-response':   { value: 0, target: 0 },
+    'hsc-zones-covered':  { value: 0, target: 0 },
   };
 
   Object.entries(stats).forEach(([id, data]) => {
@@ -182,12 +182,12 @@ async function dispatchBloodRequest() {
     btn.disabled  = false;
   }
 
-  if (result.success || true) { /* Mock success */
+  if (result.success) {
     const requestId  = `REQ-${Date.now().toString().slice(-6)}`;
-    const donorsSent = Math.floor(Math.random() * 8) + 3;
+    const donorsSent = (result.data && result.data.donorsNotified) || 0;
 
     RED404.showToast(
-      `Blood request dispatched! Notified ${donorsSent} donors nearby.`,
+      `Blood request dispatched!`,
       'success',
       4000
     );
@@ -247,13 +247,7 @@ async function loadActiveRequests() {
   if (result.success) {
     requests = result.data;
   } else {
-    /* Mock data */
-    requests = [
-      { id: 'REQ-891023', bloodType: 'O+',  urgency: 'critical', units: 2, status: 'pending',    time: new Date(Date.now() - 5  * 60000).toISOString(), donorsAccepted: 0, donorsNotified: 12 },
-      { id: 'REQ-891019', bloodType: 'A-',  urgency: 'high',     units: 1, status: 'in_progress', time: new Date(Date.now() - 15 * 60000).toISOString(), donorsAccepted: 1, donorsNotified: 8  },
-      { id: 'REQ-891010', bloodType: 'B+',  urgency: 'normal',   units: 3, status: 'fulfilled',  time: new Date(Date.now() - 45 * 60000).toISOString(), donorsAccepted: 3, donorsNotified: 5  },
-      { id: 'REQ-890998', bloodType: 'AB+', urgency: 'high',     units: 1, status: 'fulfilled',  time: new Date(Date.now() - 90 * 60000).toISOString(), donorsAccepted: 1, donorsNotified: 6  },
-    ];
+    requests = [];
   }
 
   renderActiveRequests(requests, container);
@@ -551,45 +545,7 @@ async function loadDispatchLog() {
   if (result.success) {
     logs = result.data;
   } else {
-    /* Mock log entries */
-    logs = [
-      {
-        type:  'completed',
-        title: 'Request Fulfilled',
-        desc:  'O+ blood request fulfilled. Donor Rahul Sharma arrived at hospital.',
-        time:  new Date(Date.now() - 10  * 60000).toISOString(),
-      },
-      {
-        type:  'accepted',
-        title: 'Donor Accepted',
-        desc:  'Priya Patel accepted A+ blood request. ETA: 12 minutes.',
-        time:  new Date(Date.now() - 18  * 60000).toISOString(),
-      },
-      {
-        type:  'sent',
-        title: 'Alert Dispatched',
-        desc:  'B+ blood request sent to 8 donors in Zone 1 (0–5 km).',
-        time:  new Date(Date.now() - 32  * 60000).toISOString(),
-      },
-      {
-        type:  'declined',
-        title: 'Donor Declined',
-        desc:  'Donor declined O- request. Searching next available donor in zone.',
-        time:  new Date(Date.now() - 47  * 60000).toISOString(),
-      },
-      {
-        type:  'sent',
-        title: 'Zone 2 Escalation',
-        desc:  'No available O- donors in Zone 1. Escalating search to Zone 2 (5–10 km).',
-        time:  new Date(Date.now() - 55  * 60000).toISOString(),
-      },
-      {
-        type:  'completed',
-        title: 'Request Fulfilled',
-        desc:  'AB+ blood request fulfilled successfully. Response time: 14 minutes.',
-        time:  new Date(Date.now() - 90  * 60000).toISOString(),
-      },
-    ];
+    logs = [];
   }
 
   renderDispatchLog(logs, container);
@@ -935,21 +891,21 @@ async function loadHospitalProfile() {
     hospital = result.data;
   } else {
     hospital = {
-      name:            'City General Hospital',
-      type:            'Government',
-      registrationNo:  'MH-2022-HOSP-00124',
-      city:            'Mumbai',
-      state:           'Maharashtra',
+      name:            'Hospital Portal',
+      type:            'Hospital',
+      registrationNo:  '',
+      city:            'Patna',
+      state:           'Bihar',
       zone:            'Zone 1 (0–5 km)',
-      beds:            800,
-      totalRequests:   142,
-      fulfilled:       138,
-      avgResponseTime: 8,
-      verified:        true,
-      adminName:       'Dr. Rahul Desai',
-      phone:           '+91 22 1234 5678',
-      email:           'admin@citygeneral.com',
-      joined:          '2022-01-15',
+      beds:            0,
+      totalRequests:   0,
+      fulfilled:       0,
+      avgResponseTime: 0,
+      verified:        false,
+      adminName:       '',
+      phone:           '',
+      email:           '',
+      joined:          '',
     };
   }
 

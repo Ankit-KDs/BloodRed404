@@ -142,8 +142,7 @@ function initStatBars() {
 /* ==================== SCROLL REVEAL ==================== */
 function initScrollRevealHome() {
   const targets = document.querySelectorAll(
-    '.about-card, .step-item, .stat-card, .dsa-card, ' +
-    '.zone-info-card, .zone-info-card, .dsa-card, .cta-content'
+    '.about-card, .step-item, .stat-card, .zone-info-card, .cta-content'
   );
 
   targets.forEach((el, idx) => {

@@ -1,23 +1,32 @@
 package com.red404.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.red404.dao.BloodRequestDao;
-import com.red404.dao.DonorDao;
-import com.red404.model.ApiResponse;
-import com.red404.util.JsonUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.red404.dao.BloodRequestDao;
+import com.red404.dao.DonorDao;
+import com.red404.model.ApiResponse;
+import com.red404.util.JsonUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
 @RestController
-@RequestMapping("/api/donors")
+@RequestMapping({"/api/donors", "/api/donor"})
 public class DonorController {
 
     private final DonorDao donorDao = new DonorDao();
@@ -122,7 +131,7 @@ public class DonorController {
     // ======================== POST ========================
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body) {
+    public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             String email = JsonUtil.text(body, "email");
             String phone = JsonUtil.text(body, "phone");
@@ -153,8 +162,18 @@ public class DonorController {
             donor.put("emailNotif", JsonUtil.asBoolean(body, "emailNotif", false));
 
             if (donorDao.insert(donor)) {
+                Map<String, Object> registeredDonor = donorDao.findByLogin(email, (String) donor.get("password"));
+                if (registeredDonor == null) {
+                    registeredDonor = donor;
+                }
+                HttpSession session = request.getSession(true);
+                session.setAttribute("user", registeredDonor);
+                session.setAttribute("role", "DONOR");
+                Map<String, Object> wrapper = new HashMap<>();
+                wrapper.put("donor", registeredDonor);
+                wrapper.put("token", "SESSION-DONOR-" + registeredDonor.get("id"));
                 return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new ApiResponse(true, "Donor Registered Successfully!", null));
+                        .body(new ApiResponse(true, "Donor Registered Successfully!", wrapper));
             } else {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Registration Failed."));

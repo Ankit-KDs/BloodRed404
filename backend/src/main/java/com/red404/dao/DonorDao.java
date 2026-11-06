@@ -125,21 +125,23 @@ public class DonorDao {
     }
 
     public List<Map<String, Object>> findNearby(Double lat, Double lng, double radiusKm, String bloodType) throws SQLException {
-        String sql = "SELECT * FROM donors WHERE latitude IS NOT NULL AND longitude IS NOT NULL " +
-                "AND (availability IS NULL OR availability <> 'Unavailable')";
+        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR availability <> 'Unavailable')";
         List<Map<String, Object>> results = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Map<String, Object> donor = mapDonor(rs, false);
-                double donorLat = ((Number) donor.get("latitude")).doubleValue();
-                double donorLng = ((Number) donor.get("longitude")).doubleValue();
-                double distance = (lat == null || lng == null)
-                        ? 0
-                        : DistanceCalculator.calculateDistance(lat, lng, donorLat, donorLng);
-                if (lat != null && lng != null && distance > radiusKm) {
-                    continue;
+                Object latObj = donor.get("latitude");
+                Object lngObj = donor.get("longitude");
+                double distance = 0.0;
+                if (lat != null && lng != null && latObj instanceof Number && lngObj instanceof Number) {
+                    double donorLat = ((Number) latObj).doubleValue();
+                    double donorLng = ((Number) lngObj).doubleValue();
+                    distance = DistanceCalculator.calculateDistance(lat, lng, donorLat, donorLng);
+                    if (distance > radiusKm) {
+                        continue;
+                    }
                 }
                 if (bloodType != null && !bloodType.isBlank()
                         && !DistanceCalculator.isCompatibleBloodType(str(donor.get("bloodType")), bloodType)
@@ -219,6 +221,11 @@ public class DonorDao {
         Date lastDonation = rs.getDate("last_donation");
         donor.put("lastDonation", lastDonation == null ? null : lastDonation.toString());
         donor.put("lastDonationDate", lastDonation == null ? null : lastDonation.toString());
+        try {
+            Date dob = rs.getDate("dob");
+            donor.put("dateOfBirth", dob == null ? null : dob.toString());
+            donor.put("dob", dob == null ? null : dob.toString());
+        } catch (SQLException ignored) {}
         if (includePrivate) {
             donor.put("gender", rs.getString("gender"));
         }

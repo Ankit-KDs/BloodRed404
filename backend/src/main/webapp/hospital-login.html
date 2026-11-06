@@ -165,50 +165,16 @@
   <script src="js/auth.js"></script>
 
   <script>
-    /* ---- Hospital Login Form ---- */
-    document.getElementById('hospitalLoginForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      const email    = document.getElementById('hospLoginEmail').value.trim();
-      const password = document.getElementById('hospLoginPassword').value;
-      const emailErr = document.getElementById('hospLoginEmailErr');
-      const passErr  = document.getElementById('hospLoginPasswordErr');
-      let   valid    = true;
-
-      emailErr.textContent = '';
-      passErr.textContent  = '';
-
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        emailErr.textContent = 'Enter a valid email address.';
-        valid = false;
-      }
-      if (!password || password.length < 6) {
-        passErr.textContent = 'Password must be at least 6 characters.';
-        valid = false;
-      }
-      if (!valid) return;
-
-      const btn     = this.querySelector('.btn-submit');
-      const btnText = btn.querySelector('.btn-text');
-      const loader  = btn.querySelector('.btn-loader');
-
-      btnText.style.display = 'none';
-      loader.style.display  = 'inline-flex';
-      btn.disabled          = true;
-
-      /* Simulate API call → redirect to dashboard */
-      setTimeout(() => {
-        window.location.href = 'hospital-dashboard.html';
-      }, 1800);
-    });
-
     function showHospForgotModal() {
       document.getElementById('hospForgotModal').style.display = 'flex';
     }
 
     function sendHospResetLink() {
       const email = document.getElementById('hospResetEmail').value.trim();
-      if (!email) { alert('Please enter your email.'); return; }
+      if (!email) {
+        showToast('Please enter your email.', 'warning');
+        return;
+      }
       const modal = document.getElementById('hospForgotModal');
       modal.querySelector('.modal-box').innerHTML = `
         <div style="text-align:center;padding:2rem 1rem;">

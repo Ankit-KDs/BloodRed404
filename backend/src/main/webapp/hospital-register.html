@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RED404 - Hospital Registration</title>
-  <link rel="stylesheet" href="css/common.css"/>
-  <link rel="stylesheet" href="css/auth.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap"
+    rel="stylesheet" />
 </head>
+
 <body class="auth-body">
 
   <div class="auth-particles" id="authParticles"></div>
@@ -58,7 +62,7 @@
           </div>
           <div class="af-item">
             <i class="fas fa-route"></i>
-            <span>Dijkstra-powered donor routing</span>
+            <span>Optimized emergency donor routing</span>
           </div>
           <div class="af-item">
             <i class="fas fa-layer-group"></i>
@@ -109,13 +113,7 @@
               </label>
               <div class="input-wrap">
                 <i class="fas fa-hospital input-icon"></i>
-                <input
-                  type="text"
-                  id="hospitalName"
-                  name="hospitalName"
-                  placeholder="City General Hospital"
-                  required
-                />
+                <input type="text" id="hospitalName" name="hospitalName" placeholder="City General Hospital" required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="hospitalNameErr"></span>
@@ -127,13 +125,8 @@
               </label>
               <div class="input-wrap">
                 <i class="fas fa-id-card input-icon"></i>
-                <input
-                  type="text"
-                  id="registrationNo"
-                  name="registrationNo"
-                  placeholder="MH-2024-HOSP-XXXXX"
-                  required
-                />
+                <input type="text" id="registrationNo" name="registrationNo" placeholder="MH-2024-HOSP-XXXXX"
+                  required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="registrationNoErr"></span>
@@ -163,13 +156,7 @@
                 <label for="beds">Total Beds</label>
                 <div class="input-wrap">
                   <i class="fas fa-bed input-icon"></i>
-                  <input
-                    type="number"
-                    id="beds"
-                    name="beds"
-                    placeholder="500"
-                    min="1"
-                  />
+                  <input type="number" id="beds" name="beds" placeholder="500" min="1" />
                   <span class="input-focus-line"></span>
                 </div>
               </div>
@@ -179,12 +166,8 @@
               <label for="bloodBankLicense">Blood Bank License No.</label>
               <div class="input-wrap">
                 <i class="fas fa-vial input-icon"></i>
-                <input
-                  type="text"
-                  id="bloodBankLicense"
-                  name="bloodBankLicense"
-                  placeholder="BB-2024-XXXXX (if applicable)"
-                />
+                <input type="text" id="bloodBankLicense" name="bloodBankLicense"
+                  placeholder="BB-2024-XXXXX (if applicable)" />
                 <span class="input-focus-line"></span>
               </div>
             </div>
@@ -195,13 +178,7 @@
               </label>
               <div class="input-wrap">
                 <i class="fas fa-envelope input-icon"></i>
-                <input
-                  type="email"
-                  id="hospEmail"
-                  name="hospEmail"
-                  placeholder="bloodbank@hospital.com"
-                  required
-                />
+                <input type="email" id="hospEmail" name="hospEmail" placeholder="bloodbank@hospital.com" required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="hospEmailErr"></span>
@@ -214,14 +191,8 @@
               <div class="input-wrap">
                 <i class="fas fa-phone input-icon"></i>
                 <span class="phone-prefix">+91</span>
-                <input
-                  type="tel"
-                  id="hospPhone"
-                  name="hospPhone"
-                  placeholder="22 1234 5678"
-                  class="with-prefix"
-                  required
-                />
+                <input type="tel" id="hospPhone" name="hospPhone" placeholder="22 1234 5678" class="with-prefix"
+                  required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="hospPhoneErr"></span>
@@ -231,12 +202,7 @@
               <label for="hospWebsite">Hospital Website</label>
               <div class="input-wrap">
                 <i class="fas fa-globe input-icon"></i>
-                <input
-                  type="url"
-                  id="hospWebsite"
-                  name="hospWebsite"
-                  placeholder="https://www.yourhospital.com"
-                />
+                <input type="url" id="hospWebsite" name="hospWebsite" placeholder="https://www.yourhospital.com" />
                 <span class="input-focus-line"></span>
               </div>
             </div>
@@ -246,27 +212,27 @@
               <label>Services Offered</label>
               <div class="checkbox-group two-col">
                 <label class="check-opt">
-                  <input type="checkbox" name="services" value="emergency"/>
+                  <input type="checkbox" name="services" value="emergency" />
                   <span class="checkmark"></span> Emergency / Trauma
                 </label>
                 <label class="check-opt">
-                  <input type="checkbox" name="services" value="bloodbank"/>
+                  <input type="checkbox" name="services" value="bloodbank" />
                   <span class="checkmark"></span> Blood Bank
                 </label>
                 <label class="check-opt">
-                  <input type="checkbox" name="services" value="icu"/>
+                  <input type="checkbox" name="services" value="icu" />
                   <span class="checkmark"></span> ICU
                 </label>
                 <label class="check-opt">
-                  <input type="checkbox" name="services" value="surgery"/>
+                  <input type="checkbox" name="services" value="surgery" />
                   <span class="checkmark"></span> Surgery
                 </label>
                 <label class="check-opt">
-                  <input type="checkbox" name="services" value="maternity"/>
+                  <input type="checkbox" name="services" value="maternity" />
                   <span class="checkmark"></span> Maternity
                 </label>
                 <label class="check-opt">
-                  <input type="checkbox" name="services" value="dialysis"/>
+                  <input type="checkbox" name="services" value="dialysis" />
                   <span class="checkmark"></span> Dialysis
                 </label>
               </div>
@@ -292,13 +258,7 @@
                 </label>
                 <div class="input-wrap">
                   <i class="fas fa-user input-icon"></i>
-                  <input
-                    type="text"
-                    id="adminFirstName"
-                    name="adminFirstName"
-                    placeholder="Dr. Rahul"
-                    required
-                  />
+                  <input type="text" id="adminFirstName" name="adminFirstName" placeholder="Dr. Rahul" required />
                   <span class="input-focus-line"></span>
                 </div>
                 <span class="field-error" id="adminFirstNameErr"></span>
@@ -310,13 +270,7 @@
                 </label>
                 <div class="input-wrap">
                   <i class="fas fa-user input-icon"></i>
-                  <input
-                    type="text"
-                    id="adminLastName"
-                    name="adminLastName"
-                    placeholder="Sharma"
-                    required
-                  />
+                  <input type="text" id="adminLastName" name="adminLastName" placeholder="Sharma" required />
                   <span class="input-focus-line"></span>
                 </div>
                 <span class="field-error" id="adminLastNameErr"></span>
@@ -351,14 +305,8 @@
               <div class="input-wrap">
                 <i class="fas fa-phone input-icon"></i>
                 <span class="phone-prefix">+91</span>
-                <input
-                  type="tel"
-                  id="adminPhone"
-                  name="adminPhone"
-                  placeholder="98765 43210"
-                  class="with-prefix"
-                  required
-                />
+                <input type="tel" id="adminPhone" name="adminPhone" placeholder="98765 43210" class="with-prefix"
+                  required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="adminPhoneErr"></span>
@@ -370,13 +318,7 @@
               </label>
               <div class="input-wrap">
                 <i class="fas fa-envelope input-icon"></i>
-                <input
-                  type="email"
-                  id="adminEmail"
-                  name="adminEmail"
-                  placeholder="admin@hospital.com"
-                  required
-                />
+                <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@hospital.com" required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="adminEmailErr"></span>
@@ -388,18 +330,9 @@
               </label>
               <div class="input-wrap">
                 <i class="fas fa-lock input-icon"></i>
-                <input
-                  type="password"
-                  id="adminPassword"
-                  name="adminPassword"
-                  placeholder="Create strong password"
-                  required
-                />
-                <button
-                  type="button"
-                  class="toggle-pass"
-                  onclick="togglePassword('adminPassword','hospEye1')"
-                >
+                <input type="password" id="adminPassword" name="adminPassword" placeholder="Create strong password"
+                  required />
+                <button type="button" class="toggle-pass" onclick="togglePassword('adminPassword','hospEye1')">
                   <i class="fas fa-eye" id="hospEye1"></i>
                 </button>
                 <span class="input-focus-line"></span>
@@ -419,18 +352,9 @@
               </label>
               <div class="input-wrap">
                 <i class="fas fa-lock input-icon"></i>
-                <input
-                  type="password"
-                  id="adminConfirmPassword"
-                  name="adminConfirmPassword"
-                  placeholder="Repeat password"
-                  required
-                />
-                <button
-                  type="button"
-                  class="toggle-pass"
-                  onclick="togglePassword('adminConfirmPassword','hospEye2')"
-                >
+                <input type="password" id="adminConfirmPassword" name="adminConfirmPassword"
+                  placeholder="Repeat password" required />
+                <button type="button" class="toggle-pass" onclick="togglePassword('adminConfirmPassword','hospEye2')">
                   <i class="fas fa-eye" id="hospEye2"></i>
                 </button>
                 <span class="input-focus-line"></span>
@@ -446,14 +370,8 @@
               <div class="input-wrap">
                 <i class="fas fa-phone-alt input-icon"></i>
                 <span class="phone-prefix">+91</span>
-                <input
-                  type="tel"
-                  id="emergencyContact"
-                  name="emergencyContact"
-                  placeholder="Emergency hotline"
-                  class="with-prefix"
-                  required
-                />
+                <input type="tel" id="emergencyContact" name="emergencyContact" placeholder="Emergency hotline"
+                  class="with-prefix" required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="emergencyContactErr"></span>
@@ -478,13 +396,8 @@
               </label>
               <div class="input-wrap">
                 <i class="fas fa-map-marker-alt input-icon"></i>
-                <input
-                  type="text"
-                  id="hospAddress"
-                  name="hospAddress"
-                  placeholder="12 Hospital Road, Sector 5"
-                  required
-                />
+                <input type="text" id="hospAddress" name="hospAddress" placeholder="12 Hospital Road, Sector 5"
+                  required />
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="hospAddressErr"></span>
@@ -494,12 +407,8 @@
               <label for="hospLandmark">Nearest Landmark</label>
               <div class="input-wrap">
                 <i class="fas fa-thumbtack input-icon"></i>
-                <input
-                  type="text"
-                  id="hospLandmark"
-                  name="hospLandmark"
-                  placeholder="Near Central Park, Opposite Metro Station"
-                />
+                <input type="text" id="hospLandmark" name="hospLandmark"
+                  placeholder="Near Central Park, Opposite Metro Station" />
                 <span class="input-focus-line"></span>
               </div>
             </div>
@@ -511,13 +420,7 @@
                 </label>
                 <div class="input-wrap">
                   <i class="fas fa-city input-icon"></i>
-                  <input
-                    type="text"
-                    id="hospCity"
-                    name="hospCity"
-                    placeholder="Mumbai"
-                    required
-                  />
+                  <input type="text" id="hospCity" name="hospCity" placeholder="Mumbai" required />
                   <span class="input-focus-line"></span>
                 </div>
                 <span class="field-error" id="hospCityErr"></span>
@@ -531,24 +434,43 @@
                   <i class="fas fa-map input-icon"></i>
                   <select id="hospState" name="hospState" required>
                     <option value="">Select State</option>
-                    <option value="MH">Maharashtra</option>
-                    <option value="DL">Delhi</option>
-                    <option value="KA">Karnataka</option>
-                    <option value="TN">Tamil Nadu</option>
-                    <option value="UP">Uttar Pradesh</option>
-                    <option value="WB">West Bengal</option>
-                    <option value="GJ">Gujarat</option>
-                    <option value="RJ">Rajasthan</option>
-                    <option value="MP">Madhya Pradesh</option>
-                    <option value="AP">Andhra Pradesh</option>
-                    <option value="TS">Telangana</option>
-                    <option value="KL">Kerala</option>
-                    <option value="PB">Punjab</option>
-                    <option value="HR">Haryana</option>
-                    <option value="BR">Bihar</option>
-                    <option value="OD">Odisha</option>
-                    <option value="AS">Assam</option>
-                    <option value="OT">Other</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Goa">Goa</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                    <option value="Chandigarh">Chandigarh</option>
+                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                    <option value="Ladakh">Ladakh</option>
+                    <option value="Lakshadweep">Lakshadweep</option>
+                    <option value="Puducherry">Puducherry</option>
+                    <option value="Other">Other</option>
                   </select>
                   <span class="input-focus-line"></span>
                 </div>
@@ -563,14 +485,7 @@
                 </label>
                 <div class="input-wrap">
                   <i class="fas fa-mail-bulk input-icon"></i>
-                  <input
-                    type="text"
-                    id="hospPincode"
-                    name="hospPincode"
-                    placeholder="400001"
-                    maxlength="6"
-                    required
-                  />
+                  <input type="text" id="hospPincode" name="hospPincode" placeholder="400001" maxlength="6" required />
                   <span class="input-focus-line"></span>
                 </div>
                 <span class="field-error" id="hospPincodeErr"></span>
@@ -580,13 +495,7 @@
                 <label for="hospZone">Zone (Auto-detected)</label>
                 <div class="input-wrap">
                   <i class="fas fa-layer-group input-icon"></i>
-                  <input
-                    type="text"
-                    id="hospZone"
-                    name="hospZone"
-                    placeholder="Auto-detected"
-                    readonly
-                  />
+                  <input type="text" id="hospZone" name="hospZone" placeholder="Auto-detected" readonly />
                   <span class="input-focus-line"></span>
                 </div>
               </div>
@@ -617,76 +526,30 @@
             </div>
 
             <!-- Hidden lat/lng inputs -->
-            <input type="hidden" id="hospLat" name="hospLat"/>
-            <input type="hidden" id="hospLng" name="hospLng"/>
+            <input type="hidden" id="hospLat" name="hospLat" />
+            <input type="hidden" id="hospLng" name="hospLng" />
 
             <!-- Operating Hours -->
             <div class="form-group">
               <label>Operating Hours <span class="req">*</span></label>
               <div class="op-hours-grid">
                 <label class="op-hour-opt">
-                  <input type="radio" name="opHours" value="24x7" checked/>
+                  <input type="radio" name="opHours" value="24x7" checked />
                   <span class="op-btn">
                     <i class="fas fa-clock"></i> 24 × 7
                   </span>
                 </label>
                 <label class="op-hour-opt">
-                  <input type="radio" name="opHours" value="daytime"/>
+                  <input type="radio" name="opHours" value="daytime" />
                   <span class="op-btn">
                     <i class="fas fa-sun"></i> Day Only
                   </span>
                 </label>
                 <label class="op-hour-opt">
-                  <input type="radio" name="opHours" value="custom"/>
+                  <input type="radio" name="opHours" value="custom" />
                   <span class="op-btn">
                     <i class="fas fa-calendar-alt"></i> Custom
                   </span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Covered Zone Radius -->
-            <div class="form-group">
-              <label for="zoneRadius">
-                Preferred Donor Search Radius (km) <span class="req">*</span>
-              </label>
-              <div class="range-wrap">
-                <input
-                  type="range"
-                  id="zoneRadius"
-                  name="zoneRadius"
-                  min="5"
-                  max="50"
-                  step="5"
-                  value="10"
-                  oninput="updateRadiusLabel(this.value)"
-                />
-                <div class="range-labels">
-                  <span>5 km</span>
-                  <span class="range-current-val" id="radiusLabel">10 km</span>
-                  <span>50 km</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Notification preference -->
-            <div class="form-group">
-              <label>Alert / Notification Channels</label>
-              <div class="toggle-group">
-                <label class="toggle-switch">
-                  <input type="checkbox" id="hospSmsNotif" checked/>
-                  <span class="toggle-slider"></span>
-                  SMS to Donors
-                </label>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="hospPushNotif" checked/>
-                  <span class="toggle-slider"></span>
-                  Push Notifications
-                </label>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="hospEmailNotif"/>
-                  <span class="toggle-slider"></span>
-                  Email Notifications
                 </label>
               </div>
             </div>
@@ -701,7 +564,8 @@
                 <i class="fas fa-file-medical-alt"></i>
                 <p>Drag &amp; drop or <strong>click to upload</strong></p>
                 <small>Registration certificate, Blood bank license (PDF / JPG / PNG — Max 5 MB each)</small>
-                <input type="file" id="docUpload" name="docUpload" accept=".pdf,.jpg,.jpeg,.png" multiple style="display:none" onchange="handleDocUpload(event)"/>
+                <input type="file" id="docUpload" name="docUpload" accept=".pdf,.jpg,.jpeg,.png" multiple
+                  style="display:none" onchange="handleDocUpload(event)" />
               </div>
               <div class="uploaded-files" id="uploadedFiles"></div>
             </div>
@@ -709,7 +573,7 @@
             <!-- Terms -->
             <div class="form-group terms-group">
               <label class="check-opt">
-                <input type="checkbox" id="hospTerms" name="hospTerms" required/>
+                <input type="checkbox" id="hospTerms" name="hospTerms" required />
                 <span class="checkmark"></span>
                 I confirm that all information provided is accurate and I agree
                 to the <a href="#" class="text-red">Terms of Service</a>,
@@ -764,8 +628,8 @@
         receive a confirmation email once approved.
       </p>
       <div class="modal-actions">
-        <a href="hospital-login.html" class="btn btn-primary">
-          <i class="fas fa-sign-in-alt"></i> Go to Login
+        <a href="hospital-dashboard.html" class="btn btn-primary">
+          <i class="fas fa-columns"></i> Go to Dashboard
         </a>
         <a href="index.html" class="btn btn-outline">
           <i class="fas fa-home"></i> Go to Home
@@ -805,7 +669,7 @@
       if (!validateHospStep(current)) return;
 
       const currentEl = document.getElementById(`hstep${current}`);
-      const nextEl    = document.getElementById(`hstep${current + 1}`);
+      const nextEl = document.getElementById(`hstep${current + 1}`);
       if (!nextEl) return;
 
       currentEl.classList.remove('active');
@@ -826,7 +690,7 @@
 
     function prevHospStep(current) {
       const currentEl = document.getElementById(`hstep${current}`);
-      const prevEl    = document.getElementById(`hstep${current - 1}`);
+      const prevEl = document.getElementById(`hstep${current - 1}`);
       if (!prevEl) return;
 
       currentEl.classList.remove('active');
@@ -848,7 +712,7 @@
     function updateHospProgressBar(activeStep) {
       document.querySelectorAll('.fpb-step').forEach((step, idx) => {
         step.classList.remove('active', 'completed');
-        if (idx + 1 < activeStep)  step.classList.add('completed');
+        if (idx + 1 < activeStep) step.classList.add('completed');
         if (idx + 1 === activeStep) step.classList.add('active');
       });
       document.querySelectorAll('.fpb-line').forEach((line, idx) => {
@@ -878,18 +742,18 @@
         clearErr('hospEmailErr');
         clearErr('hospPhoneErr');
 
-        const name  = document.getElementById('hospitalName').value.trim();
+        const name = document.getElementById('hospitalName').value.trim();
         const regNo = document.getElementById('registrationNo').value.trim();
-        const type  = document.getElementById('hospitalType').value;
+        const type = document.getElementById('hospitalType').value;
         const email = document.getElementById('hospEmail').value.trim();
         const phone = document.getElementById('hospPhone').value.trim();
 
-        if (!name)  showErr('hospitalNameErr', 'Hospital name is required.');
+        if (!name) showErr('hospitalNameErr', 'Hospital name is required.');
         if (!regNo) showErr('registrationNoErr', 'Registration number is required.');
-        if (!type)  showErr('hospitalTypeErr', 'Please select hospital type.');
+        if (!type) showErr('hospitalTypeErr', 'Please select hospital type.');
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
           showErr('hospEmailErr', 'Enter a valid email address.');
-        if (!phone || !/^\d{10}$/.test(phone.replace(/\s/g,'')))
+        if (!phone || !/^\d{10}$/.test(phone.replace(/\s/g, '')))
           showErr('hospPhoneErr', 'Enter a valid 10-digit phone number.');
       }
 
@@ -903,19 +767,19 @@
         clearErr('adminConfirmPasswordErr');
         clearErr('emergencyContactErr');
 
-        const fn    = document.getElementById('adminFirstName').value.trim();
-        const ln    = document.getElementById('adminLastName').value.trim();
-        const desg  = document.getElementById('adminDesignation').value;
-        const ph    = document.getElementById('adminPhone').value.trim();
-        const em    = document.getElementById('adminEmail').value.trim();
-        const pw    = document.getElementById('adminPassword').value;
-        const cpw   = document.getElementById('adminConfirmPassword').value;
-        const emer  = document.getElementById('emergencyContact').value.trim();
+        const fn = document.getElementById('adminFirstName').value.trim();
+        const ln = document.getElementById('adminLastName').value.trim();
+        const desg = document.getElementById('adminDesignation').value;
+        const ph = document.getElementById('adminPhone').value.trim();
+        const em = document.getElementById('adminEmail').value.trim();
+        const pw = document.getElementById('adminPassword').value;
+        const cpw = document.getElementById('adminConfirmPassword').value;
+        const emer = document.getElementById('emergencyContact').value.trim();
 
-        if (!fn)  showErr('adminFirstNameErr', 'First name is required.');
-        if (!ln)  showErr('adminLastNameErr',  'Last name is required.');
-        if (!desg) showErr('adminDesignationErr','Please select a designation.');
-        if (!ph || !/^\d{10}$/.test(ph.replace(/\s/g,'')))
+        if (!fn) showErr('adminFirstNameErr', 'First name is required.');
+        if (!ln) showErr('adminLastNameErr', 'Last name is required.');
+        if (!desg) showErr('adminDesignationErr', 'Please select a designation.');
+        if (!ph || !/^\d{10}$/.test(ph.replace(/\s/g, '')))
           showErr('adminPhoneErr', 'Enter a valid 10-digit phone number.');
         if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))
           showErr('adminEmailErr', 'Enter a valid email address.');
@@ -923,7 +787,7 @@
           showErr('adminPasswordErr', 'Password must be at least 8 characters.');
         if (pw !== cpw)
           showErr('adminConfirmPasswordErr', 'Passwords do not match.');
-        if (!emer || !/^\d{10}$/.test(emer.replace(/\s/g,'')))
+        if (!emer || !/^\d{10}$/.test(emer.replace(/\s/g, '')))
           showErr('emergencyContactErr', 'Enter a valid emergency contact number.');
       }
 
@@ -934,15 +798,15 @@
         clearErr('hospPincodeErr');
         clearErr('hospTermsErr');
 
-        const addr   = document.getElementById('hospAddress').value.trim();
-        const city   = document.getElementById('hospCity').value.trim();
-        const state  = document.getElementById('hospState').value;
-        const pin    = document.getElementById('hospPincode').value.trim();
-        const terms  = document.getElementById('hospTerms').checked;
+        const addr = document.getElementById('hospAddress').value.trim();
+        const city = document.getElementById('hospCity').value.trim();
+        const state = document.getElementById('hospState').value;
+        const pin = document.getElementById('hospPincode').value.trim();
+        const terms = document.getElementById('hospTerms').checked;
 
-        if (!addr)  showErr('hospAddressErr',  'Street address is required.');
-        if (!city)  showErr('hospCityErr',     'City is required.');
-        if (!state) showErr('hospStateErr',    'Please select a state.');
+        if (!addr) showErr('hospAddressErr', 'Street address is required.');
+        if (!city) showErr('hospCityErr', 'City is required.');
+        if (!state) showErr('hospStateErr', 'Please select a state.');
         if (!pin || !/^\d{6}$/.test(pin))
           showErr('hospPincodeErr', 'Enter a valid 6-digit PIN code.');
         if (!terms)
@@ -951,7 +815,7 @@
 
       if (!valid) {
         /* Shake the first visible error field */
-        const firstErr = document.querySelector('#hstep'+step+' .field-error:not(:empty)');
+        const firstErr = document.querySelector('#hstep' + step + ' .field-error:not(:empty)');
         if (firstErr) {
           const inp = firstErr.previousElementSibling || firstErr.parentElement.querySelector('input,select');
           if (inp) inp.classList.add('shake');
@@ -966,21 +830,21 @@
        PASSWORD STRENGTH METER
     ============================================================ */
     document.getElementById('adminPassword').addEventListener('input', function () {
-      const val    = this.value;
-      const fill   = document.getElementById('hospStrengthFill');
-      const text   = document.getElementById('hospStrengthText');
-      let score    = 0;
+      const val = this.value;
+      const fill = document.getElementById('hospStrengthFill');
+      const text = document.getElementById('hospStrengthText');
+      let score = 0;
 
-      if (val.length >= 8)            score++;
-      if (/[A-Z]/.test(val))          score++;
-      if (/[0-9]/.test(val))          score++;
-      if (/[^A-Za-z0-9]/.test(val))   score++;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
 
       const levels = [
-        { label: 'Too weak',  color: '#ff4444', width: '15%'  },
-        { label: 'Weak',      color: '#ff8800', width: '35%'  },
-        { label: 'Fair',      color: '#ffcc00', width: '55%'  },
-        { label: 'Strong',    color: '#44bb00', width: '80%'  },
+        { label: 'Too weak', color: '#ff4444', width: '15%' },
+        { label: 'Weak', color: '#ff8800', width: '35%' },
+        { label: 'Fair', color: '#ffcc00', width: '55%' },
+        { label: 'Strong', color: '#44bb00', width: '80%' },
         { label: 'Very strong', color: '#00cc44', width: '100%' },
       ];
       const lvl = val.length === 0 ? null : levels[score];
@@ -989,36 +853,29 @@
         fill.style.width = '0';
         text.textContent = 'Enter password';
       } else {
-        fill.style.width       = lvl.width;
-        fill.style.background  = lvl.color;
-        text.textContent       = lvl.label;
-        text.style.color       = lvl.color;
+        fill.style.width = lvl.width;
+        fill.style.background = lvl.color;
+        text.textContent = lvl.label;
+        text.style.color = lvl.color;
       }
     });
-
-    /* ============================================================
-       RADIUS RANGE SLIDER LABEL
-    ============================================================ */
-    function updateRadiusLabel(val) {
-      document.getElementById('radiusLabel').textContent = val + ' km';
-    }
 
     /* ============================================================
        GPS — AUTO-DETECT HOSPITAL LOCATION
     ============================================================ */
     function detectHospitalLocation() {
-      const statusEl  = document.getElementById('hospLocationStatus');
+      const statusEl = document.getElementById('hospLocationStatus');
       const coordsDiv = document.getElementById('hospCoordsDisplay');
-      const btn       = document.querySelector('#hospLocationDetect button');
+      const btn = document.querySelector('#hospLocationDetect button');
 
       if (!navigator.geolocation) {
-        statusEl.textContent  = 'Geolocation not supported.';
-        statusEl.style.color  = '#ff4444';
+        statusEl.textContent = 'Geolocation not supported.';
+        statusEl.style.color = '#ff4444';
         return;
       }
 
-      btn.innerHTML    = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
-      btn.disabled     = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
+      btn.disabled = true;
       statusEl.textContent = '';
 
       navigator.geolocation.getCurrentPosition(
@@ -1026,8 +883,8 @@
           const lat = pos.coords.latitude.toFixed(6);
           const lng = pos.coords.longitude.toFixed(6);
 
-          document.getElementById('hospLat').value        = lat;
-          document.getElementById('hospLng').value        = lng;
+          document.getElementById('hospLat').value = lat;
+          document.getElementById('hospLng').value = lng;
           document.getElementById('hospLatDisplay').textContent = lat;
           document.getElementById('hospLngDisplay').textContent = lng;
 
@@ -1035,15 +892,15 @@
           fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
             .then(r => r.json())
             .then(data => {
-              const addr    = data.address || {};
+              const addr = data.address || {};
               const display = data.display_name || 'Location found';
 
               document.getElementById('hospAddressDisplay').textContent = display;
 
-              if (addr.road)        document.getElementById('hospAddress').value  = addr.road + (addr.neighbourhood ? ', ' + addr.neighbourhood : '');
+              if (addr.road) document.getElementById('hospAddress').value = addr.road + (addr.neighbourhood ? ', ' + addr.neighbourhood : '');
               if (addr.city || addr.town || addr.village)
                 document.getElementById('hospCity').value = addr.city || addr.town || addr.village;
-              if (addr.postcode)    document.getElementById('hospPincode').value  = addr.postcode;
+              if (addr.postcode) document.getElementById('hospPincode').value = addr.postcode;
 
               coordsDiv.style.display = 'flex';
               btn.innerHTML = '<i class="fas fa-check-circle"></i> Location Detected';
@@ -1061,8 +918,8 @@
         err => {
           statusEl.textContent = 'Could not detect location. Please enter manually.';
           statusEl.style.color = '#ff4444';
-          btn.innerHTML  = '<i class="fas fa-crosshairs"></i> Auto-Detect Hospital Location';
-          btn.disabled   = false;
+          btn.innerHTML = '<i class="fas fa-crosshairs"></i> Auto-Detect Hospital Location';
+          btn.disabled = false;
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
@@ -1072,20 +929,20 @@
       /* Placeholder — real logic compares to city centre coordinates */
       const cityLat = 19.0760, cityLng = 72.8777;
       const d = haversineKm(parseFloat(lat), parseFloat(lng), cityLat, cityLng);
-      if (d <= 5)  return 'Zone 1 (0–5 km)';
+      if (d <= 5) return 'Zone 1 (0–5 km)';
       if (d <= 10) return 'Zone 2 (5–10 km)';
       if (d <= 20) return 'Zone 3 (10–20 km)';
       return 'Zone 4 (20+ km)';
     }
 
     function haversineKm(lat1, lon1, lat2, lon2) {
-      const R    = 6371;
+      const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a    = Math.sin(dLat/2)**2 +
-                   Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
-                   Math.sin(dLon/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     /* ============================================================
@@ -1105,16 +962,16 @@
     });
 
     function handleDocUpload(event) {
-      const files     = Array.from(event.target.files);
+      const files = Array.from(event.target.files);
       const container = document.getElementById('uploadedFiles');
-      const maxSize   = 5 * 1024 * 1024; // 5 MB
+      const maxSize = 5 * 1024 * 1024; // 5 MB
 
       files.forEach(file => {
         if (file.size > maxSize) {
           showToast(`${file.name} exceeds 5 MB limit.`, 'error');
           return;
         }
-        const id  = 'file_' + Date.now() + Math.random().toString(36).slice(2);
+        const id = 'file_' + Date.now() + Math.random().toString(36).slice(2);
         const ext = file.name.split('.').pop().toUpperCase();
         const div = document.createElement('div');
         div.className = 'uploaded-file-item';
@@ -1143,13 +1000,13 @@
 
     function simulateUpload(id) {
       const fill = document.getElementById('fill_' + id);
-      const pct  = document.getElementById('pct_'  + id);
-      let   prog = 0;
-      const iv   = setInterval(() => {
+      const pct = document.getElementById('pct_' + id);
+      let prog = 0;
+      const iv = setInterval(() => {
         prog += Math.random() * 18 + 5;
         if (prog >= 100) { prog = 100; clearInterval(iv); }
-        fill.style.width   = prog + '%';
-        pct.textContent    = Math.floor(prog) + '%';
+        fill.style.width = prog + '%';
+        pct.textContent = Math.floor(prog) + '%';
       }, 200);
     }
 
@@ -1157,30 +1014,6 @@
       const el = document.getElementById(id);
       if (el) { el.classList.add('removing'); setTimeout(() => el.remove(), 300); }
     }
-
-    /* ============================================================
-       FORM SUBMIT
-    ============================================================ */
-    document.getElementById('hospitalRegisterForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (!validateHospStep(3)) return;
-
-      const submitBtn   = document.getElementById('hospSubmitBtn');
-      const btnText     = submitBtn.querySelector('.btn-text');
-      const btnLoader   = submitBtn.querySelector('.btn-loader');
-
-      btnText.style.display   = 'none';
-      btnLoader.style.display = 'inline-flex';
-      submitBtn.disabled      = true;
-
-      /* Simulate API call */
-      setTimeout(() => {
-        btnText.style.display   = 'inline-flex';
-        btnLoader.style.display = 'none';
-        submitBtn.disabled      = false;
-        document.getElementById('hospSuccessModal').style.display = 'flex';
-      }, 2200);
-    });
 
     /* ============================================================
        MODAL HELPERS
@@ -1220,20 +1053,21 @@
       const container = document.getElementById('authParticles');
       if (!container) return;
       for (let i = 0; i < 40; i++) {
-        const p   = document.createElement('div');
+        const p = document.createElement('div');
         p.className = 'particle';
-        const size  = Math.random() * 6 + 2;
+        const size = Math.random() * 6 + 2;
         p.style.cssText = `
           width:${size}px;height:${size}px;
-          left:${Math.random()*100}%;
-          top:${Math.random()*100}%;
-          animation-delay:${Math.random()*8}s;
-          animation-duration:${Math.random()*10+8}s;
-          opacity:${Math.random()*0.4+0.1};`;
+          left:${Math.random() * 100}%;
+          top:${Math.random() * 100}%;
+          animation-delay:${Math.random() * 8}s;
+          animation-duration:${Math.random() * 10 + 8}s;
+          opacity:${Math.random() * 0.4 + 0.1};`;
         container.appendChild(p);
       }
     })();
   </script>
 
 </body>
+
 </html>

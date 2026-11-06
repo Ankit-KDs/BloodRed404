@@ -498,6 +498,32 @@
   animation:     dotPulse 1.5s ease-in-out infinite;
 }
 
+/* ==================== FLOATING BLOOD DROPS (THEME MATCHING INDEX.HTML) ==================== */
+.floating-drops {
+  position:       fixed;
+  inset:          0;
+  pointer-events: none;
+  z-index:        0;
+  overflow:       hidden;
+}
+
+.floating-drop {
+  position:      absolute;
+  bottom:        -60px;
+  font-size:     1.2rem;
+  color:         var(--red-primary, #e63946);
+  opacity:       0.12;
+  animation:     floatDrop linear infinite;
+  filter:        drop-shadow(0 0 6px rgba(230, 57, 70, 0.4));
+}
+
+@keyframes floatDrop {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 0; }
+  10%  { opacity: 0.15; }
+  90%  { opacity: 0.1; }
+  100% { transform: translateY(-110vh) rotate(360deg) scale(0.5); opacity: 0; }
+}
+
 /* ==================== DASHBOARD CONTENT ==================== */
 .dashboard-content {
   flex:    1;
@@ -1752,4 +1778,114 @@
     flex-direction: column;
     text-align:     center;
   }
+}
+
+/* ==================== MODAL OVERLAY & MODAL BOX STYLES ==================== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 16, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 100000;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.modal-overlay.open,
+.modal-overlay.modal-visible {
+  display: flex !important;
+}
+
+.modal-box {
+  background: var(--bg-card2, #14141f);
+  border: 1px solid rgba(230, 57, 70, 0.4);
+  border-radius: var(--radius-xl, 20px);
+  padding: 2.25rem 2rem;
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(230, 57, 70, 0.22);
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.modal-header h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary, #a8a8c0);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(230, 57, 70, 0.25);
+  color: #ffffff;
+  border-color: rgba(230, 57, 70, 0.5);
+}
+
+.modal-box .form-group {
+  margin-bottom: 1.25rem;
+  text-align: left;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.modal-box .form-group label {
+  display: block !important;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary, #a8a8c0);
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modal-box .form-group input,
+.modal-box .form-group select {
+  width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  background: var(--bg-surface, #1c1c28) !important;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14)) !important;
+  border-radius: 12px !important;
+  padding: 0.85rem 1.1rem !important;
+  color: #ffffff !important;
+  font-size: 0.95rem !important;
+  font-family: inherit !important;
+  transition: all 0.25s ease !important;
+}
+
+.modal-box .form-group input:focus,
+.modal-box .form-group select:focus {
+  outline: none !important;
+  border-color: var(--red-primary, #e63946) !important;
+  box-shadow: 0 0 16px rgba(230, 57, 70, 0.45) !important;
+  background: #242436 !important;
 }

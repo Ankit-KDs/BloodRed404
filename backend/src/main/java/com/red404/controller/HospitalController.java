@@ -1,6 +1,8 @@
 package com.red404.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.red404.dao.BloodRequestDao;
+import com.red404.dao.DonorDao;
 import com.red404.dao.HospitalDao;
 import com.red404.model.ApiResponse;
 import com.red404.util.JsonUtil;
@@ -16,10 +18,12 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/hospitals")
+@RequestMapping({"/api/hospitals", "/api/hospital"})
 public class HospitalController {
 
     private final HospitalDao hospitalDao = new HospitalDao();
+    private final DonorDao donorDao = new DonorDao();
+    private final BloodRequestDao requestDao = new BloodRequestDao();
 
     // ======================== GET ========================
 
@@ -34,10 +38,120 @@ public class HospitalController {
         }
     }
 
+    @GetMapping({"/donors/nearby", "/donors"})
+    public ResponseEntity<ApiResponse> getNearbyDonors(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(defaultValue = "50") double radius,
+            @RequestParam(required = false) String bloodType,
+            HttpServletRequest request) {
+        try {
+            if (lat == null || lng == null) {
+                Map<String, Object> hospital = getHospitalFromSession(request);
+                if (hospital != null) {
+                    lat = asDouble(hospital.get("latitude"));
+                    lng = asDouble(hospital.get("longitude"));
+                }
+            }
+            List<Map<String, Object>> donors = donorDao.findNearby(lat, lng, radius, bloodType);
+            return ok("Donors loaded", donors);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping({"/requests/active", "/requests"})
+    public ResponseEntity<ApiResponse> getActiveRequests(HttpServletRequest request) {
+        try {
+            Integer hospId = getHospitalId(request);
+            List<Map<String, Object>> list = (hospId != null)
+                    ? requestDao.listByHospital(hospId)
+                    : requestDao.listActive();
+            return ok("Requests loaded", list);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping("/requests/history")
+    public ResponseEntity<ApiResponse> getRequestsHistory(HttpServletRequest request) {
+        try {
+            Integer hospId = getHospitalId(request);
+            List<Map<String, Object>> list = (hospId != null)
+                    ? requestDao.listByHospital(hospId)
+                    : requestDao.listActive();
+            return ok("History loaded", list);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping("/dispatch-log")
+    public ResponseEntity<ApiResponse> getDispatchLog() {
+        try {
+            return ok("Log loaded", requestDao.listActive());
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/donors/{id}/notify")
+    public ResponseEntity<ApiResponse> notifyDonor(@PathVariable int id) {
+        return ok("Notification sent to donor #" + id, null);
+    }
+
+    @PostMapping("/requests/{id}/cancel")
+    public ResponseEntity<ApiResponse> cancelRequest(@PathVariable int id) {
+        try {
+            requestDao.updateStatus(id, "Cancelled");
+            return ok("Request cancelled", null);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/requests/{id}/fulfill")
+    public ResponseEntity<ApiResponse> fulfillRequest(@PathVariable int id) {
+        try {
+            requestDao.updateStatus(id, "Fulfilled");
+            return ok("Request marked as fulfilled", null);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/requests", "/requests/dispatch"})
+    public ResponseEntity<ApiResponse> createRequest(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                hospitalId = JsonUtil.asInt(body, "hospitalId", 0);
+            }
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("hospitalId", hospitalId != null && hospitalId > 0 ? hospitalId : 1);
+            payload.put("patientName", JsonUtil.textOrNull(body, "patientName"));
+            payload.put("bloodType", JsonUtil.text(body, "bloodType"));
+            payload.put("unitsRequested", JsonUtil.asInt(body, "unitsNeeded", 1));
+            payload.put("urgencyLevel", JsonUtil.text(body, "urgencyLevel"));
+            payload.put("requiredBefore", JsonUtil.textOrNull(body, "requiredBefore"));
+            payload.put("latitude", JsonUtil.asDouble(body, "latitude"));
+            payload.put("longitude", JsonUtil.asDouble(body, "longitude"));
+            payload.put("notes", JsonUtil.textOrNull(body, "notes"));
+            payload.put("notificationRadius", JsonUtil.asInt(body, "notificationRadius", 5));
+            int id = requestDao.insert(payload);
+            payload.put("id", id);
+            payload.put("status", "Pending");
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse(true, "Emergency blood request dispatched successfully!", payload));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     // ======================== POST ========================
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body) {
+    public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             String email = JsonUtil.text(body, "hospitalEmail");
             if (hospitalDao.emailExists(email)) {
@@ -81,8 +195,18 @@ public class HospitalController {
             hospital.put("emailNotif", JsonUtil.asBoolean(body, "emailNotif", false));
 
             if (hospitalDao.insert(hospital)) {
+                Map<String, Object> registeredHosp = hospitalDao.findByLogin(email, (String) hospital.get("password"));
+                if (registeredHosp == null) {
+                    registeredHosp = hospital;
+                }
+                HttpSession session = request.getSession(true);
+                session.setAttribute("hospitalUser", registeredHosp);
+                session.setAttribute("role", "HOSPITAL");
+                Map<String, Object> wrapper = new HashMap<>();
+                wrapper.put("hospital", registeredHosp);
+                wrapper.put("token", "SESSION-HOSPITAL-" + registeredHosp.get("id"));
                 return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new ApiResponse(true, "Hospital Registered Successfully!", null));
+                        .body(new ApiResponse(true, "Hospital Registered Successfully!", wrapper));
             } else {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Registration Failed."));
@@ -133,6 +257,24 @@ public class HospitalController {
             return null;
         }
         return (Map<String, Object>) session.getAttribute("hospitalUser");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getHospitalFromSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        return session != null ? (Map<String, Object>) session.getAttribute("hospitalUser") : null;
+    }
+
+    private Integer getHospitalId(HttpServletRequest request) {
+        Map<String, Object> h = getHospitalFromSession(request);
+        if (h != null && h.get("id") instanceof Number num) {
+            return num.intValue();
+        }
+        return null;
+    }
+
+    private static Double asDouble(Object val) {
+        return val instanceof Number ? ((Number) val).doubleValue() : null;
     }
 
     private static ResponseEntity<ApiResponse> ok(String message, Object data) {

@@ -3,102 +3,141 @@
    RED404 — Donor Dashboard JS (Real-time + Backend Connected)
    ================================================================ */
 
-// ⚙️ CONFIGURE THIS to match your servlet context path
-const API_BASE = '/red404/api'; // e.g. '/api' or '/YourAppContext/api'
+const API_BASE = '/api';
 
 // ============================================================
-// API HELPER (uses sessions / cookies; if you use JWT, swap to Authorization header)
+// API HELPER (uses common.js API or direct fetch with credentials)
 // ============================================================
-// async function apiCall(endpoint, options = {}) {
-//   const defaultOptions = {
-//     credentials: 'include', // sends JSESSIONID cookie
-//     headers: {
-//       'Content-Type': 'application/json',
-//       'Accept': 'application/json'
-//     }
-//   };
-//   const config = { ...defaultOptions, ...options, headers: { ...defaultOptions.headers, ...(options.headers || {}) } };
+async function apiCall(endpoint, options = {}) {
+  let ep = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  if (ep.startsWith('/donor/')) {
+    ep = ep.replace('/donor/', '/donors/');
+  }
+  if (typeof API !== 'undefined' && typeof API.request === 'function') {
+    return await API.request(ep, options);
+  }
+  const defaultOptions = {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  };
+  const config = { ...defaultOptions, ...options, headers: { ...defaultOptions.headers, ...(options.headers || {}) } };
+  const token = (typeof Store !== 'undefined' && Store.get('donorToken')) || localStorage.getItem('red404_token');
+  if (token) config.headers['Authorization'] = `Bearer ${token}`;
 
-//   // Optional: attach JWT if present
-//   const token = localStorage.getItem('red404_token');
-//   if (token) config.headers['Authorization'] = `Bearer ${token}`;
-
-//   try {
-//     const response = await fetch(`${API_BASE}${endpoint}`, config);
-
-//     if (response.status === 401) {
-//       // Not authenticated → kick to login
-//       window.location.href = 'donor-login.html';
-//       return null;
-//     }
-
-//     const data = await response.json();
-//     if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
-//     return data; // expects ApiResponse { success, message, data }
-//   } catch (err) {
-//     console.error(`API ${endpoint} failed:`, err);
-//     showToast(err.message || 'Network error', 'error');
-//     return null;
-//   }
-// }
+  try {
+    const response = await fetch(`${API_BASE}${ep}`, config);
+    if (response.status === 401) {
+      window.location.href = 'donor-login.html';
+      return null;
+    }
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.error(`API ${ep} failed:`, err);
+    return null;
+  }
+}
 
 // ============================================================
-// AUTH CHECK ON LOAD
+// AUTH CHECK ON LOAD (Strict Real-time Validation)
 // ============================================================
-// async function verifySession() {
-//   const res = await apiCall('/auth/check-session', { method: 'GET' });
-//   if (!res || !res.success) {
-//     window.location.href = 'donor-login.html';
-//     return null;
-//   }
-//   return res.data; // { donorId, name, email, role: 'DONOR', ... }
-// }
+async function verifySession() {
+  try {
+    const res = await apiCall('/auth/check-session', { method: 'GET' });
+    if (res && res.success && res.data && (res.data.donor || res.data.role === 'DONOR')) {
+      const donorData = res.data.donor || res.data;
+      if (typeof Auth !== 'undefined') Auth.saveSession(donorData);
+      return donorData;
+    }
+  } catch (err) {
+    console.warn('Session check failed:', err);
+  }
+  // Not authenticated on server — wipe client cache and redirect
+  if (typeof Auth !== 'undefined') Auth.clearSession();
+  if (typeof Store !== 'undefined') {
+    Store.rm('donorToken');
+    Store.rm('donorSession');
+  }
+  localStorage.removeItem('red404_token');
+  localStorage.removeItem('red404_user');
+  sessionStorage.clear();
+  window.location.replace('donor-login.html');
+  return null;
+}
+
+function renderDonorProfileData(d) {
+  if (!d) return;
+  const name = d.fullName || d.name || 'Donor';
+  const initial = name.charAt(0).toUpperCase();
+  const blood = d.bloodType || '—';
+
+  const avatarEl = document.getElementById('sidebarAvatar');
+  if (avatarEl) avatarEl.textContent = initial;
+
+  const profNameEl = document.getElementById('sidebarProfileName');
+  if (profNameEl) profNameEl.textContent = name;
+
+  const bloodEl = document.getElementById('sidebarBloodType');
+  if (bloodEl) bloodEl.textContent = blood;
+
+  const welcomeEl = document.getElementById('welcomeName');
+  if (welcomeEl) welcomeEl.textContent = name.split(' ')[0];
+
+  const profileAvatarLarge = document.getElementById('profileAvatarLarge');
+  if (profileAvatarLarge && profileAvatarLarge.firstChild) {
+    profileAvatarLarge.firstChild.textContent = initial;
+  }
+  const profileNameDisplay = document.getElementById('profileNameDisplay');
+  if (profileNameDisplay) profileNameDisplay.textContent = name;
+
+  const profileBloodBadge = document.getElementById('profileBloodBadge');
+  if (profileBloodBadge) profileBloodBadge.textContent = blood;
+
+  const setIfExists = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val || '—';
+  };
+
+  setIfExists('pil-name', name);
+  setIfExists('pil-blood', blood);
+  setIfExists('pil-phone', d.phone);
+  setIfExists('pil-email', d.email);
+  setIfExists('pil-city', `${d.city || ''}${d.state ? ', ' + d.state : ''}`);
+  setIfExists('pil-zone', d.zone || 'Zone 1 (0-5 km)');
+  setIfExists('pil-weight', d.weight ? `${d.weight} kg` : '—');
+  setIfExists('pil-last-don', d.lastDonationDate || d.lastDonation ? formatDate(d.lastDonationDate || d.lastDonation) : 'Never');
+  setIfExists('pil-next-elig', d.nextEligibleDate ? formatDate(d.nextEligibleDate) : 'Eligible Now');
+  setIfExists('pil-joined', d.memberSince || d.createdAt ? formatDate(d.memberSince || d.createdAt) : 'Recently');
+  setIfExists('pil-avail', capitalize(d.availability || 'Available'));
+
+  const availBtn = document.getElementById('availabilityToggle');
+  const availLabel = document.getElementById('availabilityLabel');
+  if (availBtn && availLabel) {
+    if (d.availability === 'unavailable' || d.availability === 'Unavailable') {
+      availBtn.classList.remove('available');
+      availLabel.textContent = 'Unavailable';
+    } else {
+      availBtn.classList.add('available');
+      availLabel.textContent = 'Available';
+    }
+  }
+  window.__donor = d;
+}
 
 // ============================================================
 // LOAD DONOR PROFILE
 // ============================================================
 async function loadDonorProfile() {
+  const local = typeof Auth !== 'undefined' ? Auth.getSession() : null;
+  if (local) renderDonorProfileData(local);
+
   const res = await apiCall('/donor/profile');
-  if (!res || !res.success) return;
-  const d = res.data;
-
-  // Sidebar
-  document.getElementById('sidebarAvatar').textContent = (d.fullName || 'D').charAt(0).toUpperCase();
-  document.getElementById('sidebarProfileName').textContent = d.fullName || '—';
-  document.getElementById('sidebarBloodType').textContent = d.bloodType || '—';
-
-  // Welcome
-  document.getElementById('welcomeName').textContent = (d.fullName || 'Donor').split(' ')[0];
-
-  // Profile page
-  document.getElementById('profileAvatarLarge').firstChild.textContent = (d.fullName || 'D').charAt(0).toUpperCase();
-  document.getElementById('profileNameDisplay').textContent = d.fullName || '—';
-  document.getElementById('profileBloodBadge').textContent = d.bloodType || '—';
-  document.getElementById('pil-name').textContent = d.fullName || '—';
-  document.getElementById('pil-blood').textContent = d.bloodType || '—';
-  document.getElementById('pil-phone').textContent = d.phone || '—';
-  document.getElementById('pil-email').textContent = d.email || '—';
-  document.getElementById('pil-city').textContent = `${d.city || ''}${d.state ? ', ' + d.state : ''}` || '—';
-  document.getElementById('pil-zone').textContent = d.zone || 'Zone — (— km)';
-  document.getElementById('pil-weight').textContent = d.weight ? `${d.weight} kg` : '—';
-  document.getElementById('pil-last-don').textContent = d.lastDonationDate ? formatDate(d.lastDonationDate) : 'Never';
-  document.getElementById('pil-next-elig').textContent = d.nextEligibleDate ? formatDate(d.nextEligibleDate) : '—';
-  document.getElementById('pil-joined').textContent = d.memberSince ? formatDate(d.memberSince) : '—';
-  document.getElementById('pil-avail').textContent = capitalize(d.availability || 'Always');
-
-  // Availability toggle UI
-  const availBtn = document.getElementById('availabilityToggle');
-  const availLabel = document.getElementById('availabilityLabel');
-  if (d.availability === 'unavailable') {
-    availBtn.classList.remove('available');
-    availLabel.textContent = 'Unavailable';
-  } else {
-    availBtn.classList.add('available');
-    availLabel.textContent = 'Available';
+  if (res && res.success && res.data) {
+    renderDonorProfileData(res.data);
   }
-
-  // Cache for forms
-  window.__donor = d;
 }
 
 // ============================================================
@@ -151,7 +190,7 @@ async function loadDashboardStats() {
 // ============================================================
 async function loadDonationChart() {
   const res = await apiCall('/donor/donation-chart');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const data = (res && res.success) ? res.data : new Array(12).fill(0);
   const max = Math.max(...data, 1);
 
@@ -212,8 +251,8 @@ async function loadBadges() {
       <div class="badge-name">${b.name}</div>
       <div class="badge-desc">${b.description}</div>
       ${b.earned
-        ? `<div class="badge-earned-date">Earned ${formatDate(b.earnedDate)}</div>`
-        : `<div class="badge-progress">${b.progress || 0}/${b.target || 1}</div>`}
+      ? `<div class="badge-earned-date">Earned ${formatDate(b.earnedDate)}</div>`
+      : `<div class="badge-progress">${b.progress || 0}/${b.target || 1}</div>`}
     </div>
   `).join('');
 }
@@ -279,7 +318,7 @@ async function loadBloodRequests() {
   document.getElementById('liveRequestContainer').innerHTML = arbHtml;
 
   // Start countdown if any
-    // Start countdown if any
+  // Start countdown if any
   if (live && live.expiresAt) startRequestTimer(live.expiresAt);
 
   // Nearby requests list
@@ -389,17 +428,17 @@ function startRequestTimer(expiresAt) {
 
 // Har 10 second mein naye requests check karne ke liye
 function initRealTimePolling() {
-    setInterval(async () => {
-        try {
-            const res = await fetch(`${API_BASE}/requests/active`);
-            const result = await res.json();
-            if (result.success && result.data.length > 0) {
-                // Dashboard update logic yahan likhein
-                renderActiveRequests(result.data, document.getElementById('activeRequestsList'));
-                showToast("New Emergency Alert!", "critical");
-            }
-        } catch (e) { console.error("Polling error", e); }
-    }, 10000); 
+  setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/requests/active`);
+      const result = await res.json();
+      if (result.success && result.data.length > 0) {
+        // Dashboard update logic yahan likhein
+        renderActiveRequests(result.data, document.getElementById('activeRequestsList'));
+        showToast("New Emergency Alert!", "critical");
+      }
+    } catch (e) { console.error("Polling error", e); }
+  }, 10000);
 }
 
 
@@ -420,7 +459,7 @@ async function acceptRequest(requestId) {
     <div class="map-placeholder-icon" style="color:#00cc66"><i class="fas fa-route"></i></div>
     <p>
       <strong>Route active to ${route.hospitalName}</strong><br/>
-      Computed via <strong>Dijkstra's Shortest Path Algorithm</strong>.
+      Computed via <strong>Real-Time Route Optimization</strong>.
     </p>
   `;
   document.getElementById('routeInfo').innerHTML = `
@@ -436,7 +475,15 @@ async function acceptRequest(requestId) {
 }
 
 async function declineRequest(requestId) {
-  if (!confirm('Decline this blood request?')) return;
+  const ok = await showAppConfirm({
+    title: 'Decline Blood Request',
+    message: 'Are you sure you want to decline this blood request?',
+    type: 'warning',
+    icon: 'fa-exclamation-triangle',
+    confirmText: 'Decline Request',
+    cancelText: 'Keep Request'
+  });
+  if (!ok) return;
   const res = await apiCall(`/donor/blood-requests/${requestId}/decline`, { method: 'POST' });
   if (!res || !res.success) return;
   showToast('Request declined', 'info');
@@ -616,11 +663,27 @@ async function exportDonationHistory() {
 // LOGOUT
 // ============================================================
 async function donorLogout() {
-  if (!confirm('Are you sure you want to logout?')) return;
-  await apiCall('/auth/logout', { method: 'POST' });
+  const ok = await showAppConfirm({
+    title: 'Logout',
+    message: 'Are you sure you want to logout from your Donor account?',
+    type: 'danger',
+    icon: 'fa-sign-out-alt',
+    confirmText: 'Logout',
+    cancelText: 'Stay Logged In'
+  });
+  if (!ok) return;
+  try {
+    await apiCall('/auth/logout', { method: 'POST' });
+  } catch (e) { }
+  if (typeof Auth !== 'undefined') Auth.clearSession();
+  if (typeof Store !== 'undefined') {
+    Store.rm('donorToken');
+    Store.rm('donorSession');
+  }
   localStorage.removeItem('red404_token');
   localStorage.removeItem('red404_user');
-  window.location.href = 'donor-login.html';
+  sessionStorage.clear();
+  window.location.replace('donor-login.html');
 }
 
 // ============================================================
@@ -637,8 +700,7 @@ function showDashboardPage(page) {
     requests: 'Blood Requests',
     history: 'Donation History',
     badges: 'My Badges',
-    profile: 'My Profile',
-    settings: 'Settings'
+    profile: 'My Profile'
   };
   document.getElementById('pageTitle').textContent = titles[page] || 'Dashboard';
   document.getElementById('pageBreadcrumb').textContent = titles[page] || '';
@@ -647,7 +709,6 @@ function showDashboardPage(page) {
   if (page === 'history') loadDonationHistory();
   if (page === 'badges') loadBadges();
   if (page === 'requests') loadBloodRequests();
-  if (page === 'settings') loadSettings();
 
   // Close mobile sidebar
   document.querySelector('.sidebar')?.classList.remove('mobile-open');
@@ -698,11 +759,17 @@ function bindNavigation() {
 // ============================================================
 function openModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.add('open');
+  if (m) {
+    m.classList.add('open');
+    m.style.display = 'flex';
+  }
 }
 function closeModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.remove('open');
+  if (m) {
+    m.classList.remove('open');
+    m.style.display = 'none';
+  }
 }
 
 // ============================================================
@@ -784,17 +851,17 @@ function capitalize(str) {
 
 // Har 10-15 seconds mein data refresh karne ke liye polling
 function startRealTimeUpdates() {
-    setInterval(async () => {
-        // Purane code ke functions ko call karein
-        if (typeof loadActiveRequests === 'function') loadActiveRequests();
-        if (typeof loadNearbyDonors === 'function') loadNearbyDonors();
-    }, 15000);
+  setInterval(async () => {
+    // Purane code ke functions ko call karein
+    if (typeof loadActiveRequests === 'function') loadActiveRequests();
+    if (typeof loadNearbyDonors === 'function') loadNearbyDonors();
+  }, 15000);
 }
 
 // Initial load ke baad polling shuru karein
 document.addEventListener('DOMContentLoaded', () => {
-    // ... aapka purana init code ...
-    startRealTimeUpdates();
+  // ... aapka purana init code ...
+  startRealTimeUpdates();
 });
 
 // ============================================================
@@ -849,4 +916,4 @@ window.markAllNotificationsRead = markAllNotificationsRead;
 window.exportDonationHistory = exportDonationHistory;
 window.donorLogout = donorLogout;
 window.openModal = openModal;
-// window.closeModal = closeModal;
+window.closeModal = closeModal;

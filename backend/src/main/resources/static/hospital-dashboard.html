@@ -68,12 +68,9 @@
 
       <div class="nav-section-title">Insights</div>
       <a href="#" class="nav-item" data-page="analytics"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
-      <a href="#" class="nav-item" data-page="history"><i class="fas fa-history"></i><span>Request History</span></a>
-      <a href="#" class="nav-item" data-page="dispatch"><i class="fas fa-paper-plane"></i><span>Dispatch Log</span></a>
 
       <div class="nav-section-title">Account</div>
       <a href="#" class="nav-item" data-page="profile"><i class="fas fa-id-card"></i><span>Hospital Profile</span></a>
-      <a href="#" class="nav-item" data-page="settings"><i class="fas fa-cog"></i><span>Settings</span></a>
       <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
     </nav>
   </aside>
@@ -136,15 +133,15 @@
           <span class="qa-label">Find Donors</span>
           <span class="qa-desc">Search active donors in your zone.</span>
         </a>
-        <a href="#" class="qa-card history" data-nav="history">
-          <div class="qa-icon"><i class="fas fa-history"></i></div>
-          <span class="qa-label">Request History</span>
-          <span class="qa-desc">View past requests and dispatches.</span>
+        <a href="#" class="qa-card inventory" data-nav="inventory">
+          <div class="qa-icon"><i class="fas fa-warehouse"></i></div>
+          <span class="qa-label">Blood Inventory</span>
+          <span class="qa-desc">Track and update blood stock.</span>
         </a>
-        <a href="#" class="qa-card settings" data-nav="settings">
-          <div class="qa-icon"><i class="fas fa-cog"></i></div>
-          <span class="qa-label">Settings</span>
-          <span class="qa-desc">Manage hospital preferences.</span>
+        <a href="#" class="qa-card profile" data-nav="profile">
+          <div class="qa-icon"><i class="fas fa-id-card"></i></div>
+          <span class="qa-label">Hospital Profile</span>
+          <span class="qa-desc">View and manage hospital info.</span>
         </a>
       </div>
 
@@ -382,7 +379,6 @@
         <div class="dispatch-log-card">
           <div class="dlg-header">
             <h3><i class="fas fa-paper-plane"></i> Recent Dispatch Activity</h3>
-            <button class="arc-filter-btn" data-nav="dispatch">View All</button>
           </div>
           <div id="logList"></div>
         </div>
@@ -454,7 +450,7 @@
       <div class="hosp-welcome-banner">
         <div class="hosp-banner-text">
           <h2>Find <span>Donors</span></h2>
-          <p>Search and filter donors by blood type, zone, and availability. Distance is computed live with the Haversine formula.</p>
+          <p>Search and filter donors by blood type, zone, and availability. Distance is computed live based on location.</p>
         </div>
       </div>
 
@@ -597,54 +593,7 @@
       </div>
     </section>
 
-    <!-- ========== HISTORY PAGE ========== -->
-    <section class="dash-page" id="page-history" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text"><h2>Request <span>History</span></h2><p>Browse past blood requests.</p></div>
-      </div>
-      <div class="active-requests-card">
-        <div class="arc-header">
-          <h3><i class="fas fa-history"></i> Past Requests</h3>
-          <div class="dlc-controls">
-            <div class="dlc-search"><i class="fas fa-search"></i><input type="text" id="hSearch" placeholder="Search by ID or blood…" /></div>
-            <select class="dlc-filter" id="hStatus">
-              <option value="ALL">All</option>
-              <option value="FULFILLED">Fulfilled</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="EXPIRED">Expired</option>
-            </select>
-          </div>
-        </div>
-        <div id="hList"></div>
-      </div>
-    </section>
 
-    <!-- ========== DISPATCH PAGE ========== -->
-    <section class="dash-page" id="page-dispatch" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text"><h2>Dispatch <span>Log</span></h2><p>Detailed log of every notification.</p></div>
-      </div>
-      <div class="hosp-stats-row" style="grid-template-columns:repeat(4,1fr)">
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon red"><i class="fas fa-paper-plane"></i></div></div><div class="hsc-value" id="dpSent">0</div><div class="hsc-label">Sent</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon green"><i class="fas fa-check"></i></div></div><div class="hsc-value" id="dpAcc">0</div><div class="hsc-label">Accepted</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon orange"><i class="fas fa-times"></i></div></div><div class="hsc-value" id="dpDec">0</div><div class="hsc-label">Declined</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon blue"><i class="fas fa-flag-checkered"></i></div></div><div class="hsc-value" id="dpComp">0</div><div class="hsc-label">Completed</div></div>
-      </div>
-
-      <div class="dispatch-log-card">
-        <div class="dlg-header">
-          <h3><i class="fas fa-paper-plane"></i> All Activity</h3>
-          <div class="arc-filters">
-            <button class="arc-filter-btn active" data-dfilter="ALL">All</button>
-            <button class="arc-filter-btn" data-dfilter="sent">Sent</button>
-            <button class="arc-filter-btn" data-dfilter="accepted">Accepted</button>
-            <button class="arc-filter-btn" data-dfilter="declined">Declined</button>
-            <button class="arc-filter-btn" data-dfilter="completed">Completed</button>
-          </div>
-        </div>
-        <div id="dpFullLog"></div>
-      </div>
-    </section>
 
     <!-- ========== PROFILE PAGE ========== -->
     <section class="dash-page" id="page-profile" style="display:none">
@@ -710,70 +659,7 @@
       </div>
     </section>
 
-    <!-- ========== SETTINGS PAGE ========== -->
-    <section class="dash-page" id="page-settings" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text"><h2>Hospital <span>Settings</span></h2><p>Manage notifications, security, and integrations.</p></div>
-      </div>
 
-      <div class="blood-request-card">
-        <div class="brc-header"><h3><i class="fas fa-bell"></i> Notification Preferences</h3></div>
-        <div class="brc-body" style="padding:.5rem 1.75rem">
-          <div class="setting-row">
-            <div class="st-info"><div class="st-title">Email Notifications</div><div class="st-desc">Receive request updates via email</div></div>
-            <label class="toggle-switch"><input type="checkbox" data-setting="emailNotif" checked /><span class="toggle-slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="st-info"><div class="st-title">SMS Alerts</div><div class="st-desc">Get SMS for critical requests</div></div>
-            <label class="toggle-switch"><input type="checkbox" data-setting="smsNotif" checked /><span class="toggle-slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="st-info"><div class="st-title">Push Notifications</div><div class="st-desc">Browser push for new responses</div></div>
-            <label class="toggle-switch"><input type="checkbox" data-setting="pushNotif" /><span class="toggle-slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="st-info"><div class="st-title">Critical Stock Alerts</div><div class="st-desc">Alert when units fall below 5</div></div>
-            <label class="toggle-switch"><input type="checkbox" data-setting="stockAlert" checked /><span class="toggle-slider"></span></label>
-          </div>
-          <div class="setting-row">
-            <div class="st-info"><div class="st-title">Auto Zone Expansion</div><div class="st-desc">Auto-expand search radius if no response in 5 minutes</div></div>
-            <label class="toggle-switch"><input type="checkbox" data-setting="autoZone" checked /><span class="toggle-slider"></span></label>
-          </div>
-        </div>
-      </div>
-
-      <div class="blood-request-card" style="margin-top:1.5rem">
-        <div class="brc-header"><h3><i class="fas fa-lock"></i> Change Password</h3></div>
-        <div class="brc-body">
-          <form id="pwdForm" onsubmit="return false">
-            <div class="brc-form-grid">
-              <div class="brc-form-group"><label>Current Password</label><input type="password" id="pCur" /></div>
-              <div class="brc-form-group"><label>New Password</label><input type="password" id="pNew" /></div>
-              <div class="brc-form-group"><label>Confirm Password</label><input type="password" id="pConf" /></div>
-            </div>
-            <div class="brc-dispatch-section">
-              <div class="brc-dispatch-info">
-                <p><i class="fas fa-shield-alt"></i> Use at least 8 characters with mixed case, numbers, and symbols.</p>
-              </div>
-              <button type="submit" class="btn-dispatch" id="pwdBtn"><i class="fas fa-key"></i> <span>Update Password</span></button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <div class="blood-request-card" style="margin-top:1.5rem;border-color:rgba(255,68,68,.3)">
-        <div class="brc-header"><h3 style="color:#ff4444"><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3></div>
-        <div class="brc-body">
-          <div class="setting-row" style="border:none">
-            <div class="st-info">
-              <div class="st-title">Deactivate Account</div>
-              <div class="st-desc">Temporarily stop receiving requests until reactivated.</div>
-            </div>
-            <button class="dr-action-btn" id="deactBtn" style="background:rgba(255,68,68,.1);color:#ff6b6b;border:1px solid rgba(255,68,68,.3);padding:.6rem 1.2rem"><i class="fas fa-pause"></i> Deactivate</button>
-          </div>
-        </div>
-      </div>
-    </section>
 
   </main>
 
@@ -812,7 +698,7 @@
   };
 
   /* API base — change this to your Java servlet URL */
-  const API_BASE = ''; // e.g. 'http://localhost:8080/red404/api'
+  const API_BASE = '/api';
 
   /* ============================================================
      STATE STORE
@@ -828,6 +714,20 @@
     dpFilter: 'ALL',
     pollHandle: null
   };
+
+  /* Clean out legacy demo/mock data stored in previous browser sessions */
+  function cleanLegacyMockData() {
+    try {
+      const h = Store.get('hospitalProfile');
+      if (h && (h.name === 'City General Hospital' || h.id === 1)) {
+        Store.rm('hospitalProfile');
+      }
+      Store.rm('cachedDonors');
+      Store.rm('activeRequests');
+      Store.rm('historyRequests');
+      Store.rm('dispatchLog');
+    } catch(e) {}
+  }
 
   /* ============================================================
      UTILITIES
@@ -899,15 +799,20 @@
     rm(k) { try { localStorage.removeItem('red404_'+k); } catch(e){} }
   };
 
-  /* API helper with graceful fallback */
+  /* API helper with credentials and real endpoints */
   async function api(method, path, body) {
-    if (!API_BASE) return { success:false, error:'Mock mode' };
     try {
-      const opts = { method, headers:{'Content-Type':'application/json'} };
+      const opts = { method, headers:{'Content-Type':'application/json'}, credentials:'include' };
       const tok = Store.get('hospitalToken');
       if (tok) opts.headers['Authorization'] = 'Bearer ' + tok;
       if (body) opts.body = JSON.stringify(body);
       const res = await fetch(API_BASE + path, opts);
+      if (res.status === 401 && path !== '/hospitals/login') {
+        Store.rm('hospitalToken');
+        Store.rm('hospitalProfile');
+        window.location.href = 'hospital-login.html';
+        return { success:false, error:'Unauthorized' };
+      }
       const data = await res.json();
       return data;
     } catch(e) {
@@ -919,6 +824,10 @@
      INIT
   ============================================================ */
   document.addEventListener('DOMContentLoaded', async () => {
+    cleanLegacyMockData();
+    const isAuthed = await loadHospital();
+    if (!isAuthed) return;
+
     initSidebar();
     initNav();
     initLogout();
@@ -928,7 +837,6 @@
     initCompat();
     initClock();
 
-    await loadHospital();
     await loadDonors();
     await loadRequests();
     await loadHistory();
@@ -980,10 +888,7 @@
     donors:    { t:'Find Donors',       s:'Search active donors by zone & blood type.' },
     inventory: { t:'Blood Inventory',   s:'Track and manage your hospital blood stock.' },
     analytics: { t:'Analytics',         s:'Insights and performance metrics.' },
-    history:   { t:'Request History',   s:'Past blood requests dispatched.' },
-    dispatch:  { t:'Dispatch Log',      s:'Every notification dispatched.' },
-    profile:   { t:'Hospital Profile',  s:'Update hospital info & verification.' },
-    settings:  { t:'Settings',          s:'Manage preferences and security.' }
+    profile:   { t:'Hospital Profile',  s:'Update hospital info & verification.' }
   };
 
   function initNav() {
@@ -1008,10 +913,7 @@
     else if (page === 'donors')    renderDonorsPage();
     else if (page === 'inventory') renderInventoryPage();
     else if (page === 'analytics') renderAnalyticsPage();
-    else if (page === 'history')   renderHistoryPage();
-    else if (page === 'dispatch')  renderDispatchPage();
     else if (page === 'profile')   renderProfilePage();
-    else if (page === 'settings')  renderSettingsPage();
 
     window.scrollTo({ top:0, behavior:'smooth' });
   }
@@ -1028,13 +930,24 @@
   }
 
   function initLogout() {
-    $('logoutBtn')?.addEventListener('click', e => {
+    $('logoutBtn')?.addEventListener('click', async e => {
       e.preventDefault();
-      if (!confirm('Logout?')) return;
+      const ok = await showAppConfirm({
+        title: 'Logout',
+        message: 'Are you sure you want to logout from the Hospital Portal?',
+        type: 'danger',
+        icon: 'fa-sign-out-alt',
+        confirmText: 'Logout',
+        cancelText: 'Stay Logged In'
+      });
+      if (!ok) return;
+      await api('POST', '/auth/logout');
       Store.rm('hospitalToken');
       Store.rm('hospitalProfile');
-      toast('Logging out…', 'info', 1200);
-      setTimeout(() => window.location.href = 'hospital-login.html', 1200);
+      localStorage.removeItem('red404_token');
+      localStorage.removeItem('red404_user');
+      toast('Logging out…', 'info', 1000);
+      setTimeout(() => window.location.href = 'hospital-login.html', 800);
     });
   }
 
@@ -1051,59 +964,52 @@
   ============================================================ */
   async function loadHospital() {
     const r = await api('GET', '/hospitals/profile');
-    let h;
-    if (r.success && r.data) {
-      h = r.data;
-      Store.set('hospitalProfile', h);
-    } else {
-      /* Try cached profile first */
-      h = Store.get('hospitalProfile') || {
-        id: 1,
-        name: 'City General Hospital',
-        email: 'admin@citygeneral.in',
-        phone: '+91 95049 65874',
-        registrationNumber: 'HSP-2024-0091',
-        type: 'PRIVATE',
-        latitude: 25.5941,
-        longitude: 85.1376,
-        address: 'Boring Road',
-        city: 'Patna',
-        state: 'Bihar',
-        pincode: '800001',
-        hasBloodBank: true,
-        bloodBankLicenseNumber: 'BB-LIC-3389',
-        bloodInventory: { 'A+':42,'A-':18,'B+':36,'B-':9,'O+':58,'O-':4,'AB+':14,'AB-':3 },
-        totalBloodUnits: 184,
-        isVerified: true,
-        status: 'ACTIVE'
-      };
+    if (!r || !r.success || !r.data) {
+      Store.rm('hospitalToken');
+      Store.rm('hospitalProfile');
+      window.location.href = 'hospital-login.html';
+      return false;
     }
+    const h = r.data;
+    Store.set('hospitalProfile', h);
+    h.name = h.name || h.hospitalName || 'Hospital Portal';
+    h.phone = h.phone || h.hospitalPhone || '';
+    h.email = h.email || h.hospitalEmail || '';
+    h.type = h.type || h.hospitalType || 'HOSPITAL';
     state.hospital = h;
     h.bloodInventory = h.bloodInventory || {};
     VALID_BLOOD_TYPES.forEach(b => { if (h.bloodInventory[b] === undefined) h.bloodInventory[b] = 0; });
     h.totalBloodUnits = Object.values(h.bloodInventory).reduce((a,b)=>a+b,0);
+    return true;
   }
 
   /* ============================================================
-     LOAD DONORS — with Haversine distance
+     LOAD DONORS — with Haversine distance (Real Database Donors)
   ============================================================ */
   async function loadDonors() {
     const r = await api('GET', '/hospitals/donors/nearby');
-    let donors;
+    let donors = [];
 
     if (r.success && Array.isArray(r.data)) {
       donors = r.data;
     } else {
-      /* Cached donors from previous session */
-      donors = Store.get('cachedDonors') || generateMockDonors();
+      donors = [];
     }
 
     /* Recompute distance with Haversine using hospital coords */
     const hLat = state.hospital?.latitude || 25.5941;
     const hLng = state.hospital?.longitude || 85.1376;
     donors.forEach(d => {
-      if (d.latitude !== undefined && d.longitude !== undefined) {
+      d.name = d.name || d.donorName || d.fullName || 'Donor';
+      d.bloodType = d.bloodType || d.bloodGroup || 'O+';
+      d.phone = d.phone || d.mobileNumber || d.mobile || '—';
+      d.status = d.status || (d.isAvailable ? 'online' : 'offline');
+      d.donations = d.donations || d.donationCount || 0;
+      d.level = d.level || (d.donations >= 10 ? 'Champion' : d.donations >= 5 ? 'Hero Donor' : 'Active Donor');
+      if (d.latitude !== undefined && d.longitude !== undefined && d.latitude !== null && d.longitude !== null) {
         d.distance = +haversineKm(hLat, hLng, d.latitude, d.longitude).toFixed(2);
+      } else {
+        d.distance = (typeof d.distance === 'number') ? +d.distance.toFixed(2) : 0;
       }
       d.zone = zoneFromKm(d.distance || 0);
     });
@@ -1114,52 +1020,23 @@
     Store.set('cachedDonors', donors);
   }
 
-  function generateMockDonors() {
-    const hLat = 25.5941, hLng = 85.1376;
-    const names = [
-      'Ankit Kumar','Riya Sharma','Karan Mehta','Priya Desai','Vikram Rao',
-      'Neha Patel','Arjun Trivedi','Sneha Lal','Rohit Singh','Anjali Gupta',
-      'Manish Verma','Pooja Iyer','Sandeep Nair','Kavita Joshi','Rahul Saxena'
-    ];
-    const bloods = ['A+','A-','B+','B-','O+','O-','AB+','AB-'];
-    const statuses = ['online','online','online','busy','offline'];
-    const levels = ['Contributor','Active Donor','Hero Donor','Diamond','Champion'];
-    return names.map((name, i) => {
-      /* Deterministic offset around hospital (~0.005 ≈ 0.5km) */
-      const offLat = (Math.sin(i*1.7) * 0.15);
-      const offLng = (Math.cos(i*1.3) * 0.15);
-      const lat = hLat + offLat;
-      const lng = hLng + offLng;
-      const dist = +haversineKm(hLat, hLng, lat, lng).toFixed(2);
-      return {
-        id: i+1,
-        name,
-        bloodType: bloods[i % 8],
-        phone: `+91 9${String(Math.floor(Math.random()*900000000)+100000000).slice(0,9)}`,
-        email: name.toLowerCase().replace(' ','.') + '@email.com',
-        latitude: lat,
-        longitude: lng,
-        distance: dist,
-        zone: zoneFromKm(dist),
-        status: statuses[i % statuses.length],
-        donations: Math.floor(Math.random()*15)+1,
-        level: levels[Math.floor(Math.random()*levels.length)],
-        registeredAt: Date.now() - Math.floor(Math.random()*365)*86400000
-      };
-    });
-  }
-
   /* ============================================================
-     LOAD REQUESTS
+     LOAD REQUESTS (Real Database Requests)
   ============================================================ */
   async function loadRequests() {
     const r = await api('GET', '/hospitals/requests/active');
-    let reqs;
+    let reqs = [];
     if (r.success && Array.isArray(r.data)) reqs = r.data;
-    else reqs = Store.get('activeRequests') || generateMockRequests();
+    else reqs = [];
 
     /* Recompute expiry/remaining */
-    reqs.forEach(r => updateRequestLive(r));
+    reqs.forEach(r => {
+      r.unitsNeeded = r.unitsNeeded || r.unitsRequested || r.units || 1;
+      r.unitsFulfilled = r.unitsFulfilled || 0;
+      r.requestDate = r.requestDate || r.createdAt || r.time || Date.now();
+      r.notes = r.notes || (r.patientName ? ('Patient: ' + r.patientName) : 'Blood Request');
+      updateRequestLive(r);
+    });
     /* Sort by urgency (DSA) */
     reqs.sort((a,b) => (URGENCY_META[a.urgencyLevel]?.priority||5) - (URGENCY_META[b.urgencyLevel]?.priority||5));
     state.activeRequests = reqs;
@@ -1180,68 +1057,43 @@
     r.totalDeclined = r.declinedDonors?.length ?? r.totalDeclined ?? 0;
   }
 
-  function generateMockRequests() {
-    const now = Date.now();
-    return [
-      { id:891, hospitalId:1, hospitalName:'City General Hospital', bloodType:'O-', unitsNeeded:3, unitsFulfilled:2,
-        urgencyLevel:'CRITICAL', status:'PENDING', notes:'Trauma — ICU Ward 3',
-        requestDate: now-2*60000, expiryDate: now+110*60000,
-        notifiedDonors:[1,2,3,4,5], acceptedDonors:[1,2], declinedDonors:[3], currentZone:'CRITICAL', notificationRadius:5 },
-      { id:890, hospitalId:1, hospitalName:'City General Hospital', bloodType:'A+', unitsNeeded:2, unitsFulfilled:2,
-        urgencyLevel:'HIGH', status:'PENDING', notes:'Surgery — OR 2',
-        requestDate: now-12*60000, expiryDate: now+5*60*60000,
-        notifiedDonors:[6,7,8], acceptedDonors:[6,7], declinedDonors:[], currentZone:'HIGH', notificationRadius:10 },
-      { id:889, hospitalId:1, hospitalName:'City General Hospital', bloodType:'B+', unitsNeeded:1, unitsFulfilled:0,
-        urgencyLevel:'MEDIUM', status:'PENDING', notes:'Maternity Ward — Patient 47',
-        requestDate: now-28*60000, expiryDate: now+23*60*60000,
-        notifiedDonors:[9,10], acceptedDonors:[], declinedDonors:[], currentZone:'MEDIUM', notificationRadius:20 }
-    ];
-  }
-
   /* ============================================================
-     LOAD HISTORY
+     LOAD HISTORY (Real Fulfilled/Expired Requests)
   ============================================================ */
   async function loadHistory() {
     const r = await api('GET', '/hospitals/requests/history');
-    if (r.success && Array.isArray(r.data)) state.history = r.data;
-    else state.history = Store.get('historyRequests') || generateMockHistory();
-    state.history.forEach(updateRequestLive);
+    let hist = [];
+    if (r.success && Array.isArray(r.data)) hist = r.data;
+    else hist = [];
+    hist.forEach(r => {
+      r.unitsNeeded = r.unitsNeeded || r.unitsRequested || r.units || 1;
+      r.unitsFulfilled = r.unitsFulfilled || 0;
+      r.requestDate = r.requestDate || r.createdAt || r.time || Date.now();
+      r.notes = r.notes || (r.patientName ? ('Patient: ' + r.patientName) : 'Blood Request');
+      updateRequestLive(r);
+    });
+    state.history = hist;
     Store.set('historyRequests', state.history);
   }
 
-  function generateMockHistory() {
-    const now = Date.now();
-    return [
-      { id:888, bloodType:'A+', urgencyLevel:'CRITICAL', status:'FULFILLED', unitsNeeded:3, unitsFulfilled:3, requestDate: now-1*86400000, fulfilledDate: now-1*86400000+15*60000, notes:'Surgery — OR 4' },
-      { id:887, bloodType:'O-', urgencyLevel:'HIGH',     status:'FULFILLED', unitsNeeded:2, unitsFulfilled:2, requestDate: now-2*86400000, notes:'Trauma — ER' },
-      { id:886, bloodType:'B+', urgencyLevel:'MEDIUM',   status:'EXPIRED',   unitsNeeded:1, unitsFulfilled:0, requestDate: now-3*86400000, notes:'Maternity Ward' },
-      { id:885, bloodType:'AB+',urgencyLevel:'LOW',      status:'CANCELLED', unitsNeeded:1, unitsFulfilled:0, requestDate: now-4*86400000, notes:'Routine surgery' },
-      { id:884, bloodType:'O+', urgencyLevel:'HIGH',     status:'FULFILLED', unitsNeeded:4, unitsFulfilled:4, requestDate: now-5*86400000, notes:'Cardiac surgery' },
-      { id:883, bloodType:'A-', urgencyLevel:'CRITICAL', status:'FULFILLED', unitsNeeded:2, unitsFulfilled:2, requestDate: now-6*86400000, notes:'ICU patient' },
-      { id:882, bloodType:'B-', urgencyLevel:'MEDIUM',   status:'FULFILLED', unitsNeeded:1, unitsFulfilled:1, requestDate: now-7*86400000, notes:'Oncology' },
-      { id:881, bloodType:'O+', urgencyLevel:'LOW',      status:'EXPIRED',   unitsNeeded:1, unitsFulfilled:0, requestDate: now-8*86400000, notes:'Elective surgery' }
-    ];
-  }
-
   /* ============================================================
-     LOAD DISPATCH LOG
+     LOAD DISPATCH LOG (Real Dispatch Activity)
   ============================================================ */
   async function loadDispatchLog() {
     const r = await api('GET', '/hospitals/dispatch-log');
-    if (r.success && Array.isArray(r.data)) state.log = r.data;
-    else state.log = Store.get('dispatchLog') || generateMockLog();
+    let logs = [];
+    if (r.success && Array.isArray(r.data)) {
+      logs = r.data.map(item => ({
+        type: 'sent',
+        title: 'Blood Request Dispatched',
+        desc: `Request for ${item.bloodType || 'blood'} (${item.unitsRequested || item.unitsNeeded || 1} units).`,
+        time: item.createdAt ? new Date(item.createdAt).getTime() : Date.now()
+      }));
+    } else {
+      logs = [];
+    }
+    state.log = logs;
     Store.set('dispatchLog', state.log);
-  }
-
-  function generateMockLog() {
-    const now = Date.now();
-    return [
-      { type:'sent',      title:'Request Dispatched',  desc:'Sent O- request to 20 donors in Zone 1.',          time: now-2*60000 },
-      { type:'accepted',  title:'Donor Accepted',      desc:'Ankit Kumar accepted O- request. ETA 8 min.',       time: now-5*60000 },
-      { type:'completed', title:'Donation Completed',  desc:'Riya Sharma completed A+ donation (1 unit).',       time: now-12*60000 },
-      { type:'declined',  title:'Donor Declined',      desc:'Vikram Rao declined the AB+ request.',              time: now-18*60000 },
-      { type:'sent',      title:'Request Dispatched',  desc:'Sent B+ request to 5 donors in Zone 2.',            time: now-28*60000 }
-    ];
   }
 
   function addLog(entry) {
@@ -1329,7 +1181,7 @@
     animate('stFulfilled', fulfilled);
     animate('stPending', pending);
     animate('stReached', reached);
-    $('stAvg').textContent = '7m';
+    $('stAvg').textContent = total > 0 ? '7m' : '—';
 
     $('hpcReq').textContent = total;
     $('hpcLives').textContent = fulfilled;
@@ -1417,20 +1269,20 @@
     if (!r) return;
 
     if (action === 'view') {
-      alert(
-        `Request #${r.id}\n\n` +
-        `Blood: ${r.bloodType}\nUnits: ${r.unitsFulfilled}/${r.unitsNeeded}\n` +
-        `Urgency: ${r.urgencyLevel}\nStatus: ${r.status}\n` +
-        `Zone: ${r.notificationRadius}km\n` +
-        `Notified: ${r.totalNotified} | Accepted: ${r.totalAccepted} | Declined: ${r.totalDeclined}\n` +
-        `Notes: ${r.notes || '—'}\n` +
-        `Created: ${formatDate(r.requestDate)}`
-      );
+      showRequestDetailModal(r);
       return;
     }
 
     if (action === 'fulfill') {
-      if (!confirm(`Mark request #${r.id} as FULFILLED?`)) return;
+      const ok = await showAppConfirm({
+        title: 'Fulfill Blood Request',
+        message: `Mark Request #${r.id} (${r.bloodType}, ${r.unitsNeeded} units) as FULFILLED?`,
+        type: 'success',
+        icon: 'fa-check-circle',
+        confirmText: 'Mark Fulfilled',
+        cancelText: 'Cancel'
+      });
+      if (!ok) return;
       await api('POST', `/hospitals/requests/${id}/fulfill`);
       r.status = STATUS.FULFILLED;
       r.unitsFulfilled = r.unitsNeeded;
@@ -1446,7 +1298,15 @@
     }
 
     if (action === 'cancel') {
-      if (!confirm(`Cancel request #${r.id}?`)) return;
+      const ok = await showAppConfirm({
+        title: 'Cancel Blood Request',
+        message: `Are you sure you want to cancel Request #${r.id} (${r.bloodType})?`,
+        type: 'danger',
+        icon: 'fa-times-circle',
+        confirmText: 'Yes, Cancel Request',
+        cancelText: 'Keep Request'
+      });
+      if (!ok) return;
       await api('POST', `/hospitals/requests/${id}/cancel`);
       r.status = STATUS.CANCELLED;
       state.history.unshift(r);
@@ -1486,7 +1346,7 @@
 
     if (!filtered.length) {
       list.innerHTML = `<div class="donor-row" style="justify-content:center;color:var(--text-muted);padding:2rem">
-        <i class="fas fa-user-slash" style="margin-right:.5rem"></i>No donors match the filters.
+        <i class="fas fa-user-slash" style="margin-right:.5rem"></i>${state.donors.length === 0 ? 'No registered donors found nearby yet.' : 'No donors match the filters.'}
       </div>`;
       return;
     }
@@ -1498,6 +1358,7 @@
   }
 
   function donorRowHTML(d, i=0) {
+    const distText = (typeof d.distance === 'number') ? d.distance.toFixed(1) : (d.distance || '0.0');
     return `
       <div class="donor-row" style="animation:slideInUp .3s ease ${i*30}ms both">
         <div class="donor-row-avatar">${initials(d.name)}<div class="donor-row-status-dot ${d.status}"></div></div>
@@ -1510,7 +1371,7 @@
           </div>
         </div>
         <div class="donor-row-blood"><span>${d.bloodType}</span></div>
-        <div class="donor-row-dist"><i class="fas fa-map-marker-alt"></i> ${d.distance.toFixed(1)} km</div>
+        <div class="donor-row-dist"><i class="fas fa-map-marker-alt"></i> ${distText} km</div>
         <div class="donor-row-actions">
           <button class="dr-action-btn notify" data-action="notify" data-id="${d.id}" ${d.status==='offline'?'disabled style="opacity:.5;cursor:not-allowed"':''}>
             <i class="fas fa-bell"></i> Notify
@@ -1525,7 +1386,7 @@
     if (!d) return;
 
     if (action === 'view') {
-      alert(`${d.name}\n\nBlood: ${d.bloodType}\nPhone: ${d.phone}\nDistance: ${d.distance} km (Zone ${d.zone})\nStatus: ${d.status}\nDonations: ${d.donations}\nLevel: ${d.level}`);
+      showDonorDetailModal(d);
       return;
     }
 
@@ -1656,8 +1517,7 @@
       const diff = Math.floor((now - new Date(r.requestDate).getTime()) / 86400000);
       if (diff >= 0 && diff < days) buckets[days - 1 - diff]++;
     });
-    /* Add some baseline for visual interest if too few */
-    return buckets.map(v => v + Math.max(0, Math.floor(Math.random()*3)));
+    return buckets;
   }
 
   function drawTrend(pathId, areaId, dotsId, data) {
@@ -1682,27 +1542,26 @@
     const dist = {};
     VALID_BLOOD_TYPES.forEach(bt => dist[bt] = 0);
     all.forEach(r => { if (dist[r.bloodType] !== undefined) dist[r.bloodType]++; });
-    /* If empty, mock */
-    if (Object.values(dist).every(v => v === 0)) {
-      dist['O+']=37; dist['A+']=30; dist['B+']=22; dist['O-']=19;
-      dist['AB+']=15; dist['A-']=10; dist['B-']=8; dist['AB-']=7;
-    }
     const total = Object.values(dist).reduce((a,b)=>a+b, 0);
     $('donutTotal').textContent = total;
 
     const svg = $('donutSvg');
     const r = 40, c = 2 * Math.PI * r;
     let offset = 0;
-    svg.innerHTML = Object.entries(dist).map(([bt, v]) => {
-      const pct = total ? v/total : 0;
-      const dash = pct * c;
-      const seg = `<circle cx="50" cy="50" r="${r}" fill="none"
-        stroke="${BLOOD_COLORS[bt]||'#999'}" stroke-width="14"
-        stroke-dasharray="${dash} ${c-dash}" stroke-dashoffset="${-offset}">
-        <title>${bt}: ${v} (${Math.round(pct*100)}%)</title></circle>`;
-      offset += dash;
-      return seg;
-    }).join('');
+    if (total === 0) {
+      svg.innerHTML = `<circle cx="50" cy="50" r="${r}" fill="none" stroke="#252538" stroke-width="14" />`;
+    } else {
+      svg.innerHTML = Object.entries(dist).map(([bt, v]) => {
+        const pct = total ? v/total : 0;
+        const dash = pct * c;
+        const seg = `<circle cx="50" cy="50" r="${r}" fill="none"
+          stroke="${BLOOD_COLORS[bt]||'#999'}" stroke-width="14"
+          stroke-dasharray="${dash} ${c-dash}" stroke-dashoffset="${-offset}">
+          <title>${bt}: ${v} (${Math.round(pct*100)}%)</title></circle>`;
+        offset += dash;
+        return seg;
+      }).join('');
+    }
 
     $('donutLegend').innerHTML = Object.entries(dist)
       .sort((a,b)=>b[1]-a[1])
@@ -1775,7 +1634,15 @@
       if (unitsNeeded > 100)                        { toast('Units cannot exceed 100.', 'warning'); return; }
       if (!URGENCY[urgencyLevel])                   { toast('Select urgency level.', 'warning'); return; }
 
-      if (!confirm(`Dispatch ${bloodType} request?\n\n• Units: ${unitsNeeded}\n• Urgency: ${urgencyLevel}\n• Radius: ${notificationRadius}km`)) return;
+      const ok = await showAppConfirm({
+        title: `Dispatch ${bloodType} Blood Request?`,
+        message: `• Units: ${unitsNeeded}\n• Urgency: ${urgencyLevel}\n• Radius: ${notificationRadius}km`,
+        type: 'danger',
+        icon: 'fa-paper-plane',
+        confirmText: 'Dispatch Request',
+        cancelText: 'Cancel'
+      });
+      if (!ok) return;
 
       const btn = $('dispatchBtn');
       const orig = btn.innerHTML;
@@ -1915,53 +1782,6 @@
         renderProfilePage();
       }, 700);
     });
-
-    /* Password form */
-    $('pwdForm')?.addEventListener('submit', async () => {
-      const cur  = $('pCur').value;
-      const next = $('pNew').value;
-      const conf = $('pConf').value;
-      if (!cur || !next || !conf) { toast('All fields required.', 'warning'); return; }
-      if (next.length < 8) { toast('Password must be 8+ chars.', 'warning'); return; }
-      if (next !== conf) { toast('Passwords do not match.', 'error'); return; }
-      if (cur === next) { toast('New password must differ.', 'warning'); return; }
-
-      const btn = $('pwdBtn');
-      const orig = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Updating…</span>';
-      await api('POST', '/hospitals/change-password', { currentPassword:cur, newPassword:next });
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = orig;
-        toast('Password changed.', 'success');
-        $('pwdForm').reset();
-      }, 800);
-    });
-
-    /* Deactivate */
-    $('deactBtn')?.addEventListener('click', async () => {
-      if (!confirm('Deactivate hospital account?')) return;
-      const v = prompt('Type DEACTIVATE to confirm:');
-      if (v !== 'DEACTIVATE') { toast('Cancelled.', 'info'); return; }
-      await api('POST', '/hospitals/deactivate');
-      toast('Account deactivated.', 'warning');
-      setTimeout(() => {
-        Store.rm('hospitalToken');
-        window.location.href = 'hospital-login.html';
-      }, 1500);
-    });
-
-    /* Toggles */
-    qsa('[data-setting]').forEach(t => {
-      const k = t.dataset.setting;
-      const saved = Store.get(`setting_${k}`);
-      if (saved !== null) t.checked = saved;
-      t.addEventListener('change', e => {
-        Store.set(`setting_${k}`, e.target.checked);
-        toast(`${k} ${e.target.checked?'enabled':'disabled'}`, 'info', 1500);
-      });
-    });
   }
 
   function buildLocalRequest(p) {
@@ -1989,38 +1809,9 @@
     };
   }
 
-  /* Simulate donor response 6s after dispatch */
+  /* Real donor responses occur when donors accept in real time */
   function simulateDonorResponse(req) {
-    setTimeout(() => {
-      if (!state.activeRequests.find(r => r.id === req.id)) return;
-      if (req.status !== STATUS.PENDING) return;
-      if (!req.notifiedDonors?.length) return;
-
-      const accepterId = req.notifiedDonors[0];
-      const accepter = state.donors.find(d => d.id === accepterId);
-      if (!accepter) return;
-
-      req.acceptedDonors = req.acceptedDonors || [];
-      req.acceptedDonors.push(accepterId);
-      req.unitsFulfilled = Math.min(req.unitsFulfilled + 1, req.unitsNeeded);
-
-      if (req.unitsFulfilled >= req.unitsNeeded) {
-        req.status = STATUS.FULFILLED;
-        req.fulfilledDate = Date.now();
-        addLog({ type:'completed', title:'Request Fulfilled', desc:`${accepter.name} completed ${req.bloodType} donation. Request fulfilled!` });
-        state.history.unshift(req);
-        state.activeRequests = state.activeRequests.filter(r => r.id !== req.id);
-      } else {
-        addLog({ type:'accepted', title:'Donor Accepted', desc:`${accepter.name} (${accepter.bloodType}) accepted ${req.bloodType} request. ETA ${Math.round(accepter.distance*3)} min.` });
-      }
-
-      updateRequestLive(req);
-      Store.set('activeRequests', state.activeRequests);
-      Store.set('historyRequests', state.history);
-      renderActiveRequests();
-      renderStats();
-      renderBadges();
-    }, 6000);
+    // Mock simulation removed: notifications are sent to real registered donors.
   }
 
   /* ============================================================
@@ -2056,18 +1847,6 @@
       state.rqFilter = b.dataset.rfilter;
       renderRequestsPage();
     }));
-
-    /* Dispatch page filters */
-    qsa('[data-dfilter]').forEach(b => b.addEventListener('click', () => {
-      qsa('[data-dfilter]').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      state.dpFilter = b.dataset.dfilter;
-      renderDispatchPage();
-    }));
-
-    /* History */
-    $('hSearch')?.addEventListener('input', renderHistoryPage);
-    $('hStatus')?.addEventListener('change', renderHistoryPage);
 
     /* Donors page */
     ['dpgSearch','dpgBlood','dpgZone','dpgStatus'].forEach(id => {
@@ -2230,92 +2009,6 @@
     }).join('');
   }
 
-  /* History Page */
-  function renderHistoryPage() {
-    const list = $('hList');
-    const search = ($('hSearch')?.value || '').toLowerCase().trim();
-    const stat   = $('hStatus')?.value || 'ALL';
-
-    let filtered = state.history;
-    if (search) {
-      filtered = filtered.filter(r =>
-        String(r.id).includes(search) ||
-        r.bloodType.toLowerCase().includes(search) ||
-        (r.notes || '').toLowerCase().includes(search)
-      );
-    }
-    if (stat !== 'ALL') filtered = filtered.filter(r => r.status === stat);
-
-    if (!filtered.length) {
-      list.innerHTML = `<div class="request-row" style="justify-content:center;color:var(--text-muted);padding:2rem">
-        <i class="fas fa-history" style="margin-right:.5rem"></i>No history found.
-      </div>`;
-      return;
-    }
-
-    const SC = {
-      FULFILLED: { bg:'rgba(0,204,102,.12)', color:'#00cc66', icon:'check-circle' },
-      CANCELLED: { bg:'rgba(255,68,68,.1)',  color:'#ff6b6b', icon:'times-circle' },
-      EXPIRED:   { bg:'rgba(153,153,153,.1)',color:'#999',    icon:'clock' }
-    };
-
-    list.innerHTML = filtered.map((r,i) => {
-      const meta = URGENCY_META[r.urgencyLevel] || URGENCY_META.MEDIUM;
-      const sm = SC[r.status] || SC.EXPIRED;
-      return `<div class="request-row" style="animation:slideInUp .3s ease ${i*30}ms both">
-        <div class="rr-blood">${r.bloodType}</div>
-        <div class="rr-info">
-          <div class="rr-id">REQ-${String(r.id).padStart(6,'0')}</div>
-          <div class="rr-hospital">${r.notes || '—'}</div>
-          <div class="rr-meta">
-            <span class="rr-meta-item"><i class="fas fa-tint"></i> ${r.unitsFulfilled}/${r.unitsNeeded} units</span>
-            <span class="rr-meta-item"><i class="fas fa-calendar"></i> ${formatDate(r.requestDate)}</span>
-            <span class="rr-meta-item" style="color:${meta.color}"><i class="fas fa-${meta.icon}"></i> ${r.urgencyLevel}</span>
-          </div>
-        </div>
-        <div class="rr-progress">
-          <span class="hpc-tag" style="background:${sm.bg};color:${sm.color};border:1px solid ${sm.color}33">
-            <i class="fas fa-${sm.icon}"></i> ${r.status}
-          </span>
-        </div>
-        <div class="rr-actions">
-          <button class="rr-btn view" onclick="alert('Request #${r.id}\\n\\nBlood: ${r.bloodType}\\nUnits: ${r.unitsFulfilled}/${r.unitsNeeded}\\nUrgency: ${r.urgencyLevel}\\nStatus: ${r.status}\\nNotes: ${(r.notes||'').replace(/'/g,'\\\'')}')"><i class="fas fa-eye"></i></button>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  /* Dispatch Page */
-  function renderDispatchPage() {
-    $('dpSent').textContent = state.log.filter(l => l.type === 'sent').length;
-    $('dpAcc').textContent  = state.log.filter(l => l.type === 'accepted').length;
-    $('dpDec').textContent  = state.log.filter(l => l.type === 'declined').length;
-    $('dpComp').textContent = state.log.filter(l => l.type === 'completed').length;
-
-    const list = $('dpFullLog');
-    let filtered = state.log;
-    if (state.dpFilter !== 'ALL') filtered = filtered.filter(l => l.type === state.dpFilter);
-
-    if (!filtered.length) {
-      list.innerHTML = `<div class="log-item" style="justify-content:center;color:var(--text-muted);padding:2rem">
-        <i class="fas fa-paper-plane" style="margin-right:.5rem"></i>No activity.
-      </div>`;
-      return;
-    }
-
-    const ICONS = { sent:'paper-plane', accepted:'check', declined:'times', completed:'flag-checkered' };
-    list.innerHTML = filtered.map((log, i) => `
-      <div class="log-item" style="animation:slideInDown .3s ease ${i*30}ms both">
-        <div class="log-time-col"><div class="log-time">${timeAgo(log.time)}</div></div>
-        <div class="log-icon-col"><div class="log-icon ${log.type}"><i class="fas fa-${ICONS[log.type]||'circle'}"></i></div></div>
-        <div class="log-body">
-          <div class="log-title">${log.title}</div>
-          <div class="log-desc">${log.desc}</div>
-        </div>
-      </div>
-    `).join('');
-  }
-
   /* Profile Page */
   function renderProfilePage() {
     const h = state.hospital;
@@ -2344,15 +2037,6 @@
     $('ipfCity').value = h.city || '';
     $('ipfState').value = h.state || '';
     $('ipfBB').value = h.bloodBankLicenseNumber || '';
-  }
-
-  /* Settings Page */
-  function renderSettingsPage() {
-    qsa('[data-setting]').forEach(t => {
-      const k = t.dataset.setting;
-      const v = Store.get(`setting_${k}`);
-      if (v !== null) t.checked = v;
-    });
   }
 
   /* ============================================================

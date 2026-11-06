@@ -24,30 +24,66 @@ if (hamburger && navLinks) {
     navLinks.classList.toggle('open');
   });
 
-  /* Close on link click */
-  navLinks.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', () => {
-      hamburger.classList.remove('open');
-      navLinks.classList.remove('open');
+  /* Smooth scrolling with exact offset on nav link click */
+  document.querySelectorAll('.nav-link[href^="#"]').forEach(link => {
+    link.addEventListener('click', function(e) {
+      if (hamburger && navLinks) {
+        hamburger.classList.remove('open');
+        navLinks.classList.remove('open');
+      }
+
+      const href = this.getAttribute('href');
+      if (!href || href === '#') return;
+      const target = document.querySelector(href);
+      if (target) {
+        e.preventDefault();
+        const navHeight = navbar ? navbar.offsetHeight : 75;
+        const targetTop = target.getBoundingClientRect().top + window.pageYOffset - navHeight - 10;
+        window.scrollTo({
+          top: Math.max(0, targetTop),
+          behavior: 'smooth'
+        });
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        if (history.pushState) {
+          history.pushState(null, null, href);
+        }
+      }
     });
   });
 }
 
-/* Active nav link on scroll */
-const sections = document.querySelectorAll('section[id]');
-if (sections.length) {
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
-        if (active) active.classList.add('active');
-      }
-    });
-  }, { threshold: 0.4 });
+/* Active nav link on scroll (accurate spy covering all sections and footer) */
+function updateActiveNavLink() {
+  const navHeight = (navbar ? navbar.offsetHeight : 75) + 30;
+  const scrollPos = window.scrollY + navHeight;
+  const allSections = document.querySelectorAll('section[id], footer[id]');
+  if (!allSections.length) return;
 
-  sections.forEach(s => observer.observe(s));
+  // If scrolled to bottom, activate contact
+  if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 80)) {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    const contactLink = document.querySelector('.nav-link[href="#contact"]');
+    if (contactLink) contactLink.classList.add('active');
+    return;
+  }
+
+  let currentId = 'home';
+  allSections.forEach(sec => {
+    const top = sec.offsetTop;
+    const height = sec.offsetHeight;
+    if (scrollPos >= top && scrollPos < top + height) {
+      currentId = sec.id;
+    }
+  });
+
+  document.querySelectorAll('.nav-link').forEach(l => {
+    l.classList.toggle('active', l.getAttribute('href') === `#${currentId}`);
+  });
 }
+
+window.addEventListener('scroll', updateActiveNavLink, { passive: true });
+updateActiveNavLink();
 
 /* ==================== PARTICLES ==================== */
 function initParticles(containerId = 'particles', count = 50) {
@@ -431,8 +467,225 @@ document.addEventListener('keydown', e => {
     document.querySelectorAll('.modal-overlay[style*="flex"]').forEach(m => {
       closeModal(m.id);
     });
+    document.querySelectorAll('.red-dialog-overlay.active').forEach(m => {
+      m.classList.remove('active');
+      document.body.style.overflow = '';
+      setTimeout(() => m.remove(), 260);
+    });
   }
 });
+
+/* ==================== BLURRY CYBERPUNK MODAL DIALOGS ==================== */
+function showAppConfirm(opts = {}) {
+  return new Promise(resolve => {
+    if (typeof opts === 'string') opts = { message: opts };
+    const title = opts.title || 'Please Confirm';
+    const message = opts.message || 'Are you sure you want to proceed?';
+    const type = opts.type || 'danger';
+    const confirmText = opts.confirmText || 'Confirm';
+    const cancelText = opts.cancelText || 'Cancel';
+    const icon = opts.icon || (type === 'danger' ? 'fa-exclamation-triangle' : (type === 'warning' ? 'fa-exclamation-circle' : 'fa-info-circle'));
+
+    let bodyHtml = '';
+    if (opts.html) {
+      bodyHtml = opts.html;
+    } else {
+      const lines = message.split('\n').map(l => l.trim()).filter(Boolean);
+      const bulletLines = lines.filter(l => l.startsWith('•') || l.startsWith('-'));
+      const normalLines = lines.filter(l => !l.startsWith('•') && !l.startsWith('-'));
+
+      let normalHtml = normalLines.join('<br>');
+      let bulletsHtml = '';
+      if (bulletLines.length > 0) {
+        bulletsHtml = `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.9rem 1.1rem;margin-top:0.85rem;text-align:left;font-size:0.92rem;line-height:1.7;">` +
+          bulletLines.map(b => `<div style="color:#e0e0f0;"><span style="color:#ff4d5a;font-weight:bold;margin-right:8px;">•</span>${b.replace(/^[•\-]\s*/, '')}</div>`).join('') +
+          `</div>`;
+      }
+      bodyHtml = `<div>${normalHtml}</div>${bulletsHtml}`;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'red-dialog-overlay';
+    overlay.innerHTML = `
+      <div class="red-dialog-box" onclick="event.stopPropagation()">
+        <div class="red-dialog-icon ${type}">
+          <i class="fas ${icon}"></i>
+        </div>
+        <div class="red-dialog-title">${title}</div>
+        <div class="red-dialog-msg">${bodyHtml}</div>
+        <div class="red-dialog-actions">
+          <button class="red-dialog-btn cancel" id="dlgCancelBtn">${cancelText}</button>
+          <button class="red-dialog-btn confirm ${type}" id="dlgConfirmBtn">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => overlay.classList.add('active'));
+
+    function cleanup(res) {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      setTimeout(() => overlay.remove(), 260);
+      resolve(res);
+    }
+
+    overlay.querySelector('#dlgCancelBtn').onclick = () => cleanup(false);
+    overlay.querySelector('#dlgConfirmBtn').onclick = () => cleanup(true);
+    overlay.onclick = () => cleanup(false);
+  });
+}
+
+function showAppAlert(opts = {}) {
+  return new Promise(resolve => {
+    if (typeof opts === 'string') opts = { message: opts };
+    const title = opts.title || 'Notification';
+    const message = opts.message || '';
+    const type = opts.type || 'info';
+    const btnText = opts.btnText || 'OK';
+    const icon = opts.icon || (type === 'danger' ? 'fa-times-circle' : (type === 'warning' ? 'fa-exclamation-triangle' : (type === 'success' ? 'fa-check-circle' : 'fa-info-circle')));
+
+    let bodyHtml = opts.html || `<div style="line-height:1.6;font-size:0.95rem;color:#b8b8d0;">${message.replace(/\n/g, '<br>')}</div>`;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'red-dialog-overlay';
+    overlay.innerHTML = `
+      <div class="red-dialog-box" onclick="event.stopPropagation()">
+        <div class="red-dialog-icon ${type}">
+          <i class="fas ${icon}"></i>
+        </div>
+        <div class="red-dialog-title">${title}</div>
+        <div class="red-dialog-msg">${bodyHtml}</div>
+        <div class="red-dialog-actions single">
+          <button class="red-dialog-btn confirm ${type}" id="dlgOkBtn">${btnText}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => overlay.classList.add('active'));
+
+    function cleanup() {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      setTimeout(() => overlay.remove(), 260);
+      resolve();
+    }
+
+    overlay.querySelector('#dlgOkBtn').onclick = () => cleanup();
+    overlay.onclick = () => cleanup();
+  });
+}
+
+function showDonorDetailModal(d) {
+  if (!d) return;
+  const inits = (d.name || 'D').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const html = `
+    <div class="dlg-donor-card">
+      <div class="dlg-donor-top">
+        <div class="dlg-donor-avatar">${inits}</div>
+        <div>
+          <div style="font-size:1.15rem;font-weight:700;color:#fff;">${d.name || 'Donor'}</div>
+          <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.35rem;">
+            <span style="background:#e63946;color:#fff;padding:0.2rem 0.65rem;border-radius:6px;font-weight:700;font-size:0.8rem;">${d.bloodType || 'Unknown'}</span>
+            <span style="font-size:0.8rem;color:#00cc66;background:rgba(0,204,102,0.12);padding:0.2rem 0.5rem;border-radius:6px;display:flex;align-items:center;gap:5px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:#00cc66;"></span> ${d.status || 'Active'}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="dlg-donor-meta-grid">
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-phone"></i> Phone</span>
+          <span class="dlg-meta-val"><a href="tel:${d.phone}" style="color:#ff6b6b;text-decoration:none;">${d.phone || 'N/A'}</a></span>
+        </div>
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-map-marker-alt"></i> Location</span>
+          <span class="dlg-meta-val">${d.distance ?? 0} km (Zone ${d.zone ?? 1})</span>
+        </div>
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-hand-holding-heart"></i> Total Donations</span>
+          <span class="dlg-meta-val">${d.donations ?? 0} times</span>
+        </div>
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-medal"></i> Status Level</span>
+          <span class="dlg-meta-val" style="color:#ffaa00;">${d.level || 'Active Donor'}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  return showAppAlert({
+    title: 'Donor Information',
+    html: html,
+    type: 'danger',
+    icon: 'fa-user-check',
+    btnText: 'Close'
+  });
+}
+
+function showRequestDetailModal(r) {
+  if (!r) return;
+  const statusColor = r.status === 'FULFILLED' ? '#00cc66' : (r.status === 'CANCELLED' ? '#888' : '#e63946');
+  const html = `
+    <div class="dlg-req-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div>
+          <span style="font-size:0.75rem;text-transform:uppercase;color:#888;">Request ID</span>
+          <div style="font-size:1.15rem;font-weight:700;color:#fff;">#${r.id}</div>
+        </div>
+        <span style="background:#e63946;color:#fff;padding:0.3rem 0.8rem;border-radius:8px;font-weight:800;font-size:0.95rem;">${r.bloodType}</span>
+      </div>
+      <div class="dlg-donor-meta-grid">
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-cubes"></i> Units Required</span>
+          <span class="dlg-meta-val">${r.unitsFulfilled ?? 0} / ${r.unitsNeeded ?? r.units ?? 1} units</span>
+        </div>
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-tachometer-alt"></i> Urgency</span>
+          <span class="dlg-meta-val" style="color:#ffaa00;">${r.urgencyLevel || 'MEDIUM'}</span>
+        </div>
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-info-circle"></i> Status</span>
+          <span class="dlg-meta-val" style="color:${statusColor};">${r.status || 'PENDING'}</span>
+        </div>
+        <div class="dlg-meta-item">
+          <span class="dlg-meta-label"><i class="fas fa-hospital"></i> Hospital</span>
+          <span class="dlg-meta-val">${r.hospitalName || 'Your Hospital'}</span>
+        </div>
+      </div>
+      ${r.notes ? `
+        <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.08);text-align:left;">
+          <span class="dlg-meta-label">Notes</span>
+          <div style="font-size:0.88rem;color:#b8b8d0;margin-top:0.25rem;">${r.notes}</div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  return showAppAlert({
+    title: 'Blood Request Details',
+    html: html,
+    type: 'danger',
+    icon: 'fa-tint',
+    btnText: 'Close'
+  });
+}
+
+// Global window overrides for complete coverage
+window.showAppConfirm = showAppConfirm;
+window.showAppAlert = showAppAlert;
+window.showDonorDetailModal = showDonorDetailModal;
+window.showRequestDetailModal = showRequestDetailModal;
+window.alert = function(msg) {
+  return showAppAlert({
+    title: 'Notification',
+    message: String(msg || ''),
+    type: 'info'
+  });
+};
+
+
 
 /* ==================== PASSWORD TOGGLE ==================== */
 function togglePassword(inputId, iconId) {
@@ -1038,6 +1291,10 @@ window.RED404 = {
   showToast,
   openModal,
   closeModal,
+  showAppConfirm,
+  showAppAlert,
+  showDonorDetailModal,
+  showRequestDetailModal,
   togglePassword,
   detectLocation,
   haversineKm,

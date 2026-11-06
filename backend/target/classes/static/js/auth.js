@@ -345,8 +345,17 @@ function initDonorRegisterForm() {
     setButtonLoading(submitBtn, false);
 
     if (result.success) {
+      if (result.data && result.data.donor) {
+        Auth.saveSession(result.data.donor);
+        Store.set('donorToken', result.data.token);
+      }
       form.reset();
-      document.getElementById('successModal').style.display = 'flex';
+      const modal = document.getElementById('successModal');
+      if (modal) modal.style.display = 'flex';
+      showToast('Registration successful! Redirecting to donor dashboard...', 'success', 2000);
+      setTimeout(() => {
+        window.location.href = 'donor-dashboard.html';
+      }, 2000);
     } else {
       showToast(result.error || 'Registration failed. Please try again.', 'error');
     }
@@ -443,7 +452,17 @@ function initHospitalRegisterForm() {
     setButtonLoading(submitBtn, false);
 
     if (result.success) {
-      document.getElementById('hospSuccessModal').style.display = 'flex';
+      if (result.data && result.data.hospital) {
+        Auth.saveSession(result.data.hospital);
+        Store.set('hospitalToken', result.data.token);
+      }
+      form.reset();
+      const modal = document.getElementById('hospSuccessModal');
+      if (modal) modal.style.display = 'flex';
+      showToast('Registration successful! Redirecting to hospital dashboard...', 'success', 2000);
+      setTimeout(() => {
+        window.location.href = 'hospital-dashboard.html';
+      }, 2000);
     } else {
       showToast(result.error || 'Registration failed. Please try again.', 'error');
     }
