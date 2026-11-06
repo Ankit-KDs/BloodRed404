@@ -53,6 +53,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- H2 In-Memory Database (Automatic Cloud Fallback) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Gson (version managed by Spring Boot parent) -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
