@@ -45,7 +45,7 @@ public class DynamicDataSourceConfig {
                 config.setDriverClassName("com.mysql.cj.jdbc.Driver");
                 config.setMaximumPoolSize(10);
                 config.setMinimumIdle(2);
-                config.setConnectionTimeout(4000);
+                config.setConnectionTimeout(8000);
                 config.setInitializationFailTimeout(1);
 
                 HikariDataSource ds = new HikariDataSource(config);
@@ -58,26 +58,41 @@ public class DynamicDataSourceConfig {
                     throw connEx;
                 }
             } catch (Throwable t) {
-                log.warn("Could not connect to primary MySQL database: {}. Activating embedded H2 fallback database...", t.getMessage());
+                log.warn("Could not connect to primary MySQL database ({}). Activating embedded H2 fallback database...", t.getMessage());
             }
         }
 
-        // 2. Fallback to embedded in-memory H2 database with MySQL compatibility mode
+        // 2. Fallback to embedded in-memory H2 database (MySQL compatibility mode)
         try {
             log.info("Starting embedded H2 database (MySQL compatibility mode)...");
             HikariConfig h2Config = new HikariConfig();
-            h2Config.setJdbcUrl("jdbc:h2:mem:red404;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDER=HIGH;DB_CLOSE_DELAY=-1");
+            h2Config.setJdbcUrl("jdbc:h2:mem:red404;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE");
             h2Config.setUsername("sa");
             h2Config.setPassword("");
             h2Config.setDriverClassName("org.h2.Driver");
+            h2Config.setMaximumPoolSize(10);
+            h2Config.setMinimumIdle(2);
 
             HikariDataSource h2Ds = new HikariDataSource(h2Config);
             runInitScript(h2Ds);
             log.info("H2 fallback database initialized successfully! Web service is ready.");
             return h2Ds;
-        } catch (Exception ex) {
-            log.error("Failed to initialize fallback database: {}", ex.getMessage(), ex);
-            throw new RuntimeException("Database initialization error", ex);
+        } catch (Throwable ex) {
+            log.error("Failed to initialize H2 MySQL-mode fallback: {}. Trying minimal H2...", ex.getMessage());
+            try {
+                HikariConfig minimalConfig = new HikariConfig();
+                minimalConfig.setJdbcUrl("jdbc:h2:mem:red404;DB_CLOSE_DELAY=-1");
+                minimalConfig.setUsername("sa");
+                minimalConfig.setPassword("");
+                minimalConfig.setDriverClassName("org.h2.Driver");
+                HikariDataSource minimalDs = new HikariDataSource(minimalConfig);
+                runInitScript(minimalDs);
+                log.info("Minimal H2 database initialized successfully! Web service is ready.");
+                return minimalDs;
+            } catch (Exception e) {
+                log.error("Fatal database initialization error: {}", e.getMessage(), e);
+                throw new RuntimeException("Database initialization error", e);
+            }
         }
     }
 
@@ -94,38 +109,47 @@ public class DynamicDataSourceConfig {
     }
 
     private ResolvedConfig resolveMySQLConfig() {
-        String envUrl = System.getenv("MYSQL_URL");
-        if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("MYSQL_PRIVATE_URL");
-        if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("DATABASE_URL");
-        if (envUrl == null || envUrl.isBlank()) envUrl = rawUrl;
-
         String host = System.getenv("MYSQLHOST");
         String port = System.getenv("MYSQLPORT");
         String user = System.getenv("MYSQLUSER");
         String pass = System.getenv("MYSQLPASSWORD");
         String db = System.getenv("MYSQLDATABASE");
 
+        // If explicit Railway / cloud variables are set
+        if (host != null && !host.isBlank()) {
+            if (port == null || port.isBlank()) port = "3306";
+            if (user == null || user.isBlank()) user = (rawUsername != null && !rawUsername.isBlank()) ? rawUsername : "root";
+            if (pass == null) pass = rawPassword != null ? rawPassword : "";
+            if (db == null || db.isBlank()) db = "railway";
+
+            String jdbcUrl = String.format(
+                    "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=8000&socketTimeout=15000",
+                    host, port, db
+            );
+            return new ResolvedConfig(jdbcUrl, user, pass);
+        }
+
+        // Check full URLs (MYSQL_URL, MYSQL_PRIVATE_URL, DATABASE_URL)
+        String envUrl = System.getenv("MYSQL_URL");
+        if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("MYSQL_PRIVATE_URL");
+        if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("DATABASE_URL");
+        if (envUrl == null || envUrl.isBlank()) envUrl = rawUrl;
+
         if (envUrl != null && !envUrl.isBlank()) {
             if (envUrl.startsWith("mysql://") || envUrl.startsWith("jdbc:mysql://")) {
                 try {
                     String clean = envUrl.startsWith("jdbc:") ? envUrl.substring(5) : envUrl;
                     URI uri = new URI(clean);
-                    if (uri.getHost() != null && !uri.getHost().isBlank()) {
-                        host = uri.getHost();
-                    }
-                    if (uri.getPort() > 0) {
-                        port = String.valueOf(uri.getPort());
-                    }
+                    if (uri.getHost() != null && !uri.getHost().isBlank()) host = uri.getHost();
+                    if (uri.getPort() > 0) port = String.valueOf(uri.getPort());
                     if (uri.getUserInfo() != null) {
                         String[] parts = uri.getUserInfo().split(":", 2);
                         if (parts.length > 0 && !parts[0].isEmpty()) user = parts[0];
                         if (parts.length > 1) pass = parts[1];
                     }
-                    if (uri.getPath() != null && uri.getPath().length() > 1) {
-                        db = uri.getPath().substring(1);
-                    }
+                    if (uri.getPath() != null && uri.getPath().length() > 1) db = uri.getPath().substring(1);
                 } catch (Exception e) {
-                    log.debug("Notice parsing env URL: {}", e.getMessage());
+                    log.debug("Notice parsing URL: {}", e.getMessage());
                 }
             } else if (envUrl.startsWith("jdbc:")) {
                 return new ResolvedConfig(envUrl,
@@ -141,7 +165,7 @@ public class DynamicDataSourceConfig {
         if (db == null || db.isBlank()) db = "red404";
 
         String jdbcUrl = String.format(
-                "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=3000&socketTimeout=3000",
+                "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=10000",
                 host, port, db
         );
         return new ResolvedConfig(jdbcUrl, user, pass);
