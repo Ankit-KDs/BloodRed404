@@ -2027,16 +2027,72 @@ button {
   color: var(--red-primary);
 }
 
-/* ==================== RESPONSIVE ==================== */
+/* ==================== RESPONSIVE UTILITIES & WRAPPERS ==================== */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-md);
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(230, 57, 70, 0.3);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: rgba(230, 57, 70, 0.6);
+}
+
+/* ==================== RESPONSIVE BREAKPOINTS ==================== */
+
+/* Ultra-wide & Big Screens (1440px - 2560px+) */
+@media (min-width: 1440px) {
+  .section-container,
+  .navbar-container,
+  .footer-container {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 1920px) {
+  .section-container,
+  .navbar-container,
+  .footer-container {
+    max-width: 1600px;
+  }
+  
+  html {
+    font-size: 17px;
+  }
+}
+
+/* Laptops & Tablets Landscape (max-width: 1024px) */
 @media (max-width: 1024px) {
   .footer-container {
     grid-template-columns: 1fr 1fr;
     gap: 2.5rem;
   }
+
+  .navbar-container {
+    padding: 0 1.5rem;
+  }
 }
 
+/* Tablets Portrait & Large Phones (max-width: 768px) */
 @media (max-width: 768px) {
-
   .navbar .nav-links,
   .navbar .nav-actions {
     display: none;
@@ -2049,27 +2105,56 @@ button {
     top: 70px;
     left: 0;
     right: 0;
-    background: rgba(10, 10, 15, 0.97);
-    backdrop-filter: blur(20px);
-    padding: 1.5rem 2rem;
+    bottom: 0;
+    height: calc(100vh - 70px);
+    overflow-y: auto;
+    background: rgba(10, 10, 15, 0.98);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    padding: 2rem 1.5rem 6rem;
+    gap: 1.25rem;
     border-bottom: 1px solid var(--border-color);
     z-index: var(--z-nav);
-    animation: slideInDown 0.3s ease;
+    animation: fadeIn 0.25s ease;
   }
 
-  .navbar .nav-links.open+.nav-actions {
+  .navbar .nav-links.open .nav-link {
+    font-size: 1.15rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    align-items: center;
+  }
+
+  .navbar .nav-links.open .nav-link:hover,
+  .navbar .nav-links.open .nav-link.active {
+    background: var(--red-glow-soft);
+    color: var(--red-light);
+  }
+
+  .navbar .nav-links.open ~ .nav-actions {
     display: flex;
     position: fixed;
-    top: calc(70px + 56px * 6 + 1.5rem);
-    left: 2rem;
-    right: 2rem;
-    z-index: var(--z-nav);
+    bottom: 1.5rem;
+    left: 1.5rem;
+    right: 1.5rem;
+    z-index: calc(var(--z-nav) + 2);
     flex-direction: column;
     gap: 0.75rem;
   }
 
+  .navbar .nav-links.open ~ .nav-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+  }
+
   .hamburger {
     display: flex;
+    cursor: pointer;
+    z-index: calc(var(--z-nav) + 3);
   }
 
   .section-container {
@@ -2081,8 +2166,30 @@ button {
     gap: 2rem;
   }
 
-  .modal-box {
-    padding: 2rem 1.5rem;
+  .modal-overlay {
+    padding: 1rem;
+    align-items: flex-end;
+  }
+
+  .modal-box,
+  .app-modal-dialog {
+    width: 100%;
+    max-width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.75rem 1.25rem;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 0.65rem;
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .toast {
@@ -2098,34 +2205,36 @@ button {
   }
 }
 
+/* Small Phones & Mobile Devices (max-width: 480px) */
 @media (max-width: 480px) {
   html {
     font-size: 14px;
   }
 
   .btn {
-    padding: 0.7rem 1.4rem;
+    padding: 0.7rem 1.25rem;
     font-size: 0.85rem;
+    min-height: 44px;
   }
 
-  .modal-box {
-    padding: 1.75rem 1.25rem;
-    border-radius: var(--radius-lg);
+  .section-container {
+    padding: 0 1rem;
   }
 
-  .modal-actions {
-    flex-direction: column;
+  .modal-box,
+  .app-modal-dialog {
+    padding: 1.5rem 1rem;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
-  .modal-actions .btn {
-    width: 100%;
-    justify-content: center;
+  .toast {
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
   }
 }
 
 /* ==================== PRINT STYLES ==================== */
 @media print {
-
   .navbar,
   .footer,
   .btn,

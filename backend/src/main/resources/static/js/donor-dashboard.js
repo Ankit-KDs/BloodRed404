@@ -748,7 +748,7 @@ function bindNavigation() {
   // Show mobile toggle on small screens
   const checkMobile = () => {
     const mobileBtn = document.getElementById('mobileSidebarToggle');
-    if (mobileBtn) mobileBtn.style.display = window.innerWidth < 900 ? 'flex' : 'none';
+    if (mobileBtn) mobileBtn.style.display = window.innerWidth <= 1024 ? 'flex' : 'none';
   };
   checkMobile();
   window.addEventListener('resize', checkMobile);

@@ -1398,9 +1398,41 @@
 }
 
 /* ==================== RESPONSIVE ==================== */
+
+/* Ultra-wide & 4K Big Screens */
+@media (min-width: 1440px) {
+  .hero-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 9rem 2rem 5rem;
+  }
+
+  .about-section,
+  .how-it-works-section,
+  .stats-section,
+  .zones-section,
+  .cta-section {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 1920px) {
+  .hero-section,
+  .about-section,
+  .how-it-works-section,
+  .stats-section,
+  .zones-section,
+  .cta-section {
+    max-width: 1600px;
+  }
+}
+
+/* Laptops & Tablets Landscape */
 @media (max-width: 1280px) {
   .hero-section {
-    padding: 8rem 4rem 4rem;
+    padding: 7.5rem 2.5rem 4rem;
   }
 
   .about-cards {
@@ -1412,11 +1444,12 @@
   }
 }
 
+/* Tablets Portrait */
 @media (max-width: 1024px) {
   .hero-section {
     flex-direction: column;
     text-align:     center;
-    padding:        7rem 3rem 4rem;
+    padding:        6.5rem 2rem 3.5rem;
   }
 
   .hero-content {
@@ -1433,22 +1466,25 @@
 
   .hero-visual {
     flex: none;
+    margin: 2rem auto 0;
   }
 
   .city-map-container {
-    width:  360px;
-    height: 360px;
+    width:  min(360px, 90vw);
+    height: min(360px, 90vw);
   }
 
   .zones-layout {
     flex-direction: column;
-    gap:            3rem;
+    gap:            2.5rem;
   }
 
   .zone-diagram {
     flex:   none;
     width:  100%;
-    height: 360px;
+    max-width: 480px;
+    margin: 0 auto;
+    height: 340px;
   }
 
   .dsa-grid {
@@ -1456,16 +1492,22 @@
   }
 }
 
+/* Tablets & Large Phones */
 @media (max-width: 768px) {
   .hero-section {
-    padding: 6rem 1.5rem 3rem;
+    padding: 5.5rem 1.25rem 2.5rem;
+  }
+
+  .hero-title {
+    font-size: clamp(2rem, 7.5vw, 3.2rem);
+    line-height: 1.15;
   }
 
   .hero-stats-bar {
     display:               grid;
     grid-template-columns: 1fr 1fr;
-    gap:                   1rem;
-    padding:               1rem;
+    gap:                   0.75rem;
+    padding:               0.85rem;
   }
 
   .stat-divider {
@@ -1473,16 +1515,17 @@
   }
 
   .city-map-container {
-    width:  300px;
-    height: 300px;
+    width:  min(300px, 85vw);
+    height: min(300px, 85vw);
   }
 
   .about-cards {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .dsa-grid {
@@ -1498,38 +1541,64 @@
   }
 }
 
+/* Small Phones & Mobile Devices */
 @media (max-width: 480px) {
+  .hero-section {
+    padding: 5rem 1rem 2rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+  }
+
   .about-cards {
     grid-template-columns: 1fr;
   }
 
   .stats-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .hero-cta {
     flex-direction: column;
-    align-items:    center;
+    align-items:    stretch;
+    width: 100%;
+    gap: 0.75rem;
   }
 
   .btn-hero-primary,
   .btn-hero-secondary {
     width:           100%;
     justify-content: center;
+    min-height: 48px;
   }
 
   .cta-buttons {
     flex-direction: column;
-    align-items:    center;
+    align-items:    stretch;
+    width: 100%;
+    gap: 0.75rem;
   }
 
   .btn-cta-primary,
   .btn-cta-secondary {
     width:           100%;
     justify-content: center;
+    min-height: 48px;
   }
 
   .blood-type-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+  }
+
+  .city-map-container {
+    width: min(260px, 80vw);
+    height: min(260px, 80vw);
   }
 }

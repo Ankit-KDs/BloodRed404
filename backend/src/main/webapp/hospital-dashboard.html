@@ -75,15 +75,16 @@
     </nav>
   </aside>
 
-  <button class="mobile-sidebar-toggle"><i class="fas fa-bars"></i></button>
-
   <!-- ======================== MAIN ======================== -->
   <main class="dashboard-main" id="main">
 
     <header class="dashboard-topbar">
       <div class="topbar-left">
-        <h1 class="page-title">Overview</h1>
-        <p class="page-subtitle">Manage blood requests and donors in real-time.</p>
+        <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+        <div>
+          <h1 class="page-title">Overview</h1>
+          <p class="page-subtitle">Manage blood requests and donors in real-time.</p>
+        </div>
       </div>
       <div class="topbar-right">
         <span class="live-indicator"><span class="pulse-dot"></span> LIVE</span>
@@ -870,14 +871,22 @@
       if (tg) tg.innerHTML = '<i class="fas fa-chevron-right"></i>';
     }
 
+    const bdrop = document.getElementById('mobileSidebarBackdrop');
+
     mb?.addEventListener('click', e => {
       e.stopPropagation();
-      sb.classList.toggle('mobile-open');
+      const open = sb.classList.toggle('mobile-open');
+      if (bdrop) bdrop.style.display = open ? 'block' : 'none';
+    });
+    bdrop?.addEventListener('click', () => {
+      sb.classList.remove('mobile-open');
+      bdrop.style.display = 'none';
     });
     document.addEventListener('click', e => {
       if (window.innerWidth < 1024 && sb.classList.contains('mobile-open') &&
           !sb.contains(e.target) && !mb?.contains(e.target)) {
         sb.classList.remove('mobile-open');
+        if (bdrop) bdrop.style.display = 'none';
       }
     });
   }
@@ -901,6 +910,12 @@
   }
 
   function gotoPage(page) {
+    if (window.innerWidth < 1024) {
+      document.querySelector('.sidebar')?.classList.remove('mobile-open');
+      const bdrop = document.getElementById('mobileSidebarBackdrop');
+      if (bdrop) bdrop.style.display = 'none';
+    }
+
     qsa('.nav-item').forEach(i => i.classList.remove('active'));
     qs(`.nav-item[data-page="${page}"]`)?.classList.add('active');
     qsa('.dash-page').forEach(p => p.style.display = (p.id === `page-${page}`) ? 'block' : 'none');
@@ -2056,5 +2071,8 @@
   })();
 
   </script>
+
+  <!-- Mobile sidebar backdrop -->
+  <div id="mobileSidebarBackdrop" class="sidebar-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);"></div>
 </body>
 </html>
