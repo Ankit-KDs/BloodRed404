@@ -305,24 +305,32 @@
     const metaTag = document.getElementById('eligibilityMetaTag');
 
     const lastDonation = currentDonor.lastDonationDate;
-    let daysPassed = 48; // Default showcase state matching reference image
-    let remainingDays = 42;
-    let percentage = 53;
-    let targetDateStr = '15 Oct 2026';
-    let isCompleted = false;
+    let isEligible = false;
+    let daysPassed = 0;
+    let remainingDays = 0;
+    let percentage = 0;
+    let targetDateStr = 'Immediate / READY';
 
-    if (lastDonation) {
+    if (!lastDonation) {
+      // Donor has NOT donated any blood yet -> Real-time 100% Eligible!
+      isEligible = true;
+      percentage = 100;
+      remainingDays = 0;
+    } else {
+      // Donor has a recorded donation -> calculate real-time day-by-day countdown & fluid rise
       const donationDate = new Date(lastDonation);
       if (!isNaN(donationDate.getTime())) {
         const now = new Date();
         daysPassed = Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24));
         if (daysPassed >= 90) {
-          isCompleted = true;
+          isEligible = true;
           percentage = 100;
           remainingDays = 0;
         } else {
+          isEligible = false;
           remainingDays = Math.max(0, 90 - daysPassed);
-          percentage = Math.min(Math.max(1, Math.floor((daysPassed / 90) * 100)), 99);
+          // After donation starts at 0% and increases day by day with blood flow
+          percentage = Math.min(Math.max(0, Math.floor((daysPassed / 90) * 100)), 99);
           const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
           targetDateStr = targetDate.toLocaleDateString('en-GB', {
             day: 'numeric',
@@ -330,11 +338,15 @@
             year: 'numeric'
           });
         }
+      } else {
+        isEligible = true;
+        percentage = 100;
+        remainingDays = 0;
       }
     }
 
-    if (isCompleted) {
-      // State 1: Eligible / Pre-Donation (Fluid height sets to 100%, entire chamber filled)
+    if (isEligible) {
+      // State 1: 100% Eligible (Pre-Donation or Cooldown Completed)
       if (bloodColumn) {
         bloodColumn.style.height = '100%';
       }
@@ -356,7 +368,7 @@
       }
 
       if (recoveredSub) {
-        recoveredSub.textContent = '(optimal biological volume)';
+        recoveredSub.textContent = '(optimal biological volume • ready to donate)';
       }
 
       if (pillWrap) {
@@ -389,7 +401,7 @@
         `;
       }
     } else {
-      // State 2: Cooldown Active (Fluid rises from feet to head over 90 days, defaults to 53% / 42 days matching reference image)
+      // State 2: Cooldown Active (Fluid rises day by day from 0% to 100% post-donation)
       if (bloodColumn) {
         bloodColumn.style.height = `${percentage}%`;
       }
@@ -411,7 +423,7 @@
       }
 
       if (recoveredSub) {
-        recoveredSub.textContent = '(reducing day by day post-donation)';
+        recoveredSub.textContent = '(increasing day by day with blood volume recovery)';
       }
 
       if (pillWrap) {
