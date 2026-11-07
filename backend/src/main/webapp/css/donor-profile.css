@@ -31,8 +31,9 @@
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
 
-  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-tech: 'Rajdhani', sans-serif;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-tech: 'Orbitron', -apple-system, sans-serif;
+  --font-hud: 'Rajdhani', sans-serif;
 }
 
 /* Base Reset */
@@ -86,6 +87,60 @@ body.donor-profile-body {
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
+}
+
+.hub-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+.hub-brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff2a44, #b30018);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.15rem;
+  box-shadow: 0 0 20px rgba(255, 42, 68, 0.5);
+  animation: pulseBrand 3s infinite ease-in-out;
+}
+
+.hub-brand-name {
+  font-family: var(--font-tech);
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #fff;
+}
+
+.hub-title-block {
+  border-left: 1px solid var(--border-glass);
+  padding-left: 1.25rem;
+}
+
+.hub-main-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hub-main-title span {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.hub-user-greeting {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
 }
 
 .hub-logo-brand {
@@ -228,6 +283,12 @@ body.donor-profile-body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .hub-nav-menu {
@@ -247,12 +308,18 @@ body.donor-profile-body {
   font-size: 0.92rem;
   font-weight: 500;
   transition: all 0.2s ease;
+  position: relative;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.2px;
+  box-sizing: border-box;
 }
 
 .hub-nav-item i {
   font-size: 1.1rem;
   width: 22px;
   text-align: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .hub-nav-item:hover {
@@ -265,6 +332,7 @@ body.donor-profile-body {
   background: linear-gradient(135deg, rgba(255, 42, 68, 0.2), rgba(255, 42, 68, 0.05));
   border: 1px solid var(--red-border);
   box-shadow: 0 0 20px var(--red-glow-soft);
+  font-weight: 600;
 }
 
 .hub-nav-item.active i {
@@ -291,6 +359,7 @@ body.donor-profile-body {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .hes-dot {
@@ -300,12 +369,14 @@ body.donor-profile-body {
   background: var(--green-neon);
   box-shadow: 0 0 10px var(--green-neon);
   animation: pulseGps 2s infinite;
+  flex-shrink: 0;
 }
 
 .hes-sub {
   font-size: 0.72rem;
   color: var(--text-muted);
   margin-top: 4px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* ==================== MAIN PROFILE WORKSPACE ==================== */
@@ -808,6 +879,11 @@ body.donor-profile-body {
 .toast-success { border-color: var(--green-border); color: var(--green-neon); }
 .toast-info { border-color: var(--border-glass); color: #fff; }
 
+@keyframes pulseBrand {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 42, 68, 0.5); }
+  50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 42, 68, 0.8); }
+}
+
 @keyframes pulseGps {
   0% { transform: scale(0.95); opacity: 0.7; }
   50% { transform: scale(1.15); opacity: 1; }
@@ -865,3 +941,4 @@ body.donor-profile-body {
     align-items: center;
   }
 }
+

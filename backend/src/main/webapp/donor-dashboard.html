@@ -5,7 +5,11 @@
   <meta http-equiv="refresh" content="0; url=donor-alerts.html" />
   <title>RED404 • Redirecting to Donor Command Center</title>
   <script>
-    window.location.replace('donor-alerts.html' + (window.location.hash || ''));
+    if (window.location.hash === '#history') {
+      window.location.replace('donor-profile.html#pastDonationHistoryCard');
+    } else {
+      window.location.replace('donor-alerts.html' + (window.location.hash || ''));
+    }
   </script>
 </head>
 <body style="background:#0b0d11;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">

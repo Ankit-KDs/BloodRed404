@@ -269,7 +269,7 @@ body.donor-hub-body {
 
 @media (min-width: 1600px) {
   .hub-layout {
-    grid-template-columns: 250px 1fr 540px;
+    grid-template-columns: 240px 1fr 540px;
   }
 }
 
@@ -281,6 +281,12 @@ body.donor-hub-body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .hub-nav-menu {
