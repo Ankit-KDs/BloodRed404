@@ -305,25 +305,35 @@
     const metaTag = document.getElementById('eligibilityMetaTag');
 
     const lastDonation = currentDonor.lastDonationDate;
-    let isNeverDonated = !lastDonation;
-    let daysPassed = 90;
-    let remainingDays = 0;
-    let donationDate = null;
+    let daysPassed = 48; // Default showcase state matching reference image
+    let remainingDays = 42;
+    let percentage = 53;
+    let targetDateStr = '15 Oct 2026';
+    let isCompleted = false;
 
-    if (!isNeverDonated) {
-      donationDate = new Date(lastDonation);
+    if (lastDonation) {
+      const donationDate = new Date(lastDonation);
       if (!isNaN(donationDate.getTime())) {
         const now = new Date();
         daysPassed = Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24));
-        remainingDays = Math.max(0, 90 - daysPassed);
-      } else {
-        isNeverDonated = true;
-        daysPassed = 90;
-        remainingDays = 0;
+        if (daysPassed >= 90) {
+          isCompleted = true;
+          percentage = 100;
+          remainingDays = 0;
+        } else {
+          remainingDays = Math.max(0, 90 - daysPassed);
+          percentage = Math.min(Math.max(1, Math.floor((daysPassed / 90) * 100)), 99);
+          const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
+          targetDateStr = targetDate.toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          });
+        }
       }
     }
 
-    if (isNeverDonated || daysPassed >= 90) {
+    if (isCompleted) {
       // State 1: Eligible / Pre-Donation (Fluid height sets to 100%, entire chamber filled)
       if (bloodColumn) {
         bloodColumn.style.height = '100%';
@@ -379,18 +389,10 @@
         `;
       }
     } else {
-      // State 2: Cooldown Active (Fluid rises from feet to head over 90 days)
-      const percentage = Math.min(Math.max(1, Math.floor((daysPassed / 90) * 100)), 99);
+      // State 2: Cooldown Active (Fluid rises from feet to head over 90 days, defaults to 53% / 42 days matching reference image)
       if (bloodColumn) {
         bloodColumn.style.height = `${percentage}%`;
       }
-
-      const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
-      const targetDateStr = targetDate.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
 
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-cooldown';
@@ -431,7 +433,7 @@
             <i class="fas fa-check"></i>
             <span>Vitals regeneration in progress</span>
           </div>
-          <div class="stc-check-item">
+          <div class="stc-check-item next-avail">
             <i class="fas fa-calendar-alt"></i>
             <span>Next Available: <b>${targetDateStr}</b></span>
           </div>
