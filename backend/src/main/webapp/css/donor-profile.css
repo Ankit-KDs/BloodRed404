@@ -819,129 +819,336 @@ body.donor-profile-body {
   padding: 0.25rem 0.5rem 0.5rem 0.25rem;
 }
 
-.gauge-col-left {
+/* ==================== CARD 2: HOLOGRAPHIC ANATOMICAL BODY SCANNER ==================== */
+.scanner-meta-tag {
+  color: #38bdf8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-main);
+  transition: color 0.3s ease;
+}
+
+.scanner-meta-tag.tag-ready {
+  color: #34d399;
+}
+
+.scanner-meta-tag.tag-cooldown {
+  color: #f87171;
+}
+
+.scanner-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
+  gap: 0.75rem;
+  flex: 1;
 }
 
-.gauge-wrapper {
+.scanner-stage {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1.25rem;
+  align-items: center;
   position: relative;
-  width: 215px;
-  height: 215px;
+}
+
+/* 3D Glass Body Chamber */
+.holo-chamber-box {
+  width: 140px;
+  height: 206px;
+  position: relative;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 40%, rgba(56, 189, 248, 0.06) 0%, rgba(15, 23, 42, 0.6) 80%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 
+    inset 0 0 25px rgba(56, 189, 248, 0.08),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.gauge-svg {
-  width: 215px;
-  height: 215px;
-  overflow: visible;
-}
-
-/* 2nd Layer: 3D Base/Extrusion Dark Emerald Under-layer */
-.gauge-base-layer {
-  fill: none;
-  stroke: url(#gaugeBaseGradient);
-  stroke-width: 19;
-  stroke-linecap: round;
-  transition: stroke 0.4s ease;
-}
-
-.gauge-base-layer.cooldown {
-  stroke: url(#gaugeBaseCoralGradient);
-}
-
-/* 1st Layer: Glowing Luminous Top Surface Arc */
-.gauge-fill-arc {
-  fill: none;
-  stroke: url(#emeraldMintGradient);
-  stroke-width: 18;
-  stroke-linecap: round;
-  filter: url(#gaugeGlowHalo);
-  transition: stroke-dashoffset 0.8s ease, stroke 0.4s ease, filter 0.4s ease;
-}
-
-.gauge-fill-arc.cooldown {
-  stroke: url(#coralCooldownGradient);
-  filter: url(#gaugeGlowHaloCoral);
-}
-
-/* Inside the bar: ONLY the percentage is shown */
-.gauge-center-content {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  pointer-events: none;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
-.gcc-percent-only {
-  font-family: var(--font-main);
-  font-size: 2.75rem;
-  font-weight: 800;
-  color: #10b981;
-  line-height: 1;
-  letter-spacing: -1px;
-  text-shadow: 
-    0 0 22px rgba(16, 185, 129, 0.5),
-    0 2px 5px rgba(0, 0, 0, 0.7);
+/* Chamber Corner Brackets (HUD Styling) */
+.chamber-bracket {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: rgba(56, 189, 248, 0.6);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.chamber-bracket.top-left {
+  top: 5px;
+  left: 6px;
+  border-width: 2px 0 0 2px;
+}
+
+.chamber-bracket.top-right {
+  top: 5px;
+  right: 6px;
+  border-width: 2px 2px 0 0;
+}
+
+.chamber-bracket.bottom-left {
+  bottom: 5px;
+  left: 6px;
+  border-width: 0 0 2px 2px;
+}
+
+.chamber-bracket.bottom-right {
+  bottom: 5px;
+  right: 6px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Sweeping Holographic Laser Scan Line */
+.scanner-laser-line {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), #38bdf8, rgba(56, 189, 248, 0.8), transparent);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.85), 0 0 20px rgba(56, 189, 248, 0.4);
+  pointer-events: none;
+  z-index: 5;
+  animation: laserScan 4s ease-in-out infinite alternate;
+}
+
+@keyframes laserScan {
+  0% { top: 8px; opacity: 0.35; }
+  50% { opacity: 0.95; }
+  100% { top: 196px; opacity: 0.35; }
+}
+
+/* SVG Holographic Anatomy Model */
+.holo-body-svg {
+  width: 120px;
+  height: 206px;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.6));
+}
+
+#bloodFluidRect {
+  transition: y 1.2s cubic-bezier(0.4, 0, 0.2, 1), height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.meniscus-wave {
+  transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: meniscusPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes meniscusPulse {
+  0% { opacity: 0.75; transform: scaleY(0.9); }
+  100% { opacity: 1; transform: scaleY(1.3); }
+}
+
+/* Cardiac Pulse Beacon at Chest */
+.cardiac-node {
+  fill: #f87171;
+  filter: drop-shadow(0 0 6px #ef4444);
+}
+
+.cardiac-pulse {
+  fill: none;
+  stroke: #ef4444;
+  stroke-width: 1.2;
+  opacity: 0.7;
+  animation: cardiacPulseRing 2s ease-out infinite;
+  transform-origin: 60px 58px;
+}
+
+@keyframes cardiacPulseRing {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Anatomy Scale Milestones (Beside 3D Figure) */
+.anatomy-scale-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 206px;
+  padding: 4px 0 4px 0.25rem;
+  box-sizing: border-box;
+}
+
+.scale-tick-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  position: relative;
   transition: all 0.3s ease;
-  user-select: none;
 }
 
-.gcc-percent-only.cooldown {
-  color: #f87171;
-  text-shadow: 
-    0 0 22px rgba(248, 113, 113, 0.5),
-    0 2px 5px rgba(0, 0, 0, 0.7);
+.sti-bar {
+  width: 22px;
+  height: 2px;
+  background: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.35);
+  flex-shrink: 0;
+  position: relative;
 }
 
-/* Status text placed just down the bar (replacing Next Available) */
-.gauge-down-content {
-  margin-top: 0.75rem;
+.sti-bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.scale-tick-item.tick-top .sti-bar {
+  background: rgba(16, 185, 129, 0.6);
+}
+.scale-tick-item.tick-top .sti-bar::before {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.scale-tick-item.tick-mid .sti-bar {
+  background: rgba(56, 189, 248, 0.55);
+}
+.scale-tick-item.tick-mid .sti-bar::before {
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.scale-tick-item.tick-base .sti-bar {
+  background: rgba(239, 68, 68, 0.5);
+}
+.scale-tick-item.tick-base .sti-bar::before {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.sti-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sti-val {
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.2px;
+}
+
+.scale-tick-item.tick-top .sti-val {
+  color: #34d399;
+}
+
+.scale-tick-item.tick-mid .sti-val {
+  color: #38bdf8;
+}
+
+.scale-tick-item.tick-base .sti-val {
+  color: #fca5a5;
+}
+
+.sti-txt {
+  font-family: var(--font-main);
+  font-size: 0.74rem;
+  color: #94a3b8;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+/* Telemetry Readout Directly Below Body */
+.scanner-telemetry-readout {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 3px;
-  transition: all 0.3s ease;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 0.2rem;
 }
 
-.gdc-main {
+.str-metric {
   font-family: var(--font-main);
-  font-size: 1.25rem;
+  font-size: 1.45rem;
   font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+  color: #f8fafc;
   line-height: 1.1;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: -0.2px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
   transition: color 0.3s ease;
 }
 
-.gdc-sub {
+.str-badge-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0;
+}
+
+.scanner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border-radius: 9999px;
   font-family: var(--font-main);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.scanner-chip.chip-eligible {
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(52, 211, 153, 0.35);
   color: #34d399;
-  line-height: 1.1;
-  transition: color 0.3s ease;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
 }
 
-.gauge-down-content.cooldown .gdc-main {
-  color: #ffffff;
-}
-
-.gauge-down-content.cooldown .gdc-sub {
+.scanner-chip.chip-cooldown {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(248, 113, 113, 0.35);
   color: #f87171;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.18);
+}
+
+.sc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.sc-dot.dot-green {
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+}
+
+.str-subtitle {
+  font-family: var(--font-main);
+  font-size: 0.76rem;
+  color: #94a3b8;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  max-width: 380px;
 }
 
 /* Right Column: 3-Point Checklist */

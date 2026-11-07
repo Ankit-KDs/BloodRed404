@@ -221,88 +221,130 @@
           </div>
         </section>
 
-        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER -->
+        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (Holographic Anatomical Scanner) -->
         <section class="profile-card" id="eligibilityTrackerCard">
           <div class="card-header-row">
             <h2 class="card-title">Medical Eligibility Tracker</h2>
-            <span class="card-meta-tag eligibility-tag" id="eligibilityMetaTag">
-              <!-- Dynamically rendered by JS -->
+            <span class="card-meta-tag scanner-meta-tag" id="eligibilityMetaTag">
+              <!-- Dynamically populated by JS -->
             </span>
           </div>
 
-          <div class="eligibility-layout">
-            <!-- Left Column: Circular Radial Gauge + Next Available Row -->
-            <div class="gauge-col-left">
-              <div class="gauge-wrapper">
-                <svg class="gauge-svg" viewBox="0 0 240 240">
+          <div class="scanner-container">
+            <!-- Stage: 3D Holographic Body Chamber + Anatomy Scale Milestones -->
+            <div class="scanner-stage">
+              <!-- Left/Center: Medical Glass Body Chamber -->
+              <div class="holo-chamber-box">
+                <!-- Medical HUD Corner Brackets -->
+                <div class="chamber-bracket top-left"></div>
+                <div class="chamber-bracket top-right"></div>
+                <div class="chamber-bracket bottom-left"></div>
+                <div class="chamber-bracket bottom-right"></div>
+
+                <!-- Laser Scan Line -->
+                <div class="scanner-laser-line"></div>
+
+                <!-- SVG Holographic Anatomy Model -->
+                <svg class="holo-body-svg" viewBox="0 0 120 206" preserveAspectRatio="xMidYMid meet">
                   <defs>
-                    <!-- Top Layer Neon Emerald-to-Mint Gradient (State A: Ready / Eligible) -->
-                    <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#059669" />
-                      <stop offset="50%" stop-color="#10b981" />
-                      <stop offset="100%" stop-color="#34d399" />
-                    </linearGradient>
+                    <!-- Human Silhouette Clip Path -->
+                    <clipPath id="humanSilhouetteClip">
+                      <path d="M 60,10 C 66,10 71,15 71,21 C 71,27 67,31 65,34 C 65,37 66,39 74,43 C 82,46 87,48 90,55 C 93,64 93,76 92,92 C 91,104 90,116 88,126 C 87,128 85,128 84,124 C 82,118 82,108 81,96 C 80,82 78,68 76,62 C 75,69 74,78 72,86 C 71,92 73,98 75,103 C 76,112 76,124 75,138 C 74,146 74,152 73,158 C 73,166 72,176 71,186 C 71,191 73,194 72,196 C 70,197 64,197 64,196 C 63,192 64,186 64,180 C 64,170 63,158 63,150 C 62,138 61,124 60,108 C 59,124 58,138 57,150 C 57,158 56,170 56,180 C 56,186 57,192 56,196 C 56,197 50,197 48,196 C 47,194 49,191 49,186 C 48,176 47,166 47,158 C 46,152 46,146 45,138 C 44,124 44,112 45,103 C 47,98 49,92 48,86 C 46,78 45,69 44,62 C 42,68 40,82 39,96 C 38,108 38,118 36,124 C 35,128 33,128 32,126 C 30,116 29,104 28,92 C 27,76 27,64 30,55 C 33,48 38,46 46,43 C 54,39 55,37 55,34 C 53,31 49,27 49,21 C 49,15 54,10 60,10 Z" />
+                    </clipPath>
 
-                    <!-- 2nd Layer: 3D Base/Extrusion Dark Emerald Gradient (State A) -->
-                    <linearGradient id="gaugeBaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#064e3b" />
-                      <stop offset="50%" stop-color="#065f46" />
-                      <stop offset="100%" stop-color="#047857" />
-                    </linearGradient>
-
-                    <!-- Top Layer Soft Coral/Amber Gradient (State B: Active Cooldown Countdown) -->
-                    <linearGradient id="coralCooldownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#b91c1c" />
-                      <stop offset="50%" stop-color="#ef4444" />
+                    <!-- Fluid Gradient: Arterial Crimson -> Glowing Ruby -> Light Ruby Meniscus -->
+                    <linearGradient id="bloodVolumetricGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                      <stop offset="0%" stop-color="#7f1d1d" />
+                      <stop offset="50%" stop-color="#dc2626" />
                       <stop offset="100%" stop-color="#f87171" />
                     </linearGradient>
 
-                    <!-- 2nd Layer: 3D Base/Extrusion Dark Wine/Coral Gradient (State B) -->
-                    <linearGradient id="gaugeBaseCoralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#450a0a" />
-                      <stop offset="50%" stop-color="#7f1d1d" />
-                      <stop offset="100%" stop-color="#991b1b" />
+                    <!-- 3D Outer Glass Rim Gradient -->
+                    <linearGradient id="bodyGlassRimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.65" />
+                      <stop offset="50%" stop-color="#0284c7" stop-opacity="0.2" />
+                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.5" />
                     </linearGradient>
 
-                    <!-- Atmospheric Emerald Glow Halo -->
-                    <filter id="gaugeGlowHalo" x="-40%" y="-40%" width="180%" height="180%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#10b981" flood-opacity="0.6"/>
-                      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#10b981" flood-opacity="0.25"/>
-                    </filter>
-
-                    <!-- Atmospheric Coral Glow Halo -->
-                    <filter id="gaugeGlowHaloCoral" x="-40%" y="-40%" width="180%" height="180%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f87171" flood-opacity="0.6"/>
-                      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#f87171" flood-opacity="0.25"/>
-                    </filter>
-
-                    <!-- 3D Base Depth Shadow -->
-                    <filter id="gaugeBaseDepth" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="1" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.75"/>
+                    <!-- Diffused Anti-Glare Glow Filter -->
+                    <filter id="fluidVolumetricGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#dc2626" flood-opacity="0.5"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#ef4444" flood-opacity="0.25"/>
                     </filter>
                   </defs>
 
-                  <!-- 2nd Layer: 3D Base / Extrusion Under-layer (shifted down and right) -->
-                  <circle class="gauge-base-layer" id="gaugeBaseLayer" cx="121" cy="125" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 121 125)" filter="url(#gaugeBaseDepth)"></circle>
-                  <!-- 1st Layer: Glowing Luminous Top Surface Arc -->
-                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="120" cy="120" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 120 120)" filter="url(#gaugeGlowHalo)"></circle>
-                </svg>
+                  <!-- Chamber Grid Background Box -->
+                  <rect x="8" y="4" width="104" height="198" rx="14" fill="rgba(15, 23, 42, 0.45)" stroke="rgba(56, 189, 248, 0.12)" stroke-width="1" />
 
-                <!-- Inside the bar: ONLY show percentage -->
-                <div class="gauge-center-content" id="gaugeCenterContent">
-                  <div class="gcc-percent-only" id="gaugePercentText"></div>
-                </div>
+                  <!-- Unfilled Semi-Transparent Body Silhouette Base -->
+                  <path d="M 60,10 C 66,10 71,15 71,21 C 71,27 67,31 65,34 C 65,37 66,39 74,43 C 82,46 87,48 90,55 C 93,64 93,76 92,92 C 91,104 90,116 88,126 C 87,128 85,128 84,124 C 82,118 82,108 81,96 C 80,82 78,68 76,62 C 75,69 74,78 72,86 C 71,92 73,98 75,103 C 76,112 76,124 75,138 C 74,146 74,152 73,158 C 73,166 72,176 71,186 C 71,191 73,194 72,196 C 70,197 64,197 64,196 C 63,192 64,186 64,180 C 64,170 63,158 63,150 C 62,138 61,124 60,108 C 59,124 58,138 57,150 C 57,158 56,170 56,180 C 56,186 57,192 56,196 C 56,197 50,197 48,196 C 47,194 49,191 49,186 C 48,176 47,166 47,158 C 46,152 46,146 45,138 C 44,124 44,112 45,103 C 47,98 49,92 48,86 C 46,78 45,69 44,62 C 42,68 40,82 39,96 C 38,108 38,118 36,124 C 35,128 33,128 32,126 C 30,116 29,104 28,92 C 27,76 27,64 30,55 C 33,48 38,46 46,43 C 54,39 55,37 55,34 C 53,31 49,27 49,21 C 49,15 54,10 60,10 Z" 
+                        fill="rgba(255, 255, 255, 0.03)" 
+                        stroke="rgba(56, 189, 248, 0.22)" 
+                        stroke-width="1.3" />
+
+                  <!-- Holographic Anatomy Reference Contours -->
+                  <line x1="60" y1="36" x2="60" y2="108" stroke="rgba(56, 189, 248, 0.2)" stroke-width="1" stroke-dasharray="2 3" />
+                  <ellipse cx="60" cy="62" rx="14" ry="7" fill="none" stroke="rgba(56, 189, 248, 0.15)" stroke-width="0.8" />
+                  <ellipse cx="60" cy="74" rx="12" ry="6" fill="none" stroke="rgba(56, 189, 248, 0.12)" stroke-width="0.8" />
+
+                  <!-- Volumetric Blood Fluid (Clipped inside Human Silhouette) -->
+                  <g clip-path="url(#humanSilhouetteClip)">
+                    <!-- Dynamic Blood Column -->
+                    <rect id="bloodFluidRect" x="0" y="10" width="120" height="186" fill="url(#bloodVolumetricGrad)" filter="url(#fluidVolumetricGlow)" />
+                    <!-- Dynamic Meniscus Wave Surface -->
+                    <path id="bloodMeniscusWave" class="meniscus-wave" d="M 0,10 Q 30,7 60,10 T 120,10 L 120,15 L 0,15 Z" fill="#fca5a5" opacity="0.9" />
+                  </g>
+
+                  <!-- 3D Glass Shell: Specular Rim Lighting -->
+                  <path d="M 60,10 C 66,10 71,15 71,21 C 71,27 67,31 65,34 C 65,37 66,39 74,43 C 82,46 87,48 90,55 C 93,64 93,76 92,92 C 91,104 90,116 88,126 C 87,128 85,128 84,124 C 82,118 82,108 81,96 C 80,82 78,68 76,62 C 75,69 74,78 72,86 C 71,92 73,98 75,103 C 76,112 76,124 75,138 C 74,146 74,152 73,158 C 73,166 72,176 71,186 C 71,191 73,194 72,196 C 70,197 64,197 64,196 C 63,192 64,186 64,180 C 64,170 63,158 63,150 C 62,138 61,124 60,108 C 59,124 58,138 57,150 C 57,158 56,170 56,180 C 56,186 57,192 56,196 C 56,197 50,197 48,196 C 47,194 49,191 49,186 C 48,176 47,166 47,158 C 46,152 46,146 45,138 C 44,124 44,112 45,103 C 47,98 49,92 48,86 C 46,78 45,69 44,62 C 42,68 40,82 39,96 C 38,108 38,118 36,124 C 35,128 33,128 32,126 C 30,116 29,104 28,92 C 27,76 27,64 30,55 C 33,48 38,46 46,43 C 54,39 55,37 55,34 C 53,31 49,27 49,21 C 49,15 54,10 60,10 Z" 
+                        fill="none" 
+                        stroke="url(#bodyGlassRimGrad)" 
+                        stroke-width="1.8" 
+                        filter="drop-shadow(0 0 6px rgba(56, 189, 248, 0.35))" />
+
+                  <!-- Pulsing Cardiac Beacon (Heart) -->
+                  <circle cx="60" cy="58" r="3" class="cardiac-node" />
+                  <circle cx="60" cy="58" r="7" class="cardiac-pulse" />
+                </svg>
               </div>
 
-              <!-- Just down the bar: ELIGIBLE / Ready to Donate -->
-              <div class="gauge-down-content" id="gaugeDownContent">
-                <div class="gdc-main" id="gaugeDownMain"></div>
-                <div class="gdc-sub" id="gaugeDownSub"></div>
+              <!-- Right: Anatomy Scale Milestones -->
+              <div class="anatomy-scale-panel">
+                <!-- Top Tick: 100% -->
+                <div class="scale-tick-item tick-top">
+                  <div class="sti-bar"></div>
+                  <div class="sti-info">
+                    <span class="sti-val">100%</span>
+                    <span class="sti-txt">Full Volume (Day 90)</span>
+                  </div>
+                </div>
+
+                <!-- Mid Tick: 50% -->
+                <div class="scale-tick-item tick-mid">
+                  <div class="sti-bar"></div>
+                  <div class="sti-info">
+                    <span class="sti-val">50%</span>
+                    <span class="sti-txt">Plasma & RBC Equilibrium (Day 45)</span>
+                  </div>
+                </div>
+
+                <!-- Base Tick: 0% -->
+                <div class="scale-tick-item tick-base">
+                  <div class="sti-bar"></div>
+                  <div class="sti-info">
+                    <span class="sti-val">0%</span>
+                    <span class="sti-txt">Post-Donation (Day 1)</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Right Eligibility Checklist (Zero hardcoded text in HTML — dynamically injected via JS) -->
-            <div class="eligibility-checklist" id="eligibilityChecklist"></div>
+            <!-- Bottom: Telemetry Readout directly below the body -->
+            <div class="scanner-telemetry-readout" id="scannerTelemetryReadout">
+              <div class="str-metric" id="scannerMetricVal"></div>
+              <div class="str-badge-wrap" id="scannerBadgeWrap"></div>
+              <div class="str-subtitle" id="scannerSubtitle"></div>
+            </div>
           </div>
         </section>
 

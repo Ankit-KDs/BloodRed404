@@ -290,21 +290,17 @@
     }
   }
 
-  // ======================== 4. 90-DAY ELIGIBILITY COUNTDOWN ========================
-  // Inside the bar: ONLY show percentage (nothing else, no STATUS ACTIVE).
-  // Just down the bar: ELIGIBLE / READY TO DONATE (replaces Next Available line).
+  // ======================== 4. 3D HOLOGRAPHIC ANATOMICAL SCANNER ========================
+  // Real-time volumetric blood fill inside 3D human body silhouette
+  // State A: Pre-Donation OR 90 Days Completed (Universal 100% Eligible)
+  // State B: Post-Donation Recovery (Day-by-Day Upward Fill from feet to head)
   function renderMedicalEligibilityTracker() {
-    const arc = document.getElementById('gaugeFillArc');
-    const baseLayer = document.getElementById('gaugeBaseLayer');
-    const percentText = document.getElementById('gaugePercentText');
+    const bloodFluidRect = document.getElementById('bloodFluidRect');
+    const bloodMeniscusWave = document.getElementById('bloodMeniscusWave');
+    const metricVal = document.getElementById('scannerMetricVal');
+    const badgeWrap = document.getElementById('scannerBadgeWrap');
+    const subtitle = document.getElementById('scannerSubtitle');
     const metaTag = document.getElementById('eligibilityMetaTag');
-    const downContent = document.getElementById('gaugeDownContent');
-    const downMain = document.getElementById('gaugeDownMain');
-    const downSub = document.getElementById('gaugeDownSub');
-    const checklist = document.getElementById('eligibilityChecklist');
-
-    // Total arc circumference for radius 85 over 270 deg: 2 * PI * 85 * (270 / 360) = 400.55 ~ 401px
-    const totalArcLength = 401;
 
     // 1. Dynamic Data Handling:
     // Read lastDonationDate from donor's backend record.
@@ -328,124 +324,97 @@
       }
     }
 
-    // 2. State A: Universal READY State (Applies if NEVER DONATED or if daysPassed >= 90)
+    // Body silhouette dimensions:
+    // Feet: Y = 196, Head top: Y = 10, Total height = 186 units
+    const totalHeight = 186;
+
+    // State A: Pre-Donation OR 90 Days Completed (Universal 100% Eligible)
     if (isNeverDonated || daysPassed >= 90) {
-      // Arc: 100% full circle styled in soothing clinical emerald (#10b981)
-      if (arc) {
-        arc.classList.remove('cooldown');
-        arc.style.stroke = 'url(#emeraldMintGradient)';
-        arc.style.filter = 'url(#gaugeGlowHalo)';
-        arc.style.strokeDashoffset = '0';
-      }
-      if (baseLayer) {
-        baseLayer.classList.remove('cooldown');
-        baseLayer.style.stroke = 'url(#gaugeBaseGradient)';
+      // 100% completely filled from feet to head
+      const fluidHeight = 186;
+      const fluidY = 10;
+
+      if (bloodFluidRect) {
+        bloodFluidRect.setAttribute('y', String(fluidY));
+        bloodFluidRect.setAttribute('height', String(fluidHeight));
       }
 
-      // Meta Tag
+      if (bloodMeniscusWave) {
+        bloodMeniscusWave.style.transform = `translateY(${fluidY - 10}px)`;
+      }
+
       if (metaTag) {
-        metaTag.className = 'card-meta-tag eligibility-tag tag-ready';
-        metaTag.innerHTML = `<i class="fas fa-shield-alt"></i> Safety Cooldown: Cleared`;
+        metaTag.className = 'card-meta-tag scanner-meta-tag tag-ready';
+        metaTag.innerHTML = `<i class="fas fa-shield-alt"></i> Bio-Scan: 100% Full Volume`;
       }
 
-      // Inside the bar: ONLY show percentage (nothing else!)
-      if (percentText) {
-        percentText.className = 'gcc-percent-only';
-        percentText.textContent = '100%';
+      // Large Bold Metric: '100% RESTORED' (color: #f8fafc)
+      if (metricVal) {
+        metricVal.style.color = '#f8fafc';
+        metricVal.textContent = '100% RESTORED';
       }
 
-      // Just down the bar: ELIGIBLE / READY TO DONATE
-      if (downContent) downContent.className = 'gauge-down-content';
-      if (downMain) {
-        downMain.className = 'gdc-main';
-        downMain.textContent = 'ELIGIBLE';
-      }
-      if (downSub) {
-        downSub.className = 'gdc-sub';
-        downSub.textContent = 'READY TO DONATE';
-      }
-
-      // Right-side Checklist (Verified Optimal Clinical Parameters)
-      if (checklist) {
-        checklist.innerHTML = `
-          <div class="check-item">
-            <i class="fas fa-check"></i>
-            <span>90-day wait period met</span>
-          </div>
-          <div class="check-item">
-            <i class="fas fa-check"></i>
-            <span>Health indicators optimal</span>
-          </div>
-          <div class="check-item">
-            <i class="fas fa-check"></i>
-            <span>Not currently on medication</span>
+      // Status Badge: '🟢 ELIGIBLE TO DONATE • READY' in soothing mint-green glass chip
+      if (badgeWrap) {
+        badgeWrap.innerHTML = `
+          <div class="scanner-chip chip-eligible">
+            <span class="sc-dot dot-green"></span>
+            <span>ELIGIBLE TO DONATE • READY</span>
           </div>
         `;
       }
-    } else {
-      // 3. State B: Active Decreasing Countdown (Applies ONLY if daysPassed < 90)
-      const percentRemaining = Math.max(1, Math.min(100, Math.floor((remainingDays / 90) * 100)));
-      const dashOffset = totalArcLength * (1 - (percentRemaining / 100));
 
-      // Compute Target Date: donationDate + 90 days
+      // Subtitle: 'Full biological blood volume available for emergency dispatch'
+      if (subtitle) {
+        subtitle.textContent = 'Full biological blood volume available for emergency dispatch';
+      }
+    } else {
+      // State B: Post-Donation Recovery (Day-by-Day Upward Fill)
+      // Percentage calculated strictly from daysPassed
+      const percentage = Math.min(Math.floor((daysPassed / 90) * 100), 99);
+      const fluidHeight = Math.max(8, (percentage / 100) * totalHeight);
+      const fluidY = 196 - fluidHeight;
+
+      if (bloodFluidRect) {
+        bloodFluidRect.setAttribute('y', String(fluidY));
+        bloodFluidRect.setAttribute('height', String(fluidHeight));
+      }
+
+      if (bloodMeniscusWave) {
+        bloodMeniscusWave.style.transform = `translateY(${fluidY - 10}px)`;
+      }
+
       const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
-      const nextAvailDateStr = targetDate.toLocaleDateString('en-US', {
+      const targetDateStr = targetDate.toLocaleDateString('en-US', {
         month: 'short',
         day: '2-digit',
         year: 'numeric'
       });
 
-      // Arc: Changes stroke color to soft coral/amber (#f87171)
-      if (arc) {
-        arc.classList.add('cooldown');
-        arc.style.stroke = 'url(#coralCooldownGradient)';
-        arc.style.filter = 'url(#gaugeGlowHaloCoral)';
-        arc.style.strokeDashoffset = String(dashOffset);
-      }
-      if (baseLayer) {
-        baseLayer.classList.add('cooldown');
-        baseLayer.style.stroke = 'url(#gaugeBaseCoralGradient)';
-      }
-
-      // Meta Tag
       if (metaTag) {
-        metaTag.className = 'card-meta-tag eligibility-tag tag-cooldown';
-        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Cooldown Active`;
+        metaTag.className = 'card-meta-tag scanner-meta-tag tag-cooldown';
+        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Recovery Scan Active (${remainingDays}d left)`;
       }
 
-      // Inside the bar: ONLY show percentage
-      if (percentText) {
-        percentText.className = 'gcc-percent-only cooldown';
-        percentText.textContent = `${percentRemaining}%`;
+      // Large Bold Metric: `${percentage}% RECOVERED` (or `${remainingDays} DAYS LEFT`)
+      if (metricVal) {
+        metricVal.style.color = '#f8fafc';
+        metricVal.textContent = `${percentage}% RECOVERED (${remainingDays} DAYS LEFT)`;
       }
 
-      // Just down the bar: ${remainingDays} DAYS REMAINING / RECOVERY IN PROGRESS
-      if (downContent) downContent.className = 'gauge-down-content cooldown';
-      if (downMain) {
-        downMain.className = 'gdc-main';
-        downMain.textContent = `${remainingDays} DAYS REMAINING`;
-      }
-      if (downSub) {
-        downSub.className = 'gdc-sub';
-        downSub.textContent = 'RECOVERY IN PROGRESS';
-      }
-
-      // Right-side Checklist
-      if (checklist) {
-        checklist.innerHTML = `
-          <div class="check-item pending">
-            <i class="fas fa-hourglass-half"></i>
-            <span>Recovery interval: ${remainingDays} days left</span>
-          </div>
-          <div class="check-item">
-            <i class="fas fa-check"></i>
-            <span>Health indicators monitored</span>
-          </div>
-          <div class="check-item pending">
-            <i class="fas fa-calendar-alt"></i>
-            <span>Next cycle: <b>${nextAvailDateStr}</b></span>
+      // Status Badge: '⏳ COOLDOWN ACTIVE • RECOVERY IN PROGRESS' in soft coral-amber chip
+      if (badgeWrap) {
+        badgeWrap.innerHTML = `
+          <div class="scanner-chip chip-cooldown">
+            <i class="fas fa-hourglass-half" style="font-size:0.75rem;"></i>
+            <span>COOLDOWN ACTIVE • RECOVERY IN PROGRESS</span>
           </div>
         `;
+      }
+
+      // Subtitle: Estimated full restoration
+      if (subtitle) {
+        subtitle.textContent = `Estimated full restoration: ${targetDateStr}`;
       }
     }
   }
