@@ -233,34 +233,41 @@
             <!-- Left Column: Circular Radial Gauge + Next Available Row -->
             <div class="gauge-col-left">
               <div class="gauge-wrapper">
-                <svg class="gauge-svg" viewBox="0 0 160 160">
+                <svg class="gauge-svg" viewBox="0 0 240 240">
                   <defs>
-                    <!-- Intense Neon Emerald-to-Mint Gradient -->
+                    <!-- Top Layer Neon Emerald-to-Mint Gradient -->
                     <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stop-color="#00e676" />
-                      <stop offset="60%" stop-color="#10b981" />
-                      <stop offset="100%" stop-color="#34d399" />
+                      <stop offset="55%" stop-color="#22c55e" />
+                      <stop offset="100%" stop-color="#86efac" />
+                    </linearGradient>
+
+                    <!-- 2nd Layer: 3D Base/Extrusion Dark Emerald Gradient -->
+                    <linearGradient id="gaugeBaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#0b382c" />
+                      <stop offset="50%" stop-color="#144e3d" />
+                      <stop offset="100%" stop-color="#235c4b" />
                     </linearGradient>
 
                     <!-- Atmospheric Neon Glow Halo -->
-                    <filter id="gaugeGlowHalo" x="-30%" y="-30%" width="160%" height="160%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="glow1"/>
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="glow2"/>
-                      <feMerge>
-                        <feMergeNode in="glow2"/>
-                        <feMergeNode in="glow1"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
+                    <filter id="gaugeGlowHalo" x="-40%" y="-40%" width="180%" height="180%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#00e676" flood-opacity="0.8"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#00e676" flood-opacity="0.4"/>
+                    </filter>
+
+                    <!-- 3D Base Depth Shadow -->
+                    <filter id="gaugeBaseDepth" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="1" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.75"/>
                     </filter>
                   </defs>
 
-                  <!-- Subtle Dark Background Track -->
-                  <circle class="gauge-bg-arc" cx="80" cy="80" r="60" stroke-dasharray="283 377" stroke-dashoffset="0" transform="rotate(135 80 80)"></circle>
-                  <!-- Luminous Glowing Dynamic Fill Arc -->
-                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="60" stroke-dasharray="283 377" stroke-dashoffset="0" transform="rotate(135 80 80)" filter="url(#gaugeGlowHalo)"></circle>
+                  <!-- 2nd Layer: 3D Base / Extrusion Under-layer (shifted down and right) -->
+                  <circle class="gauge-base-layer" cx="121" cy="125" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 121 125)" filter="url(#gaugeBaseDepth)"></circle>
+                  <!-- 1st Layer: Glowing Luminous Top Surface Arc -->
+                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="120" cy="120" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 120 120)" filter="url(#gaugeGlowHalo)"></circle>
                 </svg>
 
-                <!-- Center Text Content (Exact 2-line layout matching image) -->
+                <!-- Center Text Content (Well-spaced layout: Content NEVER touches the bar) -->
                 <div class="gauge-center-content">
                   <div class="gcc-status" id="gaugeStatusText">
                     <span>ELIGIBLE</span>

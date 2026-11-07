@@ -308,8 +308,8 @@
     const checkWaitItem = document.getElementById('checkWaitItem');
     const nextAvailableEl = document.getElementById('nextAvailableText');
 
-    // Total arc circumference for radius 60 over 270 deg: 2 * PI * 60 * (270 / 360) = 282.74 ~ 283px
-    const totalArcLength = 283;
+    // Total arc circumference for radius 85 over 270 deg: 2 * PI * 85 * (270 / 360) = 400.55 ~ 401px
+    const totalArcLength = 401;
 
     if (daysPassed >= 90) {
       // Cooldown Completed -> Eligible

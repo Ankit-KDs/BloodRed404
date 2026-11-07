@@ -792,7 +792,7 @@ body.donor-profile-body {
 
 .eligibility-layout {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 220px 1fr;
   gap: 1.5rem;
   align-items: center;
   flex: 1;
@@ -808,32 +808,34 @@ body.donor-profile-body {
 /* Circular Radial Progress Gauge with Soft Emerald-to-Mint Gradient */
 .gauge-wrapper {
   position: relative;
-  width: 170px;
-  height: 170px;
+  width: 215px;
+  height: 215px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .gauge-svg {
-  width: 170px;
-  height: 170px;
+  width: 215px;
+  height: 215px;
   overflow: visible;
 }
 
-.gauge-bg-arc {
+/* 2nd Layer: 3D Base/Extrusion Dark Emerald Under-layer */
+.gauge-base-layer {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.04);
-  stroke-width: 16;
+  stroke: url(#gaugeBaseGradient);
+  stroke-width: 19;
   stroke-linecap: round;
 }
 
+/* 1st Layer: Glowing Luminous Top Surface Arc */
 .gauge-fill-arc {
   fill: none;
   stroke: url(#emeraldMintGradient);
-  stroke-width: 16;
+  stroke-width: 18;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.65)) drop-shadow(0 0 24px rgba(0, 230, 118, 0.35));
+  filter: drop-shadow(0 0 8px rgba(0, 230, 118, 0.7)) drop-shadow(0 0 20px rgba(0, 230, 118, 0.35));
   transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -851,6 +853,8 @@ body.donor-profile-body {
   justify-content: center;
   text-align: center;
   pointer-events: none;
+  padding: 18px 24px 14px 24px;
+  box-sizing: border-box;
 }
 
 .gcc-status {
@@ -858,42 +862,44 @@ body.donor-profile-body {
   font-size: 0.72rem;
   font-weight: 800;
   color: #00e676;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  line-height: 1.15;
+  line-height: 1.2;
+  margin-bottom: 4px;
 }
 
 .gcc-days {
   font-family: var(--font-main);
-  font-size: 1.95rem;
+  font-size: 1.85rem;
   font-weight: 800;
   color: #ffffff;
-  line-height: 1.05;
-  margin: 3px 0 1px 0;
+  line-height: 1;
+  margin: 4px 0 6px 0;
   letter-spacing: -0.5px;
 }
 
 .gcc-sub {
   font-family: var(--font-main);
-  font-size: 0.64rem;
+  font-size: 0.65rem;
   color: #94a3b8;
   font-weight: 700;
   letter-spacing: 0.8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  line-height: 1.15;
+  line-height: 1.2;
+  margin-bottom: 5px;
 }
 
 .gcc-percent {
   font-family: var(--font-main);
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: #00e676;
-  margin-top: 3px;
   line-height: 1;
+  margin-top: 1px;
 }
 
 /* Right Clean 3-Point Checklist */
