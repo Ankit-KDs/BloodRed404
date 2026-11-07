@@ -841,8 +841,8 @@ body.donor-profile-body {
 
 .body-scanner-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 310px 1fr;
+  gap: 1.75rem;
   align-items: center;
   flex: 1;
 }
@@ -858,7 +858,7 @@ body.donor-profile-body {
 .scanner-visual-col {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
   position: relative;
 }
 
@@ -867,10 +867,10 @@ body.donor-profile-body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 320px;
-  width: 68px;
+  height: 340px;
+  width: 72px;
   box-sizing: border-box;
-  padding: 8px 0;
+  padding: 10px 0;
   flex-shrink: 0;
 }
 
@@ -904,9 +904,9 @@ body.donor-profile-body {
 }
 
 .psr-line {
-  width: 12px;
+  width: 14px;
   height: 1.5px;
-  background: rgba(56, 189, 248, 0.7);
+  background: rgba(56, 189, 248, 0.75);
   box-shadow: 0 0 6px rgba(56, 189, 248, 0.55);
   flex-shrink: 0;
 }
@@ -915,27 +915,29 @@ body.donor-profile-body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 13px;
+  gap: 14px;
 }
 
 .psr-tick-minor {
-  width: 5px;
+  width: 6px;
   height: 1px;
   background: rgba(56, 189, 248, 0.35);
   margin-right: 0;
 }
 
 /* ==================== 2. BIOMETRIC CRYO-POD CONTAINER (3D GLASS OPTICS) ==================== */
+.cryo-pod,
 .cryo-pod-container {
-  width: 200px;
-  height: 320px;
+  width: 220px;
+  height: 340px;
   position: relative;
-  border-radius: 24px;
-  background: linear-gradient(180deg, #07151e 0%, #030a0e 100%);
-  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  border-radius: 26px;
+  background: radial-gradient(circle at 50% 25%, #0c2635 0%, #06151f 55%, #02070b 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.45);
   box-shadow: 
-    inset 0 0 25px rgba(56, 189, 248, 0.18), 
-    0 10px 30px rgba(0, 0, 0, 0.6);
+    inset 0 0 30px rgba(56, 189, 248, 0.16), 
+    inset 0 2px 4px rgba(255, 255, 255, 0.28), 
+    0 16px 40px rgba(0, 0, 0, 0.7);
   overflow: hidden;
   box-sizing: border-box;
   display: flex;
@@ -944,12 +946,13 @@ body.donor-profile-body {
 }
 
 /* Diagonal glossy specular glass reflection strip */
+.cryo-pod::before,
 .cryo-pod-container::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 24px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 40%);
+  border-radius: 26px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 35%, transparent 55%);
   pointer-events: none;
   z-index: 10;
 }
@@ -957,22 +960,22 @@ body.donor-profile-body {
 /* 3D Perspective Chamber Depth Lines & Ambient Lamps */
 .pod-ceiling-lamp {
   position: absolute;
-  top: 10px;
-  left: 36px;
-  right: 36px;
+  top: 12px;
+  left: 45px;
+  right: 45px;
   height: 3.5px;
   border-radius: 2px;
   background: #38bdf8;
-  box-shadow: 0 0 16px 3px rgba(56, 189, 248, 0.9), 0 2px 8px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 18px 4px rgba(56, 189, 248, 0.95), 0 2px 8px rgba(56, 189, 248, 0.7);
   z-index: 2;
   pointer-events: none;
 }
 
 .pod-floor-lamp {
   position: absolute;
-  bottom: 10px;
-  left: 36px;
-  right: 36px;
+  bottom: 12px;
+  left: 45px;
+  right: 45px;
   height: 3px;
   border-radius: 2px;
   background: rgba(56, 189, 248, 0.6);
@@ -981,29 +984,13 @@ body.donor-profile-body {
   pointer-events: none;
 }
 
-.pod-perspective-box {
+.pod-perspective-svg {
   position: absolute;
-  top: 16px;
-  bottom: 16px;
-  left: 14px;
-  right: 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(56, 189, 248, 0.16);
-  box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.08);
+  inset: 0;
+  width: 220px;
+  height: 340px;
   pointer-events: none;
   z-index: 1;
-}
-
-.pod-perspective-box::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  bottom: 16px;
-  left: 14px;
-  right: 14px;
-  border-radius: 12px;
-  border: 1px dashed rgba(56, 189, 248, 0.12);
-  pointer-events: none;
 }
 
 /* ==================== 3. HOLOGRAPHIC CYAN HUMAN BODY ==================== */
@@ -1018,15 +1005,15 @@ body.donor-profile-body {
 }
 
 .hologram-body {
-  width: 200px;
-  height: 320px;
+  width: 220px;
+  height: 340px;
   display: block;
 }
 
 .hologram-contour {
-  stroke: rgba(56, 189, 248, 0.85);
+  stroke: rgba(56, 189, 248, 0.88);
   fill: rgba(56, 189, 248, 0.08);
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
 }
 
 /* ==================== 4. DYNAMIC LIQUID BLOOD COLUMN & FLOWING SINE WAVE ==================== */
@@ -1036,8 +1023,8 @@ body.donor-profile-body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, #991b1b 0%, #450a0a 100%);
-  box-shadow: 0 0 24px rgba(220, 38, 38, 0.35);
+  background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 35%, #450a0a 75%, #250404 100%);
+  box-shadow: 0 0 28px rgba(220, 38, 38, 0.45);
   overflow: hidden;
   transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 4;
@@ -1049,14 +1036,14 @@ body.donor-profile-body {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 200px;
-  height: 320px;
+  width: 220px;
+  height: 340px;
   pointer-events: none;
 }
 
 .submerged-body-svg {
-  width: 200px;
-  height: 320px;
+  width: 220px;
+  height: 340px;
   display: block;
 }
 
@@ -1085,16 +1072,16 @@ body.donor-profile-body {
 
 .wave-crest-line {
   stroke: #f87171;
-  stroke-width: 2.5;
-  filter: drop-shadow(0 0 6px #ef4444);
+  stroke-width: 2.8;
+  filter: drop-shadow(0 0 8px #ef4444);
 }
 
 .pod-rim-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 28px;
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.12);
+  border-radius: 26px;
+  border: 1.5px solid rgba(56, 189, 248, 0.25);
+  box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.12);
   pointer-events: none;
   z-index: 8;
 }

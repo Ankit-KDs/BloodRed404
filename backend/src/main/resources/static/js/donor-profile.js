@@ -372,6 +372,10 @@
             <i class="fas fa-check"></i>
             <span>Not currently on medication</span>
           </div>
+          <div class="stc-check-item">
+            <i class="fas fa-calendar-check"></i>
+            <span>Next Available: <b>Immediate / READY</b></span>
+          </div>
         `;
       }
     } else {
