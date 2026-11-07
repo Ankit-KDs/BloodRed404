@@ -224,14 +224,14 @@
         <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (3D Biometric Cryo-Pod) -->
         <section class="profile-card" id="eligibilityTrackerCard">
           <div class="card-header-row">
-            <h2 class="card-title">Medical Eligibility Tracker (Biometric Cryo-Pod)</h2>
+            <h2 class="card-title">Medical Eligibility Tracker (3D Body Scanner)</h2>
             <span class="card-meta-tag scanner-meta-tag" id="eligibilityMetaTag">
               <i class="fas fa-question-circle"></i> Safety Cooldown
             </span>
           </div>
 
           <div class="body-scanner-layout">
-            <!-- Left: Calibration Scale Ticks + Cryo-Pod Chamber -->
+                        <!-- Left: Calibration Scale Ticks + 3D Glass Cuboid Chamber -->
             <div class="scanner-visual-col">
               <!-- Left Calibration Scale Ruler -->
               <div class="pod-scale-ruler">
@@ -243,6 +243,11 @@
                   <span class="psr-line"></span>
                 </div>
                 <div class="psr-minor-group">
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-med"></span>
                   <span class="psr-tick-minor"></span>
                   <span class="psr-tick-minor"></span>
                   <span class="psr-tick-minor"></span>
@@ -260,6 +265,11 @@
                   <span class="psr-tick-minor"></span>
                   <span class="psr-tick-minor"></span>
                   <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-med"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
                 </div>
                 <div class="psr-tick psr-base">
                   <div class="psr-labels">
@@ -270,40 +280,67 @@
                 </div>
               </div>
 
-                            <!-- High-Tech Biometric Cryo-Pod (220px x 340px) -->
-              <div class="cryo-pod cryo-pod-container" id="cryoPodContainer">
-                <!-- 3D Perspective Chamber Depth Lines & Ambient Lamps -->
-                <div class="pod-ceiling-lamp"></div>
-                <div class="pod-floor-lamp"></div>
-                
-                <!-- 3D Chamber Perspective Depth & Perspective Rays -->
-                <svg class="pod-perspective-svg" viewBox="0 0 220 340" preserveAspectRatio="none">
+              <!-- High-Tech 3D Glass Cuboid Chamber (220px x 350px) -->
+              <div class="cryo-pod cryo-pod-container glass-cuboid" id="cryoPodContainer">
+                <!-- 3D Perspective Lines for Recessed Glass Box -->
+                <svg class="pod-perspective-svg" viewBox="0 0 220 350" preserveAspectRatio="none">
                   <defs>
-                    <linearGradient id="ceilLightBeam" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45"/>
-                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"/>
+                    <linearGradient id="leftGlassTint" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.04"/>
+                    </linearGradient>
+                    <linearGradient id="rightGlassTint" x1="100%" y1="0%" x2="0%" y2="0%">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.04"/>
+                    </linearGradient>
+                    <linearGradient id="ceilBevel" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.4"/>
+                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02"/>
+                    </linearGradient>
+                    <linearGradient id="floorBevel" x1="0%" y1="100%" x2="0%" y2="0%">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.03"/>
                     </linearGradient>
                   </defs>
-                  <!-- Back Wall Panel -->
-                  <rect x="20" y="20" width="180" height="300" rx="14" fill="rgba(8, 28, 42, 0.45)" stroke="rgba(56, 189, 248, 0.22)" stroke-width="1" />
-                  <!-- 3D Perspective Corner Rays -->
-                  <line x1="0" y1="0" x2="20" y2="20" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <line x1="220" y1="0" x2="200" y2="20" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <line x1="0" y1="340" x2="20" y2="320" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <line x1="220" y1="340" x2="200" y2="320" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <!-- Ceiling Beam Reflection -->
-                  <polygon points="0,0 220,0 200,20 20,20" fill="url(#ceilLightBeam)" />
-                  <!-- Floor Plate Ground Glow -->
-                  <ellipse cx="110" cy="324" rx="70" ry="8" fill="rgba(56, 189, 248, 0.2)" />
+
+                  <!-- 3D Recessed Back Wall Panel -->
+                  <rect x="22" y="20" width="176" height="310" rx="8" fill="#040b12" stroke="rgba(56, 189, 248, 0.28)" stroke-width="1.2" />
+
+                  <!-- 3D Perspective Corner Seams (Connecting Front Face to Back Face) -->
+                  <line x1="0" y1="0" x2="22" y2="20" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
+                  <line x1="220" y1="0" x2="198" y2="20" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
+                  <line x1="0" y1="350" x2="22" y2="330" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
+                  <line x1="220" y1="350" x2="198" y2="330" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
+
+                  <!-- Left Glass Side Wall -->
+                  <polygon points="0,0 22,20 22,330 0,350" fill="url(#leftGlassTint)" />
+                  <line x1="6" y1="4" x2="6" y2="346" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1" />
+
+                  <!-- Right Glass Side Wall -->
+                  <polygon points="220,0 198,20 198,330 220,350" fill="url(#rightGlassTint)" />
+                  <line x1="214" y1="4" x2="214" y2="346" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1" />
+
+                  <!-- Ceiling Glass Bevel -->
+                  <polygon points="0,0 220,0 198,20 22,20" fill="url(#ceilBevel)" />
+
+                  <!-- Floor Plate Glass Bevel & Ground Glow -->
+                  <polygon points="0,350 220,350 198,330 22,330" fill="url(#floorBevel)" />
+                  <ellipse cx="110" cy="334" rx="72" ry="7" fill="rgba(56, 189, 248, 0.22)" />
                 </svg>
+
+                <!-- 3D Perspective Lamps -->
+                <div class="pod-ceiling-lamp"></div>
+                <div class="pod-floor-lamp"></div>
 
                 <!-- Layer 1: Base Cyan Holographic Muscular Male Mannequin -->
                 <div class="pod-body-layer">
-                  <svg class="hologram-body" viewBox="0 0 220 340" preserveAspectRatio="xMidYMid meet">
+                  <svg class="hologram-body" viewBox="0 0 220 350" preserveAspectRatio="xMidYMid meet">
                     <defs>
-                      <pattern id="cyanWireframeGrid" width="4" height="4" patternUnits="userSpaceOnUse">
-                        <circle cx="2" cy="2" r="0.6" fill="rgba(56, 189, 248, 0.7)" />
-                        <path d="M 4 0 L 0 0 0 4" fill="none" stroke="rgba(56, 189, 248, 0.22)" stroke-width="0.4" />
+                      <!-- 3D Triangular Polygonal Wireframe Mesh Pattern -->
+                      <pattern id="cyanPolyMesh" width="6" height="6" patternUnits="userSpaceOnUse">
+                        <path d="M 0 0 L 6 0 L 6 6 L 0 6 Z M 0 0 L 6 6" fill="none" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.5" />
+                        <circle cx="0" cy="0" r="0.6" fill="rgba(56, 189, 248, 0.7)" />
+                        <circle cx="6" cy="6" r="0.6" fill="rgba(56, 189, 248, 0.7)" />
                       </pattern>
 
                       <clipPath id="cyanMannequinClip">
@@ -311,7 +348,7 @@
                       </clipPath>
 
                       <linearGradient id="body3DShadingCyan" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.32"/>
+                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
                         <stop offset="35%" stop-color="#0284c7" stop-opacity="0.22"/>
                         <stop offset="70%" stop-color="#0369a1" stop-opacity="0.14"/>
                         <stop offset="100%" stop-color="#082f49" stop-opacity="0.06"/>
@@ -328,8 +365,8 @@
                     <!-- Semi-Transparent 3D Volumetric Fill -->
                     <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" fill="url(#body3DShadingCyan)" />
 
-                    <!-- Cyan Holographic Wireframe Dot-Matrix Grid inside Silhouette -->
-                    <rect x="30" y="20" width="160" height="310" fill="url(#cyanWireframeGrid)" clip-path="url(#cyanMannequinClip)" opacity="0.9" />
+                    <!-- 3D Polygonal Wireframe Mesh inside Silhouette -->
+                    <rect x="30" y="20" width="160" height="320" fill="url(#cyanPolyMesh)" clip-path="url(#cyanMannequinClip)" opacity="0.9" />
 
                     <!-- High-Fidelity 3D Muscular Anatomy Contours -->
                     <g clip-path="url(#cyanMannequinClip)">
@@ -400,7 +437,7 @@
                     <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" 
                           fill="none" 
                           stroke="url(#bodyCyanRim)" 
-                          stroke-width="1.4" 
+                          stroke-width="1.5" 
                           class="hologram-contour" />
                   </svg>
                 </div>
@@ -409,7 +446,7 @@
                 <div class="blood-liquid-column" id="bloodLiquidColumn" style="height: 100%;">
                   <!-- Submerged Body Silhouette (Pinned to Bottom) -->
                   <div class="submerged-body-wrap">
-                    <svg class="submerged-body-svg" viewBox="0 0 220 340" preserveAspectRatio="xMidYMid meet">
+                    <svg class="submerged-body-svg" viewBox="0 0 220 350" preserveAspectRatio="xMidYMid meet">
                       <defs>
                         <clipPath id="submergedClip">
                           <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" />
@@ -417,7 +454,7 @@
                       </defs>
 
                       <!-- Dark Ruby Submerged Silhouette -->
-                      <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" fill="rgba(28, 3, 8, 0.88)" stroke="rgba(244, 63, 94, 0.4)" stroke-width="1.4" />
+                      <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" fill="rgba(26, 3, 7, 0.92)" stroke="rgba(244, 63, 94, 0.45)" stroke-width="1.4" />
 
                       <!-- Submerged Body Interior Shading -->
                       <g clip-path="url(#submergedClip)">
@@ -441,13 +478,13 @@
                             fill="none" 
                             stroke="#fda4af" 
                             stroke-width="5" 
-                            opacity="0.4" 
+                            opacity="0.38" 
                             style="filter: blur(2px);" />
                       <!-- Crisp Radiant Wave Crest Line -->
                       <path d="M 0,16 Q 55,6 110,16 T 220,16 T 330,16 T 440,16" 
                             fill="none" 
                             stroke="#fb7185" 
-                            stroke-width="2.5" 
+                            stroke-width="2.6" 
                             class="wave-crest-line" />
                     </svg>
                   </div>
