@@ -295,8 +295,6 @@
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
   function renderMedicalEligibilityTracker() {
-    const liveWave = document.getElementById('liveWaveRipple');
-    const bloodColumn = document.getElementById('bloodLiquidColumn');
     const daysVal = document.getElementById('scannerDaysVal');
     const daysLbl = document.getElementById('scannerDaysLbl');
     const recoveredVal = document.getElementById('scannerRecoveredVal');
@@ -348,13 +346,6 @@
 
     if (isEligible) {
       // State 1: 100% Eligible (Pre-Donation or Cooldown Completed)
-      if (liveWave) {
-        liveWave.style.top = '50%'; // Aligns with reference image's wave position
-      }
-      if (bloodColumn) {
-        bloodColumn.style.height = '100%';
-      }
-
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-ready';
         metaTag.innerHTML = `<i class="fas fa-check-circle"></i> Safety Cooldown`;
@@ -406,14 +397,6 @@
       }
     } else {
       // State 2: Cooldown Active (Fluid rises day by day from 0% to 100% post-donation)
-      const waveTopPercent = Math.max(15, Math.min(90, 100 - percentage));
-      if (liveWave) {
-        liveWave.style.top = `${waveTopPercent}%`;
-      }
-      if (bloodColumn) {
-        bloodColumn.style.height = `${percentage}%`;
-      }
-
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-cooldown';
         metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Safety Cooldown`;

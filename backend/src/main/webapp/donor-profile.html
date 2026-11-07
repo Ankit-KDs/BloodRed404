@@ -15,8 +15,8 @@
 
   <!-- Core Profile CSS -->
   <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_cuboid_v3">
-  <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_clean_v4">
+    <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
     .body-scanner-layout {
       display: grid !important;
@@ -35,17 +35,23 @@
       justify-content: center !important;
       align-items: center !important;
       position: relative !important;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
     }
     .biometric-cuboid-display {
       position: relative !important;
       width: 320px !important;
       height: 350px !important;
-      border-radius: 16px !important;
-      overflow: hidden !important;
-      background: #03080e !important;
-      border: 2px solid rgba(56, 189, 248, 0.45) !important;
-      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2), inset 0 0 30px rgba(56, 189, 248, 0.15), 0 16px 36px rgba(0, 0, 0, 0.75) !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
       box-sizing: border-box !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
     .cuboid-base-img {
       width: 100% !important;
@@ -53,39 +59,10 @@
       object-fit: contain !important;
       display: block !important;
       pointer-events: none !important;
-    }
-    .live-wave-ripple {
-      position: absolute !important;
-      left: 28% !important;
-      width: 72% !important;
-      height: 24px !important;
-      transform: translateY(-50%) !important;
-      pointer-events: none !important;
-      overflow: hidden !important;
-      z-index: 5 !important;
-      transition: top 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-    .ripple-wave-svg {
-      width: 200% !important;
-      height: 100% !important;
-      animation: waveScroll 4s linear infinite !important;
-    }
-    @keyframes waveScroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .ripple-crest {
-      stroke: #fb7185 !important;
-      stroke-width: 2.6 !important;
-      filter: drop-shadow(0 0 8px #f43f5e) !important;
-    }
-    .cuboid-specular-sheen {
-      position: absolute !important;
-      inset: 0 !important;
-      border-radius: 16px !important;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 35%, transparent 55%) !important;
-      pointer-events: none !important;
-      z-index: 8 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.75)) !important;
     }
   </style>
 </head>
@@ -303,7 +280,7 @@
           </div>
 
           <div class="body-scanner-layout">
-                                    <!-- Left: 3D Biometric Glass Cuboid Body Scanner (Photorealistic 3D Cuboid & Mannequin) -->
+                                                <!-- Left: 3D Biometric Glass Cuboid Body Scanner -->
             <div class="scanner-visual-col">
               <div class="biometric-cuboid-display" id="cryoPodContainer">
                 <!-- Base Photorealistic 3D Glass Cuboid & Athletic Mannequin Render -->
@@ -311,28 +288,6 @@
                      alt="3D Biometric Human Body Scanner" 
                      class="cuboid-base-img" 
                      id="cuboidBaseImg" />
-
-                <!-- Dynamic Fluid Meniscus Wave Layer -->
-                <div class="live-wave-ripple" id="liveWaveRipple" style="top: 50%;">
-                  <svg class="ripple-wave-svg" viewBox="0 0 440 24" preserveAspectRatio="none">
-                    <!-- Soft Meniscus Ambient Glow -->
-                    <path d="M 0,12 Q 55,2 110,12 T 220,12 T 330,12 T 440,12" 
-                          fill="none" 
-                          stroke="#fda4af" 
-                          stroke-width="5" 
-                          opacity="0.45" 
-                          style="filter: blur(2px);" />
-                    <!-- Crisp Radiant Meniscus Crest -->
-                    <path d="M 0,12 Q 55,2 110,12 T 220,12 T 330,12 T 440,12" 
-                          fill="none" 
-                          stroke="#fb7185" 
-                          stroke-width="2.6" 
-                          class="ripple-crest" />
-                  </svg>
-                </div>
-
-                <!-- Glass Front Face Specular Reflection Sheen -->
-                <div class="cuboid-specular-sheen"></div>
               </div>
             </div>
 
@@ -421,6 +376,6 @@
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
-  <script src="js/donor-profile.js?v=20261108_cuboid_v3"></script>
+  <script src="js/donor-profile.js?v=20261108_clean_v4"></script>
 </body>
 </html>
