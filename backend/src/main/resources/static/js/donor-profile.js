@@ -341,7 +341,7 @@
       }
 
       if (recoveredVal) {
-        recoveredVal.textContent = '100% RESTORED • ELIGIBLE TO DONATE';
+        recoveredVal.textContent = '100% RESTORED • READY';
         recoveredVal.style.color = '#f8fafc';
       }
 
