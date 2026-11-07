@@ -404,7 +404,74 @@
     `;
   }
 
-  // ======================== 8. REAL INTERACTIVE LEAFLET RADAR MAP ========================
+  // ======================== 8. REAL ACCURATE GOOGLE MAPS RADAR ENGINE ========================
+  const MAP_LAYERS = {
+    'google-dark': {
+      name: 'Google Dark',
+      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: true
+    },
+    'google-roads': {
+      name: 'Google Roads',
+      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: false
+    },
+    'google-hybrid': {
+      name: 'Google Satellite',
+      url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: false
+    },
+    'osm': {
+      name: 'OpenStreetMap',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c'],
+      maxZoom: 19,
+      darkFilter: false
+    }
+  };
+
+  let currentTileLayer = null;
+  let activeLayerKey = localStorage.getItem('red404_map_layer') || 'google-dark';
+
+  function setRadarMapLayer(layerKey) {
+    if (!leafletMap) return;
+    const cfg = MAP_LAYERS[layerKey] || MAP_LAYERS['google-dark'];
+    activeLayerKey = layerKey;
+    try {
+      localStorage.setItem('red404_map_layer', layerKey);
+    } catch (_) {}
+
+    if (currentTileLayer) {
+      leafletMap.removeLayer(currentTileLayer);
+    }
+
+    currentTileLayer = L.tileLayer(cfg.url, {
+      maxZoom: cfg.maxZoom,
+      subdomains: cfg.subdomains,
+      attribution: ''
+    }).addTo(leafletMap);
+
+    const mapContainer = document.getElementById('proximityMap');
+    if (mapContainer) {
+      if (cfg.darkFilter) {
+        mapContainer.classList.add('dark-map');
+      } else {
+        mapContainer.classList.remove('dark-map');
+      }
+    }
+
+    // Update button active state
+    document.querySelectorAll('.rlb-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-layer') === layerKey);
+    });
+  }
+
   function initRadarMap() {
     const mapContainer = document.getElementById('proximityMap');
     if (!mapContainer || typeof L === 'undefined') return;
@@ -412,27 +479,54 @@
     try {
       leafletMap = L.map('proximityMap', {
         center: [currentDonor.latitude, currentDonor.longitude],
-        zoom: 12,
+        zoom: 13,
         zoomControl: false,
         attributionControl: false
       });
 
-      // Clean ESRI World Dark Gray tiles (NO API keys required, NO watermarks)
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 16,
-        attribution: ''
-      }).addTo(leafletMap);
+      // Apply initial map layer
+      setRadarMapLayer(activeLayerKey);
+
+      // Layer switch buttons
+      document.querySelectorAll('.rlb-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const layerKey = btn.getAttribute('data-layer');
+          setRadarMapLayer(layerKey);
+        });
+      });
+
+      // Zoom & Recenter controls
+      const zoomInBtn = document.getElementById('radarZoomInBtn');
+      if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          leafletMap.zoomIn();
+        });
+      }
+
+      const zoomOutBtn = document.getElementById('radarZoomOutBtn');
+      if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          leafletMap.zoomOut();
+        });
+      }
+
+      const centerBtn = document.getElementById('radarCenterBtn');
+      if (centerBtn) {
+        centerBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          leafletMap.setView([currentDonor.latitude, currentDonor.longitude], 13);
+        });
+      }
 
       // Clicking anywhere on the map redirects to route navigation
       leafletMap.on('click', () => {
         window.location.href = 'donor-route.html';
       });
 
-      // Also make map container click navigate
       mapContainer.style.cursor = 'pointer';
-      mapContainer.addEventListener('click', () => {
-        window.location.href = 'donor-route.html';
-      });
 
       updateRadarVisualization();
     } catch (e) {
@@ -513,7 +607,8 @@
         radarBadge.style.background = 'var(--green-soft)';
       }
 
-      leafletMap.setView(donorLatLng, 12);
+      const currentZoom = leafletMap.getZoom() || 13;
+      leafletMap.setView(donorLatLng, Math.max(currentZoom, 13));
     }
   }
 

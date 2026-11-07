@@ -36,6 +36,10 @@
       inset: 0;
     }
 
+    #routeMap.dark-map .leaflet-tile {
+      filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(115%) saturate(0.85);
+    }
+
     .nav-hud-overlay {
       position: absolute;
       top: 1.5rem;
@@ -213,7 +217,7 @@
 
     <!-- CENTER NAVIGATION MAP -->
     <main class="nav-map-container">
-      <div id="routeMap"></div>
+      <div id="routeMap" class="dark-map"></div>
 
       <!-- Turn-by-turn Navigation HUD -->
       <div class="nav-hud-overlay">
@@ -314,9 +318,13 @@
       const gMapBtn = document.getElementById('openGoogleMapsBtn');
       if (gMapBtn) gMapBtn.href = googleMapsUrl;
 
-      // Initialize route map with clean ESRI Dark Gray (NO API key required, NO watermark)
-      map = L.map('routeMap', { center: [donorLat, donorLng], zoom: 13, zoomControl: false });
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(map);
+      // Initialize route map with accurate Google Maps
+      map = L.map('routeMap', { center: [donorLat, donorLng], zoom: 14, zoomControl: true });
+      L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: ''
+      }).addTo(map);
 
       // Donor pin
       L.circleMarker([donorLat, donorLng], {

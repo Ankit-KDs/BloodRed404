@@ -152,13 +152,35 @@
     <!-- RIGHT SIDE PANEL (LIVE PROXIMITY RADAR MAP) -->
     <aside class="hub-radar-panel">
       <div class="radar-panel-header">
-        <span class="rph-title">LIVE RADAR PROXIMITY MAP</span>
+        <div>
+          <span class="rph-title">LIVE RADAR PROXIMITY MAP</span>
+          <div class="rph-sub">Real-Time Google Maps Engine</div>
+        </div>
         <span class="rph-badge" id="radarActiveBadge">RADAR SCANNING: 0 ACTIVE ALERTS</span>
       </div>
 
+      <!-- Map Layer Switcher: Google Dark / Roads / Satellite / OSM -->
+      <div class="radar-layer-bar" onclick="event.stopPropagation()">
+        <span class="rlb-label"><i class="fas fa-layer-group"></i> MAP:</span>
+        <div class="rlb-btn-group">
+          <button type="button" class="rlb-btn active" data-layer="google-dark" title="Google Maps - Tactical Night Mode">
+            <i class="fab fa-google"></i> Google Dark
+          </button>
+          <button type="button" class="rlb-btn" data-layer="google-roads" title="Google Maps - Standard Road Map">
+            <i class="fas fa-road"></i> Roads
+          </button>
+          <button type="button" class="rlb-btn" data-layer="google-hybrid" title="Google Maps - Satellite Imagery + Road Overlay">
+            <i class="fas fa-satellite"></i> Satellite
+          </button>
+          <button type="button" class="rlb-btn" data-layer="osm" title="OpenStreetMap - Open Global Road Network">
+            <i class="fas fa-globe-americas"></i> OSM
+          </button>
+        </div>
+      </div>
+
       <div class="radar-map-wrapper" onclick="window.location.href='donor-route.html'" title="Click to open Live Route Navigation" style="cursor:pointer">
-        <!-- Interactive Leaflet Dark Map Container -->
-        <div id="proximityMap"></div>
+        <!-- Interactive Leaflet Map Container -->
+        <div id="proximityMap" class="dark-map"></div>
 
         <!-- Overlaid High-Tech Radar HUD Rings & Scanner -->
         <div class="radar-hud-overlay">
@@ -168,8 +190,17 @@
           <div class="radar-scope-circle rsc-zone2">
             <span class="rsc-zone2-lbl">Zone 2 (5-10km)</span>
           </div>
-          <div class="radar-scope-circle rsc-zone3"></div>
+          <div class="radar-scope-circle rsc-zone3">
+            <span class="rsc-zone3-lbl">Zone 3 (10-20km)</span>
+          </div>
           <div class="radar-scanner-sweep"></div>
+        </div>
+
+        <!-- Interactive Map Controls (Zoom & Recenter) -->
+        <div class="radar-map-controls" onclick="event.stopPropagation()">
+          <button type="button" class="rmc-btn" id="radarZoomInBtn" title="Zoom In"><i class="fas fa-plus"></i></button>
+          <button type="button" class="rmc-btn" id="radarZoomOutBtn" title="Zoom Out"><i class="fas fa-minus"></i></button>
+          <button type="button" class="rmc-btn" id="radarCenterBtn" title="Recenter on My Location"><i class="fas fa-crosshairs"></i></button>
         </div>
 
         <div class="radar-click-hint">
