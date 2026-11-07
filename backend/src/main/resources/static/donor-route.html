@@ -18,14 +18,27 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <!-- Core Dashboard CSS -->
+  <link rel="stylesheet" href="css/common.css" />
   <link rel="stylesheet" href="css/donor-alerts.css">
 
   <style>
     .hub-layout {
       display: grid;
-      grid-template-columns: 240px 1fr 380px;
+      grid-template-columns: 260px 1fr 380px !important;
       flex: 1;
       min-height: calc(100vh - 74px);
+    }
+
+    @media (max-width: 1360px) {
+      .hub-layout {
+        grid-template-columns: 260px 1fr 360px !important;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .hub-layout {
+        grid-template-columns: 260px 1fr 340px !important;
+      }
     }
     .nav-map-container {
       position: relative;
