@@ -1,31 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RED404 • Emergency Route Navigation</title>
-  
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
-  
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RED404 — Emergency Route Navigation</title>
+
+  <!-- Google Fonts & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/donor-alerts.css" />
+
+  <!-- Core Dashboard CSS -->
+  <link rel="stylesheet" href="css/donor-alerts.css">
 
   <style>
-    .route-page-layout {
-      display: grid;
-      grid-template-columns: 240px 1fr 380px;
-      flex: 1;
-      min-height: calc(100vh - 74px);
-    }
-
     .nav-map-container {
       position: relative;
+      flex: 1;
+      height: 100%;
+      min-height: calc(100vh - 74px);
       background: #090c10;
-      min-height: 500px;
       overflow: hidden;
     }
 
@@ -44,21 +42,25 @@
       position: absolute;
       top: 1.5rem;
       left: 1.5rem;
-      z-index: 1000;
-      background: rgba(13, 17, 24, 0.92);
-      border: 1px solid var(--border-glass-bright);
-      backdrop-filter: blur(20px);
+      z-index: 500;
+      background: rgba(13, 17, 24, 0.94);
+      border: 1px solid var(--border-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border-radius: 16px;
-      padding: 1.25rem 1.5rem;
-      max-width: 400px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 25px var(--red-glow-soft);
+      padding: 1.15rem 1.4rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      max-width: 420px;
+      width: calc(100% - 3rem);
     }
 
     .nav-hud-step {
       display: flex;
       align-items: center;
       gap: 1rem;
-      margin-bottom: 0.75rem;
     }
 
     .nhs-arrow {
@@ -72,10 +74,16 @@
       color: #000;
       font-size: 1.35rem;
       font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .nhs-arrow.standby {
+      background: linear-gradient(135deg, #334155, #1e293b);
+      color: #94a3b8;
     }
 
     .nhs-instruction {
-      font-size: 1rem;
+      font-size: 0.98rem;
       font-weight: 700;
       color: #fff;
     }
@@ -83,6 +91,7 @@
     .nhs-sub {
       font-size: 0.78rem;
       color: var(--text-secondary);
+      margin-top: 2px;
     }
 
     .route-sidebar-right {
@@ -93,6 +102,7 @@
       flex-direction: column;
       gap: 1.5rem;
       overflow-y: auto;
+      width: 380px;
     }
 
     .emergency-hosp-box {
@@ -101,6 +111,13 @@
       border-radius: 16px;
       padding: 1.25rem;
       box-shadow: 0 0 25px var(--red-glow-soft);
+      transition: all 0.3s ease;
+    }
+
+    .emergency-hosp-box.standby-box {
+      border-color: var(--border-glass);
+      box-shadow: none;
+      background: rgba(18, 24, 38, 0.6);
     }
 
     .ehb-title {
@@ -109,75 +126,92 @@
       font-weight: 800;
       color: #fff;
       margin-bottom: 0.5rem;
+      letter-spacing: 0.5px;
     }
 
     .ehb-meta-row {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 0.85rem;
-      padding-top: 0.85rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      padding-top: 1rem;
+      margin-top: 1rem;
       border-top: 1px solid var(--border-glass);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
+      text-align: center;
     }
 
     .ehb-meta-val {
       font-family: var(--font-tech);
-      font-weight: 700;
-      color: var(--green-neon);
-      font-size: 1.1rem;
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .btn-disabled {
+      background: #1c2433 !important;
+      color: #64748b !important;
+      border: 1px solid rgba(255, 255, 255, 0.05) !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+      box-shadow: none !important;
     }
 
     @media (max-width: 1024px) {
-      .route-page-layout {
-        grid-template-columns: 1fr;
+      .hub-layout {
+        display: flex;
+        flex-direction: column-reverse;
+      }
+      .route-sidebar-right {
+        width: 100%;
+        border-left: none;
+        border-bottom: 1px solid var(--border-glass);
       }
       .nav-map-container {
-        height: 60vh;
+        min-height: 480px;
       }
     }
   </style>
 </head>
-
 <body class="donor-hub-body">
 
   <!-- TOP HEADER -->
   <header class="hub-header">
     <div class="hub-header-left">
-      <button class="hub-notif-btn hub-mobile-menu-btn" id="mobileMenuBtn" style="display:none;" aria-label="Toggle menu">
+      <button class="hub-mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Navigation">
         <i class="fas fa-bars"></i>
       </button>
 
-      <a href="donor-alerts.html" class="hub-brand">
-        <div class="hub-brand-icon"><i class="fas fa-tint"></i></div>
-        <span class="hub-brand-name">RED404</span>
+      <a href="donor-alerts.html" class="hub-logo-brand" title="RED404 Emergency System">
+        <div class="hub-logo-drop">
+          <i class="fas fa-tint"></i>
+        </div>
+        <div class="hub-logo-text">
+          <span class="hl-red">RED</span><span class="hl-num">404</span>
+        </div>
       </a>
 
-      <div class="hub-title-block">
-        <h1 class="hub-main-title">
-          Live Route Navigation <span>• Priority Emergency Path</span>
-        </h1>
-        <div class="hub-user-greeting">
-          Destination: <b id="destHospitalName">City Civil Hospital</b>
-        </div>
+      <div class="hub-donor-welcome">
+        <span class="hdw-title" id="routeNavHeaderTitle">Navigation Center • Live GPS Route</span>
+        <span class="hdw-sub" id="destHospitalSub">Checking active mission status...</span>
       </div>
     </div>
 
     <div class="hub-header-right">
-      <div class="gps-sync-capsule">
+      <div class="gps-sync-capsule" id="routeGpsCapsule">
         <i class="fas fa-satellite-dish gps-icon-spin"></i>
         <div class="gps-meta">
           <div class="gps-title-row">
-            <span>PRIORITY ROUTE:</span>
+            <span>LIVE GPS LOCK:</span>
             <span class="gps-pulse-dot"></span>
           </div>
-          <div class="gps-coords-txt">Dijkstra Fast-Path Active</div>
+          <div class="gps-coords-txt" id="routeGpsText">ACQUIRING GPS...</div>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- MAIN LAYOUT -->
-  <div class="route-page-layout">
+  <!-- MAIN NAVIGATION LAYOUT -->
+  <div class="hub-layout">
 
     <!-- LEFT SIDEBAR -->
     <aside class="hub-sidebar" id="hubSidebar">
@@ -206,11 +240,11 @@
 
       <div class="hub-sidebar-bottom">
         <div class="hub-engine-status-card">
-          <div class="hes-row">
+          <div class="hes-row" id="sidebarModeRow">
             <span class="hes-dot"></span>
-            <span>Emergency Mode: <b>EN ROUTE</b></span>
+            <span id="sidebarModeText">Navigation: <b>STANDBY</b></span>
           </div>
-          <div class="hes-sub">GPS Trajectory Tracking Active</div>
+          <div class="hes-sub" id="sidebarModeSub">No Active Mission Route</div>
         </div>
       </div>
     </aside>
@@ -220,155 +254,417 @@
       <div id="routeMap" class="dark-map"></div>
 
       <!-- Turn-by-turn Navigation HUD -->
-      <div class="nav-hud-overlay">
+      <div class="nav-hud-overlay" id="navHudOverlay">
         <div class="nav-hud-step">
-          <div class="nhs-arrow"><i class="fas fa-arrow-up"></i></div>
+          <div class="nhs-arrow standby" id="hudArrow">
+            <i class="fas fa-crosshairs" id="hudIcon"></i>
+          </div>
           <div>
-            <div class="nhs-instruction">Head North on Main Hospital Blvd</div>
-            <div class="nhs-sub">In 400m, keep right toward Trauma Center Entrance</div>
+            <div class="nhs-instruction" id="hudInstruction">Standby Mode — No Active Route Locked</div>
+            <div class="nhs-sub" id="hudSubInstruction">You are currently not responding to any hospital SOS request.</div>
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-secondary);padding-top:0.5rem;border-top:1px solid var(--border-glass)">
-          <span>Remaining: <b style="color:#fff" id="hudDistance">3.8 km</b></span>
-          <span>ETA: <b style="color:var(--green-neon)" id="hudEta">12 mins</b></span>
-          <span>Speed: <b style="color:#fff">42 km/h</b></span>
+          <span>Remaining: <b style="color:#fff" id="hudDistance">-- km</b></span>
+          <span>ETA: <b style="color:var(--green-neon)" id="hudEta">-- mins</b></span>
+          <span>Status: <b style="color:#fff" id="hudStatus">Standby</b></span>
         </div>
       </div>
     </main>
 
     <!-- RIGHT EMERGENCY DISPATCH DETAILS -->
     <aside class="route-sidebar-right">
-      <div class="emergency-hosp-box">
+      <div class="emergency-hosp-box standby-box" id="emergencyHospBox">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-          <span class="sos-zone-tag">TARGET DESTINATION</span>
-          <span style="background:var(--red-neon);color:#fff;font-family:var(--font-tech);font-weight:900;padding:2px 8px;border-radius:6px;font-size:0.85rem" id="hospBloodBadge">O-</span>
+          <span class="sos-zone-tag" id="hospZoneBadge">STANDBY MODE</span>
+          <span style="background:var(--border-glass);color:var(--text-secondary);font-family:var(--font-tech);font-weight:900;padding:2px 8px;border-radius:6px;font-size:0.85rem" id="hospBloodBadge">--</span>
         </div>
-        <div class="ehb-title" id="hospDetailName">City Civil Hospital</div>
+        <div class="ehb-title" id="hospDetailName">No Active Route Locked</div>
         <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5" id="hospAddress">
-          Trauma Bay 4 • Critical Hemorrhage Emergency
+          You currently have no emergency dispatch destination assigned. View live incoming alerts to respond.
         </div>
         <div class="ehb-meta-row">
           <div>
             <div style="color:var(--text-muted)">Distance</div>
-            <div class="ehb-meta-val" id="metaDistance">3.8 km</div>
+            <div class="ehb-meta-val" id="metaDistance">-- km</div>
           </div>
           <div>
             <div style="color:var(--text-muted)">Est. Arrival</div>
-            <div class="ehb-meta-val" style="color:#fff" id="metaEta">12 mins</div>
+            <div class="ehb-meta-val" style="color:#fff" id="metaEta">-- mins</div>
           </div>
           <div>
             <div style="color:var(--text-muted)">Blood Units</div>
-            <div class="ehb-meta-val" style="color:var(--red-neon)">2 Units</div>
+            <div class="ehb-meta-val" style="color:var(--red-neon)" id="metaUnits">--</div>
           </div>
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:0.75rem">
-        <a id="openGoogleMapsBtn" target="_blank" class="btn-sos-accept" style="background:#1a73e8;width:100%;justify-content:center;box-shadow:0 4px 20px rgba(26,115,232,0.4);text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
+      <div style="display:flex;flex-direction:column;gap:0.75rem" id="navActionsContainer">
+        <!-- Google Maps Button (State 1: Disabled / State 2: Active) -->
+        <a id="openGoogleMapsBtn" target="_blank" class="btn-sos-accept btn-disabled" style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
           <i class="fab fa-google"></i>
-          <span>Open in Google Maps App ↗</span>
+          <span id="gMapBtnText">Google Maps (Route Inactive)</span>
         </a>
 
-        <button class="btn-sos-accept" style="width:100%;justify-content:center" onclick="confirmArrival()">
-          <i class="fas fa-check-circle"></i>
-          <span>I Have Arrived at Hospital</span>
-        </button>
+        <!-- Dynamic Mission Action Button -->
+        <div id="dynamicMissionActionBtn">
+          <a href="donor-alerts.html" class="btn-sos-accept" style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fas fa-bell"></i>
+            <span>Go to Active Alerts</span>
+          </a>
+        </div>
 
-        <a href="tel:108" class="hub-notif-btn" style="width:100%;height:44px;gap:0.5rem;font-size:0.9rem;text-decoration:none">
+        <a id="callHospitalBtn" href="tel:108" class="hub-notif-btn btn-disabled" style="width:100%;height:44px;gap:0.5rem;font-size:0.9rem;text-decoration:none;">
           <i class="fas fa-phone-alt" style="color:var(--green-neon)"></i>
-          <span>Call Hospital Dispatch</span>
+          <span id="callDispatchText">Call Hospital Dispatch</span>
         </a>
 
         <a href="donor-alerts.html" class="btn-sos-decline" style="text-align:center;text-decoration:none;display:block">
-          Exit Navigation
+          Back to Dashboard
         </a>
       </div>
     </aside>
 
   </div>
 
+  <!-- Mobile Sidebar Overlay Backdrop -->
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);"></div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/common.js"></script>
 
   <script>
     let map = null;
+    let currentMission = null;
+    let donorPin = null;
+    let hospitalPin = null;
+    let routeLine = null;
+    let donorCoords = { lat: 28.3486, lng: 79.5619 };
 
-    document.addEventListener('DOMContentLoaded', () => {
-      let saved = null;
+    document.addEventListener('DOMContentLoaded', async () => {
+      initMobileNav();
+
+      // 1. Check for Active Mission: sessionStorage or API
+      currentMission = checkActiveMission();
+      if (!currentMission) {
+        try {
+          const res = await fetch('/api/donor/current-mission');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              currentMission = json.data;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 2. Fetch Real Geolocation on Load
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            donorCoords.lat = pos.coords.latitude;
+            donorCoords.lng = pos.coords.longitude;
+            updateGpsUI(donorCoords.lat, donorCoords.lng);
+            renderNavigationView();
+          },
+          (err) => {
+            console.warn('Geolocation notice / denied:', err.message);
+            if (currentMission && currentMission.donorLat && currentMission.donorLng) {
+              donorCoords.lat = parseFloat(currentMission.donorLat);
+              donorCoords.lng = parseFloat(currentMission.donorLng);
+            }
+            updateGpsUI(donorCoords.lat, donorCoords.lng);
+            renderNavigationView();
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+      } else {
+        if (currentMission && currentMission.donorLat && currentMission.donorLng) {
+          donorCoords.lat = parseFloat(currentMission.donorLat);
+          donorCoords.lng = parseFloat(currentMission.donorLng);
+        }
+        updateGpsUI(donorCoords.lat, donorCoords.lng);
+        renderNavigationView();
+      }
+    });
+
+    function checkActiveMission() {
       try {
-        saved = JSON.parse(localStorage.getItem('activeEmergencyRoute'));
+        const raw = sessionStorage.getItem('activeMission');
+        if (raw) return JSON.parse(raw);
       } catch (_) {}
+      try {
+        const rawLocal = localStorage.getItem('activeEmergencyRoute');
+        if (rawLocal) return JSON.parse(rawLocal);
+      } catch (_) {}
+      return null;
+    }
 
-      const hospName = saved?.hospitalName || 'City Civil Hospital';
-      const distance = saved?.distanceKm || 3.8;
-      const bloodType = saved?.bloodType || 'O-';
-      const donorLat = saved?.donorLat || 28.3486;
-      const donorLng = saved?.donorLng || 79.5619;
-      const hospLat = saved?.reqLat || (donorLat + 0.024);
-      const hospLng = saved?.reqLng || (donorLng + 0.018);
+    function updateGpsUI(lat, lng) {
+      const txt = document.getElementById('routeGpsText');
+      if (txt) {
+        const latStr = Math.abs(lat).toFixed(4) + (lat >= 0 ? '° N' : '° S');
+        const lngStr = Math.abs(lng).toFixed(4) + (lng >= 0 ? '° E' : '° W');
+        txt.textContent = `CONNECTED (${latStr}, ${lngStr})`;
+      }
+    }
 
-      document.getElementById('destHospitalName').textContent = hospName;
-      document.getElementById('hospDetailName').textContent = hospName;
-      document.getElementById('hospBloodBadge').textContent = bloodType;
-      document.getElementById('hudDistance').textContent = distance + ' km';
-      document.getElementById('metaDistance').textContent = distance + ' km';
+    function renderNavigationView() {
+      // Initialize map instance if not already initialized
+      if (!map) {
+        map = L.map('routeMap', {
+          center: [donorCoords.lat, donorCoords.lng],
+          zoom: 14,
+          zoomControl: true,
+          attributionControl: false
+        });
 
-      // Set Google Maps Navigation deep-link
-      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${donorLat},${donorLng}&destination=${hospLat},${hospLng}&travelmode=driving`;
+        // Accurate Google Maps Road Tiles
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+          maxZoom: 20,
+          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+          attribution: ''
+        }).addTo(map);
+      }
+
+      const hasActiveMission = Boolean(
+        currentMission &&
+        (currentMission.hospitalLat || currentMission.latitude || currentMission.reqLat) &&
+        (currentMission.hospitalLng || currentMission.longitude || currentMission.reqLng)
+      );
+
+      if (!hasActiveMission) {
+        renderStandbyMode();
+      } else {
+        renderActiveMissionRoute();
+      }
+    }
+
+    // ======================== STATE 1: NO ACTIVE MISSION (STANDBY MODE) ========================
+    function renderStandbyMode() {
+      // Center exclusively on donor's position
+      map.setView([donorCoords.lat, donorCoords.lng], 14);
+
+      // Plot only the donor's pin
+      if (donorPin) map.removeLayer(donorPin);
+      if (hospitalPin) { map.removeLayer(hospitalPin); hospitalPin = null; }
+      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+
+      donorPin = L.circleMarker([donorCoords.lat, donorCoords.lng], {
+        radius: 10,
+        color: '#fff',
+        fillColor: '#00e676',
+        fillOpacity: 1,
+        weight: 3
+      }).addTo(map).bindPopup('<b>Your Current Location</b><br>Standby — No Active Emergency Mission').openPopup();
+
+      // Header
+      document.getElementById('destHospitalSub').textContent = 'Standby Mode: Radar scanning for nearby hospital requests';
+
+      // Turn-by-turn HUD
+      document.getElementById('hudArrow').className = 'nhs-arrow standby';
+      document.getElementById('hudIcon').className = 'fas fa-crosshairs';
+      document.getElementById('hudInstruction').textContent = 'Standby Mode — No Active Route Locked';
+      document.getElementById('hudSubInstruction').textContent = 'You are currently not responding to any hospital SOS request.';
+      document.getElementById('hudDistance').textContent = '-- km';
+      document.getElementById('hudEta').textContent = '-- mins';
+      document.getElementById('hudStatus').textContent = 'Standby';
+
+      // Right-hand HUD Box
+      const box = document.getElementById('emergencyHospBox');
+      box.className = 'emergency-hosp-box standby-box';
+      document.getElementById('hospZoneBadge').textContent = 'STANDBY MODE';
+      document.getElementById('hospBloodBadge').textContent = '--';
+      document.getElementById('hospBloodBadge').style.background = 'var(--border-glass)';
+      document.getElementById('hospBloodBadge').style.color = 'var(--text-secondary)';
+      document.getElementById('hospDetailName').textContent = 'No Active Route Locked';
+      document.getElementById('hospAddress').textContent = 'You currently have no emergency dispatch destination assigned. View live incoming alerts to respond.';
+      document.getElementById('metaDistance').textContent = '-- km';
+      document.getElementById('metaEta').textContent = '-- mins';
+      document.getElementById('metaUnits').textContent = '--';
+
+      // Sidebar Status
+      document.getElementById('sidebarModeText').innerHTML = 'Navigation: <b>STANDBY</b>';
+      document.getElementById('sidebarModeSub').textContent = 'No Active Mission Route';
+
+      // Google Maps button disabled
       const gMapBtn = document.getElementById('openGoogleMapsBtn');
-      if (gMapBtn) gMapBtn.href = googleMapsUrl;
+      gMapBtn.className = 'btn-sos-accept btn-disabled';
+      gMapBtn.removeAttribute('href');
+      document.getElementById('gMapBtnText').textContent = 'Google Maps (Route Inactive)';
 
-      // Initialize route map with accurate Google Maps
-      map = L.map('routeMap', { center: [donorLat, donorLng], zoom: 14, zoomControl: true });
-      L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        maxZoom: 20,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-        attribution: ''
-      }).addTo(map);
+      // Action button: Go to Active Alerts
+      document.getElementById('dynamicMissionActionBtn').innerHTML = `
+        <a href="donor-alerts.html" class="btn-sos-accept" style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
+          <i class="fas fa-bell"></i>
+          <span>Go to Active Alerts</span>
+        </a>
+      `;
 
-      // Donor pin
-      L.circleMarker([donorLat, donorLng], {
+      // Call button disabled
+      const callBtn = document.getElementById('callHospitalBtn');
+      callBtn.className = 'hub-notif-btn btn-disabled';
+      callBtn.removeAttribute('href');
+    }
+
+    // ======================== STATE 2: ACTIVE MISSION (REAL ROUTE LOADED) ========================
+    function renderActiveMissionRoute() {
+      const hospName = currentMission.hospitalName || currentMission.hospital_name || 'Emergency Medical Center';
+      const hospLat = parseFloat(currentMission.hospitalLat || currentMission.latitude || currentMission.reqLat);
+      const hospLng = parseFloat(currentMission.hospitalLng || currentMission.longitude || currentMission.reqLng);
+      const bloodType = currentMission.bloodGroup || currentMission.bloodType || 'O-';
+      const distance = currentMission.distanceKm || '3.5';
+      const eta = currentMission.etaMinutes || '12';
+      const address = currentMission.address || currentMission.city || 'Emergency Trauma Bay';
+      const phone = currentMission.phone || currentMission.hospitalPhone || currentMission.hospital_phone || '+91 108';
+      const units = currentMission.unitsRequested || currentMission.units || 1;
+
+      // Header
+      document.getElementById('destHospitalSub').textContent = `En Route to ${hospName} • Emergency Dispatch`;
+
+      // Clear previous layers
+      if (donorPin) map.removeLayer(donorPin);
+      if (hospitalPin) map.removeLayer(hospitalPin);
+      if (routeLine) map.removeLayer(routeLine);
+
+      // Plot Donor Marker
+      donorPin = L.circleMarker([donorCoords.lat, donorCoords.lng], {
         radius: 9,
         color: '#fff',
         fillColor: '#00e676',
         fillOpacity: 1,
         weight: 3
-      }).addTo(map).bindPopup('Your Current GPS Position').openPopup();
+      }).addTo(map).bindPopup('<b>Your Live Location</b><br>Responding Donor').openPopup();
 
-      // Hospital pin
-      L.circleMarker([hospLat, hospLng], {
+      // Plot Hospital Marker
+      hospitalPin = L.circleMarker([hospLat, hospLng], {
         radius: 12,
         color: '#fff',
         fillColor: '#ff2a44',
         fillOpacity: 1,
         weight: 3
-      }).addTo(map).bindPopup('<b>' + hospName + '</b><br>Emergency Blood Target');
+      }).addTo(map).bindPopup(`<b>${escapeHtml(hospName)}</b><br>${escapeHtml(address)}`);
 
-      // Polyline route
-      const latlngs = [
-        [donorLat, donorLng],
-        [donorLat + (hospLat - donorLat)*0.4, donorLng + (hospLng - donorLng)*0.1],
-        [donorLat + (hospLat - donorLat)*0.6, donorLng + (hospLng - donorLng)*0.8],
-        [hospLat, hospLng]
-      ];
-      L.polyline(latlngs, { color: '#00e676', weight: 5, opacity: 0.9 }).addTo(map);
-      map.fitBounds(L.latLngBounds([donorLat, donorLng], [hospLat, hospLng]), { padding: [80, 80] });
-    });
+      // Plot Connecting Route Line
+      routeLine = L.polyline([[donorCoords.lat, donorCoords.lng], [hospLat, hospLng]], {
+        color: '#00e676',
+        weight: 5,
+        opacity: 0.9,
+        dashArray: '8, 8'
+      }).addTo(map);
 
-    function confirmArrival() {
+      // Fit map bounds to show full route
+      map.fitBounds(L.latLngBounds([donorCoords.lat, donorCoords.lng], [hospLat, hospLng]), {
+        padding: [80, 80]
+      });
+
+      // Turn-by-turn HUD
+      document.getElementById('hudArrow').className = 'nhs-arrow';
+      document.getElementById('hudIcon').className = 'fas fa-arrow-up';
+      document.getElementById('hudInstruction').textContent = `Proceed to ${hospName}`;
+      document.getElementById('hudSubInstruction').textContent = `Fast-track emergency dispatch route • ${address}`;
+      document.getElementById('hudDistance').textContent = `${distance} km`;
+      document.getElementById('hudEta').textContent = `${eta} mins`;
+      document.getElementById('hudStatus').textContent = 'En Route';
+
+      // Right-hand HUD Box
+      const box = document.getElementById('emergencyHospBox');
+      box.className = 'emergency-hosp-box';
+      document.getElementById('hospZoneBadge').textContent = 'TARGET DESTINATION';
+      document.getElementById('hospBloodBadge').textContent = bloodType;
+      document.getElementById('hospBloodBadge').style.background = 'var(--red-neon)';
+      document.getElementById('hospBloodBadge').style.color = '#fff';
+      document.getElementById('hospDetailName').textContent = hospName;
+      document.getElementById('hospAddress').textContent = address;
+      document.getElementById('metaDistance').textContent = `${distance} km`;
+      document.getElementById('metaEta').textContent = `${eta} mins`;
+      document.getElementById('metaUnits').textContent = `${units} Units`;
+
+      // Sidebar Status
+      document.getElementById('sidebarModeText').innerHTML = 'Emergency Mode: <b>EN ROUTE</b>';
+      document.getElementById('sidebarModeSub').textContent = `Target: ${hospName}`;
+
+      // Dynamically build real Google Maps driving navigation URL
+      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${donorCoords.lat},${donorCoords.lng}&destination=${hospLat},${hospLng}&travelmode=driving`;
+      const gMapBtn = document.getElementById('openGoogleMapsBtn');
+      gMapBtn.className = 'btn-sos-accept';
+      gMapBtn.style.background = '#1a73e8';
+      gMapBtn.style.boxShadow = '0 4px 20px rgba(26,115,232,0.4)';
+      gMapBtn.href = googleMapsUrl;
+      document.getElementById('gMapBtnText').textContent = 'Open in Google Maps App ↗';
+
+      // Action button: Mark as Arrived / Completed
+      document.getElementById('dynamicMissionActionBtn').innerHTML = `
+        <button class="btn-sos-accept" style="width:100%;justify-content:center" onclick="completeMission()">
+          <i class="fas fa-check-circle"></i>
+          <span>Mark as Arrived / Completed</span>
+        </button>
+      `;
+
+      // Call button active
+      const callBtn = document.getElementById('callHospitalBtn');
+      callBtn.className = 'hub-notif-btn';
+      callBtn.href = `tel:${phone}`;
+      document.getElementById('callDispatchText').textContent = `Call ${hospName}`;
+    }
+
+    // ======================== MARK MISSION COMPLETED ========================
+    async function completeMission() {
+      const requestId = currentMission?.requestId || currentMission?.id;
+
+      try {
+        await fetch('/api/donor/complete-mission', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestId })
+        });
+      } catch (err) {
+        console.warn('complete-mission notice:', err);
+      }
+
+      // Clear session storage as explicitly required
+      sessionStorage.removeItem('activeMission');
+      localStorage.removeItem('activeEmergencyRoute');
+
       if (typeof showAppAlert === 'function') {
         showAppAlert({
-          title: 'Arrival Confirmed',
+          title: 'Arrival Confirmed!',
           message: 'Thank you for responding to this emergency alert! Hospital staff have been notified of your arrival.',
           type: 'success'
         });
-        setTimeout(() => { window.location.href = 'donor-alerts.html'; }, 2200);
-      } else {
-        alert('Arrival confirmed! Hospital staff have been notified.');
-        window.location.href = 'donor-alerts.html';
       }
+
+      setTimeout(() => {
+        window.location.href = 'donor-profile.html';
+      }, 1200);
+    }
+
+    function initMobileNav() {
+      const mobileBtn = document.getElementById('mobileMenuBtn');
+      const sidebar = document.getElementById('hubSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (!mobileBtn || !sidebar || !overlay) return;
+
+      mobileBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('mobile-open');
+        overlay.style.display = sidebar.classList.contains('mobile-open') ? 'block' : 'none';
+      });
+
+      overlay.addEventListener('click', () => {
+        sidebar.classList.remove('mobile-open');
+        overlay.style.display = 'none';
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
   </script>
 </body>
 </html>
-

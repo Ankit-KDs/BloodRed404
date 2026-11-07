@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.red404.dao.BloodRequestDao;
 import com.red404.dao.DonorDao;
 import com.red404.model.ApiResponse;
+import com.red404.util.DistanceCalculator;
 import com.red404.util.JsonUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -118,6 +119,110 @@ public class DonorController {
             Double lat = asDouble(donor.get("latitude"));
             Double lng = asDouble(donor.get("longitude"));
             return ok("Requests loaded", requestDao.listForDonor(lat, lng));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping({"/alerts", "/active-alerts"})
+    public ResponseEntity<ApiResponse> getAlerts(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) String bloodGroup,
+            HttpServletRequest request) {
+        try {
+            if (lat == null || lng == null) {
+                Map<String, Object> donor = requireDonor(request);
+                if (donor != null) {
+                    if (lat == null) lat = asDouble(donor.get("latitude"));
+                    if (lng == null) lng = asDouble(donor.get("longitude"));
+                    if (bloodGroup == null || bloodGroup.isBlank()) {
+                        bloodGroup = (String) donor.get("bloodType");
+                    }
+                }
+            }
+            List<Map<String, Object>> allRequests = requestDao.listActive();
+            List<Map<String, Object>> result = new ArrayList<>();
+
+            for (Map<String, Object> req : allRequests) {
+                Double reqLat = asDouble(req.get("latitude"));
+                Double reqLng = asDouble(req.get("longitude"));
+
+                double dist = 0.0;
+                int eta = 15;
+                String zone = "Zone 1 (0-5km)";
+
+                if (lat != null && lng != null && reqLat != null && reqLng != null) {
+                    dist = DistanceCalculator.calculateDistance(lat, lng, reqLat, reqLng);
+                    eta = DistanceCalculator.getEstimatedTravelTime(dist, "DRIVING");
+                    if (dist <= 5.0) {
+                        zone = "Zone 1 (0-5km)";
+                    } else if (dist <= 10.0) {
+                        zone = "Zone 2 (5-10km)";
+                    } else {
+                        zone = "Zone 3 (10-20km)";
+                    }
+                }
+
+                req.put("distanceKm", dist);
+                req.put("etaMinutes", Math.max(eta, 5));
+                req.put("zone", zone);
+
+                String urgency = (String) req.getOrDefault("urgencyLevel", "HIGH");
+                int neededWithin = 45;
+                if ("CRITICAL".equalsIgnoreCase(urgency)) neededWithin = 20;
+                else if ("HIGH".equalsIgnoreCase(urgency)) neededWithin = 35;
+                else if ("URGENT".equalsIgnoreCase(urgency)) neededWithin = 45;
+                else neededWithin = 90;
+                req.put("neededWithinMinutes", neededWithin);
+
+                // Filter by blood compatibility if bloodGroup specified
+                String reqBlood = (String) req.get("bloodType");
+                if (bloodGroup != null && !bloodGroup.isBlank()) {
+                    if (DistanceCalculator.isCompatibleBloodType(bloodGroup, reqBlood) || bloodGroup.equalsIgnoreCase(reqBlood)) {
+                        result.add(req);
+                    }
+                } else {
+                    result.add(req);
+                }
+            }
+
+            // Sort by distance ascending
+            result.sort((a, b) -> Double.compare((Double) a.getOrDefault("distanceKm", 0.0), (Double) b.getOrDefault("distanceKm", 0.0)));
+
+            return ok("Active alerts loaded", result);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping("/current-mission")
+    public ResponseEntity<ApiResponse> getCurrentMission(
+            @RequestParam(required = false) Integer donorId,
+            HttpServletRequest request) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session != null && session.getAttribute("activeMission") != null) {
+                return ok("Active mission found", session.getAttribute("activeMission"));
+            }
+            return ok("No active mission", null);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/complete-mission")
+    public ResponseEntity<ApiResponse> completeMission(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+        try {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.removeAttribute("activeMission");
+            }
+            if (body != null && body.has("requestId")) {
+                int reqId = body.get("requestId").asInt();
+                requestDao.updateStatus(reqId, "Fulfilled");
+            }
+            return ok("Mission completed successfully", null);
         } catch (Exception e) {
             return serverError(e);
         }

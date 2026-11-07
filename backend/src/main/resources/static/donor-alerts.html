@@ -131,20 +131,12 @@
         </div>
       </div>
 
-      <!-- Emergency request cards or standby state container -->
-      <div id="emergencyFeedContainer">
-        <!-- Dynamic content injected by donor-alerts.js -->
-        <div class="standby-state-container">
-          <div class="standby-radar-disc">
-            <div class="standby-radar-sweep"></div>
-            <div class="standby-shield-icon">
-              <i class="fas fa-shield-alt"></i>
-            </div>
-          </div>
-          <h2 class="standby-title">NO ACTIVE EMERGENCY REQUESTS</h2>
-          <p class="standby-desc">
-            System Standing By: Radar actively scanning 5km–10km zones. You will receive an immediate push notification when a nearby hospital requests blood.
-          </p>
+      <!-- Emergency request cards or standby state container (Purely Dynamic) -->
+      <div id="alertsFeedContainer">
+        <div class="alerts-loading-state" id="alertsLoadingSpinner">
+          <div class="alerts-spinner"></div>
+          <div class="als-title">SCANNING DISPATCH RADAR...</div>
+          <div class="als-desc">Locking live GPS coordinates and retrieving hospital SOS requests...</div>
         </div>
       </div>
     </main>

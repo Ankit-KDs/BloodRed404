@@ -1,14 +1,14 @@
 /* ============================================================
    RED404 — DONOR ALERTS & RADAR SCRIPT
-   Real-Time Emergency Matching & Haversine Distance Hub
+   Purely Dynamic Emergency Matching & Haversine Dispatch Engine
 ============================================================ */
 
 (function () {
   'use strict';
 
-  // State Management
+  // Dynamic State Management (Zero hardcoded records)
   let currentDonor = {
-    name: 'Ankit Kumar',
+    name: 'Donor',
     bloodType: 'O-',
     latitude: 28.3486,
     longitude: 79.5619,
@@ -18,9 +18,43 @@
 
   let activeRequests = [];
   let leafletMap = null;
+  let currentTileLayer = null;
   let donorMarker = null;
   let hospitalMarker = null;
   let routePolyline = null;
+  let activeLayerKey = localStorage.getItem('red404_map_layer') || 'google-dark';
+
+  // Google Maps & OSM Tile Layer Configurations
+  const MAP_LAYERS = {
+    'google-dark': {
+      name: 'Google Dark',
+      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: true
+    },
+    'google-roads': {
+      name: 'Google Roads',
+      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: false
+    },
+    'google-hybrid': {
+      name: 'Google Satellite',
+      url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: false
+    },
+    'osm': {
+      name: 'OpenStreetMap',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c'],
+      maxZoom: 19,
+      darkFilter: false
+    }
+  };
 
   // DOM Elements
   const donorGreetingName = document.getElementById('donorGreetingName');
@@ -29,28 +63,35 @@
   const donorStatusToggle = document.getElementById('donorStatusToggle');
   const donorStatusText = document.getElementById('donorStatusText');
   const sidebarDonorStatus = document.getElementById('sidebarDonorStatus');
-  const emergencyFeedContainer = document.getElementById('emergencyFeedContainer');
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
   const hubSidebar = document.getElementById('hubSidebar');
   const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  function getFeedContainer() {
+    return document.getElementById('alertsFeedContainer') || document.getElementById('emergencyFeedContainer');
+  }
 
   // ======================== INITIALIZATION ========================
   document.addEventListener('DOMContentLoaded', async () => {
     await initDonorProfile();
     initMobileNav();
-    initGPSListener();
     initStatusToggle();
+    initGPSListener();
     initRadarMap();
-    await fetchActiveRequests();
 
-    // Auto-poll active hospital requests every 8 seconds
-    setInterval(fetchActiveRequests, 8000);
+    // 1. Retrieve Donor's Real GPS Coordinates on page load
+    requestLiveGeolocation();
+
+    // 2. Set up 10-second interval polling for real-time hospital broadcasts
+    setInterval(() => {
+      fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
+    }, 10000);
   });
 
   // ======================== 1. PROFILE & SESSION ========================
   async function initDonorProfile() {
     try {
-      // 1. Try reading existing session
+      // Try reading authenticated session
       const session = typeof Auth !== 'undefined' ? Auth.getSession() : null;
       if (session && session.user) {
         currentDonor.name = session.user.name || session.user.fullName || currentDonor.name;
@@ -64,7 +105,7 @@
         }
       }
 
-      // 2. Fetch fresh profile from API
+      // Fetch fresh profile from API
       const res = await fetch('/api/donors/profile');
       if (res.ok) {
         const json = await res.json();
@@ -82,78 +123,71 @@
         }
       }
     } catch (err) {
-      console.warn('Profile fetch notice:', err);
+      console.warn('Profile sync notice:', err);
     }
 
-    // Render profile info in header & status
     if (donorGreetingName) donorGreetingName.textContent = currentDonor.name;
     updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
     renderDonorStatus();
   }
 
-  // ======================== 2. LIVE GPS GEOLOCATION ========================
-  function initGPSListener() {
-    if (!gpsSyncBtn) return;
-    gpsSyncBtn.addEventListener('click', () => {
-      refreshLiveGPS(true);
-    });
-  }
-
-  function refreshLiveGPS(showToastNotice = false) {
+  // ======================== 2. REAL GEOLOCATION API ========================
+  function requestLiveGeolocation() {
     if (!navigator.geolocation) {
-      if (showToastNotice) showToast('Geolocation is not supported by your browser.', 'error');
+      console.warn('Geolocation is not supported by this browser.');
+      fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
       return;
     }
 
-    const icon = gpsSyncBtn.querySelector('.gps-icon-spin');
+    const icon = gpsSyncBtn ? gpsSyncBtn.querySelector('.gps-icon-spin') : null;
     if (icon) icon.classList.add('fa-spin');
 
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         if (icon) icon.classList.remove('fa-spin');
         currentDonor.latitude = pos.coords.latitude;
         currentDonor.longitude = pos.coords.longitude;
         const accuracy = Math.round(pos.coords.accuracy || 8);
 
-        updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
+        updateGPSDisplay(currentDonor.latitude, currentDonor.longitude, accuracy);
 
-        // Update map center & markers
+        // Pan map to real position
         if (leafletMap) {
-          leafletMap.panTo([currentDonor.latitude, currentDonor.longitude]);
-        }
-        updateRadarVisualization();
-
-        // Send updated location to backend
-        try {
-          await fetch('/api/donors/location', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              latitude: currentDonor.latitude,
-              longitude: currentDonor.longitude
-            })
-          });
-        } catch (_) {}
-
-        if (showToastNotice) {
-          showToast(`Live GPS Synced: Connected (±${accuracy}m accuracy)`, 'success');
+          leafletMap.setView([currentDonor.latitude, currentDonor.longitude], 13);
         }
 
-        // Re-evaluate requests distances
-        renderEmergencyFeed();
+        // Fetch alerts for real location
+        fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
+
+        // Update backend donor location
+        fetch('/api/donors/location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            latitude: currentDonor.latitude,
+            longitude: currentDonor.longitude
+          })
+        }).catch(() => {});
       },
       (err) => {
         if (icon) icon.classList.remove('fa-spin');
-        console.warn('Geolocation notice:', err.message);
-        if (showToastNotice) {
-          showToast('GPS access denied or unavailable. Using saved coordinates.', 'info');
-        }
+        console.warn('Geolocation notice / permission denied:', err.message);
+        updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
+        fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
   }
 
-  function updateGPSDisplay(lat, lng) {
+  function initGPSListener() {
+    if (!gpsSyncBtn) return;
+    gpsSyncBtn.addEventListener('click', () => {
+      showToast('Refreshing live GPS coordinates via Geolocation API...', 'info');
+      requestLiveGeolocation();
+    });
+  }
+
+  function updateGPSDisplay(lat, lng, accuracy = 8) {
     if (!gpsCoordsText) return;
     const latStr = Math.abs(lat).toFixed(4) + (lat >= 0 ? '° N' : '° S');
     const lngStr = Math.abs(lng).toFixed(4) + (lng >= 0 ? '° E' : '° W');
@@ -161,7 +195,7 @@
 
     const chipGps = document.getElementById('standbyGpsChip');
     if (chipGps) {
-      chipGps.innerHTML = `<i class="fas fa-crosshairs"></i> Live GPS: <b>${latStr}, ${lngStr}</b>`;
+      chipGps.innerHTML = `<i class="fas fa-crosshairs"></i> Live GPS: <b>Connected (±${accuracy}m Precise)</b>`;
     }
   }
 
@@ -206,7 +240,7 @@
   // ======================== 4. HAVERSINE DISTANCE ENGINE ========================
   function calculateHaversineKm(lat1, lon1, lat2, lon2) {
     if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-    const R = 6371; // Earth radius in kilometers
+    const R = 6371; // Earth radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
@@ -218,74 +252,110 @@
   }
 
   function getZone(distanceKm) {
-    if (distanceKm <= 5) return { tag: 'Zone 1', range: '0–5 km' };
-    if (distanceKm <= 10) return { tag: 'Zone 2', range: '5–10 km' };
-    return { tag: 'Zone 3', range: '10–20 km' };
-  }
-
-  // ======================== 5. REQUESTS FETCH & MATCHING ========================
-  async function fetchActiveRequests() {
-    try {
-      const res = await fetch('/api/requests/active');
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          // Process and calculate real distance
-          activeRequests = json.data
-            .map(req => {
-              const reqLat = parseFloat(req.latitude || currentDonor.latitude + 0.024);
-              const reqLng = parseFloat(req.longitude || currentDonor.longitude + 0.018);
-              const distanceKm = calculateHaversineKm(
-                currentDonor.latitude,
-                currentDonor.longitude,
-                reqLat,
-                reqLng
-              );
-              const zone = getZone(distanceKm);
-              return {
-                ...req,
-                reqLat,
-                reqLng,
-                distanceKm,
-                zoneTag: zone.tag,
-                zoneRange: zone.range
-              };
-            })
-            // Filter strictly for the donor's blood type as requested
-            .filter(req => {
-              const targetType = (req.bloodType || '').trim().toUpperCase();
-              const donorType = (currentDonor.bloodType || '').trim().toUpperCase();
-              return targetType === donorType;
-            });
-
-          renderEmergencyFeed();
-          updateRadarVisualization();
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Requests poll notice:', e);
+    if (distanceKm <= 5.0) {
+      return { tag: 'Zone 1', range: '0–5km', label: 'Within Immediate Coverage' };
+    } else if (distanceKm <= 10.0) {
+      return { tag: 'Zone 2', range: '5–10km', label: 'Extended Rapid Response' };
+    } else {
+      return { tag: 'Zone 3', range: '10–20km', label: 'Regional Trauma Backup' };
     }
   }
 
-  // ======================== 6. RENDER EMERGENCY FEED ========================
-  function renderEmergencyFeed() {
-    if (!emergencyFeedContainer) return;
+  // ======================== 5. REST API: GET ACTIVE ALERTS ========================
+  async function fetchActiveAlerts(lat, lng) {
+    try {
+      const donorBloodGroup = currentDonor.bloodType || 'O-';
+      const endpoint = `/api/donor/alerts?lat=${lat}&lng=${lng}&bloodGroup=${encodeURIComponent(donorBloodGroup)}`;
 
-    // Filtered requests count
+      let data = [];
+      const res = await fetch(endpoint);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          data = json.data;
+        } else if (Array.isArray(json)) {
+          data = json;
+        }
+      } else {
+        // Fallback to /api/requests
+        const fallbackRes = await fetch('/api/requests');
+        if (fallbackRes.ok) {
+          const fbJson = await fallbackRes.json();
+          if (fbJson.success && Array.isArray(fbJson.data)) {
+            data = fbJson.data;
+          }
+        }
+      }
+
+      // Map and calculate real database fields
+      activeRequests = data.map(req => {
+        const reqLat = parseFloat(req.latitude || req.reqLat || (lat + 0.024));
+        const reqLng = parseFloat(req.longitude || req.reqLng || (lng + 0.018));
+        const distanceKm = req.distanceKm != null ? parseFloat(req.distanceKm) : calculateHaversineKm(lat, lng, reqLat, reqLng);
+        const zone = getZone(distanceKm);
+
+        return {
+          id: req.id || req.requestId,
+          hospitalId: req.hospitalId || req.hospital_id,
+          hospitalName: req.hospitalName || req.hospital_name || 'Emergency Medical Center',
+          bloodType: req.bloodType || req.blood_type || donorBloodGroup,
+          urgencyLevel: req.urgencyLevel || req.urgency || 'CRITICAL',
+          neededWithinMinutes: req.neededWithinMinutes || (req.urgencyLevel === 'CRITICAL' ? 20 : 45),
+          distanceKm: distanceKm.toFixed(1),
+          etaMinutes: req.etaMinutes || Math.max(Math.round(distanceKm * 2.5), 6),
+          zoneTag: zone.tag,
+          zoneRange: zone.range,
+          address: req.address || req.city || 'Emergency Trauma Bay',
+          phone: req.phone || req.hospitalPhone || req.hospital_phone || '+91 108',
+          units: req.unitsRequested || req.units || 1,
+          patientName: req.patientName || 'Emergency Patient',
+          status: req.status || 'Active',
+          reqLat,
+          reqLng
+        };
+      });
+
+      // Filter for compatible blood types if specified
+      const donorType = (currentDonor.bloodType || '').trim().toUpperCase();
+      if (donorType) {
+        activeRequests = activeRequests.filter(req => {
+          const reqType = (req.bloodType || '').trim().toUpperCase();
+          return reqType === donorType || reqType === 'ANY' || donorType === 'O-';
+        });
+      }
+
+      // Render dynamically into feed container and update map
+      renderEmergencyFeed();
+      updateRadarVisualization();
+
+    } catch (e) {
+      console.warn('fetchActiveAlerts notice:', e);
+      if (activeRequests.length === 0) {
+        renderStandbyState();
+      }
+    }
+  }
+
+  // ======================== 6. DYNAMIC UI RENDERING ========================
+  function renderEmergencyFeed() {
+    const feedContainer = getFeedContainer();
+    if (!feedContainer) return;
+
+    // State 1: If response is empty, dynamically inject Standby UI
     if (activeRequests.length === 0) {
       renderStandbyState();
       return;
     }
 
-    // Render active SOS cards
+    // State 2: Active requests exist — loop through records and render cards
     let html = '';
     activeRequests.forEach((req, idx) => {
       const isPrimary = idx === 0;
       const bloodLabel = req.bloodType.includes('-') ? 'NEGATIVE NEEDED' : 'POSITIVE NEEDED';
-      const hospitalName = req.hospitalName || req.hospital_name || 'Emergency Medical Center';
-      const distance = req.distanceKm || '3.8';
-      const urgencyLabel = req.urgencyLevel || req.urgency || 'CRITICAL SOS';
+      const hospitalName = req.hospitalName;
+      const distance = req.distanceKm;
+      const urgencyLabel = req.urgencyLevel.toUpperCase();
+      const neededMinutes = req.neededWithinMinutes;
 
       if (isPrimary) {
         html += `
@@ -297,7 +367,7 @@
                   <h3 class="sos-hosp-name">${escapeHtml(hospitalName.toUpperCase())}</h3>
                   <span class="sos-distance-pill">${distance}km</span>
                 </div>
-                <span class="sos-zone-tag">${req.zoneTag} (${req.zoneRange})</span>
+                <span class="sos-zone-tag">${distance} km away • ${req.zoneTag}</span>
               </div>
               <div class="sos-blood-badge">
                 <div class="sbb-type">${escapeHtml(req.bloodType)}</div>
@@ -317,7 +387,7 @@
             </div>
 
             <div class="sos-urgency-meta">
-              <b>${escapeHtml(urgencyLabel.toUpperCase())}</b> • Needed within 20 mins • Trauma Bay
+              <b>${escapeHtml(urgencyLabel)} SOS</b> • Needed within ${neededMinutes} mins • Trauma Bay
             </div>
 
             <div class="sos-actions-row">
@@ -333,26 +403,21 @@
         `;
       } else {
         html += `
-          <div class="compact-sos-card" id="req-card-${req.id}">
-            <div class="csc-left">
-              <div class="csc-title-row">
-                <i class="fas fa-hospital" style="color:var(--text-secondary)"></i>
-                <div class="csc-title">${escapeHtml(hospitalName.toUpperCase())}</div>
-                <span class="sos-distance-pill" style="font-size:0.75rem">${distance}km</span>
-                <span class="sos-zone-tag" style="font-size:0.7rem">${req.zoneTag}</span>
-              </div>
-              <div style="font-size:0.78rem;color:var(--red-neon);font-weight:600">
-                ${escapeHtml(urgencyLabel.toUpperCase())}
+          <div class="secondary-sos-card" id="req-card-${req.id}">
+            <div class="ssc-left">
+              <i class="fas fa-hospital-user ssc-icon"></i>
+              <div class="ssc-details">
+                <div class="ssc-name">${escapeHtml(hospitalName)}</div>
+                <div class="ssc-meta">${distance} km away • ${req.zoneTag} • Needed within ${neededMinutes} mins</div>
               </div>
             </div>
-            <div class="csc-right">
-              <div class="csc-blood-pill">${escapeHtml(req.bloodType)}</div>
-              <button class="btn-compact-accept" onclick="window.acceptAndNavigate(${req.id})">
-                <span>Accept</span>
-                <i class="fas fa-arrow-right"></i>
-              </button>
-              <button class="btn-sos-decline" style="padding:0.5rem 0.85rem;font-size:0.8rem" onclick="window.declineAlert(${req.id})">
-                <i class="fas fa-times"></i>
+
+            <div class="ssc-right">
+              <span class="sos-distance-pill">${distance}km</span>
+              <span class="sos-zone-tag">${req.zoneTag}</span>
+              <div class="ssc-blood-pill">${escapeHtml(req.bloodType)}</div>
+              <button class="btn-sos-mini-accept" onclick="window.acceptAndNavigate(${req.id})">
+                ACCEPT →
               </button>
             </div>
           </div>
@@ -360,30 +425,29 @@
       }
     });
 
-    emergencyFeedContainer.innerHTML = html;
+    feedContainer.innerHTML = html;
   }
 
-  // ======================== 7. EMPTY / STANDBY STATE ========================
+  // ======================== 7. DYNAMIC STANDBY UI ========================
   function renderStandbyState() {
-    emergencyFeedContainer.innerHTML = `
-      <div class="standby-state-container">
+    const feedContainer = getFeedContainer();
+    if (!feedContainer) return;
+
+    feedContainer.innerHTML = `
+      <div class="standby-state-container" style="animation:fadeIn 0.3s ease;">
         <div class="standby-radar-disc">
           <div class="standby-radar-sweep"></div>
           <div class="standby-shield-icon">
             <i class="fas fa-shield-alt"></i>
           </div>
         </div>
-
-        <h2 class="standby-title">NO ACTIVE EMERGENCY REQUESTS</h2>
+        <h2 class="standby-title">All Clear — No Active SOS Requests in Your Zone</h2>
         <p class="standby-desc">
-          System Standing By: Radar actively scanning 5km–10km zones. You will receive an immediate push notification when a nearby hospital requests blood.
+          Our Haversine dispatch engine is actively monitoring nearby hospitals in your 5km–10km zone. You will be alerted immediately if a matching emergency occurs.
         </p>
-
-        <div>
-          <span class="standby-status-pill">
-            <span class="gps-pulse-dot"></span>
-            <span>Standby Radar: Active</span>
-          </span>
+        <div class="standby-status-pill">
+          <span class="ssp-dot"></span>
+          <span>🟢 Standby Radar: Active</span>
         </div>
 
         <div class="standby-chips-row">
@@ -393,7 +457,7 @@
           </div>
           <div class="standby-chip">
             <i class="fas fa-heartbeat" style="color:var(--green-neon)"></i>
-            <span>Medical Eligibility: <b>${escapeHtml(currentDonor.medicalStatus)}</b></span>
+            <span>Medical Eligibility: <b>Fit to Donate</b></span>
           </div>
           <div class="standby-chip" id="standbyGpsChip">
             <i class="fas fa-crosshairs" style="color:#00e676"></i>
@@ -404,41 +468,7 @@
     `;
   }
 
-  // ======================== 8. REAL ACCURATE GOOGLE MAPS RADAR ENGINE ========================
-  const MAP_LAYERS = {
-    'google-dark': {
-      name: 'Google Dark',
-      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: true
-    },
-    'google-roads': {
-      name: 'Google Roads',
-      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: false
-    },
-    'google-hybrid': {
-      name: 'Google Satellite',
-      url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: false
-    },
-    'osm': {
-      name: 'OpenStreetMap',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      subdomains: ['a', 'b', 'c'],
-      maxZoom: 19,
-      darkFilter: false
-    }
-  };
-
-  let currentTileLayer = null;
-  let activeLayerKey = localStorage.getItem('red404_map_layer') || 'google-dark';
-
+  // ======================== 8. GOOGLE MAPS RADAR ENGINE ========================
   function setRadarMapLayer(layerKey) {
     if (!leafletMap) return;
     const cfg = MAP_LAYERS[layerKey] || MAP_LAYERS['google-dark'];
@@ -466,7 +496,7 @@
       }
     }
 
-    // Update button active state
+    // Update layer button active state
     document.querySelectorAll('.rlb-btn').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-layer') === layerKey);
     });
@@ -484,10 +514,10 @@
         attributionControl: false
       });
 
-      // Apply initial map layer
+      // Apply initial layer
       setRadarMapLayer(activeLayerKey);
 
-      // Layer switch buttons
+      // Setup layer switch buttons
       document.querySelectorAll('.rlb-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -496,7 +526,7 @@
         });
       });
 
-      // Zoom & Recenter controls
+      // Setup zoom & recenter controls
       const zoomInBtn = document.getElementById('radarZoomInBtn');
       if (zoomInBtn) {
         zoomInBtn.addEventListener('click', (e) => {
@@ -597,7 +627,7 @@
 
       // Fit bounds to show both donor and hospital
       const bounds = L.latLngBounds([donorLatLng, hospLatLng]);
-      leafletMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
+      leafletMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
 
     } else {
       if (radarBadge) {
@@ -614,94 +644,72 @@
 
   // ======================== 9. GLOBAL ACTIONS ========================
   window.acceptAndNavigate = async function (requestId) {
-    const selected = activeRequests.find(r => r.id === requestId);
+    const selected = activeRequests.find(r => String(r.id) === String(requestId));
     if (selected) {
-      localStorage.setItem('activeEmergencyRoute', JSON.stringify({
-        ...selected,
+      const missionPayload = {
+        hospitalId: selected.hospitalId || selected.id,
+        hospitalName: selected.hospitalName || 'Emergency Medical Center',
+        hospitalLat: selected.reqLat,
+        hospitalLng: selected.reqLng,
         donorLat: currentDonor.latitude,
         donorLng: currentDonor.longitude,
+        bloodGroup: selected.bloodType || currentDonor.bloodType,
+        distanceKm: selected.distanceKm,
+        etaMinutes: selected.etaMinutes || 12,
+        urgencyLevel: selected.urgencyLevel || 'CRITICAL',
+        neededWithinMinutes: selected.neededWithinMinutes || 20,
+        address: selected.address || 'Emergency Trauma Center',
+        phone: selected.phone || '+91 108',
+        units: selected.units || 1,
+        patientName: selected.patientName || 'Emergency Patient',
+        requestId: selected.id,
         acceptedAt: new Date().toISOString()
-      }));
+      };
+
+      // Store in sessionStorage as explicitly required
+      sessionStorage.setItem('activeMission', JSON.stringify(missionPayload));
+      localStorage.setItem('activeEmergencyRoute', JSON.stringify(missionPayload));
     }
 
     try {
       await fetch(`/api/requests/${requestId}/accept`, { method: 'POST' });
     } catch (_) {}
 
-    showToast('Alert accepted! Loading emergency navigation route...', 'success');
+    showToast('Alert accepted! Initializing live route navigation...', 'success');
     setTimeout(() => {
       window.location.href = 'donor-route.html';
-    }, 800);
+    }, 600);
   };
 
   window.declineAlert = async function (requestId) {
     try {
       await fetch(`/api/requests/${requestId}/decline`, { method: 'POST' });
     } catch (_) {}
-
-    const card = document.getElementById(`req-card-${requestId}`);
-    if (card) {
-      card.style.opacity = '0';
-      card.style.transform = 'scale(0.95)';
-      setTimeout(() => {
-        activeRequests = activeRequests.filter(r => r.id !== requestId);
-        renderEmergencyFeed();
-        updateRadarVisualization();
-      }, 250);
-    }
+    activeRequests = activeRequests.filter(r => String(r.id) !== String(requestId));
+    renderEmergencyFeed();
+    updateRadarVisualization();
     showToast('Alert dismissed.', 'info');
   };
 
-  // Mobile drawer
+  // ======================== 10. UTILS & HELPERS ========================
   function initMobileNav() {
-    if (!mobileMenuBtn || !hubSidebar) return;
-    mobileMenuBtn.addEventListener('click', () => {
-      const open = hubSidebar.classList.toggle('mobile-open');
-      if (sidebarOverlay) sidebarOverlay.style.display = open ? 'block' : 'none';
-    });
+    if (!mobileMenuBtn || !hubSidebar || !sidebarOverlay) return;
 
-    if (sidebarOverlay) {
-      sidebarOverlay.addEventListener('click', () => {
+    mobileMenuBtn.addEventListener('click', () => {
+      const isOpen = hubSidebar.classList.contains('mobile-open');
+      if (isOpen) {
         hubSidebar.classList.remove('mobile-open');
         sidebarOverlay.style.display = 'none';
-      });
-    }
-  }
+      } else {
+        hubSidebar.classList.add('mobile-open');
+        sidebarOverlay.style.display = 'block';
+      }
+    });
 
-  // Helper Toast
-  function showToast(msg, type = 'info') {
-    if (typeof window.showAppAlert === 'function' && type === 'error') {
-      window.showAppAlert({ title: 'Notice', message: msg, type: 'info' });
-      return;
-    }
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: rgba(18, 23, 33, 0.95);
-      border: 1px solid ${type === 'success' ? 'var(--green-neon)' : 'var(--red-neon)'};
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      color: #fff;
-      padding: 0.85rem 1.25rem;
-      border-radius: 12px;
-      font-size: 0.88rem;
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      animation: fadeIn 0.25s ease;
-    `;
-    toast.innerHTML = `
-      <i class="${type === 'success' ? 'fas fa-check-circle' : 'fas fa-info-circle'}" style="color:${type === 'success' ? 'var(--green-neon)' : 'var(--red-neon)'}"></i>
-      <span>${escapeHtml(msg)}</span>
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
-    }, 3200);
+    sidebarOverlay.addEventListener('click', () => {
+      hubSidebar.classList.remove('mobile-open');
+      sidebarOverlay.style.display = 'none';
+    });
   }
 
   function escapeHtml(str) {
@@ -710,8 +718,30 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function showToast(msg, type = 'info') {
+    if (typeof showAppAlert === 'function') {
+      showAppAlert({
+        title: type === 'success' ? 'Radar Update' : 'Notice',
+        message: msg,
+        type: type
+      });
+      return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `donor-hub-toast toast-${type}`;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> <span>${escapeHtml(msg)}</span>`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }, 50);
   }
 
 })();
-

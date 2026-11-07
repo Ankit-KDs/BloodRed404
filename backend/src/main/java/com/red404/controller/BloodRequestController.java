@@ -97,10 +97,15 @@ public class BloodRequestController {
     }
 
     @PostMapping("/{id}/accept")
-    public ResponseEntity<ApiResponse> accept(@PathVariable int id) {
+    public ResponseEntity<ApiResponse> accept(@PathVariable int id, HttpServletRequest request) {
         try {
             requestDao.updateStatus(id, "Accepted");
-            return ok("Request accepted", requestDao.findById(id));
+            Map<String, Object> req = requestDao.findById(id);
+            HttpSession session = request.getSession(true);
+            if (session != null) {
+                session.setAttribute("activeMission", req);
+            }
+            return ok("Request accepted", req);
         } catch (Exception e) {
             return serverError(e);
         }
