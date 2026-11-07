@@ -869,117 +869,79 @@ body.donor-profile-body {
   filter: url(#gaugeGlowHaloCoral);
 }
 
-/* Center Content: Well-spaced layout strictly inside circle, NEVER touches or crosses the bar */
+/* Inside the bar: ONLY the percentage is shown */
 .gauge-center-content {
   position: absolute;
   inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   pointer-events: none;
   box-sizing: border-box;
-  padding: 18px 24px 16px 24px;
 }
 
-.gcc-status {
+.gcc-percent-only {
   font-family: var(--font-main);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.9px;
-  text-transform: uppercase;
-  line-height: 1.1;
-  margin-bottom: 2px;
-  transition: color 0.3s ease;
-  white-space: nowrap;
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: #10b981;
+  line-height: 1;
+  letter-spacing: -1px;
+  text-shadow: 
+    0 0 22px rgba(16, 185, 129, 0.5),
+    0 2px 5px rgba(0, 0, 0, 0.7);
+  transition: all 0.3s ease;
+  user-select: none;
 }
 
-.gcc-status.status-active {
-  color: #34d399;
-}
-
-.gcc-status.status-cooldown {
+.gcc-percent-only.cooldown {
   color: #f87171;
+  text-shadow: 
+    0 0 22px rgba(248, 113, 113, 0.5),
+    0 2px 5px rgba(0, 0, 0, 0.7);
 }
 
-.gcc-days {
-  font-family: var(--font-main);
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #f8fafc;
-  line-height: 1.05;
-  margin: 2px 0 2px 0;
-  letter-spacing: -0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  white-space: nowrap;
-  transition: color 0.3s ease;
-}
-
-.gcc-sub {
-  font-family: var(--font-main);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  line-height: 1.1;
-  margin-bottom: 4px;
-  transition: color 0.3s ease;
-  white-space: nowrap;
-}
-
-.gcc-sub.sub-ready {
-  color: #34d399;
-}
-
-.gcc-sub.sub-recovery {
-  color: #94a3b8;
-}
-
-/* Frosted Mini-Capsule Chip */
-.gcc-chip-capsule {
-  display: inline-flex;
+/* Status text placed just down the bar (replacing Next Available) */
+.gauge-down-content {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  font-family: var(--font-main);
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  box-sizing: border-box;
-  backdrop-filter: blur(8px);
+  text-align: center;
+  gap: 3px;
   transition: all 0.3s ease;
 }
 
-.gcc-chip-capsule.chip-cleared {
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(52, 211, 153, 0.35);
-  color: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
-}
-
-.gcc-chip-capsule.chip-cooldown {
-  background: rgba(239, 68, 68, 0.14);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  color: #f87171;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
-}
-
-/* Next Available Row directly below the gauge */
-.eligibility-next-row {
-  margin-top: 0.5rem;
-  font-size: 0.82rem;
-  color: #64748b;
+.gdc-main {
   font-family: var(--font-main);
-  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   transition: color 0.3s ease;
 }
 
-.eligibility-next-row b {
+.gdc-sub {
+  font-family: var(--font-main);
+  font-size: 0.82rem;
   font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #34d399;
+  line-height: 1.1;
+  transition: color 0.3s ease;
+}
+
+.gauge-down-content.cooldown .gdc-main {
+  color: #ffffff;
+}
+
+.gauge-down-content.cooldown .gdc-sub {
+  color: #f87171;
 }
 
 /* Right Column: 3-Point Checklist */

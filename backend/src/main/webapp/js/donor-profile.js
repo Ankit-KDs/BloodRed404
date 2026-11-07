@@ -291,17 +291,16 @@
   }
 
   // ======================== 4. 90-DAY ELIGIBILITY COUNTDOWN ========================
-  // Implements State A (Universal READY: Never donated or cooldown >= 90 days)
-  // vs State B (Active Decreasing Countdown when hospital logs a donation: daysPassed < 90)
+  // Inside the bar: ONLY show percentage (nothing else, no STATUS ACTIVE).
+  // Just down the bar: ELIGIBLE / READY TO DONATE (replaces Next Available line).
   function renderMedicalEligibilityTracker() {
     const arc = document.getElementById('gaugeFillArc');
     const baseLayer = document.getElementById('gaugeBaseLayer');
-    const statusText = document.getElementById('gaugeStatusText');
-    const daysText = document.getElementById('gaugeDaysText');
-    const subText = document.getElementById('gaugeSubText');
     const percentText = document.getElementById('gaugePercentText');
     const metaTag = document.getElementById('eligibilityMetaTag');
-    const nextRow = document.getElementById('eligibilityNextRow');
+    const downContent = document.getElementById('gaugeDownContent');
+    const downMain = document.getElementById('gaugeDownMain');
+    const downSub = document.getElementById('gaugeDownSub');
     const checklist = document.getElementById('eligibilityChecklist');
 
     // Total arc circumference for radius 85 over 270 deg: 2 * PI * 85 * (270 / 360) = 400.55 ~ 401px
@@ -330,9 +329,8 @@
     }
 
     // 2. State A: Universal READY State (Applies if NEVER DONATED or if daysPassed >= 90)
-    // Both cases look 100% identical:
     if (isNeverDonated || daysPassed >= 90) {
-      // Arc: 100% full circle styled in soothing clinical emerald (#10b981) with soft diffused glow
+      // Arc: 100% full circle styled in soothing clinical emerald (#10b981)
       if (arc) {
         arc.classList.remove('cooldown');
         arc.style.stroke = 'url(#emeraldMintGradient)';
@@ -350,59 +348,46 @@
         metaTag.innerHTML = `<i class="fas fa-shield-alt"></i> Safety Cooldown: Cleared`;
       }
 
-      // Center Top Tag: 'STATUS: ACTIVE'
-      if (statusText) {
-        statusText.className = 'gcc-status status-active';
-        statusText.textContent = 'STATUS: ACTIVE';
-      }
-
-      // Center Main Readout: 'ELIGIBLE' (font-size: 1.8rem, bold, crisp white #f8fafc)
-      if (daysText) {
-        daysText.className = 'gcc-days days-eligible';
-        daysText.textContent = 'ELIGIBLE';
-      }
-
-      // Center Subtitle: 'READY TO DONATE' (color: #34d399)
-      if (subText) {
-        subText.className = 'gcc-sub sub-ready';
-        subText.textContent = 'READY TO DONATE';
-      }
-
-      // Center Chip: '100% CLEARED'
+      // Inside the bar: ONLY show percentage (nothing else!)
       if (percentText) {
-        percentText.innerHTML = `<div class="gcc-chip-capsule chip-cleared">100% CLEARED</div>`;
+        percentText.className = 'gcc-percent-only';
+        percentText.textContent = '100%';
       }
 
-      // Next Available Row under the gauge
-      if (nextRow) {
-        nextRow.innerHTML = `Next Available: <b style="color: #10b981;">Immediate / READY</b>`;
+      // Just down the bar: ELIGIBLE / READY TO DONATE
+      if (downContent) downContent.className = 'gauge-down-content';
+      if (downMain) {
+        downMain.className = 'gdc-main';
+        downMain.textContent = 'ELIGIBLE';
+      }
+      if (downSub) {
+        downSub.className = 'gdc-sub';
+        downSub.textContent = 'READY TO DONATE';
       }
 
-      // Right-side Checklist
+      // Right-side Checklist (Verified Optimal Clinical Parameters)
       if (checklist) {
         checklist.innerHTML = `
           <div class="check-item">
             <i class="fas fa-check"></i>
-            <span>No active cooldown restrictions</span>
+            <span>90-day wait period met</span>
           </div>
           <div class="check-item">
             <i class="fas fa-check"></i>
-            <span>Health indicators cleared</span>
+            <span>Health indicators optimal</span>
           </div>
           <div class="check-item">
             <i class="fas fa-check"></i>
-            <span>Next Available: <b>Immediate / READY</b></span>
+            <span>Not currently on medication</span>
           </div>
         `;
       }
     } else {
       // 3. State B: Active Decreasing Countdown (Applies ONLY if daysPassed < 90)
-      // Triggers the moment a hospital marks a donation
       const percentRemaining = Math.max(1, Math.min(100, Math.floor((remainingDays / 90) * 100)));
-      // Arc animates stroke-dashoffset to visually decrease in sync with remaining days
       const dashOffset = totalArcLength * (1 - (percentRemaining / 100));
 
-      // Compute Next Available Target Date: donationDate + 90 days
+      // Compute Target Date: donationDate + 90 days
       const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
       const nextAvailDateStr = targetDate.toLocaleDateString('en-US', {
         month: 'short',
@@ -428,32 +413,21 @@
         metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Cooldown Active`;
       }
 
-      // Center Top Tag: 'COOLDOWN ACTIVE'
-      if (statusText) {
-        statusText.className = 'gcc-status status-cooldown';
-        statusText.textContent = 'COOLDOWN ACTIVE';
-      }
-
-      // Center Main Readout: `${remainingDays} DAYS` (decreases day by day: 90, 89, 88... 1)
-      if (daysText) {
-        daysText.className = 'gcc-days days-cooldown';
-        daysText.textContent = `${remainingDays} DAYS`;
-      }
-
-      // Center Subtitle: 'RECOVERY IN PROGRESS'
-      if (subText) {
-        subText.className = 'gcc-sub sub-recovery';
-        subText.textContent = 'RECOVERY IN PROGRESS';
-      }
-
-      // Center Chip: `${percentRemaining}% REMAINING`
+      // Inside the bar: ONLY show percentage
       if (percentText) {
-        percentText.innerHTML = `<div class="gcc-chip-capsule chip-cooldown">${percentRemaining}% REMAINING</div>`;
+        percentText.className = 'gcc-percent-only cooldown';
+        percentText.textContent = `${percentRemaining}%`;
       }
 
-      // Next Available Row under the gauge
-      if (nextRow) {
-        nextRow.innerHTML = `Next Available: <b style="color: #f87171;">${nextAvailDateStr}</b>`;
+      // Just down the bar: ${remainingDays} DAYS REMAINING / RECOVERY IN PROGRESS
+      if (downContent) downContent.className = 'gauge-down-content cooldown';
+      if (downMain) {
+        downMain.className = 'gdc-main';
+        downMain.textContent = `${remainingDays} DAYS REMAINING`;
+      }
+      if (downSub) {
+        downSub.className = 'gdc-sub';
+        downSub.textContent = 'RECOVERY IN PROGRESS';
       }
 
       // Right-side Checklist
@@ -469,7 +443,7 @@
           </div>
           <div class="check-item pending">
             <i class="fas fa-calendar-alt"></i>
-            <span>Next Available: <b>${nextAvailDateStr}</b></span>
+            <span>Next cycle: <b>${nextAvailDateStr}</b></span>
           </div>
         `;
       }

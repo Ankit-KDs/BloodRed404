@@ -288,17 +288,17 @@
                   <circle class="gauge-fill-arc" id="gaugeFillArc" cx="120" cy="120" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 120 120)" filter="url(#gaugeGlowHalo)"></circle>
                 </svg>
 
-                <!-- Center Text Content (Zero hardcoded text in HTML — dynamically injected via JS) -->
+                <!-- Inside the bar: ONLY show percentage -->
                 <div class="gauge-center-content" id="gaugeCenterContent">
-                  <div class="gcc-status" id="gaugeStatusText"></div>
-                  <div class="gcc-days" id="gaugeDaysText"></div>
-                  <div class="gcc-sub" id="gaugeSubText"></div>
-                  <div class="gcc-percent" id="gaugePercentText"></div>
+                  <div class="gcc-percent-only" id="gaugePercentText"></div>
                 </div>
               </div>
 
-              <!-- Next Available Row placed directly under the gauge -->
-              <div class="eligibility-next-row" id="eligibilityNextRow"></div>
+              <!-- Just down the bar: ELIGIBLE / Ready to Donate -->
+              <div class="gauge-down-content" id="gaugeDownContent">
+                <div class="gdc-main" id="gaugeDownMain"></div>
+                <div class="gdc-sub" id="gaugeDownSub"></div>
+              </div>
             </div>
 
             <!-- Right Eligibility Checklist (Zero hardcoded text in HTML — dynamically injected via JS) -->
