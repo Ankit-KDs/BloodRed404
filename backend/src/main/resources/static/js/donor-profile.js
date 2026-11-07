@@ -295,11 +295,10 @@
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
   function renderMedicalEligibilityTracker() {
-    const liquidWrapper = document.getElementById('liquidLevelWrapper') || document.getElementById('bloodFluid');
+    const bloodColumn = document.getElementById('capsuleBloodColumn') || document.getElementById('liquidLevelWrapper');
+    const statusLed = document.getElementById('collarStatusLed');
     const daysVal = document.getElementById('scannerDaysVal');
     const daysLbl = document.getElementById('scannerDaysLbl');
-    const recoveredVal = document.getElementById('scannerRecoveredVal');
-    const recoveredSub = document.getElementById('scannerRecoveredSub');
     const pillWrap = document.getElementById('scannerStatusPillWrap');
     const checklistWrap = document.getElementById('scannerChecklistWrap');
     const metaTag = document.getElementById('eligibilityMetaTag');
@@ -311,8 +310,9 @@
     let percentage = 0;
     let targetDateStr = 'Immediate / READY';
 
+    // 100% Real-Time Dynamic Date Math
     if (!lastDonation) {
-      // Case 1: First time donor OR 90 days already completed -> 100% Eligible
+      // Case 1: First time donor -> 100% Eligible
       setEligibleState();
     } else {
       const donationDate = new Date(lastDonation);
@@ -320,11 +320,12 @@
         const now = new Date();
         daysPassed = Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24));
         if (daysPassed >= 90) {
+          // 90 days completed -> 100% Eligible
           setEligibleState();
         } else {
           // Case 2: In Cooldown (day-by-day gradual increase)
           remainingDays = Math.max(0, 90 - daysPassed);
-          percentage = Math.max(5, Math.min(99, Math.floor((daysPassed / 90) * 100))); // Minimum 5% so feet aren't empty
+          percentage = Math.max(8, Math.min(99, Math.floor((daysPassed / 90) * 100))); // Min 8% so base isn't empty
 
           const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
           targetDateStr = targetDate.toLocaleDateString('en-GB', {
@@ -333,53 +334,50 @@
             year: 'numeric'
           });
 
-          // Dynamic vertical rise:
-          if (liquidWrapper) {
-            liquidWrapper.style.height = `${percentage}%`;
+          // Dynamic vertical rise
+          if (bloodColumn) {
+            bloodColumn.style.height = `${percentage}%`;
+          }
+
+          // Top LED: Pulsing coral-red during cooldown
+          if (statusLed) {
+            statusLed.className = 'collar-status-led led-cooldown';
           }
 
           if (metaTag) {
             metaTag.className = 'card-meta-tag scanner-meta-tag tag-cooldown';
-            metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Safety Cooldown`;
+            metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Stasis Cooldown`;
           }
 
-          if (daysVal) daysVal.textContent = `${remainingDays} DAYS`;
+          // Side Telemetry
+          if (daysVal) daysVal.textContent = `${remainingDays} DAYS REMAINING`;
           if (daysLbl) {
-            daysLbl.textContent = 'REMAINING';
-            daysLbl.style.color = '#94a3b8';
-          }
-
-          if (recoveredVal) {
-            recoveredVal.textContent = `${percentage}% RECOVERED`;
-            recoveredVal.style.color = '#ffffff';
-          }
-
-          if (recoveredSub) {
-            recoveredSub.textContent = '(reducing day by day post-donation)';
+            daysLbl.textContent = `${daysPassed} / 90 DAYS COMPLETED (${percentage}%)`;
+            daysLbl.style.color = '#f87171';
           }
 
           if (pillWrap) {
             pillWrap.innerHTML = `
               <div class="stc-pill pill-cooldown">
-                <i class="fas fa-hourglass-half" style="font-size:0.75rem;"></i>
-                <span>COOLDOWN ACTIVE • ${remainingDays} DAYS LEFT</span>
+                <i class="fas fa-circle-notch fa-spin" style="font-size:0.75rem;"></i>
+                <span>🟡 REGENERATION PROTOCOL ACTIVE</span>
               </div>
             `;
           }
 
           if (checklistWrap) {
             checklistWrap.innerHTML = `
-              <div class="stc-check-item pending">
+              <div class="stc-check-item item-pending">
                 <i class="fas fa-hourglass-half"></i>
-                <span>Recovery interval: ${remainingDays} days left</span>
+                <span>Cellular volume regeneration in progress (${remainingDays}d left)</span>
               </div>
               <div class="stc-check-item">
                 <i class="fas fa-check"></i>
-                <span>Vitals regeneration in progress</span>
+                <span>Minimum 90-day safe blood interval</span>
               </div>
               <div class="stc-check-item next-avail">
                 <i class="fas fa-calendar-alt"></i>
-                <span>Next Available: <b>${targetDateStr}</b></span>
+                <span>Next Dispatch: <b>${targetDateStr}</b></span>
               </div>
             `;
           }
@@ -391,35 +389,31 @@
 
     function setEligibleState() {
       // 100% full: Full body submerged in blood fluid up to 90d
-      if (liquidWrapper) {
-        liquidWrapper.style.height = '100%';
+      if (bloodColumn) {
+        bloodColumn.style.height = '100%';
+      }
+
+      // Top LED: Glowing green
+      if (statusLed) {
+        statusLed.className = 'collar-status-led';
       }
 
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-ready';
-        metaTag.innerHTML = `<i class="fas fa-check-circle"></i> Safety Cooldown`;
+        metaTag.innerHTML = `<i class="fas fa-shield-alt"></i> Stasis Bio-Capsule`;
       }
 
-      if (daysVal) daysVal.textContent = '90 DAYS';
+      if (daysVal) daysVal.textContent = '100% RESTORED';
       if (daysLbl) {
-        daysLbl.textContent = 'ELIGIBLE TO DONATE';
+        daysLbl.textContent = '90 / 90 DAYS COMPLETED';
         daysLbl.style.color = '#34d399';
-      }
-
-      if (recoveredVal) {
-        recoveredVal.textContent = '100% RESTORED • READY';
-        recoveredVal.style.color = '#f8fafc';
-      }
-
-      if (recoveredSub) {
-        recoveredSub.textContent = '(optimal biological volume • ready to donate)';
       }
 
       if (pillWrap) {
         pillWrap.innerHTML = `
           <div class="stc-pill pill-eligible">
             <span class="stc-dot dot-green"></span>
-            <span>ELIGIBLE TO DONATE • READY</span>
+            <span>🟢 CORE SEALED • ELIGIBLE TO DONATE</span>
           </div>
         `;
       }
@@ -428,19 +422,15 @@
         checklistWrap.innerHTML = `
           <div class="stc-check-item">
             <i class="fas fa-check"></i>
-            <span>90-day wait period met</span>
+            <span>Cellular volume integrity verified</span>
           </div>
           <div class="stc-check-item">
             <i class="fas fa-check"></i>
-            <span>Health indicators optimal</span>
-          </div>
-          <div class="stc-check-item">
-            <i class="fas fa-check"></i>
-            <span>Not currently on medication</span>
+            <span>Minimum 90-day safe blood interval</span>
           </div>
           <div class="stc-check-item">
             <i class="fas fa-calendar-check"></i>
-            <span>Next Available: <b>Immediate / READY</b></span>
+            <span>Next Dispatch: <b style="color: #f8fafc;">Immediate / READY</b></span>
           </div>
         `;
       }
