@@ -197,6 +197,35 @@ public class DonorDao {
         return rows;
     }
 
+    public boolean recordDonation(int donorId, Integer hospitalId, String bloodType, int units, String status) throws SQLException {
+        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status) VALUES (?, ?, ?, ?, CURRENT_DATE, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            if (hospitalId == null || hospitalId <= 0) {
+                ps.setNull(2, Types.INTEGER);
+            } else {
+                ps.setInt(2, hospitalId);
+            }
+            ps.setString(3, bloodType != null && !bloodType.isBlank() ? bloodType : "O-");
+            ps.setInt(4, units > 0 ? units : 1);
+            ps.setString(5, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+            int inserted = ps.executeUpdate();
+            if (inserted > 0) {
+                try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE id = ?")) {
+                    upd.setInt(1, donorId);
+                    upd.executeUpdate();
+                } catch (SQLException ignored) {}
+            }
+            return inserted > 0;
+        } catch (SQLException e) {
+            if (isMissingTable(e)) {
+                return false;
+            }
+            throw e;
+        }
+    }
+
     private Map<String, Object> mapDonor(ResultSet rs, boolean includePrivate) throws SQLException {
         Map<String, Object> donor = new HashMap<>();
         donor.put("id", rs.getInt("id"));

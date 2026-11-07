@@ -419,71 +419,84 @@ body.donor-profile-body {
 }
 
 .card-title {
-  font-family: var(--font-tech);
+  font-family: var(--font-main);
   font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: 0.8px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
   color: #fff;
 }
 
 .card-meta-tag {
-  font-family: var(--font-tech);
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--text-muted);
-  letter-spacing: 0.5px;
 }
 
 /* ==================== CARD 1: DONOR PROFILE & VITALS ==================== */
 .vitals-split-layout {
   display: grid;
-  grid-template-columns: 140px 1fr;
+  grid-template-columns: 145px 1fr;
   gap: 1.5rem;
   align-items: stretch;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
-/* Dark Translucent Crimson Glass Container (Zero harsh retinal glare) */
+/* Dark Translucent Crimson Glass Container (Zero harsh retinal glare, exact match to reference) */
 .blood-emblem-box {
-  background: rgba(239, 68, 68, 0.16);
-  border: 1px solid rgba(239, 68, 68, 0.32);
+  width: 145px;
+  min-width: 145px;
+  height: 215px;
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.22) 0%, rgba(136, 19, 55, 0.16) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.42);
   border-radius: 16px;
-  padding: 1.5rem 1rem;
+  padding: 1.4rem 1rem 1.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   text-align: center;
   color: #fff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(239, 68, 68, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 25px rgba(239, 68, 68, 0.1), 0 0 20px rgba(239, 68, 68, 0.18);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .beb-type {
-  font-family: var(--font-tech);
-  font-size: 3.4rem;
+  font-family: var(--font-main);
+  font-size: 3.6rem;
   font-weight: 800;
   line-height: 1;
   color: #ffffff;
-  text-shadow: 0 2px 12px rgba(239, 68, 68, 0.3);
+  letter-spacing: -1.5px;
+  text-shadow: 0 2px 14px rgba(239, 68, 68, 0.35);
 }
 
 .beb-label {
-  font-family: var(--font-tech);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+  font-family: var(--font-main);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 2px;
   color: #fca5a5;
-  margin-top: 4px;
+  margin-top: 6px;
   text-transform: uppercase;
 }
 
 .beb-icon {
-  margin-top: 0.85rem;
-  font-size: 1.6rem;
-  color: #f87171;
-  opacity: 0.85;
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heart-drop-svg {
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.35));
+  transition: transform 0.3s ease;
+}
+
+.blood-emblem-box:hover .heart-drop-svg {
+  transform: scale(1.08);
 }
 
 /* Right Verified Vitals Details */
@@ -495,7 +508,7 @@ body.donor-profile-body {
 }
 
 .vitals-top-meta {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   color: #94a3b8;
   font-family: var(--font-main);
 }
@@ -506,17 +519,20 @@ body.donor-profile-body {
 }
 
 .vitals-verified-sub {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: #64748b;
-  margin-bottom: 0.2rem;
+  margin-top: 2px;
+  margin-bottom: 0.35rem;
+  font-family: var(--font-main);
 }
 
 .vital-row {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.9rem;
+  gap: 0.5rem;
+  font-size: 0.92rem;
   color: #94a3b8;
+  font-family: var(--font-main);
 }
 
 .vital-row .vr-label {
@@ -534,27 +550,27 @@ body.donor-profile-body {
 }
 
 .vital-pill.pill-normal {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.16);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.28);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: 6px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.5px;
-  font-family: var(--font-tech);
+  font-family: var(--font-main);
 }
 
 .vital-pill.pill-alert {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.16);
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 6px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.5px;
-  font-family: var(--font-tech);
+  font-family: var(--font-main);
 }
 
 /* Automated AI Health Evaluation Banner in Calm Emerald Green #10b981 */
@@ -563,43 +579,145 @@ body.donor-profile-body {
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
-  padding: 0.7rem 1rem;
+  padding: 0.8rem 1rem;
   border-radius: 10px;
-  font-family: var(--font-tech);
-  font-size: 0.92rem;
+  font-family: var(--font-main);
+  font-size: 0.95rem;
   font-weight: 800;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   margin-top: 0.5rem;
   transition: all 0.3s ease;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .badge-fit {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.14);
+  border: 1.5px solid rgba(16, 185, 129, 0.4);
   color: #10b981;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+
+.badge-fit:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10b981;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
 
 .badge-unfit {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.14);
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
   color: #f87171;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
 }
 
 .badge-awaiting {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
+}
+
+/* AI Clinical Health Evaluation Box */
+.ai-eval-box {
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  border-radius: 14px;
+  padding: 0.9rem 1.15rem;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+}
+
+.ai-eval-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.aeb-tag {
+  color: #34d399;
+  font-family: var(--font-main);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aeb-who {
   color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ai-eval-message {
+  font-size: 0.83rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin: 0.4rem 0 0.65rem 0;
+  font-family: var(--font-main);
+}
+
+.ai-metrics-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+}
+
+.amp-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-main);
+}
+
+.amp-pass {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.amp-warn {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.hospital-intake-note {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-main);
+}
+
+.hospital-intake-note b {
+  color: #e2e8f0;
 }
 
 /* ==================== CARD 2: MEDICAL ELIGIBILITY TRACKER ==================== */
 .eligibility-tag {
-  color: #10b981;
-  font-size: 0.78rem;
+  color: #34d399;
+  font-size: 0.82rem;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  font-family: var(--font-main);
 }
 
 .eligibility-layout {
@@ -607,6 +725,13 @@ body.donor-profile-body {
   grid-template-columns: 180px 1fr;
   gap: 1.5rem;
   align-items: center;
+}
+
+.gauge-col-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Circular Radial Progress Gauge with Soft Emerald-to-Mint Gradient */
@@ -658,16 +783,16 @@ body.donor-profile-body {
 }
 
 .gcc-status {
-  font-family: var(--font-tech);
-  font-size: 0.66rem;
+  font-family: var(--font-main);
+  font-size: 0.72rem;
   font-weight: 700;
   color: #34d399;
   letter-spacing: 0.6px;
 }
 
 .gcc-days {
-  font-family: var(--font-tech);
-  font-size: 1.65rem;
+  font-family: var(--font-main);
+  font-size: 1.85rem;
   font-weight: 800;
   color: #ffffff;
   line-height: 1.1;
@@ -675,16 +800,16 @@ body.donor-profile-body {
 }
 
 .gcc-sub {
-  font-family: var(--font-tech);
-  font-size: 0.62rem;
+  font-family: var(--font-main);
+  font-size: 0.65rem;
   color: #94a3b8;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .gcc-percent {
-  font-family: var(--font-tech);
-  font-size: 1.25rem;
+  font-family: var(--font-main);
+  font-size: 1.35rem;
   font-weight: 800;
   color: #34d399;
   margin-top: 2px;
@@ -704,6 +829,7 @@ body.donor-profile-body {
   font-size: 0.92rem;
   color: #e2e8f0;
   font-weight: 500;
+  font-family: var(--font-main);
 }
 
 .check-item i {
@@ -716,17 +842,17 @@ body.donor-profile-body {
 }
 
 .eligibility-next-row {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin-top: 0.85rem;
   font-size: 0.82rem;
   color: #94a3b8;
+  text-align: center;
+  font-family: var(--font-main);
 }
 
 .eligibility-next-row b {
   color: #34d399;
   font-weight: 700;
-  font-family: var(--font-tech);
+  font-family: var(--font-main);
 }
 
 /* ==================== CARD 3: DONOR IMPACT MILESTONES (Dimmed Glassmorphic) ==================== */
@@ -860,17 +986,19 @@ body.donor-profile-body {
 .ht-ref {
   color: #f87171;
   font-weight: 700;
-  font-family: var(--font-tech);
+  font-family: var(--font-main);
   margin-right: 8px;
 }
 
 .ht-date {
   color: #94a3b8;
+  font-family: var(--font-main);
 }
 
 .ht-hosp {
   color: #e2e8f0;
   font-weight: 500;
+  font-family: var(--font-main);
 }
 
 .status-pill-completed {
@@ -883,6 +1011,7 @@ body.donor-profile-body {
   font-weight: 700;
   letter-spacing: 0.5px;
   display: inline-block;
+  font-family: var(--font-main);
 }
 
 .empty-history-state {
@@ -891,20 +1020,67 @@ body.donor-profile-body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 2.5rem 1rem;
+  padding: 3rem 1.5rem;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  margin-top: 0.35rem;
   color: var(--text-muted);
 }
 
-.empty-history-state i {
-  font-size: 2.25rem;
-  color: rgba(255, 255, 255, 0.1);
-  margin-bottom: 0.75rem;
+.eh-icon-ring {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #34d399;
+  font-size: 1.5rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.12);
 }
 
-.empty-history-state p {
-  font-size: 0.85rem;
-  max-width: 360px;
-  line-height: 1.5;
+.eh-title {
+  font-family: var(--font-main);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.eh-desc {
+  font-family: var(--font-main);
+  font-size: 0.84rem;
+  color: #94a3b8;
+  max-width: 440px;
+  line-height: 1.55;
+  margin-bottom: 1rem;
+}
+
+.eh-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  color: #34d399;
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-family: var(--font-main);
+}
+
+.eh-sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: pulseGps 1.8s infinite;
 }
 
 /* Toast */

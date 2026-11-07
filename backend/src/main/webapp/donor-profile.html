@@ -122,7 +122,14 @@
               <div class="beb-type" id="vitalBloodType">A+</div>
               <div class="beb-label" id="vitalBloodLabel">POSITIVE</div>
               <div class="beb-icon">
-                <i class="fas fa-heart-pulse"></i>
+                <svg class="heart-drop-svg" viewBox="0 0 44 44" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Heart body with soft glow -->
+                  <path d="M22 35C22 35 7 24.5 7 14.8C7 9.5 11.2 5.5 16.5 5.5C19.8 5.5 22 7.5 22 7.5C22 7.5 24.2 5.5 27.5 5.5C32.8 5.5 37 9.5 37 14.8C37 24.5 22 35 22 35Z" 
+                        fill="rgba(248, 113, 113, 0.22)" stroke="#f87171" stroke-width="2.4" stroke-linejoin="round"/>
+                  <!-- Dripping Blood Drop -->
+                  <path d="M22 41C20.2 38.2 18 34.5 18 32C18 29.8 19.8 28 22 28C24.2 28 26 29.8 26 32C26 34.5 23.8 38.2 22 41Z" 
+                        fill="#ef4444" stroke="#fca5a5" stroke-width="1.2"/>
+                </svg>
               </div>
             </div>
 
@@ -155,9 +162,30 @@
               </div>
 
               <!-- Automated AI Health Evaluation Banner -->
-              <div class="health-eval-badge badge-fit" id="aiHealthEvalBadge">
+              <div class="health-eval-badge badge-fit" id="aiHealthEvalBadge" role="button" title="Click to view AI Clinical Safety Assessment">
                 <span>HEALTH STATUS: FIT TO DONATE</span>
               </div>
+            </div>
+          </div>
+
+          <!-- AI Clinical Health Evaluation & Hospital Intake Advisory -->
+          <div class="ai-eval-box" id="aiHealthAdvisoryBox">
+            <div class="ai-eval-header">
+              <span class="aeb-tag"><i class="fas fa-brain"></i> AI CLINICAL EVALUATION</span>
+              <span class="aeb-who"><i class="fas fa-shield-halved"></i> WHO NBTC Safety Standard</span>
+            </div>
+            <p class="ai-eval-message" id="aiAdvisoryText">
+              Analyzing vital metrics against medical blood donation guidelines...
+            </p>
+            <div class="ai-metrics-pills" id="aiMetricsPills">
+              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> Hb 14.8 g/dL (Safe &ge; 12.5)</span>
+              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> BP 120/80 (Optimal)</span>
+              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> Weight 76 kg (&ge; 50 kg)</span>
+              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> Pulse 72 bpm (Normal)</span>
+            </div>
+            <div class="hospital-intake-note">
+              <i class="fas fa-hospital-user"></i>
+              <span>All vital health parameters are verified by hospital physical intake at <b id="intakeHospitalName">City General Hospital</b>.</span>
             </div>
           </div>
         </section>
@@ -167,32 +195,39 @@
           <div class="card-header-row">
             <h2 class="card-title">Medical Eligibility Tracker</h2>
             <span class="card-meta-tag eligibility-tag">
-              <i class="fas fa-shield-alt"></i> Safety Cooldown
+              <i class="fas fa-question-circle"></i> Safety Cooldown
             </span>
           </div>
 
           <div class="eligibility-layout">
-            <!-- Circular Radial Gauge with Soft Emerald-to-Mint Gradient -->
-            <div class="gauge-wrapper">
-              <svg class="gauge-svg" viewBox="0 0 160 160">
-                <defs>
-                  <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#10b981" />
-                    <stop offset="100%" stop-color="#34d399" />
-                  </linearGradient>
-                </defs>
-                <!-- Background Arc -->
-                <circle class="gauge-bg-arc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
-                <!-- Dynamic Fill Arc -->
-                <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
-              </svg>
+            <!-- Left Column: Circular Radial Gauge + Next Available Row -->
+            <div class="gauge-col-left">
+              <div class="gauge-wrapper">
+                <svg class="gauge-svg" viewBox="0 0 160 160">
+                  <defs>
+                    <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#10b981" />
+                      <stop offset="100%" stop-color="#34d399" />
+                    </linearGradient>
+                  </defs>
+                  <!-- Background Arc -->
+                  <circle class="gauge-bg-arc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
+                  <!-- Dynamic Fill Arc -->
+                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
+                </svg>
 
-              <!-- Center Text Content -->
-              <div class="gauge-center-content">
-                <span class="gcc-status" id="gaugeStatusText">ELIGIBLE TO DONATE</span>
-                <span class="gcc-days" id="gaugeDaysText">90 DAYS</span>
-                <span class="gcc-sub" id="gaugeSubText">COOLDOWN COMPLETED</span>
-                <span class="gcc-percent" id="gaugePercentText">100%</span>
+                <!-- Center Text Content -->
+                <div class="gauge-center-content">
+                  <span class="gcc-status" id="gaugeStatusText">ELIGIBLE TO DONATE</span>
+                  <span class="gcc-days" id="gaugeDaysText">90 DAYS</span>
+                  <span class="gcc-sub" id="gaugeSubText">COOLDOWN COMPLETED</span>
+                  <span class="gcc-percent" id="gaugePercentText">100%</span>
+                </div>
+              </div>
+
+              <!-- Next Available Row placed directly under the gauge matching target design -->
+              <div class="eligibility-next-row">
+                Next Available: <b id="nextAvailableText">Immediate / READY</b>
               </div>
             </div>
 
@@ -202,17 +237,13 @@
                 <i class="fas fa-check"></i>
                 <span>90-day wait period met</span>
               </div>
-              <div class="check-item">
+              <div class="check-item" id="checkHealthItem">
                 <i class="fas fa-check"></i>
                 <span>Health indicators optimal</span>
               </div>
-              <div class="check-item">
+              <div class="check-item" id="checkMedsItem">
                 <i class="fas fa-check"></i>
                 <span>Not currently on medication</span>
-              </div>
-
-              <div class="eligibility-next-row">
-                Next Available: <b id="nextAvailableText">Immediate / READY</b>
               </div>
             </div>
           </div>

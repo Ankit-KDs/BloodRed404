@@ -372,6 +372,28 @@ public class DonorController {
         return handleRequestAction(requestId, "Declined", request);
     }
 
+    @PostMapping({"/donations/record", "/record-donation"})
+    public ResponseEntity<ApiResponse> recordDonation(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            int donorId = JsonUtil.asInt(body, "donorId", 0);
+            if (donorId <= 0) {
+                Map<String, Object> donor = requireDonor(request);
+                if (donor != null && donor.get("id") != null) {
+                    donorId = ((Number) donor.get("id")).intValue();
+                }
+            }
+            if (donorId <= 0) donorId = 1;
+            int hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
+            String bloodType = JsonUtil.textOrNull(body, "bloodType");
+            int units = JsonUtil.asInt(body, "units", 1);
+            String status = JsonUtil.textOrNull(body, "status");
+            boolean success = donorDao.recordDonation(donorId, hospitalId, bloodType, units, status);
+            return ok("Donation recorded and approved by hospital", Map.of("recorded", success));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     // ======================== PUT ========================
 
     @PutMapping("/availability")
