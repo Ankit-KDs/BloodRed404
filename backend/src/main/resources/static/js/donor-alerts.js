@@ -417,11 +417,22 @@
         attributionControl: false
       });
 
-      // CartoDB Dark Matter Tiles (high-performance dark health-tech style)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd'
+      // Clean ESRI World Dark Gray tiles (NO API keys required, NO watermarks)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 16,
+        attribution: ''
       }).addTo(leafletMap);
+
+      // Clicking anywhere on the map redirects to route navigation
+      leafletMap.on('click', () => {
+        window.location.href = 'donor-route.html';
+      });
+
+      // Also make map container click navigate
+      mapContainer.style.cursor = 'pointer';
+      mapContainer.addEventListener('click', () => {
+        window.location.href = 'donor-route.html';
+      });
 
       updateRadarVisualization();
     } catch (e) {
@@ -608,3 +619,4 @@
   }
 
 })();
+

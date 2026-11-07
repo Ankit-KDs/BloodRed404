@@ -260,6 +260,11 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <a id="openGoogleMapsBtn" target="_blank" class="btn-sos-accept" style="background:#1a73e8;width:100%;justify-content:center;box-shadow:0 4px 20px rgba(26,115,232,0.4);text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
+          <i class="fab fa-google"></i>
+          <span>Open in Google Maps App ↗</span>
+        </a>
+
         <button class="btn-sos-accept" style="width:100%;justify-content:center" onclick="confirmArrival()">
           <i class="fas fa-check-circle"></i>
           <span>I Have Arrived at Hospital</span>
@@ -304,9 +309,14 @@
       document.getElementById('hudDistance').textContent = distance + ' km';
       document.getElementById('metaDistance').textContent = distance + ' km';
 
-      // Initialize route map
+      // Set Google Maps Navigation deep-link
+      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${donorLat},${donorLng}&destination=${hospLat},${hospLng}&travelmode=driving`;
+      const gMapBtn = document.getElementById('openGoogleMapsBtn');
+      if (gMapBtn) gMapBtn.href = googleMapsUrl;
+
+      // Initialize route map with clean ESRI Dark Gray (NO API key required, NO watermark)
       map = L.map('routeMap', { center: [donorLat, donorLng], zoom: 13, zoomControl: false });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(map);
 
       // Donor pin
       L.circleMarker([donorLat, donorLng], {
@@ -353,3 +363,4 @@
   </script>
 </body>
 </html>
+

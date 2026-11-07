@@ -156,7 +156,7 @@
         <span class="rph-badge" id="radarActiveBadge">RADAR SCANNING: 0 ACTIVE ALERTS</span>
       </div>
 
-      <div class="radar-map-wrapper">
+      <div class="radar-map-wrapper" onclick="window.location.href='donor-route.html'" title="Click to open Live Route Navigation" style="cursor:pointer">
         <!-- Interactive Leaflet Dark Map Container -->
         <div id="proximityMap"></div>
 
@@ -170,6 +170,11 @@
           </div>
           <div class="radar-scope-circle rsc-zone3"></div>
           <div class="radar-scanner-sweep"></div>
+        </div>
+
+        <div class="radar-click-hint">
+          <i class="fas fa-location-arrow"></i>
+          <span>Click Map to Open Navigation ↗</span>
         </div>
       </div>
 
@@ -193,3 +198,4 @@
   <script src="js/donor-alerts.js"></script>
 </body>
 </html>
+
