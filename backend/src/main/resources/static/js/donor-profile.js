@@ -91,8 +91,11 @@
         } catch (_) {}
       }
 
-      // 2. Fetch fresh dynamic profile from API
-      const res = await fetch(`/api/donor/profile?donorId=${currentDonor.id}`);
+      // 2. Fetch fresh dynamic profile from API (/api/donor/profile-data or /api/donor/profile)
+      let res = await fetch(`/api/donor/profile-data?donorId=${currentDonor.id}`);
+      if (!res.ok) {
+        res = await fetch(`/api/donor/profile?donorId=${currentDonor.id}`);
+      }
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
@@ -288,90 +291,187 @@
   }
 
   // ======================== 4. 90-DAY ELIGIBILITY COUNTDOWN ========================
+  // Implements State A (Universal READY: Never donated or cooldown >= 90 days)
+  // vs State B (Active Decreasing Countdown when hospital logs a donation: daysPassed < 90)
   function renderMedicalEligibilityTracker() {
-    const currentDate = new Date();
-    let daysPassed = 90; // Default to eligible if never donated
-
-    if (currentDonor.lastDonationDate) {
-      const lastDate = new Date(currentDonor.lastDonationDate);
-      if (!isNaN(lastDate.getTime())) {
-        const diffMs = currentDate.getTime() - lastDate.getTime();
-        daysPassed = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-      }
-    }
-
     const arc = document.getElementById('gaugeFillArc');
+    const baseLayer = document.getElementById('gaugeBaseLayer');
     const statusText = document.getElementById('gaugeStatusText');
     const daysText = document.getElementById('gaugeDaysText');
     const subText = document.getElementById('gaugeSubText');
     const percentText = document.getElementById('gaugePercentText');
-    const checkWaitItem = document.getElementById('checkWaitItem');
-    const nextAvailableEl = document.getElementById('nextAvailableText');
+    const metaTag = document.getElementById('eligibilityMetaTag');
+    const nextRow = document.getElementById('eligibilityNextRow');
+    const checklist = document.getElementById('eligibilityChecklist');
 
     // Total arc circumference for radius 85 over 270 deg: 2 * PI * 85 * (270 / 360) = 400.55 ~ 401px
     const totalArcLength = 401;
 
-    if (daysPassed >= 90) {
-      // Cooldown Completed -> Eligible
+    // 1. Dynamic Data Handling:
+    // Read lastDonationDate from donor's backend record.
+    // If null/undefined -> treat as NEVER DONATED.
+    const lastDonation = currentDonor.lastDonationDate;
+    let isNeverDonated = !lastDonation;
+    let daysPassed = 90;
+    let remainingDays = 0;
+    let donationDate = null;
+
+    if (!isNeverDonated) {
+      donationDate = new Date(lastDonation);
+      if (!isNaN(donationDate.getTime())) {
+        const now = new Date();
+        daysPassed = Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24));
+        remainingDays = 90 - daysPassed;
+      } else {
+        isNeverDonated = true;
+        daysPassed = 90;
+        remainingDays = 0;
+      }
+    }
+
+    // 2. State A: Universal READY State (Applies if NEVER DONATED or if daysPassed >= 90)
+    // Both cases look 100% identical:
+    if (isNeverDonated || daysPassed >= 90) {
+      // Arc: 100% full circle styled in soothing clinical emerald (#10b981) with soft diffused glow
       if (arc) {
         arc.classList.remove('cooldown');
+        arc.style.stroke = 'url(#emeraldMintGradient)';
+        arc.style.filter = 'url(#gaugeGlowHalo)';
         arc.style.strokeDashoffset = '0';
       }
+      if (baseLayer) {
+        baseLayer.classList.remove('cooldown');
+        baseLayer.style.stroke = 'url(#gaugeBaseGradient)';
+      }
+
+      // Meta Tag
+      if (metaTag) {
+        metaTag.className = 'card-meta-tag eligibility-tag tag-ready';
+        metaTag.innerHTML = `<i class="fas fa-shield-alt"></i> Safety Cooldown: Cleared`;
+      }
+
+      // Center Top Tag: 'STATUS: ACTIVE'
       if (statusText) {
-        statusText.innerHTML = '<span>ELIGIBLE</span><span>TO DONATE</span>';
-        statusText.style.color = '#00e676';
+        statusText.className = 'gcc-status status-active';
+        statusText.textContent = 'STATUS: ACTIVE';
       }
-      if (daysText) daysText.textContent = '90 DAYS';
+
+      // Center Main Readout: 'ELIGIBLE' (font-size: 1.8rem, bold, crisp white #f8fafc)
+      if (daysText) {
+        daysText.className = 'gcc-days days-eligible';
+        daysText.textContent = 'ELIGIBLE';
+      }
+
+      // Center Subtitle: 'READY TO DONATE' (color: #34d399)
       if (subText) {
-        subText.innerHTML = '<span>COOLDOWN</span><span>COMPLETED</span>';
-        subText.style.color = '#94a3b8';
+        subText.className = 'gcc-sub sub-ready';
+        subText.textContent = 'READY TO DONATE';
       }
+
+      // Center Chip: '100% CLEARED'
       if (percentText) {
-        percentText.textContent = '100%';
-        percentText.style.color = '#00e676';
+        percentText.innerHTML = `<div class="gcc-chip-capsule chip-cleared">100% CLEARED</div>`;
       }
-      if (checkWaitItem) {
-        checkWaitItem.className = 'check-item';
-        checkWaitItem.innerHTML = `<i class="fas fa-check"></i> <span>90-day wait period met</span>`;
+
+      // Next Available Row under the gauge
+      if (nextRow) {
+        nextRow.innerHTML = `Next Available: <b style="color: #10b981;">Immediate / READY</b>`;
       }
-      if (nextAvailableEl) {
-        nextAvailableEl.style.color = '#00e676';
-        nextAvailableEl.textContent = 'Immediate / READY';
+
+      // Right-side Checklist
+      if (checklist) {
+        checklist.innerHTML = `
+          <div class="check-item">
+            <i class="fas fa-check"></i>
+            <span>No active cooldown restrictions</span>
+          </div>
+          <div class="check-item">
+            <i class="fas fa-check"></i>
+            <span>Health indicators cleared</span>
+          </div>
+          <div class="check-item">
+            <i class="fas fa-check"></i>
+            <span>Next Available: <b>Immediate / READY</b></span>
+          </div>
+        `;
       }
     } else {
-      // Cooldown Active -> Days Remaining
-      const remainingDays = 90 - daysPassed;
-      const percentage = Math.floor((daysPassed / 90) * 100);
-      const dashOffset = totalArcLength * (1 - (percentage / 100));
+      // 3. State B: Active Decreasing Countdown (Applies ONLY if daysPassed < 90)
+      // Triggers the moment a hospital marks a donation
+      const percentRemaining = Math.max(1, Math.min(100, Math.floor((remainingDays / 90) * 100)));
+      // Arc animates stroke-dashoffset to visually decrease in sync with remaining days
+      const dashOffset = totalArcLength * (1 - (percentRemaining / 100));
 
+      // Compute Next Available Target Date: donationDate + 90 days
+      const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
+      const nextAvailDateStr = targetDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
+      });
+
+      // Arc: Changes stroke color to soft coral/amber (#f87171)
       if (arc) {
         arc.classList.add('cooldown');
+        arc.style.stroke = 'url(#coralCooldownGradient)';
+        arc.style.filter = 'url(#gaugeGlowHaloCoral)';
         arc.style.strokeDashoffset = String(dashOffset);
       }
-      if (statusText) {
-        statusText.innerHTML = '<span>COOLDOWN</span><span>ACTIVE</span>';
-        statusText.style.color = '#ff9100';
-      }
-      if (daysText) daysText.textContent = `${remainingDays} DAYS`;
-      if (subText) {
-        subText.innerHTML = '<span>COOLDOWN</span><span>REMAINING</span>';
-        subText.style.color = '#94a3b8';
-      }
-      if (percentText) {
-        percentText.textContent = `${percentage}%`;
-        percentText.style.color = '#ff9100';
-      }
-      if (checkWaitItem) {
-        checkWaitItem.className = 'check-item pending';
-        checkWaitItem.innerHTML = `<i class="fas fa-hourglass-half"></i> <span>${remainingDays} days remaining in recovery cooldown</span>`;
+      if (baseLayer) {
+        baseLayer.classList.add('cooldown');
+        baseLayer.style.stroke = 'url(#gaugeBaseCoralGradient)';
       }
 
-      // Calculate future available date
-      if (nextAvailableEl && currentDonor.lastDonationDate) {
-        const nextAvailDate = new Date(currentDonor.lastDonationDate);
-        nextAvailDate.setDate(nextAvailDate.getDate() + 90);
-        nextAvailableEl.style.color = '#ff9100';
-        nextAvailableEl.textContent = formatDate(nextAvailDate);
+      // Meta Tag
+      if (metaTag) {
+        metaTag.className = 'card-meta-tag eligibility-tag tag-cooldown';
+        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Cooldown Active`;
+      }
+
+      // Center Top Tag: 'COOLDOWN ACTIVE'
+      if (statusText) {
+        statusText.className = 'gcc-status status-cooldown';
+        statusText.textContent = 'COOLDOWN ACTIVE';
+      }
+
+      // Center Main Readout: `${remainingDays} DAYS` (decreases day by day: 90, 89, 88... 1)
+      if (daysText) {
+        daysText.className = 'gcc-days days-cooldown';
+        daysText.textContent = `${remainingDays} DAYS`;
+      }
+
+      // Center Subtitle: 'RECOVERY IN PROGRESS'
+      if (subText) {
+        subText.className = 'gcc-sub sub-recovery';
+        subText.textContent = 'RECOVERY IN PROGRESS';
+      }
+
+      // Center Chip: `${percentRemaining}% REMAINING`
+      if (percentText) {
+        percentText.innerHTML = `<div class="gcc-chip-capsule chip-cooldown">${percentRemaining}% REMAINING</div>`;
+      }
+
+      // Next Available Row under the gauge
+      if (nextRow) {
+        nextRow.innerHTML = `Next Available: <b style="color: #f87171;">${nextAvailDateStr}</b>`;
+      }
+
+      // Right-side Checklist
+      if (checklist) {
+        checklist.innerHTML = `
+          <div class="check-item pending">
+            <i class="fas fa-hourglass-half"></i>
+            <span>Recovery interval: ${remainingDays} days left</span>
+          </div>
+          <div class="check-item">
+            <i class="fas fa-check"></i>
+            <span>Health indicators monitored</span>
+          </div>
+          <div class="check-item pending">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Next Available: <b>${nextAvailDateStr}</b></span>
+          </div>
+        `;
       }
     }
   }

@@ -35,7 +35,7 @@ public class DonorController {
 
     // ======================== GET ========================
 
-    @GetMapping("/profile")
+    @GetMapping({"/profile", "/profile-data"})
     public ResponseEntity<ApiResponse> getProfile(
             @RequestParam(required = false) Integer donorId,
             HttpServletRequest request) {

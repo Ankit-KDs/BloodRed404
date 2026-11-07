@@ -225,8 +225,8 @@
         <section class="profile-card" id="eligibilityTrackerCard">
           <div class="card-header-row">
             <h2 class="card-title">Medical Eligibility Tracker</h2>
-            <span class="card-meta-tag eligibility-tag">
-              <i class="fas fa-question-circle"></i> Safety Cooldown
+            <span class="card-meta-tag eligibility-tag" id="eligibilityMetaTag">
+              <!-- Dynamically rendered by JS -->
             </span>
           </div>
 
@@ -236,24 +236,44 @@
               <div class="gauge-wrapper">
                 <svg class="gauge-svg" viewBox="0 0 240 240">
                   <defs>
-                    <!-- Top Layer Neon Emerald-to-Mint Gradient -->
+                    <!-- Top Layer Neon Emerald-to-Mint Gradient (State A: Ready / Eligible) -->
                     <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#00e676" />
-                      <stop offset="55%" stop-color="#22c55e" />
-                      <stop offset="100%" stop-color="#86efac" />
+                      <stop offset="0%" stop-color="#059669" />
+                      <stop offset="50%" stop-color="#10b981" />
+                      <stop offset="100%" stop-color="#34d399" />
                     </linearGradient>
 
-                    <!-- 2nd Layer: 3D Base/Extrusion Dark Emerald Gradient -->
+                    <!-- 2nd Layer: 3D Base/Extrusion Dark Emerald Gradient (State A) -->
                     <linearGradient id="gaugeBaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#0b382c" />
-                      <stop offset="50%" stop-color="#144e3d" />
-                      <stop offset="100%" stop-color="#235c4b" />
+                      <stop offset="0%" stop-color="#064e3b" />
+                      <stop offset="50%" stop-color="#065f46" />
+                      <stop offset="100%" stop-color="#047857" />
                     </linearGradient>
 
-                    <!-- Atmospheric Neon Glow Halo -->
+                    <!-- Top Layer Soft Coral/Amber Gradient (State B: Active Cooldown Countdown) -->
+                    <linearGradient id="coralCooldownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#b91c1c" />
+                      <stop offset="50%" stop-color="#ef4444" />
+                      <stop offset="100%" stop-color="#f87171" />
+                    </linearGradient>
+
+                    <!-- 2nd Layer: 3D Base/Extrusion Dark Wine/Coral Gradient (State B) -->
+                    <linearGradient id="gaugeBaseCoralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#450a0a" />
+                      <stop offset="50%" stop-color="#7f1d1d" />
+                      <stop offset="100%" stop-color="#991b1b" />
+                    </linearGradient>
+
+                    <!-- Atmospheric Emerald Glow Halo -->
                     <filter id="gaugeGlowHalo" x="-40%" y="-40%" width="180%" height="180%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#00e676" flood-opacity="0.8"/>
-                      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#00e676" flood-opacity="0.4"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#10b981" flood-opacity="0.6"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#10b981" flood-opacity="0.25"/>
+                    </filter>
+
+                    <!-- Atmospheric Coral Glow Halo -->
+                    <filter id="gaugeGlowHaloCoral" x="-40%" y="-40%" width="180%" height="180%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f87171" flood-opacity="0.6"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#f87171" flood-opacity="0.25"/>
                     </filter>
 
                     <!-- 3D Base Depth Shadow -->
@@ -263,47 +283,26 @@
                   </defs>
 
                   <!-- 2nd Layer: 3D Base / Extrusion Under-layer (shifted down and right) -->
-                  <circle class="gauge-base-layer" cx="121" cy="125" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 121 125)" filter="url(#gaugeBaseDepth)"></circle>
+                  <circle class="gauge-base-layer" id="gaugeBaseLayer" cx="121" cy="125" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 121 125)" filter="url(#gaugeBaseDepth)"></circle>
                   <!-- 1st Layer: Glowing Luminous Top Surface Arc -->
                   <circle class="gauge-fill-arc" id="gaugeFillArc" cx="120" cy="120" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 120 120)" filter="url(#gaugeGlowHalo)"></circle>
                 </svg>
 
-                <!-- Center Text Content (Well-spaced layout: Content NEVER touches the bar) -->
-                <div class="gauge-center-content">
-                  <div class="gcc-status" id="gaugeStatusText">
-                    <span>ELIGIBLE</span>
-                    <span>TO DONATE</span>
-                  </div>
-                  <div class="gcc-days" id="gaugeDaysText">90 DAYS</div>
-                  <div class="gcc-sub" id="gaugeSubText">
-                    <span>COOLDOWN</span>
-                    <span>COMPLETED</span>
-                  </div>
-                  <div class="gcc-percent" id="gaugePercentText">100%</div>
+                <!-- Center Text Content (Zero hardcoded text in HTML — dynamically injected via JS) -->
+                <div class="gauge-center-content" id="gaugeCenterContent">
+                  <div class="gcc-status" id="gaugeStatusText"></div>
+                  <div class="gcc-days" id="gaugeDaysText"></div>
+                  <div class="gcc-sub" id="gaugeSubText"></div>
+                  <div class="gcc-percent" id="gaugePercentText"></div>
                 </div>
               </div>
 
               <!-- Next Available Row placed directly under the gauge -->
-              <div class="eligibility-next-row">
-                Next Available: <b id="nextAvailableText">Immediate / READY</b>
-              </div>
+              <div class="eligibility-next-row" id="eligibilityNextRow"></div>
             </div>
 
-            <!-- Right Eligibility Checklist -->
-            <div class="eligibility-checklist">
-              <div class="check-item" id="checkWaitItem">
-                <i class="fas fa-check"></i>
-                <span>90-day wait period met</span>
-              </div>
-              <div class="check-item" id="checkHealthItem">
-                <i class="fas fa-check"></i>
-                <span>Health indicators optimal</span>
-              </div>
-              <div class="check-item" id="checkMedsItem">
-                <i class="fas fa-check"></i>
-                <span>Not currently on medication</span>
-              </div>
-            </div>
+            <!-- Right Eligibility Checklist (Zero hardcoded text in HTML — dynamically injected via JS) -->
+            <div class="eligibility-checklist" id="eligibilityChecklist"></div>
           </div>
         </section>
 

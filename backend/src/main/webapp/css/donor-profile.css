@@ -791,6 +791,25 @@ body.donor-profile-body {
 }
 
 /* ==================== CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER ==================== */
+.eligibility-tag {
+  color: #34d399;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-main);
+  transition: color 0.3s ease;
+}
+
+.eligibility-tag.tag-ready {
+  color: #34d399;
+}
+
+.eligibility-tag.tag-cooldown {
+  color: #f87171;
+}
+
 .eligibility-layout {
   display: flex;
   align-items: center;
@@ -828,7 +847,11 @@ body.donor-profile-body {
   stroke: url(#gaugeBaseGradient);
   stroke-width: 19;
   stroke-linecap: round;
-  transition: all 0.3s ease;
+  transition: stroke 0.4s ease;
+}
+
+.gauge-base-layer.cooldown {
+  stroke: url(#gaugeBaseCoralGradient);
 }
 
 /* 1st Layer: Glowing Luminous Top Surface Arc */
@@ -837,16 +860,16 @@ body.donor-profile-body {
   stroke: url(#emeraldMintGradient);
   stroke-width: 18;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 8px rgba(0, 230, 118, 0.7)) drop-shadow(0 0 20px rgba(0, 230, 118, 0.35));
-  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease, filter 0.4s ease;
+  filter: url(#gaugeGlowHalo);
+  transition: stroke-dashoffset 0.8s ease, stroke 0.4s ease, filter 0.4s ease;
 }
 
 .gauge-fill-arc.cooldown {
-  stroke: #ff9100;
-  filter: drop-shadow(0 0 10px rgba(255, 145, 0, 0.6)) drop-shadow(0 0 20px rgba(255, 145, 0, 0.3));
+  stroke: url(#coralCooldownGradient);
+  filter: url(#gaugeGlowHaloCoral);
 }
 
-/* Center Content: Content is strictly contained inside the circle, NEVER touches or crosses the bar */
+/* Center Content: Well-spaced layout strictly inside circle, NEVER touches or crosses the bar */
 .gauge-center-content {
   position: absolute;
   inset: 0;
@@ -857,37 +880,36 @@ body.donor-profile-body {
   text-align: center;
   pointer-events: none;
   box-sizing: border-box;
-  padding: 16px 22px 14px 22px;
+  padding: 18px 24px 16px 24px;
 }
 
 .gcc-status {
   font-family: var(--font-main);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  color: #00e676;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.9px;
   text-transform: uppercase;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.15;
-  max-width: 105px;
+  line-height: 1.1;
   margin-bottom: 2px;
   transition: color 0.3s ease;
+  white-space: nowrap;
 }
 
-.gcc-status span {
-  display: block;
-  white-space: nowrap;
+.gcc-status.status-active {
+  color: #34d399;
+}
+
+.gcc-status.status-cooldown {
+  color: #f87171;
 }
 
 .gcc-days {
   font-family: var(--font-main);
-  font-size: 1.85rem;
+  font-size: 1.8rem;
   font-weight: 800;
-  color: #ffffff;
+  color: #f8fafc;
   line-height: 1.05;
-  margin: 3px 0 3px 0;
+  margin: 2px 0 2px 0;
   letter-spacing: -0.5px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   white-space: nowrap;
@@ -896,33 +918,54 @@ body.donor-profile-body {
 
 .gcc-sub {
   font-family: var(--font-main);
-  font-size: 0.62rem;
-  color: #94a3b8;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.15;
-  max-width: 105px;
-  margin-bottom: 3px;
+  line-height: 1.1;
+  margin-bottom: 4px;
   transition: color 0.3s ease;
-}
-
-.gcc-sub span {
-  display: block;
   white-space: nowrap;
 }
 
-.gcc-percent {
+.gcc-sub.sub-ready {
+  color: #34d399;
+}
+
+.gcc-sub.sub-recovery {
+  color: #94a3b8;
+}
+
+/* Frosted Mini-Capsule Chip */
+.gcc-chip-capsule {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
   font-family: var(--font-main);
-  font-size: 1.3rem;
+  font-size: 0.74rem;
   font-weight: 800;
-  color: #00e676;
-  line-height: 1;
-  margin-top: 1px;
-  transition: color 0.3s ease;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-sizing: border-box;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.gcc-chip-capsule.chip-cleared {
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+}
+
+.gcc-chip-capsule.chip-cooldown {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #f87171;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
 }
 
 /* Next Available Row directly below the gauge */
@@ -932,10 +975,10 @@ body.donor-profile-body {
   color: #64748b;
   font-family: var(--font-main);
   text-align: center;
+  transition: color 0.3s ease;
 }
 
 .eligibility-next-row b {
-  color: #e2e8f0;
   font-weight: 700;
 }
 
@@ -959,15 +1002,25 @@ body.donor-profile-body {
 }
 
 .check-item i {
-  color: #00e676;
+  color: #10b981;
   font-size: 1rem;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.45));
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.45));
 }
 
 .check-item.pending i {
-  color: #ff9100;
-  filter: drop-shadow(0 0 6px rgba(255, 145, 0, 0.45));
+  color: #f87171;
+  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.45));
+}
+
+.check-item.pending span {
+  color: #cbd5e1;
+}
+
+.check-item b {
+  color: #f8fafc;
+  font-weight: 700;
+}
 }
 
 /* ==================== CARD 3: DONOR IMPACT MILESTONES (Dimmed Glassmorphic) ==================== */
