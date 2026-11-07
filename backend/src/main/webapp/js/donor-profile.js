@@ -287,7 +287,7 @@
     }
   }
 
-  // ======================== 4. 90-DAY ELIGIBILITY COUNTDOWN ========================
+  // ======================== 4. 240-DEGREE 3D MEDICAL ELIGIBILITY TRACKER ========================
   function renderMedicalEligibilityTracker() {
     const currentDate = new Date();
     let daysPassed = 90; // Default to eligible if never donated
@@ -300,60 +300,106 @@
       }
     }
 
-    const arc = document.getElementById('gaugeFillArc');
+    const pipe = document.getElementById('gaugeActivePipe') || document.getElementById('gaugeFillArc');
+    const bead = document.getElementById('gaugeTipBead');
     const statusText = document.getElementById('gaugeStatusText');
     const daysText = document.getElementById('gaugeDaysText');
     const subText = document.getElementById('gaugeSubText');
     const percentText = document.getElementById('gaugePercentText');
+    const chipContainer = document.getElementById('gaugeChipContainer');
     const checkWaitItem = document.getElementById('checkWaitItem');
     const nextAvailableEl = document.getElementById('nextAvailableText');
 
-    // Total arc circumference for radius 85 over 270 deg: 2 * PI * 85 * (270 / 360) = 400.55 ~ 401px
-    const totalArcLength = 401;
+    // 240-degree 3D Horseshoe Geometry: Radius 80, Center (120, 120), Span 240° (150° to 390°/30°)
+    // Circumference = 2 * PI * 80 = 502.65px; Arc length = 502.65 * (240 / 360) = 335.10px
+    const totalArcLength = 335.1;
+    const startAngle = 150;
+    const totalSpan = 240;
+    const cx = 120, cy = 120, R = 80;
 
     if (daysPassed >= 90) {
       // Cooldown Completed -> Eligible
-      if (arc) {
-        arc.classList.remove('cooldown');
-        arc.style.strokeDashoffset = '0';
+      if (pipe) {
+        pipe.style.strokeDashoffset = '0';
+        pipe.setAttribute('stroke', 'url(#pipeEmerald3D)');
+        pipe.setAttribute('filter', 'url(#pipeVolumetricGlow)');
+      }
+      if (bead) {
+        // At 100%, leading tip angle = 390° = 30°
+        const endRad = 30 * (Math.PI / 180);
+        const bx = (cx + R * Math.cos(endRad)).toFixed(2);
+        const by = (cy + R * Math.sin(endRad)).toFixed(2);
+        bead.setAttribute('cx', bx);
+        bead.setAttribute('cy', by);
+        bead.setAttribute('fill', 'url(#beadEmeraldSphere)');
+        bead.setAttribute('filter', 'url(#beadGlow)');
+        bead.style.display = 'block';
       }
       if (statusText) {
-        statusText.innerHTML = '<span>ELIGIBLE</span><span>TO DONATE</span>';
-        statusText.style.color = '#00e676';
+        statusText.textContent = 'ELIGIBLE TO DONATE';
+        statusText.style.color = '#34d399';
       }
-      if (daysText) daysText.textContent = '90 DAYS';
-      if (subText) subText.innerHTML = '<span>COOLDOWN</span><span>COMPLETED</span>';
+      if (daysText) {
+        daysText.textContent = '90 DAYS';
+        daysText.style.color = '#f8fafc';
+        daysText.classList.remove('cooldown');
+      }
+      if (subText) {
+        subText.textContent = 'COOLDOWN COMPLETED';
+        subText.style.color = '#64748b';
+      }
+      if (chipContainer) chipContainer.classList.remove('cooldown');
       if (percentText) {
         percentText.textContent = '100%';
-        percentText.style.color = '#00e676';
+        percentText.style.color = '#34d399';
       }
       if (checkWaitItem) {
         checkWaitItem.className = 'check-item';
         checkWaitItem.innerHTML = `<i class="fas fa-check"></i> <span>90-day wait period met</span>`;
       }
       if (nextAvailableEl) {
-        nextAvailableEl.style.color = '#00e676';
+        nextAvailableEl.style.color = '#34d399';
         nextAvailableEl.textContent = 'Immediate / READY';
       }
     } else {
       // Cooldown Active -> Days Remaining
       const remainingDays = 90 - daysPassed;
-      const percentage = Math.floor((daysPassed / 90) * 100);
+      const percentage = Math.max(1, Math.floor((daysPassed / 90) * 100));
       const dashOffset = totalArcLength * (1 - (percentage / 100));
 
-      if (arc) {
-        arc.classList.add('cooldown');
-        arc.style.strokeDashoffset = String(dashOffset);
+      if (pipe) {
+        pipe.style.strokeDashoffset = String(dashOffset.toFixed(2));
+        pipe.setAttribute('stroke', 'url(#pipeCoral3D)');
+        pipe.setAttribute('filter', 'url(#pipeCoralVolumetricGlow)');
+      }
+      if (bead) {
+        const curAngle = startAngle + (percentage / 100) * totalSpan;
+        const curRad = curAngle * (Math.PI / 180);
+        const bx = (cx + R * Math.cos(curRad)).toFixed(2);
+        const by = (cy + R * Math.sin(curRad)).toFixed(2);
+        bead.setAttribute('cx', bx);
+        bead.setAttribute('cy', by);
+        bead.setAttribute('fill', 'url(#beadCoralSphere)');
+        bead.setAttribute('filter', 'url(#beadCoralGlow)');
+        bead.style.display = 'block';
       }
       if (statusText) {
-        statusText.innerHTML = '<span>COOLDOWN</span><span>ACTIVE</span>';
-        statusText.style.color = '#ff9100';
+        statusText.textContent = 'COOLDOWN ACTIVE';
+        statusText.style.color = '#f87171';
       }
-      if (daysText) daysText.textContent = `${remainingDays} DAYS`;
-      if (subText) subText.innerHTML = '<span>COOLDOWN</span><span>REMAINING</span>';
+      if (daysText) {
+        daysText.textContent = `${remainingDays} DAYS REMAINING`;
+        daysText.style.color = '#f8fafc';
+        daysText.classList.add('cooldown');
+      }
+      if (subText) {
+        subText.textContent = 'RECOVERY IN PROGRESS';
+        subText.style.color = '#94a3b8';
+      }
+      if (chipContainer) chipContainer.classList.add('cooldown');
       if (percentText) {
         percentText.textContent = `${percentage}%`;
-        percentText.style.color = '#ff9100';
+        percentText.style.color = '#f87171';
       }
       if (checkWaitItem) {
         checkWaitItem.className = 'check-item pending';
@@ -364,7 +410,7 @@
       if (nextAvailableEl && currentDonor.lastDonationDate) {
         const nextAvailDate = new Date(currentDonor.lastDonationDate);
         nextAvailDate.setDate(nextAvailDate.getDate() + 90);
-        nextAvailableEl.style.color = '#ff9100';
+        nextAvailableEl.style.color = '#f87171';
         nextAvailableEl.textContent = formatDate(nextAvailDate);
       }
     }

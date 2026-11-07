@@ -235,50 +235,101 @@
               <div class="gauge-wrapper">
                 <svg class="gauge-svg" viewBox="0 0 240 240">
                   <defs>
-                    <!-- Top Layer Neon Emerald-to-Mint Gradient -->
-                    <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#00e676" />
-                      <stop offset="55%" stop-color="#22c55e" />
-                      <stop offset="100%" stop-color="#86efac" />
+                    <!-- Active 3D Volumetric Pipe Gradient: Light Source at Top Edge (Highlight, Core, Shaded Bottom) -->
+                    <linearGradient id="pipeEmerald3D" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#6ee7b7" />
+                      <stop offset="45%" stop-color="#10b981" />
+                      <stop offset="100%" stop-color="#047857" />
                     </linearGradient>
 
-                    <!-- 2nd Layer: 3D Base/Extrusion Dark Emerald Gradient -->
-                    <linearGradient id="gaugeBaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#0b382c" />
-                      <stop offset="50%" stop-color="#144e3d" />
-                      <stop offset="100%" stop-color="#235c4b" />
+                    <!-- Cooldown 3D Volumetric Pipe Gradient: Amber-Coral Palette -->
+                    <linearGradient id="pipeCoral3D" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#fca5a5" />
+                      <stop offset="45%" stop-color="#f87171" />
+                      <stop offset="100%" stop-color="#991b1b" />
                     </linearGradient>
 
-                    <!-- Atmospheric Neon Glow Halo -->
-                    <filter id="gaugeGlowHalo" x="-40%" y="-40%" width="180%" height="180%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#00e676" flood-opacity="0.8"/>
-                      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#00e676" flood-opacity="0.4"/>
+                    <!-- 3D Spherical Glowing Bead Gradients with Volumetric Specular Highlights -->
+                    <radialGradient id="beadEmeraldSphere" cx="35%" cy="32%" r="65%">
+                      <stop offset="0%" stop-color="#ffffff" />
+                      <stop offset="28%" stop-color="#a7f3d0" />
+                      <stop offset="68%" stop-color="#34d399" />
+                      <stop offset="100%" stop-color="#047857" />
+                    </radialGradient>
+
+                    <radialGradient id="beadCoralSphere" cx="35%" cy="32%" r="65%">
+                      <stop offset="0%" stop-color="#ffffff" />
+                      <stop offset="28%" stop-color="#fed7aa" />
+                      <stop offset="68%" stop-color="#f87171" />
+                      <stop offset="100%" stop-color="#991b1b" />
+                    </radialGradient>
+
+                    <!-- Soft Volumetric Lighting & Diffused Shadows (Zero Harsh Eye Strain) -->
+                    <filter id="pipeVolumetricGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0, 0, 0, 0.45)" />
+                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="rgba(52, 211, 153, 0.35)" />
                     </filter>
 
-                    <!-- 3D Base Depth Shadow -->
-                    <filter id="gaugeBaseDepth" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="1" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.75"/>
+                    <filter id="pipeCoralVolumetricGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0, 0, 0, 0.45)" />
+                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="rgba(248, 113, 113, 0.35)" />
+                    </filter>
+
+                    <!-- 3D Bead Soft Diffused Glow -->
+                    <filter id="beadGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0, 0, 0, 0.55)" />
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="rgba(52, 211, 153, 0.45)" />
+                    </filter>
+
+                    <filter id="beadCoralGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0, 0, 0, 0.55)" />
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="rgba(248, 113, 113, 0.45)" />
+                    </filter>
+
+                    <!-- Recessed Groove Inner Shadow Filter -->
+                    <filter id="grooveInnerShadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="rgba(0, 0, 0, 0.7)" />
                     </filter>
                   </defs>
 
-                  <!-- 2nd Layer: 3D Base / Extrusion Under-layer (shifted down and right) -->
-                  <circle class="gauge-base-layer" cx="121" cy="125" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 121 125)" filter="url(#gaugeBaseDepth)"></circle>
-                  <!-- 1st Layer: Glowing Luminous Top Surface Arc -->
-                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="120" cy="120" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 120 120)" filter="url(#gaugeGlowHalo)"></circle>
+                  <!-- Base Track (Recessed 3D Groove: 240-Degree open horseshoe) -->
+                  <!-- 1. Subtle bottom metallic highlight rim -->
+                  <circle class="track-groove-highlight" cx="120" cy="121.5" r="80" 
+                          stroke="rgba(255,255,255,0.05)" stroke-width="13" stroke-linecap="round" 
+                          stroke-dasharray="335.1 502.65" stroke-dashoffset="0" 
+                          transform="rotate(150 120 121.5)" fill="none" />
+
+                  <!-- 2. Dark inner shadow & recessed groove floor -->
+                  <circle class="track-groove-body" cx="120" cy="120" r="80" 
+                          stroke="#070a0f" stroke-width="12" stroke-linecap="round" 
+                          stroke-dasharray="335.1 502.65" stroke-dashoffset="0" 
+                          transform="rotate(150 120 120)" fill="none" />
+
+                  <!-- 3. Dark inner shadow upper rim -->
+                  <circle class="track-groove-shadow" cx="120" cy="119" r="80" 
+                          stroke="rgba(0,0,0,0.7)" stroke-width="10" stroke-linecap="round" 
+                          stroke-dasharray="335.1 502.65" stroke-dashoffset="0" 
+                          transform="rotate(150 120 119)" fill="none" filter="url(#grooveInnerShadow)" />
+
+                  <!-- Active 3D Volumetric Pipe (Cylindrical highlight ridge -> core -> shaded bottom) -->
+                  <circle class="gauge-active-pipe" id="gaugeActivePipe" cx="120" cy="120" r="80" 
+                          stroke="url(#pipeEmerald3D)" stroke-width="12" stroke-linecap="round" 
+                          stroke-dasharray="335.1 502.65" stroke-dashoffset="0" 
+                          transform="rotate(150 120 120)" fill="none" filter="url(#pipeVolumetricGlow)" />
+
+                  <!-- 3D Glowing Bead / Indicator Tip (Volumetric sphere leading the arc) -->
+                  <circle class="gauge-tip-bead" id="gaugeTipBead" cx="189.28" cy="160.00" r="7.5" 
+                          fill="url(#beadEmeraldSphere)" filter="url(#beadGlow)" />
                 </svg>
 
-                <!-- Center Text Content (Well-spaced layout: Content NEVER touches the bar) -->
+                <!-- Centered 3D Dial Typography (Clean Layer Hierarchy) -->
                 <div class="gauge-center-content">
-                  <div class="gcc-status" id="gaugeStatusText">
-                    <span>ELIGIBLE</span>
-                    <span>TO DONATE</span>
-                  </div>
+                  <div class="gcc-status" id="gaugeStatusText">ELIGIBLE TO DONATE</div>
                   <div class="gcc-days" id="gaugeDaysText">90 DAYS</div>
-                  <div class="gcc-sub" id="gaugeSubText">
-                    <span>COOLDOWN</span>
-                    <span>COMPLETED</span>
+                  <div class="gcc-sub" id="gaugeSubText">COOLDOWN COMPLETED</div>
+                  <div class="gcc-chip" id="gaugeChipContainer">
+                    <span class="gcc-chip-text" id="gaugePercentText">100%</span>
                   </div>
-                  <div class="gcc-percent" id="gaugePercentText">100%</div>
                 </div>
               </div>
 

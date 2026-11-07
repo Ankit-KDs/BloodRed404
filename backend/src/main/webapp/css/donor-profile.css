@@ -790,6 +790,7 @@ body.donor-profile-body {
   font-family: var(--font-main);
 }
 
+/* ==================== CARD 2: PREMIUM 240-DEGREE 3D VOLUMETRIC GAUGE ==================== */
 .eligibility-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
@@ -805,45 +806,47 @@ body.donor-profile-body {
   justify-content: center;
 }
 
-/* Circular Radial Progress Gauge with Soft Emerald-to-Mint Gradient */
+/* Gauge Wrapper & SVG Cockpit Dial Canvas */
 .gauge-wrapper {
   position: relative;
-  width: 215px;
-  height: 215px;
+  width: 220px;
+  height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .gauge-svg {
-  width: 215px;
-  height: 215px;
+  width: 220px;
+  height: 220px;
   overflow: visible;
 }
 
-/* 2nd Layer: 3D Base/Extrusion Dark Emerald Under-layer */
-.gauge-base-layer {
-  fill: none;
-  stroke: url(#gaugeBaseGradient);
-  stroke-width: 19;
-  stroke-linecap: round;
+/* Recessed 3D Groove Base Track */
+.track-groove-highlight {
+  transition: opacity 0.3s ease;
 }
 
-/* 1st Layer: Glowing Luminous Top Surface Arc */
-.gauge-fill-arc {
-  fill: none;
-  stroke: url(#emeraldMintGradient);
-  stroke-width: 18;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 8px rgba(0, 230, 118, 0.7)) drop-shadow(0 0 20px rgba(0, 230, 118, 0.35));
-  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+.track-groove-body {
+  transition: stroke 0.3s ease;
 }
 
-.gauge-fill-arc.cooldown {
-  stroke: #f59e0b;
-  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)) drop-shadow(0 0 20px rgba(245, 158, 11, 0.3));
+.track-groove-shadow {
+  transition: opacity 0.3s ease;
 }
 
+/* Active Volumetric 3D Pipe */
+.gauge-active-pipe {
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease;
+}
+
+/* 3D Spherical Indicator Bead */
+.gauge-tip-bead {
+  transition: cx 1s cubic-bezier(0.4, 0, 0.2, 1), cy 1s cubic-bezier(0.4, 0, 0.2, 1), fill 0.4s ease;
+  pointer-events: none;
+}
+
+/* Centered Telemetry Metrics (Clean 3D Dial Typography) */
 .gauge-center-content {
   position: absolute;
   inset: 0;
@@ -853,53 +856,98 @@ body.donor-profile-body {
   justify-content: center;
   text-align: center;
   pointer-events: none;
-  padding: 18px 24px 14px 24px;
+  padding: 16px 20px 12px 20px;
   box-sizing: border-box;
+  z-index: 2;
 }
 
 .gcc-status {
   font-family: var(--font-main);
   font-size: 0.72rem;
-  font-weight: 800;
-  color: #00e676;
-  letter-spacing: 0.8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.2;
-  margin-bottom: 4px;
+  font-weight: 700;
+  color: #34d399;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  transition: color 0.3s ease;
 }
 
 .gcc-days {
   font-family: var(--font-main);
   font-size: 1.85rem;
   font-weight: 800;
-  color: #ffffff;
-  line-height: 1;
-  margin: 4px 0 6px 0;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   letter-spacing: -0.5px;
+  line-height: 1.1;
+  margin: 3px 0 4px 0;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.gcc-days.cooldown {
+  font-size: 1.35rem;
+  letter-spacing: -0.2px;
 }
 
 .gcc-sub {
   font-family: var(--font-main);
-  font-size: 0.65rem;
-  color: #94a3b8;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.2;
-  margin-bottom: 5px;
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  transition: color 0.3s ease;
 }
 
-.gcc-percent {
+/* Frosted Mini-Capsule Percentage Chip */
+.gcc-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 14px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s ease;
+}
+
+.gcc-chip.cooldown {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.gcc-chip-text {
   font-family: var(--font-main);
-  font-size: 1.35rem;
+  font-size: 0.86rem;
   font-weight: 800;
-  color: #00e676;
+  color: #34d399;
+  letter-spacing: 0.5px;
   line-height: 1;
-  margin-top: 1px;
+  transition: color 0.3s ease;
+}
+
+.gcc-chip.cooldown .gcc-chip-text {
+  color: #f87171;
+}
+
+/* Next Available Telemetry Row */
+.eligibility-next-row {
+  margin-top: 0.65rem;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  text-align: center;
+  font-family: var(--font-main);
+}
+
+.eligibility-next-row b {
+  color: #34d399;
+  font-weight: 700;
+  transition: color 0.3s ease;
 }
 
 /* Right Clean 3-Point Checklist */
@@ -920,20 +968,15 @@ body.donor-profile-body {
 }
 
 .check-item i {
-  color: #00e676;
+  color: #34d399;
   font-size: 1rem;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.45));
+  transition: color 0.3s ease;
 }
 
 .check-item.pending i {
-  color: #f59e0b;
-}
-
-.eligibility-next-row {
-  margin-top: 0.65rem;
-  font-size: 0.82rem;
-  color: #94a3b8;
-  text-align: center;
-  font-family: var(--font-main);
+  color: #f87171;
+  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.45));
 }
 
 .eligibility-next-row b {
