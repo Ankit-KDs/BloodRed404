@@ -6,19 +6,19 @@
 (function () {
   'use strict';
 
-  // State
+  // State: Initialized with null vitals (empty placeholders until hospital logs checkup)
   let currentDonor = {
     id: 1,
     name: 'Ankit Kumar',
-    bloodType: 'O-',
-    age: 24,
-    weight: 72,
-    pulse: 72,
-    hemoglobin: 14.8,
-    bloodPressure: '120/80',
-    bodyTemp: 98.6,
-    verifiedFacility: 'City General Hospital',
-    verifiedDate: '2026-08-05',
+    bloodType: 'A+',
+    age: null,
+    weight: null,
+    pulse: null,
+    hemoglobin: null,
+    bloodPressure: null,
+    bodyTemp: null,
+    verifiedFacility: null,
+    verifiedDate: null,
     lastDonationDate: null,
     latitude: 28.3486,
     longitude: 79.5619,
@@ -42,6 +42,23 @@
     await loadDonorProfile();
     await loadDonationHistory();
     evaluateHealthAndEligibility();
+
+    // Auto-sync polling every 10s: Automatically catches new vitals recorded by hospital dashboard
+    setInterval(async () => {
+      await loadDonorProfile();
+      await loadDonationHistory();
+      evaluateHealthAndEligibility();
+    }, 10000);
+
+    // Cross-tab / localStorage event: instantly updates if hospital dashboard saves intake
+    window.addEventListener('storage', (e) => {
+      if (e.key && (e.key.includes('donor') || e.key.includes('vitals') || e.key.includes('donation'))) {
+        loadDonorProfile().then(() => {
+          evaluateHealthAndEligibility();
+          loadDonationHistory();
+        });
+      }
+    });
   });
 
   // ======================== 1. LOAD DONOR PROFILE ========================
@@ -59,6 +76,21 @@
         }
       }
 
+      // Check if hospital dashboard logged vitals locally in storage
+      const localVitalsRaw = localStorage.getItem('hospitalDonorVitals_' + currentDonor.id) || sessionStorage.getItem('donorVitals');
+      if (localVitalsRaw) {
+        try {
+          const lv = JSON.parse(localVitalsRaw);
+          if (lv.weight !== undefined && lv.weight !== null) currentDonor.weight = parseFloat(lv.weight);
+          if (lv.pulse !== undefined && lv.pulse !== null) currentDonor.pulse = parseInt(lv.pulse, 10);
+          if (lv.hemoglobin !== undefined && lv.hemoglobin !== null) currentDonor.hemoglobin = parseFloat(lv.hemoglobin);
+          if (lv.bloodPressure) currentDonor.bloodPressure = lv.bloodPressure;
+          if (lv.bodyTemp !== undefined && lv.bodyTemp !== null) currentDonor.bodyTemp = parseFloat(lv.bodyTemp);
+          if (lv.verifiedFacility) currentDonor.verifiedFacility = lv.verifiedFacility;
+          if (lv.verifiedDate) currentDonor.verifiedDate = lv.verifiedDate;
+        } catch (_) {}
+      }
+
       // 2. Fetch fresh dynamic profile from API
       const res = await fetch(`/api/donor/profile?donorId=${currentDonor.id}`);
       if (res.ok) {
@@ -68,11 +100,11 @@
           currentDonor.id = d.id || currentDonor.id;
           currentDonor.name = d.name || d.fullName || currentDonor.name;
           currentDonor.bloodType = d.bloodType || d.blood_type || currentDonor.bloodType;
-          if (d.weight) currentDonor.weight = parseFloat(d.weight);
-          if (d.pulse) currentDonor.pulse = parseInt(d.pulse, 10);
-          if (d.hemoglobin) currentDonor.hemoglobin = parseFloat(d.hemoglobin);
+          if (d.weight !== undefined && d.weight !== null) currentDonor.weight = parseFloat(d.weight);
+          if (d.pulse !== undefined && d.pulse !== null) currentDonor.pulse = parseInt(d.pulse, 10);
+          if (d.hemoglobin !== undefined && d.hemoglobin !== null) currentDonor.hemoglobin = parseFloat(d.hemoglobin);
           if (d.bloodPressure) currentDonor.bloodPressure = d.bloodPressure;
-          if (d.bodyTemp) currentDonor.bodyTemp = parseFloat(d.bodyTemp);
+          if (d.bodyTemp !== undefined && d.bodyTemp !== null) currentDonor.bodyTemp = parseFloat(d.bodyTemp);
           if (d.verifiedFacility) currentDonor.verifiedFacility = d.verifiedFacility;
           if (d.verifiedDate) currentDonor.verifiedDate = d.verifiedDate;
           if (d.lastDonationDate || d.lastDonation) {
@@ -156,46 +188,62 @@
       beLabel.textContent = bloodGroup.includes('-') ? 'NEGATIVE' : 'POSITIVE';
     }
 
-    // 2. Top Meta (Age | Weight | Pulse)
+    // 2. Top Meta (Age | Weight | Pulse) — Empty placeholders until hospital logs checkup
     const ageEl = document.getElementById('vitalAge');
     const weightEl = document.getElementById('vitalWeight');
     const pulseEl = document.getElementById('vitalPulse');
-    if (ageEl) ageEl.textContent = currentDonor.age || 22;
-    if (weightEl) weightEl.textContent = currentDonor.weight || 76;
-    if (pulseEl) pulseEl.textContent = currentDonor.pulse || 72;
+    if (ageEl) ageEl.textContent = (currentDonor.age !== null && currentDonor.age !== undefined) ? currentDonor.age : '--';
+    if (weightEl) weightEl.textContent = (currentDonor.weight !== null && currentDonor.weight !== undefined) ? currentDonor.weight : '--';
+    if (pulseEl) pulseEl.textContent = (currentDonor.pulse !== null && currentDonor.pulse !== undefined) ? currentDonor.pulse : '--';
 
     // 3. Verified hospital intake facility & date
     const verifiedSub = document.getElementById('vitalsVerifiedSub');
     if (verifiedSub) {
-      const formattedDate = formatDate(currentDonor.verifiedDate || '2026-08-05');
-      verifiedSub.textContent = `Verified on ${formattedDate}`;
+      if (currentDonor.verifiedDate) {
+        verifiedSub.textContent = `Verified on ${formatDate(currentDonor.verifiedDate)}`;
+      } else {
+        verifiedSub.textContent = 'Awaiting Hospital Health Verification';
+      }
     }
 
-    // 4. Metrics & Chips
+    // 4. Metrics & Chips (Pending placeholders until hospital logs checkup)
     const hbVal = document.getElementById('vitalHemoglobin');
     const hbPill = document.getElementById('hbPill');
-    if (hbVal) hbVal.textContent = currentDonor.hemoglobin || 14.8;
+    const hasHb = currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined;
+    if (hbVal) hbVal.textContent = hasHb ? currentDonor.hemoglobin : '--';
     if (hbPill) {
-      const isHbOk = (currentDonor.hemoglobin || 14.8) >= 12.5;
-      hbPill.className = `vital-pill ${isHbOk ? 'pill-normal' : 'pill-alert'}`;
-      hbPill.textContent = isHbOk ? 'NORMAL' : 'LOW';
+      if (hasHb) {
+        const isHbOk = currentDonor.hemoglobin >= 12.5;
+        hbPill.className = `vital-pill ${isHbOk ? 'pill-normal' : 'pill-alert'}`;
+        hbPill.textContent = isHbOk ? 'NORMAL' : 'LOW';
+      } else {
+        hbPill.className = 'vital-pill pill-awaiting';
+        hbPill.textContent = 'PENDING';
+      }
     }
 
     const bpVal = document.getElementById('vitalBP');
     const bpPill = document.getElementById('bpPill');
-    if (bpVal) bpVal.textContent = currentDonor.bloodPressure || '120/80';
+    const hasBp = Boolean(currentDonor.bloodPressure);
+    if (bpVal) bpVal.textContent = hasBp ? currentDonor.bloodPressure : '--/--';
     if (bpPill) {
-      const isBpOk = isBpNormal(currentDonor.bloodPressure || '120/80');
-      bpPill.className = `vital-pill ${isBpOk ? 'pill-normal' : 'pill-alert'}`;
-      bpPill.textContent = isBpOk ? 'NORMAL' : 'REVIEW';
+      if (hasBp) {
+        const isBpOk = isBpNormal(currentDonor.bloodPressure);
+        bpPill.className = `vital-pill ${isBpOk ? 'pill-normal' : 'pill-alert'}`;
+        bpPill.textContent = isBpOk ? 'NORMAL' : 'REVIEW';
+      } else {
+        bpPill.className = 'vital-pill pill-awaiting';
+        bpPill.textContent = 'PENDING';
+      }
     }
 
     const tempVal = document.getElementById('vitalTemp');
-    if (tempVal) tempVal.textContent = currentDonor.bodyTemp || 98.6;
+    const hasTemp = currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined;
+    if (tempVal) tempVal.textContent = hasTemp ? currentDonor.bodyTemp : '--';
   }
 
   // ======================== AI HEALTH EVALUATION ADVISORY ========================
-  // Uses AI logic to assess whether the donor is Fit to Donate according to physical health stats
+  // Automatically runs AI safety audit once hospital fills vitals
   function renderAIHealthSuggestion() {
     const evalBadge = document.getElementById('aiHealthEvalBadge');
     const advisoryText = document.getElementById('aiAdvisoryText');
@@ -205,24 +253,27 @@
     const facility = currentDonor.verifiedFacility || 'City General Hospital';
     if (hospitalNameEl) hospitalNameEl.textContent = facility;
 
-    const hb = currentDonor.hemoglobin !== undefined ? currentDonor.hemoglobin : 14.8;
-    const bp = currentDonor.bloodPressure || '120/80';
-    const weight = currentDonor.weight !== undefined ? currentDonor.weight : 76;
-    const pulse = currentDonor.pulse !== undefined ? currentDonor.pulse : 72;
-    const temp = currentDonor.bodyTemp !== undefined ? currentDonor.bodyTemp : 98.6;
+    const hb = currentDonor.hemoglobin;
+    const bp = currentDonor.bloodPressure;
+    const weight = currentDonor.weight;
+    const pulse = currentDonor.pulse;
+    const temp = currentDonor.bodyTemp;
 
-    const hasData = hb !== undefined && bp && weight !== undefined;
+    const hasData = (hb !== null && hb !== undefined) && 
+                    Boolean(bp) && 
+                    (weight !== null && weight !== undefined);
 
+    // If details are empty: display waiting status
     if (!hasData) {
       if (evalBadge) {
         evalBadge.className = 'health-eval-badge badge-awaiting';
-        evalBadge.innerHTML = `<i class="fas fa-clock"></i><span>Awaiting Hospital Health Verification</span>`;
+        evalBadge.innerHTML = `<i class="fas fa-clock" style="margin-right:6px;"></i><span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>`;
       }
       if (advisoryText) {
-        advisoryText.innerHTML = `<strong>Awaiting Clinical Intake:</strong> No hospital intake data logged yet. Please visit ${escapeHtml(facility)} or an affiliated emergency blood center for physical checkup (fingerstick hemoglobin, blood pressure, weight screening).`;
+        advisoryText.innerHTML = `<strong>Awaiting Hospital Physical Intake:</strong> No blood screening data has been uploaded yet. Once blood is donated or physical checkup is completed through the hospital dashboard, these vitals will automatically populate, and the RED404 AI Engine will evaluate your clinical eligibility.`;
       }
       if (pillsContainer) {
-        pillsContainer.innerHTML = `<span class="amp-pill amp-warn"><i class="fas fa-info-circle"></i> Vitals pending hospital intake</span>`;
+        pillsContainer.innerHTML = `<span class="amp-pill amp-awaiting"><i class="fas fa-clock"></i> Hospital checkup pending</span>`;
       }
       return;
     }
@@ -231,12 +282,12 @@
     const isHbOk = hb >= 12.5;
     const isBpOk = isBpNormal(bp);
     const isWeightOk = weight >= 50;
-    const isPulseOk = pulse >= 60 && pulse <= 100;
-    const isTempOk = temp <= 99.0;
+    const isPulseOk = (pulse !== null && pulse !== undefined) ? (pulse >= 60 && pulse <= 100) : true;
+    const isTempOk = (temp !== null && temp !== undefined) ? (temp <= 99.0) : true;
 
     const isFit = isHbOk && isBpOk && isWeightOk && isPulseOk && isTempOk;
 
-    // Update main status banner
+    // Update main status banner to prominent GREEN if fit
     if (evalBadge) {
       if (isFit) {
         evalBadge.className = 'health-eval-badge badge-fit';
@@ -249,19 +300,23 @@
 
     // Build micro chips
     if (pillsContainer) {
-      pillsContainer.innerHTML = `
-        <span class="amp-pill ${isHbOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isHbOk ? 'check-circle' : 'exclamation-circle'}"></i> Hb: ${hb} g/dL (${isHbOk ? 'Safe ≥ 12.5' : 'Low < 12.5'})</span>
-        <span class="amp-pill ${isBpOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isBpOk ? 'check-circle' : 'exclamation-circle'}"></i> BP: ${bp} mmHg (${isBpOk ? 'Normal' : 'Out of range'})</span>
-        <span class="amp-pill ${isWeightOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isWeightOk ? 'check-circle' : 'exclamation-circle'}"></i> Weight: ${weight} kg (${isWeightOk ? '≥ 50 kg' : '< 50 kg'})</span>
-        <span class="amp-pill ${isPulseOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isPulseOk ? 'check-circle' : 'exclamation-circle'}"></i> Pulse: ${pulse} bpm (${isPulseOk ? 'Optimal' : 'Abnormal'})</span>
-        <span class="amp-pill ${isTempOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isTempOk ? 'check-circle' : 'exclamation-circle'}"></i> Temp: ${temp}° F (${isTempOk ? 'Normal' : 'Elevated'})</span>
-      `;
+      let pillsHtml = '';
+      pillsHtml += `<span class="amp-pill ${isHbOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isHbOk ? 'check-circle' : 'exclamation-circle'}"></i> Hb: ${hb} g/dL (${isHbOk ? 'Safe ≥ 12.5' : 'Low < 12.5'})</span>`;
+      pillsHtml += `<span class="amp-pill ${isBpOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isBpOk ? 'check-circle' : 'exclamation-circle'}"></i> BP: ${bp} mmHg (${isBpOk ? 'Normal' : 'Out of range'})</span>`;
+      pillsHtml += `<span class="amp-pill ${isWeightOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isWeightOk ? 'check-circle' : 'exclamation-circle'}"></i> Weight: ${weight} kg (${isWeightOk ? '≥ 50 kg' : '< 50 kg'})</span>`;
+      if (pulse !== null && pulse !== undefined) {
+        pillsHtml += `<span class="amp-pill ${isPulseOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isPulseOk ? 'check-circle' : 'exclamation-circle'}"></i> Pulse: ${pulse} bpm (${isPulseOk ? 'Optimal' : 'Abnormal'})</span>`;
+      }
+      if (temp !== null && temp !== undefined) {
+        pillsHtml += `<span class="amp-pill ${isTempOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isTempOk ? 'check-circle' : 'exclamation-circle'}"></i> Temp: ${temp}° F (${isTempOk ? 'Normal' : 'Elevated'})</span>`;
+      }
+      pillsContainer.innerHTML = pillsHtml;
     }
 
     // AI Clinical diagnosis & advice
     if (advisoryText) {
       if (isFit) {
-        advisoryText.innerHTML = `<strong>✨ AI Clinical Evaluation: FIT TO DONATE.</strong> All vital parameters satisfy WHO & NBTC international blood safety standards. Your hemoglobin (<strong>${hb} g/dL</strong>), weight (<strong>${weight} kg</strong>), and cardiovascular indicators (BP: <strong>${bp}</strong>, Pulse: <strong>${pulse} bpm</strong>) are optimal for whole blood collection. You are fully cleared to accept incoming emergency alerts.`;
+        advisoryText.innerHTML = `<strong>✨ AI Clinical Evaluation: FIT TO DONATE.</strong> All vital parameters satisfy WHO & NBTC international blood safety standards. Your hemoglobin (<strong>${hb} g/dL</strong>), weight (<strong>${weight} kg</strong>), and cardiovascular indicators (BP: <strong>${bp}</strong>, Pulse: <strong>${pulse || 72} bpm</strong>) are optimal for whole blood collection. You are fully cleared to accept incoming emergency alerts.`;
       } else {
         const issues = [];
         if (!isHbOk) issues.push(`Hemoglobin level (${hb} g/dL) is below the minimum safe threshold (12.5 g/dL)`);

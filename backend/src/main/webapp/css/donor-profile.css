@@ -442,60 +442,116 @@ body.donor-profile-body {
   margin-bottom: 0.25rem;
 }
 
-/* Dark Translucent Crimson Glass Container (Zero harsh retinal glare, exact match to reference) */
+/* 3D Glossy Shiny Glass Blood Emblem (Exact match to reference) */
 .blood-emblem-box {
   width: 145px;
   min-width: 145px;
   height: 215px;
-  background: linear-gradient(180deg, rgba(239, 68, 68, 0.22) 0%, rgba(136, 19, 55, 0.16) 100%);
-  border: 1px solid rgba(239, 68, 68, 0.42);
-  border-radius: 16px;
-  padding: 1.4rem 1rem 1.25rem;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 32%, transparent 60%),
+    linear-gradient(180deg, #580c15 0%, #35050b 50%, #180205 100%);
+  border: 1.5px solid rgba(255, 75, 95, 0.58);
+  border-radius: 18px;
+  padding: 1.35rem 1rem 1.15rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   text-align: center;
   color: #fff;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 25px rgba(239, 68, 68, 0.1), 0 0 20px rgba(239, 68, 68, 0.18);
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.75),
+    0 0 28px rgba(239, 68, 68, 0.45),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.65),
+    inset 0 -2px 10px rgba(0, 0, 0, 0.7),
+    inset 0 0 25px rgba(239, 68, 68, 0.22);
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
+  transform: perspective(600px) translateZ(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.blood-emblem-box:hover {
+  transform: perspective(600px) translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 16px 42px rgba(0, 0, 0, 0.85),
+    0 0 35px rgba(255, 42, 68, 0.6),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.8),
+    inset 0 0 30px rgba(239, 68, 68, 0.3);
+}
+
+/* 3D Diagonal Specular Glass Reflection Sheen */
+.blood-emblem-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.12) 35%, rgba(255, 255, 255, 0) 55%);
+  clip-path: polygon(0 0, 100% 0, 100% 36%, 0 88%);
+  border-top-left-radius: 17px;
+  border-top-right-radius: 17px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Secondary bottom glass rim glow */
+.blood-emblem-box::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .beb-type {
   font-family: var(--font-main);
-  font-size: 3.6rem;
+  font-size: 3.8rem;
   font-weight: 800;
   line-height: 1;
   color: #ffffff;
-  letter-spacing: -1.5px;
-  text-shadow: 0 2px 14px rgba(239, 68, 68, 0.35);
+  letter-spacing: -2px;
+  text-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.7),
+    0 0 18px rgba(255, 255, 255, 0.35);
+  position: relative;
+  z-index: 3;
 }
 
 .beb-label {
   font-family: var(--font-main);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 2.2px;
   color: #fca5a5;
-  margin-top: 6px;
+  margin-top: 4px;
   text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  position: relative;
+  z-index: 3;
 }
 
 .beb-icon {
-  margin-top: 0.4rem;
+  margin-top: 0.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 3;
 }
 
-.heart-drop-svg {
-  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.35));
+.heart-drop-3d {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 10px rgba(239, 68, 68, 0.45));
   transition: transform 0.3s ease;
 }
 
-.blood-emblem-box:hover .heart-drop-svg {
+.blood-emblem-box:hover .heart-drop-3d {
   transform: scale(1.08);
 }
 
@@ -573,6 +629,18 @@ body.donor-profile-body {
   font-family: var(--font-main);
 }
 
+.vital-pill.pill-awaiting {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: var(--font-main);
+}
+
 /* Automated AI Health Evaluation Banner in Calm Emerald Green #10b981 */
 .health-eval-badge {
   display: flex;
@@ -615,8 +683,10 @@ body.donor-profile-body {
 
 .badge-awaiting {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
   color: #94a3b8;
+  font-size: 0.88rem;
+  letter-spacing: 0.3px;
 }
 
 /* AI Clinical Health Evaluation Box */

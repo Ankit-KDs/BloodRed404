@@ -117,53 +117,104 @@
           </div>
 
           <div class="vitals-split-layout">
-            <!-- Left Crimson Glass Blood Emblem -->
+            <!-- Left Crimson 3D Glossy Glass Blood Emblem -->
             <div class="blood-emblem-box">
               <div class="beb-type" id="vitalBloodType">A+</div>
               <div class="beb-label" id="vitalBloodLabel">POSITIVE</div>
               <div class="beb-icon">
-                <svg class="heart-drop-svg" viewBox="0 0 44 44" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Heart body with soft glow -->
-                  <path d="M22 35C22 35 7 24.5 7 14.8C7 9.5 11.2 5.5 16.5 5.5C19.8 5.5 22 7.5 22 7.5C22 7.5 24.2 5.5 27.5 5.5C32.8 5.5 37 9.5 37 14.8C37 24.5 22 35 22 35Z" 
-                        fill="rgba(248, 113, 113, 0.22)" stroke="#f87171" stroke-width="2.4" stroke-linejoin="round"/>
-                  <!-- Dripping Blood Drop -->
-                  <path d="M22 41C20.2 38.2 18 34.5 18 32C18 29.8 19.8 28 22 28C24.2 28 26 29.8 26 32C26 34.5 23.8 38.2 22 41Z" 
-                        fill="#ef4444" stroke="#fca5a5" stroke-width="1.2"/>
+                <svg class="heart-drop-3d" viewBox="0 0 54 54" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <!-- Glass reflection gradient for top of heart -->
+                    <linearGradient id="heartGlassGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+                      <stop offset="45%" stop-color="#fca5a5" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+                    </linearGradient>
+                    
+                    <!-- Blood fill 3D gradient -->
+                    <linearGradient id="blood3DFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#ef4444"/>
+                      <stop offset="60%" stop-color="#dc2626"/>
+                      <stop offset="100%" stop-color="#7f1d1d"/>
+                    </linearGradient>
+
+                    <!-- Droplet 3D gradient -->
+                    <radialGradient id="drop3DGrad" cx="35%" cy="35%" r="65%">
+                      <stop offset="0%" stop-color="#fca5a5"/>
+                      <stop offset="40%" stop-color="#ef4444"/>
+                      <stop offset="100%" stop-color="#7f1d1d"/>
+                    </radialGradient>
+                    
+                    <!-- Filter for soft ambient glow -->
+                    <filter id="heartGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#ef4444" flood-opacity="0.35"/>
+                    </filter>
+                  </defs>
+
+                  <!-- Heart Base Outline & Glass Body -->
+                  <path d="M26 40C26 40 8 28 8 17C8 10.5 13 6 19 6C22.8 6 25 8.2 26 9.5C27 8.2 29.2 6 33 6C39 6 44 10.5 44 17C44 28 26 40 26 40Z" 
+                        fill="rgba(153, 27, 27, 0.35)" 
+                        stroke="rgba(248, 113, 113, 0.45)" 
+                        stroke-width="1.8" 
+                        stroke-linejoin="round"
+                        filter="url(#heartGlow)"/>
+
+                  <!-- Blood Liquid Fill (Lower half with wavy meniscus surface) -->
+                  <path d="M9.5 20C14 22 18 18 26 21C34 24 38 19 42.5 20C43.5 23 42 27 38 31.5C32.5 37 26 40 26 40C26 40 19.5 37 14 31.5C10 27 8.5 23 9.5 20Z" 
+                        fill="url(#blood3DFill)" 
+                        opacity="0.95"/>
+
+                  <!-- Top Specular Glass Sheen -->
+                  <path d="M19 8C14.5 8 10.5 11.5 10.5 16.5C10.5 18 11.5 20 13 21C16 19 20 18 25 20C25.5 14 23 8 19 8Z" 
+                        fill="url(#heartGlassGloss)" 
+                        opacity="0.85"/>
+                  <path d="M33 8C37.5 8 41.5 11.5 41.5 16.5C41.5 18 40.5 20 39 21C36 19 32 18 27 20C26.5 14 29 8 33 8Z" 
+                        fill="url(#heartGlassGloss)" 
+                        opacity="0.75"/>
+
+                  <!-- 3D Dripping Blood Drop hanging at bottom right -->
+                  <path d="M35 44C33 41 30.5 36.5 30.5 33.5C30.5 30.5 32.5 28.5 35 28.5C37.5 28.5 39.5 30.5 39.5 33.5C39.5 36.5 37 41 35 44Z" 
+                        fill="url(#drop3DGrad)" 
+                        stroke="rgba(254, 202, 202, 0.6)" 
+                        stroke-width="0.8"/>
+                  <!-- Specular highlight dot on droplet -->
+                  <circle cx="33.8" cy="32" r="1.2" fill="#ffffff" opacity="0.9"/>
                 </svg>
               </div>
             </div>
 
-            <!-- Right Verified Vitals Details -->
+            <!-- Right Verified Vitals Details (Empty by default, auto-filled by hospital dashboard) -->
             <div class="vitals-details-box">
               <div class="vitals-top-meta">
-                Age: <b id="vitalAge">22</b> &nbsp;|&nbsp; Weight: <b id="vitalWeight">76</b> kg &nbsp;|&nbsp; Pulse: <b id="vitalPulse">72</b> bpm
+                Age: <b id="vitalAge">--</b> &nbsp;|&nbsp; Weight: <b id="vitalWeight">--</b> kg &nbsp;|&nbsp; Pulse: <b id="vitalPulse">--</b> bpm
               </div>
               <div class="vitals-verified-sub" id="vitalsVerifiedSub">
-                Verified on Aug 05, 2026
+                Awaiting Hospital Health Verification
               </div>
 
               <div class="vital-row">
                 <span class="vr-label">Hemoglobin:</span>
-                <b class="vr-val"><span id="vitalHemoglobin">14.8</span> g/dL</b>
+                <b class="vr-val"><span id="vitalHemoglobin">--</span> g/dL</b>
                 <span class="vr-dot">•</span>
-                <span class="vital-pill pill-normal" id="hbPill">NORMAL</span>
+                <span class="vital-pill pill-awaiting" id="hbPill">PENDING</span>
               </div>
 
               <div class="vital-row">
                 <span class="vr-label">Blood Pressure:</span>
-                <b class="vr-val"><span id="vitalBP">120/80</span> mmHg</b>
+                <b class="vr-val"><span id="vitalBP">--/--</span> mmHg</b>
                 <span class="vr-dot">•</span>
-                <span class="vital-pill pill-normal" id="bpPill">NORMAL</span>
+                <span class="vital-pill pill-awaiting" id="bpPill">PENDING</span>
               </div>
 
               <div class="vital-row">
                 <span class="vr-label">Body Temperature:</span>
-                <b class="vr-val"><span id="vitalTemp">98.6</span>° F</b>
+                <b class="vr-val"><span id="vitalTemp">--</span>° F</b>
               </div>
 
               <!-- Automated AI Health Evaluation Banner -->
-              <div class="health-eval-badge badge-fit" id="aiHealthEvalBadge" role="button" title="Click to view AI Clinical Safety Assessment">
-                <span>HEALTH STATUS: FIT TO DONATE</span>
+              <div class="health-eval-badge badge-awaiting" id="aiHealthEvalBadge" role="button" title="Click to view AI Clinical Safety Assessment">
+                <i class="fas fa-clock" style="margin-right:6px;"></i>
+                <span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>
               </div>
             </div>
           </div>
@@ -175,13 +226,10 @@
               <span class="aeb-who"><i class="fas fa-shield-halved"></i> WHO NBTC Safety Standard</span>
             </div>
             <p class="ai-eval-message" id="aiAdvisoryText">
-              Analyzing vital metrics against medical blood donation guidelines...
+              Awaiting Hospital Physical Intake: No blood screening data has been uploaded yet. Once blood is donated or physical checkup is completed through the hospital dashboard, these vitals will automatically populate, and the RED404 AI Engine will evaluate your clinical eligibility.
             </p>
             <div class="ai-metrics-pills" id="aiMetricsPills">
-              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> Hb 14.8 g/dL (Safe &ge; 12.5)</span>
-              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> BP 120/80 (Optimal)</span>
-              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> Weight 76 kg (&ge; 50 kg)</span>
-              <span class="amp-pill amp-pass"><i class="fas fa-check-circle"></i> Pulse 72 bpm (Normal)</span>
+              <span class="amp-pill amp-awaiting"><i class="fas fa-clock"></i> Hospital checkup pending</span>
             </div>
             <div class="hospital-intake-note">
               <i class="fas fa-hospital-user"></i>
