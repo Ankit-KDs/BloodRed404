@@ -220,113 +220,87 @@
           </div>
         </section>
 
-        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (3-Stage Clinical Recovery Bar) -->
+        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER -->
         <section class="profile-card" id="eligibilityTrackerCard">
           <div class="card-header-row">
             <h2 class="card-title">Medical Eligibility Tracker</h2>
             <span class="card-meta-tag eligibility-tag">
-              <i class="fas fa-heartbeat"></i> 90-Day Clinical Cycle
+              <i class="fas fa-question-circle"></i> Safety Cooldown
             </span>
           </div>
 
-          <div class="clinical-recovery-wrapper">
-            <!-- Telemetry HUD Header (Above the bar) -->
-            <div class="hud-telemetry-header">
-              <div class="hud-stage-title" id="hudStageTitle">
-                <span class="stage-beacon-dot" id="stageBeaconDot"></span>
-                <span>CURRENT STAGE: <b id="hudStageText">Phase 3 - Final Clearance</b></span>
-              </div>
-              <div class="hud-days-metric" id="hudDaysMetric">
-                <b id="hudDaysCount">90 / 90 DAYS</b> <span class="metric-divider">•</span> <span id="hudDaysPercent" class="metric-percent">100%</span>
-              </div>
-            </div>
+          <div class="eligibility-layout">
+            <!-- Left Column: Circular Radial Gauge + Next Available Row -->
+            <div class="gauge-col-left">
+              <div class="gauge-wrapper">
+                <svg class="gauge-svg" viewBox="0 0 240 240">
+                  <defs>
+                    <!-- Top Layer Neon Emerald-to-Mint Gradient -->
+                    <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#00e676" />
+                      <stop offset="55%" stop-color="#22c55e" />
+                      <stop offset="100%" stop-color="#86efac" />
+                    </linearGradient>
 
-            <!-- Horizontal 3-Stage Progress Container -->
-            <div class="stages-progress-container">
-              <!-- Phase 1: Days 1–30 -->
-              <div class="recovery-stage-card" id="stageCard1">
-                <div class="stage-card-header">
-                  <div class="sch-left">
-                    <span class="sch-phase-num">Phase 1</span>
-                    <span class="sch-phase-name">Plasma & Cellular Restore</span>
+                    <!-- 2nd Layer: 3D Base/Extrusion Dark Emerald Gradient -->
+                    <linearGradient id="gaugeBaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#0b382c" />
+                      <stop offset="50%" stop-color="#144e3d" />
+                      <stop offset="100%" stop-color="#235c4b" />
+                    </linearGradient>
+
+                    <!-- Atmospheric Neon Glow Halo -->
+                    <filter id="gaugeGlowHalo" x="-40%" y="-40%" width="180%" height="180%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#00e676" flood-opacity="0.8"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#00e676" flood-opacity="0.4"/>
+                    </filter>
+
+                    <!-- 3D Base Depth Shadow -->
+                    <filter id="gaugeBaseDepth" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="1" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.75"/>
+                    </filter>
+                  </defs>
+
+                  <!-- 2nd Layer: 3D Base / Extrusion Under-layer (shifted down and right) -->
+                  <circle class="gauge-base-layer" cx="121" cy="125" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 121 125)" filter="url(#gaugeBaseDepth)"></circle>
+                  <!-- 1st Layer: Glowing Luminous Top Surface Arc -->
+                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="120" cy="120" r="85" stroke-dasharray="401 534" stroke-dashoffset="0" transform="rotate(135 120 120)" filter="url(#gaugeGlowHalo)"></circle>
+                </svg>
+
+                <!-- Center Text Content (Well-spaced layout: Content NEVER touches the bar) -->
+                <div class="gauge-center-content">
+                  <div class="gcc-status" id="gaugeStatusText">
+                    <span>ELIGIBLE</span>
+                    <span>TO DONATE</span>
                   </div>
-                  <div class="sch-right">
-                    <span class="sch-days-range">Days 1–30</span>
-                    <span class="stage-status-icon" id="stageIcon1"><i class="fas fa-check"></i></span>
+                  <div class="gcc-days" id="gaugeDaysText">90 DAYS</div>
+                  <div class="gcc-sub" id="gaugeSubText">
+                    <span>COOLDOWN</span>
+                    <span>COMPLETED</span>
                   </div>
-                </div>
-                <div class="stage-track-groove">
-                  <div class="stage-fill-bar" id="stageFill1" style="width: 100%;">
-                    <span class="pulse-beacon" id="beacon1"></span>
-                  </div>
+                  <div class="gcc-percent" id="gaugePercentText">100%</div>
                 </div>
               </div>
 
-              <!-- Phase 2: Days 31–60 -->
-              <div class="recovery-stage-card" id="stageCard2">
-                <div class="stage-card-header">
-                  <div class="sch-left">
-                    <span class="sch-phase-num">Phase 2</span>
-                    <span class="sch-phase-name">Iron & Ferritin Replenishment</span>
-                  </div>
-                  <div class="sch-right">
-                    <span class="sch-days-range">Days 31–60</span>
-                    <span class="stage-status-icon" id="stageIcon2"><i class="fas fa-check"></i></span>
-                  </div>
-                </div>
-                <div class="stage-track-groove">
-                  <div class="stage-fill-bar" id="stageFill2" style="width: 100%;">
-                    <span class="pulse-beacon" id="beacon2"></span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Phase 3: Days 61–90 -->
-              <div class="recovery-stage-card" id="stageCard3">
-                <div class="stage-card-header">
-                  <div class="sch-left">
-                    <span class="sch-phase-num">Phase 3</span>
-                    <span class="sch-phase-name">Universal Donor Clearance</span>
-                  </div>
-                  <div class="sch-right">
-                    <span class="sch-days-range">Days 61–90</span>
-                    <span class="stage-status-icon" id="stageIcon3"><i class="fas fa-check"></i></span>
-                  </div>
-                </div>
-                <div class="stage-track-groove">
-                  <div class="stage-fill-bar" id="stageFill3" style="width: 100%;">
-                    <span class="pulse-beacon" id="beacon3"></span>
-                  </div>
-                </div>
+              <!-- Next Available Row placed directly under the gauge -->
+              <div class="eligibility-next-row">
+                Next Available: <b id="nextAvailableText">Immediate / READY</b>
               </div>
             </div>
 
-            <!-- Status Banner Pill -->
-            <div class="recovery-status-banner banner-eligible" id="recoveryStatusBanner">
-              <i class="fas fa-shield-alt" id="recoveryStatusIcon"></i>
-              <span id="recoveryStatusText">ELIGIBLE TO DONATE • READY</span>
-            </div>
-
-            <!-- Bottom Telemetry Row: Next Available + 3-Point Checklist -->
-            <div class="recovery-bottom-row">
-              <div class="recovery-next-box">
-                <span class="rnb-label">Next Available:</span>
-                <b class="rnb-val" id="nextAvailableText">Immediate / READY</b>
+            <!-- Right Eligibility Checklist -->
+            <div class="eligibility-checklist">
+              <div class="check-item" id="checkWaitItem">
+                <i class="fas fa-check"></i>
+                <span>90-day wait period met</span>
               </div>
-
-              <div class="recovery-checklist">
-                <div class="check-item" id="checkWaitItem">
-                  <i class="fas fa-check-circle"></i>
-                  <span>90-day wait period met</span>
-                </div>
-                <div class="check-item" id="checkHealthItem">
-                  <i class="fas fa-check-circle"></i>
-                  <span>Health indicators optimal</span>
-                </div>
-                <div class="check-item" id="checkMedsItem">
-                  <i class="fas fa-check-circle"></i>
-                  <span>Not currently on medication</span>
-                </div>
+              <div class="check-item" id="checkHealthItem">
+                <i class="fas fa-check"></i>
+                <span>Health indicators optimal</span>
+              </div>
+              <div class="check-item" id="checkMedsItem">
+                <i class="fas fa-check"></i>
+                <span>Not currently on medication</span>
               </div>
             </div>
           </div>

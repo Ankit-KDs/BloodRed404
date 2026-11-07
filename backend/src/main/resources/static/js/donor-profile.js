@@ -287,7 +287,7 @@
     }
   }
 
-  // ======================== 4. 3-STAGE CLINICAL RECOVERY TRACKER ========================
+  // ======================== 4. 90-DAY ELIGIBILITY COUNTDOWN ========================
   function renderMedicalEligibilityTracker() {
     const currentDate = new Date();
     let daysPassed = 90; // Default to eligible if never donated
@@ -300,218 +300,78 @@
       }
     }
 
-    // Top HUD Telemetry Elements
-    const hudStageText = document.getElementById('hudStageText');
-    const stageBeaconDot = document.getElementById('stageBeaconDot');
-    const hudDaysCount = document.getElementById('hudDaysCount');
-    const hudDaysPercent = document.getElementById('hudDaysPercent');
-
-    // 3 Stage Phase Elements
-    const stageCard1 = document.getElementById('stageCard1');
-    const stageIcon1 = document.getElementById('stageIcon1');
-    const stageFill1 = document.getElementById('stageFill1');
-    const beacon1 = document.getElementById('beacon1');
-
-    const stageCard2 = document.getElementById('stageCard2');
-    const stageIcon2 = document.getElementById('stageIcon2');
-    const stageFill2 = document.getElementById('stageFill2');
-    const beacon2 = document.getElementById('beacon2');
-
-    const stageCard3 = document.getElementById('stageCard3');
-    const stageIcon3 = document.getElementById('stageIcon3');
-    const stageFill3 = document.getElementById('stageFill3');
-    const beacon3 = document.getElementById('beacon3');
-
-    // Status Banner & Bottom Telemetry
-    const statusBanner = document.getElementById('recoveryStatusBanner');
-    const statusIcon = document.getElementById('recoveryStatusIcon');
-    const statusText = document.getElementById('recoveryStatusText');
-    const nextAvailableEl = document.getElementById('nextAvailableText');
+    const arc = document.getElementById('gaugeFillArc');
+    const statusText = document.getElementById('gaugeStatusText');
+    const daysText = document.getElementById('gaugeDaysText');
+    const subText = document.getElementById('gaugeSubText');
+    const percentText = document.getElementById('gaugePercentText');
     const checkWaitItem = document.getElementById('checkWaitItem');
+    const nextAvailableEl = document.getElementById('nextAvailableText');
+
+    // Total arc circumference for radius 85 over 270 deg: 2 * PI * 85 * (270 / 360) = 400.55 ~ 401px
+    const totalArcLength = 401;
 
     if (daysPassed >= 90) {
       // Cooldown Completed -> Eligible
-      if (hudStageText) hudStageText.textContent = 'Phase 3 - Final Clearance';
-      if (stageBeaconDot) stageBeaconDot.className = 'stage-beacon-dot';
-      if (hudDaysCount) hudDaysCount.textContent = '90 / 90 DAYS';
-      if (hudDaysPercent) {
-        hudDaysPercent.textContent = '100%';
-        hudDaysPercent.className = 'metric-percent';
+      if (arc) {
+        arc.classList.remove('cooldown');
+        arc.style.strokeDashoffset = '0';
       }
-
-      // Phase 1 (100%)
-      if (stageFill1) {
-        stageFill1.style.width = '100%';
-        stageFill1.className = 'stage-fill-bar';
+      if (statusText) {
+        statusText.innerHTML = '<span>ELIGIBLE</span><span>TO DONATE</span>';
+        statusText.style.color = '#00e676';
       }
-      if (stageIcon1) {
-        stageIcon1.className = 'stage-status-icon completed';
-        stageIcon1.innerHTML = '<i class="fas fa-check"></i>';
+      if (daysText) daysText.textContent = '90 DAYS';
+      if (subText) {
+        subText.innerHTML = '<span>COOLDOWN</span><span>COMPLETED</span>';
+        subText.style.color = '#94a3b8';
       }
-      if (stageCard1) stageCard1.className = 'recovery-stage-card';
-      if (beacon1) beacon1.style.display = 'none';
-
-      // Phase 2 (100%)
-      if (stageFill2) {
-        stageFill2.style.width = '100%';
-        stageFill2.className = 'stage-fill-bar';
-      }
-      if (stageIcon2) {
-        stageIcon2.className = 'stage-status-icon completed';
-        stageIcon2.innerHTML = '<i class="fas fa-check"></i>';
-      }
-      if (stageCard2) stageCard2.className = 'recovery-stage-card';
-      if (beacon2) beacon2.style.display = 'none';
-
-      // Phase 3 (100%)
-      if (stageFill3) {
-        stageFill3.style.width = '100%';
-        stageFill3.className = 'stage-fill-bar';
-      }
-      if (stageIcon3) {
-        stageIcon3.className = 'stage-status-icon completed';
-        stageIcon3.innerHTML = '<i class="fas fa-check"></i>';
-      }
-      if (stageCard3) stageCard3.className = 'recovery-stage-card stage-active';
-      if (beacon3) beacon3.style.display = 'none';
-
-      // Status Banner
-      if (statusBanner) statusBanner.className = 'recovery-status-banner banner-eligible';
-      if (statusIcon) statusIcon.className = 'fas fa-shield-alt';
-      if (statusText) statusText.textContent = 'ELIGIBLE TO DONATE • READY';
-
-      // Next Available & Checklist
-      if (nextAvailableEl) {
-        nextAvailableEl.className = 'rnb-val';
-        nextAvailableEl.textContent = 'Immediate / READY';
+      if (percentText) {
+        percentText.textContent = '100%';
+        percentText.style.color = '#00e676';
       }
       if (checkWaitItem) {
         checkWaitItem.className = 'check-item';
-        checkWaitItem.innerHTML = `<i class="fas fa-check-circle"></i> <span>90-day wait period met</span>`;
+        checkWaitItem.innerHTML = `<i class="fas fa-check"></i> <span>90-day wait period met</span>`;
+      }
+      if (nextAvailableEl) {
+        nextAvailableEl.style.color = '#00e676';
+        nextAvailableEl.textContent = 'Immediate / READY';
       }
     } else {
-      // Cooldown Active -> Days Remaining & Multi-Stage Fill
+      // Cooldown Active -> Days Remaining
       const remainingDays = 90 - daysPassed;
-      const percentage = Math.max(1, Math.floor((daysPassed / 90) * 100));
+      const percentage = Math.floor((daysPassed / 90) * 100);
+      const dashOffset = totalArcLength * (1 - (percentage / 100));
 
-      if (stageBeaconDot) stageBeaconDot.className = 'stage-beacon-dot cooldown';
-      if (hudDaysCount) hudDaysCount.textContent = `${daysPassed} / 90 DAYS`;
-      if (hudDaysPercent) {
-        hudDaysPercent.textContent = `${percentage}%`;
-        hudDaysPercent.className = 'metric-percent cooldown';
+      if (arc) {
+        arc.classList.add('cooldown');
+        arc.style.strokeDashoffset = String(dashOffset);
       }
-
-      let activeStageName = 'Phase 1 - Plasma & Cellular Restore';
-
-      // Calculate Phase 1 (Days 1–30)
-      if (daysPassed >= 30) {
-        if (stageFill1) {
-          stageFill1.style.width = '100%';
-          stageFill1.className = 'stage-fill-bar';
-        }
-        if (stageIcon1) {
-          stageIcon1.className = 'stage-status-icon completed';
-          stageIcon1.innerHTML = '<i class="fas fa-check"></i>';
-        }
-        if (stageCard1) stageCard1.className = 'recovery-stage-card';
-        if (beacon1) beacon1.style.display = 'none';
-      } else {
-        const p1 = Math.max(5, Math.floor((daysPassed / 30) * 100));
-        activeStageName = 'Phase 1 - Plasma & Cellular Restore';
-        if (stageFill1) {
-          stageFill1.style.width = `${p1}%`;
-          stageFill1.className = 'stage-fill-bar cooldown';
-        }
-        if (stageIcon1) {
-          stageIcon1.className = 'stage-status-icon active-cooldown';
-          stageIcon1.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-        }
-        if (stageCard1) stageCard1.className = 'recovery-stage-card stage-active-cooldown';
-        if (beacon1) beacon1.style.display = 'block';
+      if (statusText) {
+        statusText.innerHTML = '<span>COOLDOWN</span><span>ACTIVE</span>';
+        statusText.style.color = '#ff9100';
       }
-
-      // Calculate Phase 2 (Days 31–60)
-      if (daysPassed >= 60) {
-        if (stageFill2) {
-          stageFill2.style.width = '100%';
-          stageFill2.className = 'stage-fill-bar';
-        }
-        if (stageIcon2) {
-          stageIcon2.className = 'stage-status-icon completed';
-          stageIcon2.innerHTML = '<i class="fas fa-check"></i>';
-        }
-        if (stageCard2) stageCard2.className = 'recovery-stage-card';
-        if (beacon2) beacon2.style.display = 'none';
-      } else if (daysPassed > 30) {
-        const p2 = Math.max(5, Math.floor(((daysPassed - 30) / 30) * 100));
-        activeStageName = 'Phase 2 - Iron & Ferritin Replenishment';
-        if (stageFill2) {
-          stageFill2.style.width = `${p2}%`;
-          stageFill2.className = 'stage-fill-bar cooldown';
-        }
-        if (stageIcon2) {
-          stageIcon2.className = 'stage-status-icon active-cooldown';
-          stageIcon2.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-        }
-        if (stageCard2) stageCard2.className = 'recovery-stage-card stage-active-cooldown';
-        if (beacon2) beacon2.style.display = 'block';
-      } else {
-        if (stageFill2) {
-          stageFill2.style.width = '0%';
-          stageFill2.className = 'stage-fill-bar';
-        }
-        if (stageIcon2) {
-          stageIcon2.className = 'stage-status-icon pending';
-          stageIcon2.innerHTML = '<i class="far fa-circle"></i>';
-        }
-        if (stageCard2) stageCard2.className = 'recovery-stage-card';
-        if (beacon2) beacon2.style.display = 'none';
+      if (daysText) daysText.textContent = `${remainingDays} DAYS`;
+      if (subText) {
+        subText.innerHTML = '<span>COOLDOWN</span><span>REMAINING</span>';
+        subText.style.color = '#94a3b8';
       }
-
-      // Calculate Phase 3 (Days 61–90)
-      if (daysPassed > 60) {
-        const p3 = Math.max(5, Math.floor(((daysPassed - 60) / 30) * 100));
-        activeStageName = 'Phase 3 - Universal Donor Clearance';
-        if (stageFill3) {
-          stageFill3.style.width = `${p3}%`;
-          stageFill3.className = 'stage-fill-bar cooldown';
-        }
-        if (stageIcon3) {
-          stageIcon3.className = 'stage-status-icon active-cooldown';
-          stageIcon3.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-        }
-        if (stageCard3) stageCard3.className = 'recovery-stage-card stage-active-cooldown';
-        if (beacon3) beacon3.style.display = 'block';
-      } else {
-        if (stageFill3) {
-          stageFill3.style.width = '0%';
-          stageFill3.className = 'stage-fill-bar';
-        }
-        if (stageIcon3) {
-          stageIcon3.className = 'stage-status-icon pending';
-          stageIcon3.innerHTML = '<i class="far fa-circle"></i>';
-        }
-        if (stageCard3) stageCard3.className = 'recovery-stage-card';
-        if (beacon3) beacon3.style.display = 'none';
-      }
-
-      if (hudStageText) hudStageText.textContent = activeStageName;
-
-      // Status Banner
-      if (statusBanner) statusBanner.className = 'recovery-status-banner banner-cooldown';
-      if (statusIcon) statusIcon.className = 'fas fa-hourglass-half';
-      if (statusText) statusText.textContent = `${remainingDays} DAYS REMAINING • Cooldown in Progress`;
-
-      // Next Available & Checklist
-      if (nextAvailableEl && currentDonor.lastDonationDate) {
-        const nextAvailDate = new Date(currentDonor.lastDonationDate);
-        nextAvailDate.setDate(nextAvailDate.getDate() + 90);
-        nextAvailableEl.className = 'rnb-val cooldown';
-        nextAvailableEl.textContent = formatDate(nextAvailDate);
+      if (percentText) {
+        percentText.textContent = `${percentage}%`;
+        percentText.style.color = '#ff9100';
       }
       if (checkWaitItem) {
         checkWaitItem.className = 'check-item pending';
         checkWaitItem.innerHTML = `<i class="fas fa-hourglass-half"></i> <span>${remainingDays} days remaining in recovery cooldown</span>`;
+      }
+
+      // Calculate future available date
+      if (nextAvailableEl && currentDonor.lastDonationDate) {
+        const nextAvailDate = new Date(currentDonor.lastDonationDate);
+        nextAvailDate.setDate(nextAvailDate.getDate() + 90);
+        nextAvailableEl.style.color = '#ff9100';
+        nextAvailableEl.textContent = formatDate(nextAvailDate);
       }
     }
   }
