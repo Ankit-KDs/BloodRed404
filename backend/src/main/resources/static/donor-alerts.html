@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RED404 • Active Emergency Alerts & Live GPS Hub</title>
-  
+
   <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
-  
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap"
+    rel="stylesheet" />
+
   <!-- FontAwesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  
+
   <!-- Leaflet Dark Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
+
   <!-- RED404 Styles -->
   <link rel="stylesheet" href="css/common.css" />
   <link rel="stylesheet" href="css/donor-alerts.css" />
@@ -30,7 +34,8 @@
   <header class="hub-header">
     <div class="hub-header-left">
       <!-- Mobile hamburger toggle button -->
-      <button class="hub-notif-btn hub-mobile-menu-btn" id="mobileMenuBtn" style="display:none;" aria-label="Toggle menu">
+      <button class="hub-notif-btn hub-mobile-menu-btn" id="mobileMenuBtn" style="display:none;"
+        aria-label="Toggle menu">
         <i class="fas fa-bars"></i>
       </button>
 
@@ -59,7 +64,8 @@
       </button>
 
       <!-- LIVE GPS SYNC CAPSULE BUTTON -->
-      <button class="gps-sync-capsule" id="gpsSyncBtn" title="Click to refresh browser GPS location via Geolocation API">
+      <button class="gps-sync-capsule" id="gpsSyncBtn"
+        title="Click to refresh browser GPS location via Geolocation API">
         <i class="fas fa-paper-plane gps-icon-spin"></i>
         <div class="gps-meta">
           <div class="gps-title-row">
@@ -155,13 +161,15 @@
       <div class="radar-layer-bar" onclick="event.stopPropagation()">
         <span class="rlb-label"><i class="fas fa-layer-group"></i> MAP:</span>
         <div class="rlb-btn-group">
-          <button type="button" class="rlb-btn active" data-layer="google-dark" title="Google Maps - Tactical Night Mode">
+          <button type="button" class="rlb-btn active" data-layer="google-dark"
+            title="Google Maps - Tactical Night Mode">
             <i class="fab fa-google"></i> Google Dark
           </button>
           <button type="button" class="rlb-btn" data-layer="google-roads" title="Google Maps - Standard Road Map">
             <i class="fas fa-road"></i> Roads
           </button>
-          <button type="button" class="rlb-btn" data-layer="google-hybrid" title="Google Maps - Satellite Imagery + Road Overlay">
+          <button type="button" class="rlb-btn" data-layer="google-hybrid"
+            title="Google Maps - Satellite Imagery + Road Overlay">
             <i class="fas fa-satellite"></i> Satellite
           </button>
           <button type="button" class="rlb-btn" data-layer="osm" title="OpenStreetMap - Open Global Road Network">
@@ -170,7 +178,8 @@
         </div>
       </div>
 
-      <div class="radar-map-wrapper" onclick="window.location.href='donor-route.html'" title="Click to open Live Route Navigation" style="cursor:pointer">
+      <div class="radar-map-wrapper" onclick="window.location.href='donor-route.html'"
+        title="Click to open Live Route Navigation" style="cursor:pointer">
         <!-- Interactive Leaflet Map Container -->
         <div id="proximityMap" class="dark-map"></div>
 
@@ -191,8 +200,10 @@
         <!-- Interactive Map Controls (Zoom & Recenter) -->
         <div class="radar-map-controls" onclick="event.stopPropagation()">
           <button type="button" class="rmc-btn" id="radarZoomInBtn" title="Zoom In"><i class="fas fa-plus"></i></button>
-          <button type="button" class="rmc-btn" id="radarZoomOutBtn" title="Zoom Out"><i class="fas fa-minus"></i></button>
-          <button type="button" class="rmc-btn" id="radarCenterBtn" title="Recenter on My Location"><i class="fas fa-crosshairs"></i></button>
+          <button type="button" class="rmc-btn" id="radarZoomOutBtn" title="Zoom Out"><i
+              class="fas fa-minus"></i></button>
+          <button type="button" class="rmc-btn" id="radarCenterBtn" title="Recenter on My Location"><i
+              class="fas fa-crosshairs"></i></button>
         </div>
 
         <div class="radar-click-hint">
@@ -211,7 +222,9 @@
   </div>
 
   <!-- Mobile sidebar overlay backdrop -->
-  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);"></div>
+  <div id="sidebarOverlay"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);">
+  </div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -220,5 +233,5 @@
   <script src="js/common.js"></script>
   <script src="js/donor-alerts.js"></script>
 </body>
-</html>
 
+</html>

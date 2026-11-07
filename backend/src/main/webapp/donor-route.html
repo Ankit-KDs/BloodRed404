@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,9 @@
   <!-- Google Fonts & Font Awesome -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Leaflet CSS -->
@@ -161,17 +164,20 @@
         display: flex;
         flex-direction: column-reverse;
       }
+
       .route-sidebar-right {
         width: 100%;
         border-left: none;
         border-bottom: 1px solid var(--border-glass);
       }
+
       .nav-map-container {
         min-height: 480px;
       }
     }
   </style>
 </head>
+
 <body class="donor-hub-body">
 
   <!-- TOP HEADER -->
@@ -261,10 +267,12 @@
           </div>
           <div>
             <div class="nhs-instruction" id="hudInstruction">Standby Mode — No Active Route Locked</div>
-            <div class="nhs-sub" id="hudSubInstruction">You are currently not responding to any hospital SOS request.</div>
+            <div class="nhs-sub" id="hudSubInstruction">You are currently not responding to any hospital SOS request.
+            </div>
           </div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-secondary);padding-top:0.5rem;border-top:1px solid var(--border-glass)">
+        <div
+          style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-secondary);padding-top:0.5rem;border-top:1px solid var(--border-glass)">
           <span>Remaining: <b style="color:#fff" id="hudDistance">-- km</b></span>
           <span>ETA: <b style="color:var(--green-neon)" id="hudEta">-- mins</b></span>
           <span>Status: <b style="color:#fff" id="hudStatus">Standby</b></span>
@@ -277,7 +285,9 @@
       <div class="emergency-hosp-box standby-box" id="emergencyHospBox">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
           <span class="sos-zone-tag" id="hospZoneBadge">STANDBY MODE</span>
-          <span style="background:var(--border-glass);color:var(--text-secondary);font-family:var(--font-tech);font-weight:900;padding:2px 8px;border-radius:6px;font-size:0.85rem" id="hospBloodBadge">--</span>
+          <span
+            style="background:var(--border-glass);color:var(--text-secondary);font-family:var(--font-tech);font-weight:900;padding:2px 8px;border-radius:6px;font-size:0.85rem"
+            id="hospBloodBadge">--</span>
         </div>
         <div class="ehb-title" id="hospDetailName">No Active Route Locked</div>
         <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5" id="hospAddress">
@@ -301,25 +311,29 @@
 
       <div style="display:flex;flex-direction:column;gap:0.75rem" id="navActionsContainer">
         <!-- Google Maps Button (State 1: Disabled / State 2: Active) -->
-        <a id="openGoogleMapsBtn" target="_blank" class="btn-sos-accept btn-disabled" style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
+        <a id="openGoogleMapsBtn" target="_blank" class="btn-sos-accept btn-disabled"
+          style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
           <i class="fab fa-google"></i>
           <span id="gMapBtnText">Google Maps (Route Inactive)</span>
         </a>
 
         <!-- Dynamic Mission Action Button -->
         <div id="dynamicMissionActionBtn">
-          <a href="donor-alerts.html" class="btn-sos-accept" style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
+          <a href="donor-alerts.html" class="btn-sos-accept"
+            style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
             <i class="fas fa-bell"></i>
             <span>Go to Active Alerts</span>
           </a>
         </div>
 
-        <a id="callHospitalBtn" href="tel:108" class="hub-notif-btn btn-disabled" style="width:100%;height:44px;gap:0.5rem;font-size:0.9rem;text-decoration:none;">
+        <a id="callHospitalBtn" href="tel:108" class="hub-notif-btn btn-disabled"
+          style="width:100%;height:44px;gap:0.5rem;font-size:0.9rem;text-decoration:none;">
           <i class="fas fa-phone-alt" style="color:var(--green-neon)"></i>
           <span id="callDispatchText">Call Hospital Dispatch</span>
         </a>
 
-        <a href="donor-alerts.html" class="btn-sos-decline" style="text-align:center;text-decoration:none;display:block">
+        <a href="donor-alerts.html" class="btn-sos-decline"
+          style="text-align:center;text-decoration:none;display:block">
           Back to Dashboard
         </a>
       </div>
@@ -328,7 +342,9 @@
   </div>
 
   <!-- Mobile Sidebar Overlay Backdrop -->
-  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);"></div>
+  <div id="sidebarOverlay"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);">
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/common.js"></script>
@@ -355,7 +371,7 @@
               currentMission = json.data;
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // 2. Fetch Real Geolocation on Load
@@ -667,4 +683,5 @@
     }
   </script>
 </body>
+
 </html>
