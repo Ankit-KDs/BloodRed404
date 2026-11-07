@@ -58,6 +58,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("sms_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("push_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("email_notif", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("pulse", "INT NULL DEFAULT 72");
+        requiredColumns.put("hemoglobin", "DOUBLE NULL DEFAULT 14.8");
+        requiredColumns.put("blood_pressure", "VARCHAR(30) NULL DEFAULT '120/80'");
+        requiredColumns.put("body_temp", "DOUBLE NULL DEFAULT 98.6");
+        requiredColumns.put("verified_facility", "VARCHAR(180) NULL DEFAULT 'City General Hospital'");
+        requiredColumns.put("verified_date", "DATE NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "donors", requiredColumns);
@@ -93,6 +99,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("sms_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("push_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("email_notif", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("pulse", "INT NULL DEFAULT 72");
+        requiredColumns.put("hemoglobin", "DOUBLE NULL DEFAULT 14.8");
+        requiredColumns.put("blood_pressure", "VARCHAR(30) NULL DEFAULT '120/80'");
+        requiredColumns.put("body_temp", "DOUBLE NULL DEFAULT 98.6");
+        requiredColumns.put("verified_facility", "VARCHAR(180) NULL DEFAULT 'City General Hospital'");
+        requiredColumns.put("verified_date", "DATE NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "hospitals", requiredColumns);

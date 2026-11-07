@@ -2,17 +2,258 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RED404 — Redirecting to Health Profile</title>
-  <meta http-equiv="refresh" content="0; url=donor-dashboard.html#profile">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RED404 — Donor Health Profile & Medical Eligibility</title>
+
+  <!-- Google Fonts & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Core Profile CSS -->
+  <link rel="stylesheet" href="css/donor-profile.css">
 </head>
-<body style="background:#090c10;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-  <div style="text-align:center;">
-    <div style="font-size:1.5rem;font-weight:700;color:#00e676;margin-bottom:0.5rem;">RED404 Emergency Mission Complete</div>
-    <div style="color:#94a3b8;font-size:0.95rem;">Redirecting to your Health Profile...</div>
+<body class="donor-profile-body">
+
+  <!-- TOP HEADER -->
+  <header class="hub-header">
+    <div class="hub-header-left">
+      <button class="hub-mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Navigation">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <a href="donor-alerts.html" class="hub-logo-brand" title="RED404 Emergency System">
+        <div class="hub-logo-drop">
+          <i class="fas fa-tint"></i>
+        </div>
+        <div class="hub-logo-text">
+          <span class="hl-red">RED</span><span class="hl-num">404</span>
+        </div>
+      </a>
+
+      <div class="hub-donor-welcome">
+        <span class="hdw-title">Donor Dashboard • Health Profile & Medical Eligibility</span>
+        <span class="hdw-sub">Welcome, <span id="donorGreetingName">Ankit Kumar</span></span>
+      </div>
+    </div>
+
+    <div class="hub-header-right">
+      <!-- LIVE GPS SYNC CAPSULE BUTTON -->
+      <button class="gps-sync-capsule" id="gpsSyncBtn" title="Click to refresh browser GPS location via Geolocation API">
+        <div class="gps-pulse-dot"></div>
+        <div class="gps-title-row">
+          <span>LIVE GPS SYNC:</span>
+        </div>
+        <div class="gps-coords-txt" id="gpsCoordsText">CONNECTED (28.3486° N, 79.5619° E)</div>
+      </button>
+
+      <!-- Search & Notification Buttons -->
+      <button class="hub-icon-btn" title="Search Medical Records" aria-label="Search">
+        <i class="fas fa-search"></i>
+      </button>
+
+      <button class="hub-icon-btn" title="Emergency Broadcasts" aria-label="Notifications">
+        <i class="fas fa-bell"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD LAYOUT -->
+  <div class="hub-layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="hub-sidebar" id="hubSidebar">
+      <nav class="hub-nav-menu">
+        <a href="donor-alerts.html" class="hub-nav-item" title="Real-time incoming SOS requests">
+          <i class="fas fa-bell"></i>
+          <span>Active Alerts</span>
+        </a>
+        <a href="donor-route.html" class="hub-nav-item" title="Turn-by-turn emergency navigation">
+          <i class="fas fa-route"></i>
+          <span>Route Navigation</span>
+        </a>
+        <a href="donor-profile.html" class="hub-nav-item active" title="Medical eligibility & credentials">
+          <i class="fas fa-heartbeat"></i>
+          <span>Health Profile</span>
+        </a>
+        <a href="donor-dashboard.html#history" class="hub-nav-item" title="Past donation records & impact">
+          <i class="fas fa-history"></i>
+          <span>History</span>
+        </a>
+        <a href="donor-dashboard.html#settings" class="hub-nav-item" title="Preferences & notification radius">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="hub-sidebar-bottom">
+        <div class="hub-engine-status-card">
+          <div class="hes-row" id="sidebarDonorStatus">
+            <span class="hes-dot"></span>
+            <span>Donor Status: <b>ACTIVE</b></span>
+          </div>
+          <div class="hes-sub">
+            <i class="fas fa-shield-virus" style="color:var(--green-neon);margin-right:3px;"></i>
+            Health Clearance: VERIFIED
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER 2x2 HEALTH PROFILE WORKSPACE -->
+    <main class="profile-workspace">
+      <div class="profile-grid">
+
+        <!-- CARD 1: DONOR PROFILE & VITAL HEALTH STATS (Hospital-Fed + AI Check) -->
+        <section class="profile-card" id="donorVitalsCard">
+          <div class="card-header-row">
+            <h2 class="card-title">Donor Profile & Vital Health Stats</h2>
+            <span class="card-meta-tag"><i class="fas fa-hospital-user" style="color:var(--green-neon);margin-right:3px;"></i> Hospital Intake Feed</span>
+          </div>
+
+          <div class="vitals-split-layout">
+            <!-- Left Red Blood Group Block -->
+            <div class="blood-emblem-box">
+              <div class="beb-type" id="vitalBloodType">O-</div>
+              <div class="beb-label" id="vitalBloodLabel">NEGATIVE</div>
+              <div class="beb-icon">
+                <i class="fas fa-heartbeat"></i>
+              </div>
+            </div>
+
+            <!-- Right Verified Vitals Details -->
+            <div class="vitals-details-box">
+              <div class="vitals-top-meta">
+                Age: <b id="vitalAge">24</b> | Weight: <b id="vitalWeight">72</b> kg | Pulse: <b id="vitalPulse">72</b> bpm
+              </div>
+              <div class="vitals-verified-sub" id="vitalsVerifiedSub">
+                Verified on Aug 05, 2026 • City General Hospital
+              </div>
+
+              <div class="vital-row">
+                <span>Hemoglobin:</span>
+                <b id="vitalHemoglobin">14.8</b> g/dL • 
+                <span class="vital-pill pill-normal" id="hbPill">NORMAL</span>
+              </div>
+
+              <div class="vital-row">
+                <span>Blood Pressure:</span>
+                <b id="vitalBP">120/80</b> mmHg • 
+                <span class="vital-pill pill-normal" id="bpPill">NORMAL</span>
+              </div>
+
+              <div class="vital-row">
+                <span>Body Temperature:</span>
+                <b id="vitalTemp">98.6</b>° F
+              </div>
+            </div>
+          </div>
+
+          <!-- Automated AI Health Evaluation Banner -->
+          <div class="health-eval-badge badge-fit" id="aiHealthEvalBadge">
+            <span class="heb-dot"></span>
+            <span>HEALTH STATUS: FIT TO DONATE</span>
+          </div>
+        </section>
+
+        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER -->
+        <section class="profile-card" id="eligibilityTrackerCard">
+          <div class="card-header-row">
+            <h2 class="card-title">Medical Eligibility Tracker</h2>
+            <span class="card-meta-tag"><i class="fas fa-shield-alt" style="color:var(--green-neon);margin-right:3px;"></i> Safety Cooldown</span>
+          </div>
+
+          <div class="eligibility-layout">
+            <!-- Circular Radial Gauge -->
+            <div class="gauge-wrapper">
+              <svg class="gauge-svg" viewBox="0 0 160 160">
+                <!-- Background Arc: radius 65, total ~306px -->
+                <circle class="gauge-bg-arc" cx="80" cy="80" r="65" stroke-dasharray="306" stroke-dashoffset="0"></circle>
+                <!-- Dynamic Fill Arc -->
+                <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="65" stroke-dasharray="306" stroke-dashoffset="0"></circle>
+              </svg>
+
+              <!-- Center Text Content -->
+              <div class="gauge-center-content">
+                <span class="gcc-status" id="gaugeStatusText">ELIGIBLE TO DONATE</span>
+                <span class="gcc-days" id="gaugeDaysText">90 DAYS</span>
+                <span class="gcc-sub" id="gaugeSubText">COOLDOWN COMPLETED</span>
+                <span class="gcc-percent" id="gaugePercentText">100%</span>
+              </div>
+            </div>
+
+            <!-- Right Eligibility Checklist -->
+            <div class="eligibility-checklist">
+              <div class="check-item" id="checkWaitItem">
+                <i class="fas fa-check"></i>
+                <span>90-day wait period met</span>
+              </div>
+              <div class="check-item">
+                <i class="fas fa-check"></i>
+                <span>Health indicators optimal</span>
+              </div>
+              <div class="check-item">
+                <i class="fas fa-check"></i>
+                <span>Not currently on medication</span>
+              </div>
+
+              <div class="eligibility-next-row">
+                Next Available: <b id="nextAvailableText">Immediate / READY</b>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CARD 4: DONOR IMPACT MILESTONES (Clean Placeholder) -->
+        <section class="profile-card" id="milestonesCard">
+          <div class="card-header-row">
+            <h2 class="card-title">Donor Impact Milestones</h2>
+            <span class="card-meta-tag">Earned badges</span>
+          </div>
+
+          <!-- Milestones & Badges section intentionally reserved for upcoming badge engine -->
+          <div class="milestones-empty-placeholder">
+            <div class="mep-icon-row">
+              <div class="mep-icon-badge"><i class="fas fa-award"></i></div>
+              <div class="mep-icon-badge"><i class="fas fa-shield-halved"></i></div>
+              <div class="mep-icon-badge"><i class="fas fa-medal"></i></div>
+            </div>
+            <div class="mep-title">Milestones & Achievements</div>
+            <div class="mep-sub">Milestones & badges engine will be integrated soon.</div>
+          </div>
+        </section>
+
+        <!-- CARD 3: PAST DONATION HISTORY (Direct Database Feed) -->
+        <section class="profile-card" id="donationHistoryCard">
+          <div class="card-header-row">
+            <h2 class="card-title">Past Donation History</h2>
+            <span class="card-meta-tag">(MySQL feed)</span>
+          </div>
+
+          <div style="font-size:0.85rem;font-weight:700;color:var(--text-secondary);margin-bottom:0.85rem;font-family:var(--font-tech);letter-spacing:0.5px;">
+            Verified Donation History Logs
+          </div>
+
+          <!-- Dynamic Container for verified donation logs -->
+          <div class="history-table-container" id="donationHistoryContainer">
+            <div class="empty-history-state">
+              <i class="fas fa-circle-notch fa-spin"></i>
+              <p>Retrieving verified donation records from database...</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
   </div>
-  <script>
-    window.location.replace("donor-dashboard.html#profile");
-  </script>
+
+  <!-- Mobile Sidebar Overlay Backdrop -->
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);"></div>
+
+  <!-- Scripts -->
+  <script src="js/common.js"></script>
+  <script src="js/donor-profile.js"></script>
 </body>
 </html>
-

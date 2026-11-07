@@ -1,0 +1,868 @@
+/* ============================================================
+   RED404 — DONOR HEALTH PROFILE & MEDICAL ELIGIBILITY CSS
+   Deep Dark Health-Tech UI (Command Center Theme)
+============================================================ */
+
+:root {
+  --bg-core: #08090c;
+  --bg-sidebar: #0b0d13;
+  --bg-card: #11131a;
+  --bg-panel: #0d1017;
+  --bg-card-hover: #151822;
+
+  --border-glass: #1c202e;
+  --border-card: #222738;
+
+  --red-neon: #ff2a44;
+  --red-glow: rgba(255, 42, 68, 0.45);
+  --red-glow-soft: rgba(255, 42, 68, 0.12);
+  --red-border: rgba(255, 42, 68, 0.35);
+
+  --green-neon: #00e676;
+  --green-glow: rgba(0, 230, 118, 0.4);
+  --green-soft: rgba(0, 230, 118, 0.12);
+  --green-border: rgba(0, 230, 118, 0.35);
+
+  --amber-neon: #ffab00;
+  --amber-soft: rgba(255, 171, 0, 0.12);
+  --amber-border: rgba(255, 171, 0, 0.35);
+
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-tech: 'Rajdhani', sans-serif;
+}
+
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body.donor-profile-body {
+  font-family: var(--font-main);
+  background-color: var(--bg-core);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ==================== TOP HEADER ==================== */
+.hub-header {
+  height: 74px;
+  background: rgba(11, 13, 19, 0.95);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 0 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hub-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.hub-mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border-glass);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.hub-logo-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.hub-logo-drop {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--red-neon), #990011);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.25rem;
+  box-shadow: 0 0 20px var(--red-glow);
+}
+
+.hub-logo-text {
+  font-family: var(--font-tech);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.hub-logo-text .hl-red { color: var(--red-neon); text-shadow: 0 0 12px var(--red-glow); }
+.hub-logo-text .hl-num { color: #fff; }
+
+.hub-donor-welcome {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-glass);
+  padding-left: 1.5rem;
+}
+
+.hdw-title {
+  font-family: var(--font-tech);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+.hdw-sub {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.hub-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gps-sync-capsule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 230, 118, 0.08);
+  border: 1px solid var(--green-border);
+  padding: 0.45rem 1rem;
+  border-radius: 30px;
+  color: var(--green-neon);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.15);
+  font-family: var(--font-tech);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gps-sync-capsule:hover {
+  background: rgba(0, 230, 118, 0.18);
+  box-shadow: 0 0 25px var(--green-glow);
+  transform: translateY(-1px);
+}
+
+.gps-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.gps-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green-neon);
+  box-shadow: 0 0 8px var(--green-neon);
+  animation: pulseGps 1.8s infinite;
+}
+
+.gps-coords-txt {
+  font-size: 0.72rem;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.hub-icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.hub-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ==================== HUB MAIN LAYOUT ==================== */
+.hub-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  flex: 1;
+  min-height: calc(100vh - 74px);
+}
+
+/* ==================== LEFT SIDEBAR ==================== */
+.hub-sidebar {
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-glass);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hub-nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hub-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.hub-nav-item i {
+  font-size: 1.1rem;
+  width: 22px;
+  text-align: center;
+}
+
+.hub-nav-item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.hub-nav-item.active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(255, 42, 68, 0.2), rgba(255, 42, 68, 0.05));
+  border: 1px solid var(--red-border);
+  box-shadow: 0 0 20px var(--red-glow-soft);
+}
+
+.hub-nav-item.active i {
+  color: var(--red-neon);
+  filter: drop-shadow(0 0 8px var(--red-neon));
+}
+
+.hub-sidebar-bottom {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-glass);
+}
+
+.hub-engine-status-card {
+  background: rgba(24, 31, 44, 0.8);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.hes-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hes-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-neon);
+  box-shadow: 0 0 10px var(--green-neon);
+  animation: pulseGps 2s infinite;
+}
+
+.hes-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ==================== MAIN PROFILE WORKSPACE ==================== */
+.profile-workspace {
+  padding: 2rem 2.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 74px);
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+/* ==================== COMMON CARD STYLING ==================== */
+.profile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 18px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-card:hover {
+  border-color: var(--border-card);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.card-title {
+  font-family: var(--font-tech);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #fff;
+}
+
+.card-meta-tag {
+  font-family: var(--font-tech);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+/* ==================== CARD 1: DONOR PROFILE & VITALS ==================== */
+.vitals-split-layout {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+  margin-bottom: 1.25rem;
+}
+
+/* Left Red Block */
+.blood-emblem-box {
+  background: linear-gradient(145deg, #ff2a44, #bf001d);
+  border-radius: 16px;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #fff;
+  box-shadow: 0 8px 30px rgba(255, 42, 68, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.blood-emblem-box::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.beb-type {
+  font-family: var(--font-tech);
+  font-size: 3.25rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.beb-label {
+  font-family: var(--font-tech);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.beb-icon {
+  margin-top: 1rem;
+  font-size: 1.75rem;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Right Stats Details */
+.vitals-details-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.vitals-top-meta {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--font-tech);
+  letter-spacing: 0.5px;
+}
+
+.vitals-verified-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.vital-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.vital-row b {
+  color: #fff;
+  font-weight: 700;
+}
+
+.vital-pill {
+  font-family: var(--font-tech);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.15rem 0.55rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.pill-normal {
+  background: var(--green-soft);
+  color: var(--green-neon);
+  border: 1px solid var(--green-border);
+}
+
+.pill-alert {
+  background: var(--red-glow-soft);
+  color: var(--red-neon);
+  border: 1px solid var(--red-border);
+}
+
+/* AI Health Evaluation Banner */
+.health-eval-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-family: var(--font-tech);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: auto;
+  transition: all 0.3s ease;
+}
+
+.badge-fit {
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.16), rgba(0, 230, 118, 0.04));
+  border: 1px solid var(--green-border);
+  color: var(--green-neon);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.18);
+}
+
+.badge-unfit {
+  background: linear-gradient(135deg, rgba(255, 42, 68, 0.16), rgba(255, 42, 68, 0.04));
+  border: 1px solid var(--red-border);
+  color: var(--red-neon);
+  box-shadow: 0 0 20px rgba(255, 42, 68, 0.2);
+}
+
+.badge-awaiting {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--border-glass);
+  color: var(--text-muted);
+}
+
+.heb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+  animation: pulseGps 1.5s infinite;
+}
+
+/* ==================== CARD 2: MEDICAL ELIGIBILITY TRACKER ==================== */
+.eligibility-layout {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+/* Circular Radial Gauge */
+.gauge-wrapper {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-svg {
+  transform: rotate(-135deg);
+  width: 180px;
+  height: 180px;
+}
+
+.gauge-bg-arc {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.gauge-fill-arc {
+  fill: none;
+  stroke: var(--green-neon);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease;
+  filter: drop-shadow(0 0 10px var(--green-glow));
+}
+
+.gauge-fill-arc.cooldown {
+  stroke: #ff9100;
+  filter: drop-shadow(0 0 10px rgba(255, 145, 0, 0.4));
+}
+
+.gauge-center-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.gcc-status {
+  font-family: var(--font-tech);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--green-neon);
+  letter-spacing: 0.5px;
+}
+
+.gcc-days {
+  font-family: var(--font-tech);
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+  margin: 2px 0;
+}
+
+.gcc-sub {
+  font-family: var(--font-tech);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.gcc-percent {
+  font-family: var(--font-tech);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--green-neon);
+  margin-top: 4px;
+}
+
+/* Right Checklist */
+.eligibility-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.88rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.check-item i {
+  color: var(--green-neon);
+  font-size: 0.95rem;
+}
+
+.check-item.pending i {
+  color: #ff9100;
+}
+
+.eligibility-next-row {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-glass);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.eligibility-next-row b {
+  color: var(--green-neon);
+  font-family: var(--font-tech);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* ==================== CARD 3: PAST DONATION HISTORY ==================== */
+.history-table-container {
+  overflow-x: auto;
+  min-height: 180px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.history-table th {
+  padding: 0.65rem 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.history-table td {
+  padding: 0.85rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+}
+
+.history-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+  color: #fff;
+}
+
+.ht-ref {
+  font-family: var(--font-tech);
+  font-weight: 700;
+  color: var(--red-neon);
+}
+
+.ht-hosp {
+  color: #fff;
+  font-weight: 600;
+}
+
+.status-pill-completed {
+  font-family: var(--font-tech);
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  background: var(--green-soft);
+  color: var(--green-neon);
+  border: 1px solid var(--green-border);
+  display: inline-block;
+}
+
+.empty-history-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-history-state i {
+  font-size: 2.25rem;
+  color: rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.75rem;
+}
+
+.empty-history-state p {
+  font-size: 0.85rem;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+/* ==================== CARD 4: MILESTONES PLACEHOLDER ==================== */
+.milestones-empty-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border: 1px dashed var(--border-glass);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.015);
+  margin-top: 0.5rem;
+}
+
+.mep-icon-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  opacity: 0.25;
+}
+
+.mep-icon-badge {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  color: #fff;
+}
+
+.mep-title {
+  font-family: var(--font-tech);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.mep-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Toast */
+.donor-hub-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  background: rgba(13, 17, 24, 0.95);
+  border: 1px solid var(--border-glass);
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.donor-hub-toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-success { border-color: var(--green-border); color: var(--green-neon); }
+.toast-info { border-color: var(--border-glass); color: #fff; }
+
+@keyframes pulseGps {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== RESPONSIVE BREAKPOINTS ==================== */
+@media (max-width: 1200px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hub-layout {
+    grid-template-columns: 1fr;
+  }
+  .hub-sidebar {
+    position: fixed;
+    top: 74px;
+    left: 0;
+    bottom: 0;
+    width: 270px;
+    z-index: 2000;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.7);
+  }
+  .hub-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .hub-mobile-menu-btn {
+    display: flex !important;
+  }
+  .profile-workspace {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .vitals-split-layout {
+    grid-template-columns: 1fr;
+  }
+  .eligibility-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .eligibility-checklist {
+    align-items: center;
+  }
+}
+
