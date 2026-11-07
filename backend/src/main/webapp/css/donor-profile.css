@@ -841,137 +841,278 @@ body.donor-profile-body {
 
 .body-scanner-layout {
   display: grid;
-  grid-template-columns: 205px 1fr;
-  gap: 1.25rem;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
   align-items: center;
   flex: 1;
 }
 
-/* Left Visual Column: Vertical Scale Ruler + 3D Glass Chamber */
+@media (max-width: 992px) {
+  .body-scanner-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+
+/* Left Visual Column: Vertical Scale Ruler + 3D Cryo-Pod */
 .scanner-visual-col {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.75rem;
   position: relative;
 }
 
-/* Left Vertical Scale Ruler */
-.scanner-scale-ruler {
+/* ==================== 1. LEFT CALIBRATION SCALE RULER ==================== */
+.pod-scale-ruler {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 224px;
-  width: 64px;
+  height: 320px;
+  width: 68px;
   box-sizing: border-box;
   padding: 8px 0;
+  flex-shrink: 0;
 }
 
-.ssr-tick {
+.psr-tick {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 5px;
+  gap: 6px;
 }
 
-.ssr-labels {
+.psr-labels {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  line-height: 1;
+  line-height: 1.1;
 }
 
-.ssr-val {
+.psr-val {
   font-family: var(--font-main);
   font-size: 0.95rem;
   font-weight: 700;
   color: #f1f5f9;
 }
 
-.ssr-sub {
+.psr-sub {
   font-family: var(--font-main);
-  font-size: 0.64rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: #64748b;
   margin-top: 1px;
 }
 
-.ssr-line {
-  width: 10px;
+.psr-line {
+  width: 12px;
   height: 1.5px;
   background: rgba(56, 189, 248, 0.7);
   box-shadow: 0 0 6px rgba(56, 189, 248, 0.55);
   flex-shrink: 0;
 }
 
-.ssr-tick-minor {
+.psr-minor-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 13px;
+}
+
+.psr-tick-minor {
   width: 5px;
   height: 1px;
   background: rgba(56, 189, 248, 0.35);
-  align-self: flex-end;
   margin-right: 0;
 }
 
-/* 3D Glass Chamber Capsule */
-.scanner-chamber-3d {
-  width: 136px;
-  height: 224px;
+/* ==================== 2. BIOMETRIC CRYO-POD CONTAINER (3D GLASS OPTICS) ==================== */
+.cryo-pod-container {
+  width: 200px;
+  height: 320px;
   position: relative;
-  border-radius: 18px;
-  background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.12) 0%, rgba(10, 20, 32, 0.88) 85%);
-  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(8, 20, 28, 0.85) 0%, rgba(4, 10, 15, 0.95) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
   box-shadow: 
-    inset 0 0 32px rgba(56, 189, 248, 0.2),
-    inset 0 1.5px 3px rgba(255, 255, 255, 0.38),
-    0 10px 32px rgba(0, 0, 0, 0.65);
+    inset 0 0 20px rgba(56, 189, 248, 0.15), 
+    inset 0 2px 4px rgba(255, 255, 255, 0.25), 
+    0 12px 32px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
 }
 
-.chamber-glass-bevel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.04) 40%, transparent 60%);
-  pointer-events: none;
-  z-index: 4;
-}
-
-.chamber-ambient-light {
+/* Diagonal glossy sheen specular reflection across top-left curve */
+.cryo-pod-container::before {
+  content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 3D Perspective Chamber Depth Lines & Ambient Lamps */
+.pod-ceiling-lamp {
+  position: absolute;
+  top: 10px;
+  left: 36px;
+  right: 36px;
+  height: 3.5px;
+  border-radius: 2px;
+  background: #38bdf8;
+  box-shadow: 0 0 14px 2px rgba(56, 189, 248, 0.85), 0 2px 8px rgba(56, 189, 248, 0.5);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.pod-floor-lamp {
+  position: absolute;
+  bottom: 10px;
+  left: 36px;
+  right: 36px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 14px 2px rgba(56, 189, 248, 0.5);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.pod-perspective-box {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 14px;
+  right: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.08);
   pointer-events: none;
   z-index: 1;
 }
 
-.scanner-body-svg {
-  width: 130px;
-  height: 216px;
+.pod-perspective-box::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 14px;
+  right: 14px;
+  border-radius: 12px;
+  border: 1px dashed rgba(56, 189, 248, 0.12);
+  pointer-events: none;
+}
+
+/* ==================== 3. HOLOGRAPHIC CYAN HUMAN BODY ==================== */
+.pod-body-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.hologram-body {
+  width: 200px;
+  height: 320px;
   display: block;
-  overflow: visible;
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.6));
-  position: relative;
-  z-index: 2;
 }
 
-#bloodFluidRect {
-  transition: y 1.2s cubic-bezier(0.4, 0, 0.2, 1), height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+.hologram-contour {
+  stroke: rgba(56, 189, 248, 0.7);
+  fill: rgba(56, 189, 248, 0.08);
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.35));
 }
 
-.meniscus-surface-line {
-  transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: drop-shadow(0 0 8px #f43f5e) drop-shadow(0 0 16px #e11d48);
-  animation: meniscusFlow 3s ease-in-out infinite alternate;
+@keyframes cardiacPulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.35); opacity: 1; filter: drop-shadow(0 0 8px #38bdf8); }
 }
 
-@keyframes meniscusFlow {
-  0% { transform: translateY(var(--meniscus-y, 0px)) scaleY(0.9); }
-  100% { transform: translateY(var(--meniscus-y, 0px)) scaleY(1.35); }
+.cardiac-node-glow {
+  transform-origin: 106px 95px;
+  animation: cardiacPulse 1.8s ease-in-out infinite;
+}
+
+.cardiac-node-glow-ruby {
+  transform-origin: 106px 95px;
+  animation: cardiacPulse 1.8s ease-in-out infinite;
+}
+
+/* ==================== 4. DYNAMIC LIQUID BLOOD COLUMN & FLOWING SINE WAVE ==================== */
+.blood-liquid-column {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 60%, #450a0a 100%);
+  box-shadow: 0 0 24px rgba(220, 38, 38, 0.35);
+  overflow: hidden;
+  transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Submerged crimson anatomical body layer pinned to bottom */
+.submerged-body-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200px;
+  height: 320px;
+  pointer-events: none;
+}
+
+.submerged-body-svg {
+  width: 200px;
+  height: 320px;
+  display: block;
+}
+
+/* Continuous Flowing Sine Wave Meniscus at Top of Liquid */
+.flowing-wave-track {
+  position: absolute;
+  top: -16px;
+  left: 0;
+  width: 200%;
+  height: 32px;
+  pointer-events: none;
+  animation: waveFlow 4s linear infinite;
+  z-index: 6;
+}
+
+.flowing-wave-svg {
+  width: 100%;
+  height: 32px;
+  display: block;
+}
+
+@keyframes waveFlow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.wave-crest-line {
+  stroke: #f87171;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 -2px 6px #ef4444) drop-shadow(0 0 10px #f87171);
+}
+
+.pod-rim-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.12);
+  pointer-events: none;
+  z-index: 8;
 }
 
 /* Right Telemetry Column (Matching image) */

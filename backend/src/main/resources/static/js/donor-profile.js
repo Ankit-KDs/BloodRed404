@@ -292,11 +292,10 @@
     }
   }
 
-  // ======================== 4. 3D HOLOGRAPHIC ANATOMICAL SCANNER ========================
-  // Real-time volumetric blood fill inside 3D human body silhouette matching reference image
+  // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
+  // Real-time animated flowing blood chamber with anatomical human silhouette
   function renderMedicalEligibilityTracker() {
-    const bloodFluidRect = document.getElementById('bloodFluidRect');
-    const bloodMeniscusWave = document.getElementById('bloodMeniscusWave');
+    const bloodColumn = document.getElementById('bloodLiquidColumn');
     const daysVal = document.getElementById('scannerDaysVal');
     const daysLbl = document.getElementById('scannerDaysLbl');
     const recoveredVal = document.getElementById('scannerRecoveredVal');
@@ -324,23 +323,10 @@
       }
     }
 
-    // Body silhouette dimensions:
-    // Feet: Y = 198, Head top: Y = 12, Total height = 186 units
-    const totalHeight = 186;
-
     if (isNeverDonated || daysPassed >= 90) {
-      // State A: 100% Eligible (Pre-donation OR 90 days satisfied)
-      const fluidHeight = 186;
-      const fluidY = 12;
-
-      if (bloodFluidRect) {
-        bloodFluidRect.setAttribute('y', String(fluidY));
-        bloodFluidRect.setAttribute('height', String(fluidHeight));
-      }
-
-      if (bloodMeniscusWave) {
-        bloodMeniscusWave.style.setProperty('--meniscus-y', '0px');
-        bloodMeniscusWave.style.transform = 'translateY(0px)';
+      // State 1: Eligible / Pre-Donation (Fluid height sets to 100%, entire chamber filled)
+      if (bloodColumn) {
+        bloodColumn.style.height = '100%';
       }
 
       if (metaTag) {
@@ -355,7 +341,7 @@
       }
 
       if (recoveredVal) {
-        recoveredVal.textContent = '100% RESTORED';
+        recoveredVal.textContent = '100% RESTORED • ELIGIBLE TO DONATE';
         recoveredVal.style.color = '#f8fafc';
       }
 
@@ -389,20 +375,10 @@
         `;
       }
     } else {
-      // State B: Post-Donation Recovery (Day-by-Day Upward Fill)
+      // State 2: Cooldown Active (Fluid rises from feet to head over 90 days)
       const percentage = Math.min(Math.max(1, Math.floor((daysPassed / 90) * 100)), 99);
-      const fluidHeight = Math.max(12, (percentage / 100) * totalHeight);
-      const fluidY = 198 - fluidHeight;
-      const meniscusOffsetY = fluidY - 12;
-
-      if (bloodFluidRect) {
-        bloodFluidRect.setAttribute('y', String(fluidY));
-        bloodFluidRect.setAttribute('height', String(fluidHeight));
-      }
-
-      if (bloodMeniscusWave) {
-        bloodMeniscusWave.style.setProperty('--meniscus-y', `${meniscusOffsetY}px`);
-        bloodMeniscusWave.style.transform = `translateY(${meniscusOffsetY}px)`;
+      if (bloodColumn) {
+        bloodColumn.style.height = `${percentage}%`;
       }
 
       const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);

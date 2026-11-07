@@ -221,142 +221,164 @@
           </div>
         </section>
 
-        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (3D Body Scanner) -->
+        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (Biometric Cryo-Pod) -->
         <section class="profile-card" id="eligibilityTrackerCard">
           <div class="card-header-row">
-            <h2 class="card-title">Medical Eligibility Tracker (3D Body Scanner)</h2>
+            <h2 class="card-title">Medical Eligibility Tracker (Biometric Cryo-Pod)</h2>
             <span class="card-meta-tag scanner-meta-tag" id="eligibilityMetaTag">
               <i class="fas fa-question-circle"></i> Safety Cooldown
             </span>
           </div>
 
           <div class="body-scanner-layout">
-            <!-- Left: Scale Ticks + 3D Glass Body Chamber -->
+            <!-- Left: Calibration Scale Ticks + Cryo-Pod Chamber -->
             <div class="scanner-visual-col">
-              <!-- Left Vertical Scale Ticks -->
-              <div class="scanner-scale-ruler">
-                <div class="ssr-tick ssr-top">
-                  <div class="ssr-labels">
-                    <span class="ssr-val">90d</span>
-                    <span class="ssr-sub">(100% Full)</span>
+              <!-- Left Calibration Scale Ruler -->
+              <div class="pod-scale-ruler">
+                <div class="psr-tick psr-top">
+                  <div class="psr-labels">
+                    <span class="psr-val">90d</span>
+                    <span class="psr-sub">(100% Full)</span>
                   </div>
-                  <span class="ssr-line"></span>
+                  <span class="psr-line"></span>
                 </div>
-                <div class="ssr-tick-minor"></div>
-                <div class="ssr-tick-minor"></div>
-                <div class="ssr-tick-minor"></div>
-                <div class="ssr-tick ssr-mid">
-                  <div class="ssr-labels">
-                    <span class="ssr-val">45d</span>
-                    <span class="ssr-sub">(50%)</span>
-                  </div>
-                  <span class="ssr-line"></span>
+                <div class="psr-minor-group">
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
                 </div>
-                <div class="ssr-tick-minor"></div>
-                <div class="ssr-tick-minor"></div>
-                <div class="ssr-tick-minor"></div>
-                <div class="ssr-tick ssr-base">
-                  <div class="ssr-labels">
-                    <span class="ssr-val">0d</span>
-                    <span class="ssr-sub">(0%)</span>
+                <div class="psr-tick psr-mid">
+                  <div class="psr-labels">
+                    <span class="psr-val">45d</span>
+                    <span class="psr-sub">(50%)</span>
                   </div>
-                  <span class="ssr-line"></span>
+                  <span class="psr-line"></span>
+                </div>
+                <div class="psr-minor-group">
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                  <span class="psr-tick-minor"></span>
+                </div>
+                <div class="psr-tick psr-base">
+                  <div class="psr-labels">
+                    <span class="psr-val">0d</span>
+                    <span class="psr-sub">(0%)</span>
+                  </div>
+                  <span class="psr-line"></span>
                 </div>
               </div>
 
-              <!-- 3D Glass Chamber with 3D Holographic Human Model & Volumetric Blood -->
-              <div class="scanner-chamber-3d">
-                <!-- 3D Chamber Bevel & Specular Highlight Overlays -->
-                <div class="chamber-glass-bevel"></div>
-                <div class="chamber-ambient-light"></div>
+              <!-- High-Tech Biometric Cryo-Pod (200px x 320px) -->
+              <div class="cryo-pod-container" id="cryoPodContainer">
+                <!-- 3D Perspective Chamber Depth Lines & Ambient Lamps -->
+                <div class="pod-ceiling-lamp"></div>
+                <div class="pod-floor-lamp"></div>
+                <div class="pod-perspective-box"></div>
 
-                <!-- SVG 3D Human Anatomy & Volumetric Blood Liquid -->
-                <svg class="scanner-body-svg" viewBox="0 0 140 230" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <!-- Human Silhouette Clip Path -->
-                    <clipPath id="humanSilhouetteClip">
-                      <path d="M 70,12 C 76,12 81,17 81,23 C 81,29 77,33 75,36 C 75,39 76,41 84,45 C 92,48 97,50 100,57 C 103,66 103,78 102,94 C 101,106 100,118 98,128 C 97,130 95,130 94,126 C 92,120 92,110 91,98 C 90,84 88,70 86,64 C 85,71 84,80 82,88 C 81,94 83,100 85,105 C 86,114 86,126 85,140 C 84,148 84,154 83,160 C 83,168 82,178 81,188 C 81,193 83,196 82,198 C 80,199 74,199 74,198 C 73,194 74,188 74,182 C 74,172 73,160 73,152 C 72,140 71,126 70,110 C 69,126 68,140 67,152 C 67,160 66,172 66,182 C 66,188 67,194 66,198 C 66,199 60,199 58,198 C 57,196 59,193 59,188 C 58,178 57,168 57,160 C 56,154 56,148 55,140 C 54,126 54,114 55,105 C 57,100 59,94 58,88 C 56,80 55,71 54,64 C 52,70 50,84 49,98 C 48,110 48,120 46,126 C 45,130 43,130 42,128 C 40,118 39,106 38,94 C 37,78 37,66 40,57 C 43,50 48,48 56,45 C 64,41 65,39 65,36 C 63,33 59,29 59,23 C 59,17 64,12 70,12 Z" />
-                    </clipPath>
+                <!-- Layer 1: Base Cyan Holographic Human Body (Above fluid line) -->
+                <div class="pod-body-layer">
+                  <svg class="hologram-body" viewBox="0 0 200 320" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                      <!-- Cybernetic Wireframe Mesh Pattern -->
+                      <pattern id="cyanCyberGrid" width="6" height="6" patternUnits="userSpaceOnUse">
+                        <path d="M 6 0 L 0 0 0 6" fill="none" stroke="rgba(56, 189, 248, 0.45)" stroke-width="0.75" />
+                      </pattern>
+                      <clipPath id="cyanBodyClip">
+                        <path d="M 100,28 C 109,28 116,35 116,45 C 116,53 111,60 108,64 C 108,68 110,72 120,77 C 128,81 138,87 141,98 C 143,106 142,118 141,136 C 140,148 139,160 137,175 C 136,183 134,192 131,196 C 128,196 126,190 126,180 C 126,165 125,145 122,130 C 121,118 118,105 117,100 C 117,112 116,132 114,146 C 114,158 116,168 116,176 C 116,188 115,206 113,225 C 112,233 112,240 111,245 C 111,252 112,265 110,278 C 109,284 109,290 110,296 C 108,298 99,298 97,296 C 98,290 98,284 99,278 C 100,265 101,252 101,245 C 101,240 101,233 100,225 C 99,206 97,188 96,178 C 98,174 100,172 100,172 C 100,172 102,174 104,178 C 103,188 101,206 100,225 C 99,233 99,240 99,245 C 99,252 100,265 102,278 C 102,284 102,290 103,296 C 101,298 92,298 90,296 C 91,290 91,284 89,278 C 88,265 89,252 89,245 C 88,240 88,233 87,225 C 85,206 84,188 84,176 C 84,168 86,158 86,146 C 84,132 83,112 83,100 C 82,105 79,118 78,130 C 75,145 74,165 74,180 C 74,190 72,196 69,196 C 66,192 64,183 63,175 C 61,160 60,148 59,136 C 58,118 57,106 59,98 C 62,87 72,81 80,77 C 90,72 92,68 92,64 C 89,60 84,53 84,45 C 84,35 91,28 100,28 Z" />
+                      </clipPath>
+                    </defs>
 
-                    <!-- Holographic Cybernetic Wireframe Pattern for Upper Body -->
-                    <pattern id="holoWireMesh" width="6" height="6" patternUnits="userSpaceOnUse">
-                      <path d="M 6 0 L 0 0 0 6" fill="none" stroke="rgba(56, 189, 248, 0.45)" stroke-width="0.75" />
-                    </pattern>
+                    <!-- Cyan Holographic Wireframe Grid inside Silhouette -->
+                    <rect x="50" y="25" width="100" height="275" fill="url(#cyanCyberGrid)" clip-path="url(#cyanBodyClip)" opacity="0.85" />
 
-                    <!-- Volumetric Blood Arterial Gradient -->
-                    <linearGradient id="volumetricBloodGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                      <stop offset="0%" stop-color="#4c0519" />
-                      <stop offset="25%" stop-color="#881337" />
-                      <stop offset="65%" stop-color="#be123c" />
-                      <stop offset="95%" stop-color="#e11d48" />
-                      <stop offset="100%" stop-color="#fb7185" />
-                    </linearGradient>
+                    <!-- Male Anatomical Contours & Muscular Tone -->
+                    <g clip-path="url(#cyanBodyClip)">
+                      <!-- Center Axis Line -->
+                      <line x1="100" y1="64" x2="100" y2="168" stroke="rgba(56, 189, 248, 0.45)" stroke-width="0.8" stroke-dasharray="2 3" />
+                      <!-- Clavicles -->
+                      <path d="M 85,76 Q 100,82 115,76" stroke="rgba(56, 189, 248, 0.55)" stroke-width="1.1" fill="none" />
+                      <!-- Pectorals -->
+                      <path d="M 82,96 Q 98,105 100,92 Q 102,105 118,96" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.1" fill="none" />
+                      <!-- Ribcage arcs -->
+                      <path d="M 85,112 Q 100,120 115,112" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.8" fill="none" />
+                      <path d="M 86,124 Q 100,132 114,124" stroke="rgba(56, 189, 248, 0.3)" stroke-width="0.8" fill="none" />
+                      <!-- Abdominal divisions -->
+                      <line x1="93" y1="134" x2="107" y2="134" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.8" />
+                      <line x1="94" y1="146" x2="106" y2="146" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.8" />
+                      <!-- Cardiac Node Pulse -->
+                      <circle cx="106" cy="95" r="2.8" fill="#38bdf8" class="cardiac-node-glow" />
+                    </g>
 
-                    <!-- Meniscus Glowing Wave Surface Gradient -->
-                    <linearGradient id="meniscusGlowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.8" />
-                      <stop offset="30%" stop-color="#fda4af" stop-opacity="1" />
-                      <stop offset="50%" stop-color="#ffffff" stop-opacity="1" />
-                      <stop offset="70%" stop-color="#fda4af" stop-opacity="1" />
-                      <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.8" />
-                    </linearGradient>
+                    <!-- Outer Holographic Cyan Silhouette Contour -->
+                    <path class="hologram-contour" d="M 100,28 C 109,28 116,35 116,45 C 116,53 111,60 108,64 C 108,68 110,72 120,77 C 128,81 138,87 141,98 C 143,106 142,118 141,136 C 140,148 139,160 137,175 C 136,183 134,192 131,196 C 128,196 126,190 126,180 C 126,165 125,145 122,130 C 121,118 118,105 117,100 C 117,112 116,132 114,146 C 114,158 116,168 116,176 C 116,188 115,206 113,225 C 112,233 112,240 111,245 C 111,252 112,265 110,278 C 109,284 109,290 110,296 C 108,298 99,298 97,296 C 98,290 98,284 99,278 C 100,265 101,252 101,245 C 101,240 101,233 100,225 C 99,206 97,188 96,178 C 98,174 100,172 100,172 C 100,172 102,174 104,178 C 103,188 101,206 100,225 C 99,233 99,240 99,245 C 99,252 100,265 102,278 C 102,284 102,290 103,296 C 101,298 92,298 90,296 C 91,290 91,284 89,278 C 88,265 89,252 89,245 C 88,240 88,233 87,225 C 85,206 84,188 84,176 C 84,168 86,158 86,146 C 84,132 83,112 83,100 C 82,105 79,118 78,130 C 75,145 74,165 74,180 C 74,190 72,196 69,196 C 66,192 64,183 63,175 C 61,160 60,148 59,136 C 58,118 57,106 59,98 C 62,87 72,81 80,77 C 90,72 92,68 92,64 C 89,60 84,53 84,45 C 84,35 91,28 100,28 Z" 
+                          fill="rgba(56, 189, 248, 0.08)" 
+                          stroke="rgba(56, 189, 248, 0.7)" 
+                          stroke-width="1.3" 
+                          filter="drop-shadow(0 0 8px rgba(56, 189, 248, 0.35))" />
+                  </svg>
+                </div>
 
-                    <!-- 3D Glass Specular Rim Highlight -->
-                    <linearGradient id="glassChamberRimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8" />
-                      <stop offset="45%" stop-color="#0284c7" stop-opacity="0.25" />
-                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.65" />
-                    </linearGradient>
+                <!-- Layer 2: Dynamic Liquid Blood Column with Flowing Wave Surface -->
+                <div class="blood-liquid-column" id="bloodLiquidColumn">
+                  <!-- Submerged Ruby Silhouette aligned 1:1 with base body -->
+                  <div class="submerged-body-wrap">
+                    <svg class="submerged-body-svg" viewBox="0 0 200 320" preserveAspectRatio="xMidYMid meet">
+                      <defs>
+                        <pattern id="rubyCyberGrid" width="6" height="6" patternUnits="userSpaceOnUse">
+                          <path d="M 6 0 L 0 0 0 6" fill="none" stroke="rgba(248, 113, 113, 0.45)" stroke-width="0.75" />
+                        </pattern>
+                      </defs>
+                      <rect x="50" y="25" width="100" height="275" fill="url(#rubyCyberGrid)" clip-path="url(#cyanBodyClip)" opacity="0.8" />
+                      <!-- Submerged Anatomical Highlights -->
+                      <g clip-path="url(#cyanBodyClip)">
+                        <line x1="100" y1="64" x2="100" y2="168" stroke="rgba(248, 113, 113, 0.55)" stroke-width="0.8" stroke-dasharray="2 3" />
+                        <path d="M 85,76 Q 100,82 115,76" stroke="rgba(248, 113, 113, 0.6)" stroke-width="1.1" fill="none" />
+                        <path d="M 82,96 Q 98,105 100,92 Q 102,105 118,96" stroke="rgba(248, 113, 113, 0.55)" stroke-width="1.1" fill="none" />
+                        <path d="M 85,112 Q 100,120 115,112" stroke="rgba(248, 113, 113, 0.45)" stroke-width="0.8" fill="none" />
+                        <path d="M 86,124 Q 100,132 114,124" stroke="rgba(248, 113, 113, 0.4)" stroke-width="0.8" fill="none" />
+                        <circle cx="106" cy="95" r="2.8" fill="#f87171" class="cardiac-node-glow-ruby" />
+                      </g>
+                      <!-- Submerged Body Red Contour -->
+                      <path d="M 100,28 C 109,28 116,35 116,45 C 116,53 111,60 108,64 C 108,68 110,72 120,77 C 128,81 138,87 141,98 C 143,106 142,118 141,136 C 140,148 139,160 137,175 C 136,183 134,192 131,196 C 128,196 126,190 126,180 C 126,165 125,145 122,130 C 121,118 118,105 117,100 C 117,112 116,132 114,146 C 114,158 116,168 116,176 C 116,188 115,206 113,225 C 112,233 112,240 111,245 C 111,252 112,265 110,278 C 109,284 109,290 110,296 C 108,298 99,298 97,296 C 98,290 98,284 99,278 C 100,265 101,252 101,245 C 101,240 101,233 100,225 C 99,206 97,188 96,178 C 98,174 100,172 100,172 C 100,172 102,174 104,178 C 103,188 101,206 100,225 C 99,233 99,240 99,245 C 99,252 100,265 102,278 C 102,284 102,290 103,296 C 101,298 92,298 90,296 C 91,290 91,284 89,278 C 88,265 89,252 89,245 C 88,240 88,233 87,225 C 85,206 84,188 84,176 C 84,168 86,158 86,146 C 84,132 83,112 83,100 C 82,105 79,118 78,130 C 75,145 74,165 74,180 C 74,190 72,196 69,196 C 66,192 64,183 63,175 C 61,160 60,148 59,136 C 58,118 57,106 59,98 C 62,87 72,81 80,77 C 90,72 92,68 92,64 C 89,60 84,53 84,45 C 84,35 91,28 100,28 Z" 
+                            fill="rgba(185, 28, 28, 0.45)" 
+                            stroke="rgba(248, 113, 113, 0.7)" 
+                            stroke-width="1.3" 
+                            filter="drop-shadow(0 0 10px rgba(220, 38, 38, 0.5))" />
+                    </svg>
+                  </div>
 
-                    <!-- Diffused Arterial Blood Glow -->
-                    <filter id="bloodDiffusedGlow" x="-30%" y="-30%" width="160%" height="160%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#e11d48" flood-opacity="0.55"/>
-                      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#be123c" flood-opacity="0.35"/>
-                    </filter>
-                  </defs>
+                  <!-- Continuous Undulating Live Sine Wave Surface Track -->
+                  <div class="flowing-wave-track">
+                    <svg class="flowing-wave-svg" viewBox="0 0 400 32" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="waveFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.95"/>
+                          <stop offset="60%" stop-color="#b91c1c" stop-opacity="0.9"/>
+                          <stop offset="100%" stop-color="#7f1d1d" stop-opacity="0.8"/>
+                        </linearGradient>
+                        <filter id="waveCrestGlow" x="-20%" y="-40%" width="140%" height="180%">
+                          <feDropShadow dx="0" dy="-2" stdDeviation="4" flood-color="#ef4444" flood-opacity="0.9"/>
+                          <feDropShadow dx="0" dy="-1" stdDeviation="8" flood-color="#f87171" flood-opacity="0.7"/>
+                        </filter>
+                      </defs>
+                      <!-- Back layer wave -->
+                      <path d="M 0,16 Q 50,22 100,16 T 200,16 Q 250,22 300,16 T 400,16 L 400,32 L 0,32 Z" fill="rgba(225, 29, 72, 0.35)" />
+                      <!-- Main wave -->
+                      <path d="M 0,16 Q 50,8 100,16 T 200,16 Q 250,8 300,16 T 400,16 L 400,32 L 0,32 Z" fill="url(#waveFillGrad)" />
+                      <!-- Glowing crest line -->
+                      <path class="wave-crest-line" d="M 0,16 Q 50,8 100,16 T 200,16 Q 250,8 300,16 T 400,16" fill="none" stroke="#f87171" stroke-width="2.5" filter="url(#waveCrestGlow)" />
+                    </svg>
+                  </div>
+                </div>
 
-                  <!-- 3D Chamber Inner Walls Perspective & Grid -->
-                  <rect x="14" y="8" width="112" height="214" rx="18" fill="rgba(10, 20, 32, 0.75)" stroke="rgba(56, 189, 248, 0.28)" stroke-width="1.4" />
-                  <line x1="14" y1="8" x2="26" y2="24" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <line x1="126" y1="8" x2="114" y2="24" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <line x1="14" y1="222" x2="26" y2="206" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <line x1="126" y1="222" x2="114" y2="206" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1" />
-                  <rect x="26" y="24" width="88" height="182" rx="12" fill="none" stroke="rgba(56, 189, 248, 0.12)" stroke-width="1" stroke-dasharray="3 4" />
-
-                  <!-- Semi-Transparent 3D Human Base (Glass Silhouette) -->
-                  <path class="body-base-silhouette" d="M 70,12 C 76,12 81,17 81,23 C 81,29 77,33 75,36 C 75,39 76,41 84,45 C 92,48 97,50 100,57 C 103,66 103,78 102,94 C 101,106 100,118 98,128 C 97,130 95,130 94,126 C 92,120 92,110 91,98 C 90,84 88,70 86,64 C 85,71 84,80 82,88 C 81,94 83,100 85,105 C 86,114 86,126 85,140 C 84,148 84,154 83,160 C 83,168 82,178 81,188 C 81,193 83,196 82,198 C 80,199 74,199 74,198 C 73,194 74,188 74,182 C 74,172 73,160 73,152 C 72,140 71,126 70,110 C 69,126 68,140 67,152 C 67,160 66,172 66,182 C 66,188 67,194 66,198 C 66,199 60,199 58,198 C 57,196 59,193 59,188 C 58,178 57,168 57,160 C 56,154 56,148 55,140 C 54,126 54,114 55,105 C 57,100 59,94 58,88 C 56,80 55,71 54,64 C 52,70 50,84 49,98 C 48,110 48,120 46,126 C 45,130 43,130 42,128 C 40,118 39,106 38,94 C 37,78 37,66 40,57 C 43,50 48,48 56,45 C 64,41 65,39 65,36 C 63,33 59,29 59,23 C 59,17 64,12 70,12 Z" fill="rgba(56, 189, 248, 0.05)" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.2" />
-
-                  <!-- Upper Body Holographic Wireframe Mesh Overlay -->
-                  <g clip-path="url(#humanSilhouetteClip)">
-                    <rect x="25" y="10" width="90" height="190" fill="url(#holoWireMesh)" opacity="0.65" />
-                    <!-- Anatomical Center Axis & Pectoral Curves -->
-                    <line x1="70" y1="36" x2="70" y2="110" stroke="rgba(56, 189, 248, 0.4)" stroke-width="0.8" stroke-dasharray="2 3" />
-                    <ellipse cx="70" cy="62" rx="16" ry="8" fill="none" stroke="rgba(56, 189, 248, 0.3)" stroke-width="0.8" />
-                    <ellipse cx="70" cy="76" rx="14" ry="7" fill="none" stroke="rgba(56, 189, 248, 0.25)" stroke-width="0.8" />
-                  </g>
-
-                  <!-- Volumetric Blood Fluid Fill (Clipped to Human Body) -->
-                  <g clip-path="url(#humanSilhouetteClip)">
-                    <!-- Rising Blood Column -->
-                    <rect id="bloodFluidRect" x="0" y="12" width="140" height="186" fill="url(#volumetricBloodGrad)" filter="url(#bloodDiffusedGlow)" />
-                    <!-- Flowing Wavy Meniscus Line with Glow -->
-                    <path id="bloodMeniscusWave" class="meniscus-surface-line" d="M 0,12 Q 35,6 70,12 T 140,12 L 140,18 L 0,18 Z" fill="url(#meniscusGlowGrad)" opacity="0.95" />
-                  </g>
-
-                  <!-- Outer Specular Glass Silhouette Contour (Rim Light) -->
-                  <path d="M 70,12 C 76,12 81,17 81,23 C 81,29 77,33 75,36 C 75,39 76,41 84,45 C 92,48 97,50 100,57 C 103,66 103,78 102,94 C 101,106 100,118 98,128 C 97,130 95,130 94,126 C 92,120 92,110 91,98 C 90,84 88,70 86,64 C 85,71 84,80 82,88 C 81,94 83,100 85,105 C 86,114 86,126 85,140 C 84,148 84,154 83,160 C 83,168 82,178 81,188 C 81,193 83,196 82,198 C 80,199 74,199 74,198 C 73,194 74,188 74,182 C 74,172 73,160 73,152 C 72,140 71,126 70,110 C 69,126 68,140 67,152 C 67,160 66,172 66,182 C 66,188 67,194 66,198 C 66,199 60,199 58,198 C 57,196 59,193 59,188 C 58,178 57,168 57,160 C 56,154 56,148 55,140 C 54,126 54,114 55,105 C 57,100 59,94 58,88 C 56,80 55,71 54,64 C 52,70 50,84 49,98 C 48,110 48,120 46,126 C 45,130 43,130 42,128 C 40,118 39,106 38,94 C 37,78 37,66 40,57 C 43,50 48,48 56,45 C 64,41 65,39 65,36 C 63,33 59,29 59,23 C 59,17 64,12 70,12 Z" 
-                        fill="none" 
-                        stroke="url(#glassChamberRimGrad)" 
-                        stroke-width="1.6" 
-                        filter="drop-shadow(0 0 5px rgba(56, 189, 248, 0.4))" />
-
-                  <!-- 3D Chamber Outer Frame Highlights -->
-                  <rect x="14" y="8" width="112" height="214" rx="18" fill="none" stroke="url(#glassChamberRimGrad)" stroke-width="2" filter="drop-shadow(0 0 10px rgba(56, 189, 248, 0.35))" />
-                </svg>
+                <!-- Layer 3: Glass Shell Highlights & Rim Lighting -->
+                <div class="pod-rim-overlay"></div>
               </div>
             </div>
 
-            <!-- Right: Telemetry & Countdown Telemetry (Matching Image) -->
+            <!-- Right: Telemetry & Countdown Readout -->
             <div class="scanner-telemetry-col" id="scannerTelemetryCol">
               <!-- Big Bold Days Metric -->
               <div class="stc-primary-val" id="scannerDaysVal">-- DAYS</div>
