@@ -790,222 +790,353 @@ body.donor-profile-body {
   font-family: var(--font-main);
 }
 
-/* ==================== CARD 2: PREMIUM 240-DEGREE 3D VOLUMETRIC GAUGE ==================== */
-.eligibility-layout {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 1.5rem;
-  align-items: center;
+/* ==================== CARD 2: 3-STAGE CLINICAL RECOVERY BAR ==================== */
+.clinical-recovery-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.85rem;
   flex: 1;
 }
 
-.gauge-col-left {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Gauge Wrapper & SVG Cockpit Dial Canvas */
-.gauge-wrapper {
-  position: relative;
-  width: 220px;
-  height: 220px;
+/* Telemetry HUD Header (Above the bar) */
+.hud-telemetry-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.gauge-svg {
-  width: 220px;
-  height: 220px;
-  overflow: visible;
-}
-
-/* Recessed 3D Groove Base Track */
-.track-groove-highlight {
-  transition: opacity 0.3s ease;
-}
-
-.track-groove-body {
-  transition: stroke 0.3s ease;
-}
-
-.track-groove-shadow {
-  transition: opacity 0.3s ease;
-}
-
-/* Active Volumetric 3D Pipe */
-.gauge-active-pipe {
-  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease;
-}
-
-/* 3D Spherical Indicator Bead */
-.gauge-tip-bead {
-  transition: cx 1s cubic-bezier(0.4, 0, 0.2, 1), cy 1s cubic-bezier(0.4, 0, 0.2, 1), fill 0.4s ease;
-  pointer-events: none;
-}
-
-/* Centered Telemetry Metrics (Clean 3D Dial Typography) */
-.gauge-center-content {
-  position: absolute;
-  inset: 0;
+.hud-stage-title {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  pointer-events: none;
-  padding: 16px 20px 12px 20px;
-  box-sizing: border-box;
-  z-index: 2;
-}
-
-.gcc-status {
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #94a3b8;
   font-family: var(--font-main);
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #34d399;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.2;
-  max-width: 110px;
-  text-align: center;
-  margin-bottom: 2px;
-  transition: color 0.3s ease;
+  font-weight: 500;
 }
 
-.gcc-status span {
-  display: block;
-  white-space: nowrap;
+.stage-beacon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.6);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
-.gcc-days {
-  font-family: var(--font-main);
-  font-size: 1.8rem;
-  font-weight: 800;
+.stage-beacon-dot.cooldown {
+  background: #f87171;
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.6);
+}
+
+.hud-stage-title b {
   color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: -0.5px;
-  line-height: 1.05;
-  margin: 3px 0 2px 0;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  text-align: center;
+  font-weight: 700;
 }
 
-.gcc-days.cooldown {
-  font-size: 1.45rem;
-  letter-spacing: -0.2px;
-}
-
-.gcc-sub {
-  font-family: var(--font-main);
-  font-size: 0.64rem;
-  color: #64748b;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.2;
-  max-width: 110px;
-  text-align: center;
-  margin-bottom: 6px;
-  transition: color 0.3s ease;
-}
-
-.gcc-sub span {
-  display: block;
-  white-space: nowrap;
-}
-
-/* Frosted Mini-Capsule Percentage Chip */
-.gcc-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3px 14px;
-  border-radius: 9999px;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.35);
-  transition: all 0.3s ease;
-}
-
-.gcc-chip.cooldown {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(248, 113, 113, 0.3);
-}
-
-.gcc-chip-text {
-  font-family: var(--font-main);
+.hud-days-metric {
   font-size: 0.86rem;
+  font-family: var(--font-main);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-days-metric b {
+  color: #f8fafc;
   font-weight: 800;
+  font-size: 0.96rem;
+}
+
+.metric-divider {
+  color: #475569;
+}
+
+.metric-percent {
   color: #34d399;
-  letter-spacing: 0.5px;
-  line-height: 1;
+  font-weight: 800;
+  font-size: 0.96rem;
   transition: color 0.3s ease;
 }
 
-.gcc-chip.cooldown .gcc-chip-text {
+.metric-percent.cooldown {
   color: #f87171;
 }
 
-/* Next Available Telemetry Row */
-.eligibility-next-row {
-  margin-top: 0.65rem;
-  font-size: 0.82rem;
-  color: #94a3b8;
-  text-align: center;
+/* Horizontal 3-Stage Progress Container */
+.stages-progress-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.recovery-stage-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  transition: all 0.3s ease;
+}
+
+.recovery-stage-card.stage-active {
+  background: rgba(52, 211, 153, 0.03);
+  border-color: rgba(52, 211, 153, 0.25);
+  box-shadow: 0 0 15px rgba(52, 211, 153, 0.06);
+}
+
+.recovery-stage-card.stage-active-cooldown {
+  background: rgba(248, 113, 113, 0.03);
+  border-color: rgba(248, 113, 113, 0.25);
+  box-shadow: 0 0 15px rgba(248, 113, 113, 0.06);
+}
+
+.stage-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.sch-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.sch-phase-num {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
   font-family: var(--font-main);
 }
 
-.eligibility-next-row b {
+.sch-phase-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  font-family: var(--font-main);
+  margin-top: 2px;
+  line-height: 1.25;
+}
+
+.sch-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sch-days-range {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #64748b;
+  font-family: var(--font-main);
+  white-space: nowrap;
+}
+
+.stage-status-icon {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  transition: all 0.3s ease;
+}
+
+.stage-status-icon.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.stage-status-icon.active {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.stage-status-icon.active-cooldown {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.stage-status-icon.pending {
+  background: rgba(255, 255, 255, 0.03);
+  color: #475569;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Rounded Glass Track with Inset Groove */
+.stage-track-groove {
+  width: 100%;
+  height: 9px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: visible;
+}
+
+/* Active Fill Bar with Soft Clinical Gradient & Diffused Glow */
+.stage-fill-bar {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #059669, #34d399);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.25);
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  min-width: 0;
+}
+
+.stage-fill-bar.cooldown {
+  background: linear-gradient(90deg, #f87171, #ef4444);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
+/* Animated Pulsating Indicator at Leading Edge */
+.pulse-beacon {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid #10b981;
+  box-shadow: 0 0 8px #34d399, 0 0 14px rgba(52, 211, 153, 0.5);
+  animation: beaconPulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  pointer-events: none;
+  display: none;
+  z-index: 3;
+}
+
+.pulse-beacon.cooldown {
+  border-color: #ef4444;
+  box-shadow: 0 0 8px #f87171, 0 0 14px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes beaconPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+}
+
+/* Status Banner Pill */
+.recovery-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.banner-eligible {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: #34d399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.1);
+}
+
+.banner-cooldown {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.1);
+}
+
+/* Bottom Telemetry Row: Next Available + 3-Point Checklist */
+.recovery-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.recovery-next-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-main);
+  flex-shrink: 0;
+}
+
+.rnb-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.rnb-val {
+  font-size: 0.86rem;
   color: #34d399;
   font-weight: 700;
   transition: color 0.3s ease;
 }
 
-/* Right Clean 3-Point Checklist */
-.eligibility-checklist {
-  display: flex;
-  flex-direction: column;
-  gap: 0.95rem;
+.rnb-val.cooldown {
+  color: #f87171;
 }
 
-.check-item {
+.recovery-checklist {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.94rem;
-  color: #e2e8f0;
+  gap: 0.95rem;
+  flex-wrap: wrap;
+}
+
+.recovery-checklist .check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
   font-weight: 500;
   font-family: var(--font-main);
 }
 
-.check-item i {
+.recovery-checklist .check-item i {
   color: #34d399;
-  font-size: 1rem;
+  font-size: 0.86rem;
   filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.45));
   transition: color 0.3s ease;
 }
 
-.check-item.pending i {
+.recovery-checklist .check-item.pending i {
   color: #f87171;
   filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.45));
-}
-
-.eligibility-next-row b {
-  color: #00e676;
-  font-weight: 700;
-  font-family: var(--font-main);
 }
 
 /* ==================== CARD 3: DONOR IMPACT MILESTONES (Dimmed Glassmorphic) ==================== */
