@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RED404 • Active Emergency Alerts & Live GPS Hub</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
+  
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  
+  <!-- Leaflet Dark Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- RED404 Styles -->
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/donor-alerts.css" />
+</head>
+
+<body class="donor-hub-body">
+
+  <!-- ==================== TOP HEADER BAR ==================== -->
+  <header class="hub-header">
+    <div class="hub-header-left">
+      <!-- Mobile hamburger toggle button -->
+      <button class="hub-notif-btn hub-mobile-menu-btn" id="mobileMenuBtn" style="display:none;" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <a href="index.html" class="hub-brand" title="RED404 Emergency Blood Network">
+        <div class="hub-brand-icon">
+          <i class="fas fa-tint"></i>
+        </div>
+        <span class="hub-brand-name">RED404</span>
+      </a>
+
+      <div class="hub-title-block">
+        <h1 class="hub-main-title">
+          Donor Dashboard <span>• Active Emergency Alerts & Live GPS Hub</span>
+        </h1>
+        <div class="hub-user-greeting">
+          Welcome, <b id="donorGreetingName">Ankit Kumar</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="hub-header-right">
+      <!-- Notification bell -->
+      <button class="hub-notif-btn" title="Emergency Broadcasts" aria-label="Notifications">
+        <i class="fas fa-bell"></i>
+        <span class="hub-notif-badge"></span>
+      </button>
+
+      <!-- LIVE GPS SYNC CAPSULE BUTTON -->
+      <button class="gps-sync-capsule" id="gpsSyncBtn" title="Click to refresh browser GPS location via Geolocation API">
+        <i class="fas fa-paper-plane gps-icon-spin"></i>
+        <div class="gps-meta">
+          <div class="gps-title-row">
+            <span>LIVE GPS SYNC:</span>
+            <span class="gps-pulse-dot"></span>
+            <i class="fas fa-broadcast-tower" style="font-size:0.75rem"></i>
+          </div>
+          <div class="gps-coords-txt" id="gpsCoordsText">CONNECTED (28.3486° N, 79.5619° E)</div>
+        </div>
+      </button>
+
+      <!-- DONOR STATUS TOGGLE (Available / Busy) -->
+      <button class="hub-status-toggle" id="donorStatusToggle" title="Toggle donor availability">
+        <span class="hes-dot"></span>
+        <span id="donorStatusText">Available to Donate</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== HUB MAIN LAYOUT ==================== -->
+  <div class="hub-layout">
+
+    <!-- LEFT SIDEBAR MENU -->
+    <aside class="hub-sidebar" id="hubSidebar">
+      <nav class="hub-nav-menu">
+        <a href="donor-alerts.html" class="hub-nav-item active" title="Real-time incoming SOS requests">
+          <i class="fas fa-bell"></i>
+          <span>Active Alerts</span>
+        </a>
+        <a href="donor-route.html" class="hub-nav-item" title="Turn-by-turn emergency navigation">
+          <i class="fas fa-route"></i>
+          <span>Route Navigation</span>
+        </a>
+        <a href="donor-dashboard.html#profile" class="hub-nav-item" title="Medical eligibility & credentials">
+          <i class="fas fa-heartbeat"></i>
+          <span>Health Profile</span>
+        </a>
+        <a href="donor-dashboard.html#history" class="hub-nav-item" title="Past donation records & impact">
+          <i class="fas fa-history"></i>
+          <span>Donation History</span>
+        </a>
+        <a href="donor-dashboard.html#settings" class="hub-nav-item" title="Preferences & notification radius">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="hub-sidebar-bottom">
+        <div class="hub-engine-status-card">
+          <div class="hes-row" id="sidebarDonorStatus">
+            <span class="hes-dot"></span>
+            <span>Donor Status: <b>ACTIVE</b></span>
+          </div>
+          <div class="hes-sub">
+            <i class="fas fa-shield-virus" style="color:var(--green-neon);margin-right:3px;"></i>
+            Radar Engine: ONLINE • 3 Zones
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER MAIN FEED -->
+    <main class="hub-main-feed">
+      <div class="feed-header-row">
+        <h2 class="feed-section-label">INCOMING EMERGENCY REQUESTS</h2>
+        <div class="feed-live-badge">
+          <span class="flb-dot"></span>
+          <span>LIVE SOS BROADCAST</span>
+        </div>
+      </div>
+
+      <!-- Emergency request cards or standby state container -->
+      <div id="emergencyFeedContainer">
+        <!-- Dynamic content injected by donor-alerts.js -->
+        <div class="standby-state-container">
+          <div class="standby-radar-disc">
+            <div class="standby-radar-sweep"></div>
+            <div class="standby-shield-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+          </div>
+          <h2 class="standby-title">NO ACTIVE EMERGENCY REQUESTS</h2>
+          <p class="standby-desc">
+            System Standing By: Radar actively scanning 5km–10km zones. You will receive an immediate push notification when a nearby hospital requests blood.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDE PANEL (LIVE PROXIMITY RADAR MAP) -->
+    <aside class="hub-radar-panel">
+      <div class="radar-panel-header">
+        <span class="rph-title">LIVE RADAR PROXIMITY MAP</span>
+        <span class="rph-badge" id="radarActiveBadge">RADAR SCANNING: 0 ACTIVE ALERTS</span>
+      </div>
+
+      <div class="radar-map-wrapper">
+        <!-- Interactive Leaflet Dark Map Container -->
+        <div id="proximityMap"></div>
+
+        <!-- Overlaid High-Tech Radar HUD Rings & Scanner -->
+        <div class="radar-hud-overlay">
+          <div class="radar-scope-circle rsc-zone1">
+            <span class="rsc-zone1-lbl">Zone 1 (0-5km)</span>
+          </div>
+          <div class="radar-scope-circle rsc-zone2">
+            <span class="rsc-zone2-lbl">Zone 2 (5-10km)</span>
+          </div>
+          <div class="radar-scope-circle rsc-zone3"></div>
+          <div class="radar-scanner-sweep"></div>
+        </div>
+      </div>
+
+      <div class="radar-panel-footer">
+        <span>Route Engine: <b>ON</b></span>
+        <span>Zone 1–3 Active</span>
+        <span><i class="fas fa-lock" style="color:var(--green-neon);margin-right:2px"></i> Encrypted</span>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Mobile sidebar overlay backdrop -->
+  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- RED404 Scripts -->
+  <script src="js/common.js"></script>
+  <script src="js/donor-alerts.js"></script>
+</body>
+</html>

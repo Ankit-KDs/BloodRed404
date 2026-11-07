@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RED404 • Emergency Route Navigation</title>
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/donor-alerts.css" />
+
+  <style>
+    .route-page-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr 380px;
+      flex: 1;
+      min-height: calc(100vh - 74px);
+    }
+
+    .nav-map-container {
+      position: relative;
+      background: #090c10;
+      min-height: 500px;
+      overflow: hidden;
+    }
+
+    #routeMap {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+
+    .nav-hud-overlay {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      z-index: 1000;
+      background: rgba(13, 17, 24, 0.92);
+      border: 1px solid var(--border-glass-bright);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 25px var(--red-glow-soft);
+    }
+
+    .nav-hud-step {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .nhs-arrow {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--green-neon), #00a854);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-size: 1.35rem;
+      font-weight: 900;
+    }
+
+    .nhs-instruction {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .nhs-sub {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .route-sidebar-right {
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-glass);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .emergency-hosp-box {
+      background: var(--bg-card);
+      border: 1px solid var(--red-border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 0 25px var(--red-glow-soft);
+    }
+
+    .ehb-title {
+      font-family: var(--font-tech);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .ehb-meta-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.85rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border-glass);
+      font-size: 0.82rem;
+    }
+
+    .ehb-meta-val {
+      font-family: var(--font-tech);
+      font-weight: 700;
+      color: var(--green-neon);
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 1024px) {
+      .route-page-layout {
+        grid-template-columns: 1fr;
+      }
+      .nav-map-container {
+        height: 60vh;
+      }
+    }
+  </style>
+</head>
+
+<body class="donor-hub-body">
+
+  <!-- TOP HEADER -->
+  <header class="hub-header">
+    <div class="hub-header-left">
+      <button class="hub-notif-btn hub-mobile-menu-btn" id="mobileMenuBtn" style="display:none;" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <a href="donor-alerts.html" class="hub-brand">
+        <div class="hub-brand-icon"><i class="fas fa-tint"></i></div>
+        <span class="hub-brand-name">RED404</span>
+      </a>
+
+      <div class="hub-title-block">
+        <h1 class="hub-main-title">
+          Live Route Navigation <span>• Priority Emergency Path</span>
+        </h1>
+        <div class="hub-user-greeting">
+          Destination: <b id="destHospitalName">City Civil Hospital</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="hub-header-right">
+      <div class="gps-sync-capsule">
+        <i class="fas fa-satellite-dish gps-icon-spin"></i>
+        <div class="gps-meta">
+          <div class="gps-title-row">
+            <span>PRIORITY ROUTE:</span>
+            <span class="gps-pulse-dot"></span>
+          </div>
+          <div class="gps-coords-txt">Dijkstra Fast-Path Active</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <div class="route-page-layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="hub-sidebar" id="hubSidebar">
+      <nav class="hub-nav-menu">
+        <a href="donor-alerts.html" class="hub-nav-item">
+          <i class="fas fa-bell"></i>
+          <span>Active Alerts</span>
+        </a>
+        <a href="donor-route.html" class="hub-nav-item active">
+          <i class="fas fa-route"></i>
+          <span>Route Navigation</span>
+        </a>
+        <a href="donor-dashboard.html#profile" class="hub-nav-item">
+          <i class="fas fa-heartbeat"></i>
+          <span>Health Profile</span>
+        </a>
+        <a href="donor-dashboard.html#history" class="hub-nav-item">
+          <i class="fas fa-history"></i>
+          <span>Donation History</span>
+        </a>
+        <a href="donor-dashboard.html#settings" class="hub-nav-item">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="hub-sidebar-bottom">
+        <div class="hub-engine-status-card">
+          <div class="hes-row">
+            <span class="hes-dot"></span>
+            <span>Emergency Mode: <b>EN ROUTE</b></span>
+          </div>
+          <div class="hes-sub">GPS Trajectory Tracking Active</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER NAVIGATION MAP -->
+    <main class="nav-map-container">
+      <div id="routeMap"></div>
+
+      <!-- Turn-by-turn Navigation HUD -->
+      <div class="nav-hud-overlay">
+        <div class="nav-hud-step">
+          <div class="nhs-arrow"><i class="fas fa-arrow-up"></i></div>
+          <div>
+            <div class="nhs-instruction">Head North on Main Hospital Blvd</div>
+            <div class="nhs-sub">In 400m, keep right toward Trauma Center Entrance</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-secondary);padding-top:0.5rem;border-top:1px solid var(--border-glass)">
+          <span>Remaining: <b style="color:#fff" id="hudDistance">3.8 km</b></span>
+          <span>ETA: <b style="color:var(--green-neon)" id="hudEta">12 mins</b></span>
+          <span>Speed: <b style="color:#fff">42 km/h</b></span>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT EMERGENCY DISPATCH DETAILS -->
+    <aside class="route-sidebar-right">
+      <div class="emergency-hosp-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+          <span class="sos-zone-tag">TARGET DESTINATION</span>
+          <span style="background:var(--red-neon);color:#fff;font-family:var(--font-tech);font-weight:900;padding:2px 8px;border-radius:6px;font-size:0.85rem" id="hospBloodBadge">O-</span>
+        </div>
+        <div class="ehb-title" id="hospDetailName">City Civil Hospital</div>
+        <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5" id="hospAddress">
+          Trauma Bay 4 • Critical Hemorrhage Emergency
+        </div>
+        <div class="ehb-meta-row">
+          <div>
+            <div style="color:var(--text-muted)">Distance</div>
+            <div class="ehb-meta-val" id="metaDistance">3.8 km</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted)">Est. Arrival</div>
+            <div class="ehb-meta-val" style="color:#fff" id="metaEta">12 mins</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted)">Blood Units</div>
+            <div class="ehb-meta-val" style="color:var(--red-neon)">2 Units</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <button class="btn-sos-accept" style="width:100%;justify-content:center" onclick="confirmArrival()">
+          <i class="fas fa-check-circle"></i>
+          <span>I Have Arrived at Hospital</span>
+        </button>
+
+        <a href="tel:108" class="hub-notif-btn" style="width:100%;height:44px;gap:0.5rem;font-size:0.9rem;text-decoration:none">
+          <i class="fas fa-phone-alt" style="color:var(--green-neon)"></i>
+          <span>Call Hospital Dispatch</span>
+        </a>
+
+        <a href="donor-alerts.html" class="btn-sos-decline" style="text-align:center;text-decoration:none;display:block">
+          Exit Navigation
+        </a>
+      </div>
+    </aside>
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/common.js"></script>
+
+  <script>
+    let map = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      let saved = null;
+      try {
+        saved = JSON.parse(localStorage.getItem('activeEmergencyRoute'));
+      } catch (_) {}
+
+      const hospName = saved?.hospitalName || 'City Civil Hospital';
+      const distance = saved?.distanceKm || 3.8;
+      const bloodType = saved?.bloodType || 'O-';
+      const donorLat = saved?.donorLat || 28.3486;
+      const donorLng = saved?.donorLng || 79.5619;
+      const hospLat = saved?.reqLat || (donorLat + 0.024);
+      const hospLng = saved?.reqLng || (donorLng + 0.018);
+
+      document.getElementById('destHospitalName').textContent = hospName;
+      document.getElementById('hospDetailName').textContent = hospName;
+      document.getElementById('hospBloodBadge').textContent = bloodType;
+      document.getElementById('hudDistance').textContent = distance + ' km';
+      document.getElementById('metaDistance').textContent = distance + ' km';
+
+      // Initialize route map
+      map = L.map('routeMap', { center: [donorLat, donorLng], zoom: 13, zoomControl: false });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+
+      // Donor pin
+      L.circleMarker([donorLat, donorLng], {
+        radius: 9,
+        color: '#fff',
+        fillColor: '#00e676',
+        fillOpacity: 1,
+        weight: 3
+      }).addTo(map).bindPopup('Your Current GPS Position').openPopup();
+
+      // Hospital pin
+      L.circleMarker([hospLat, hospLng], {
+        radius: 12,
+        color: '#fff',
+        fillColor: '#ff2a44',
+        fillOpacity: 1,
+        weight: 3
+      }).addTo(map).bindPopup('<b>' + hospName + '</b><br>Emergency Blood Target');
+
+      // Polyline route
+      const latlngs = [
+        [donorLat, donorLng],
+        [donorLat + (hospLat - donorLat)*0.4, donorLng + (hospLng - donorLng)*0.1],
+        [donorLat + (hospLat - donorLat)*0.6, donorLng + (hospLng - donorLng)*0.8],
+        [hospLat, hospLng]
+      ];
+      L.polyline(latlngs, { color: '#00e676', weight: 5, opacity: 0.9 }).addTo(map);
+      map.fitBounds(L.latLngBounds([donorLat, donorLng], [hospLat, hospLng]), { padding: [80, 80] });
+    });
+
+    function confirmArrival() {
+      if (typeof showAppAlert === 'function') {
+        showAppAlert({
+          title: 'Arrival Confirmed',
+          message: 'Thank you for responding to this emergency alert! Hospital staff have been notified of your arrival.',
+          type: 'success'
+        });
+        setTimeout(() => { window.location.href = 'donor-alerts.html'; }, 2200);
+      } else {
+        alert('Arrival confirmed! Hospital staff have been notified.');
+        window.location.href = 'donor-alerts.html';
+      }
+    }
+  </script>
+</body>
+</html>
