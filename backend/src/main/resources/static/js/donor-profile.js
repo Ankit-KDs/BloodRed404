@@ -423,7 +423,7 @@
       }
 
       if (recoveredSub) {
-        recoveredSub.textContent = '(increasing day by day with blood volume recovery)';
+        recoveredSub.textContent = '(reducing day by day post-donation)';
       }
 
       if (pillWrap) {
