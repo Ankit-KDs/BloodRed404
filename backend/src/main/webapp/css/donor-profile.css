@@ -819,7 +819,7 @@ body.donor-profile-body {
   padding: 0.25rem 0.5rem 0.5rem 0.25rem;
 }
 
-/* ==================== CARD 2: HOLOGRAPHIC ANATOMICAL BODY SCANNER ==================== */
+/* ==================== CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (3D BODY SCANNER) ==================== */
 .scanner-meta-tag {
   color: #38bdf8;
   font-size: 0.82rem;
@@ -836,299 +836,230 @@ body.donor-profile-body {
 }
 
 .scanner-meta-tag.tag-cooldown {
-  color: #f87171;
+  color: #f59e0b;
 }
 
-.scanner-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.body-scanner-layout {
+  display: grid;
+  grid-template-columns: 205px 1fr;
+  gap: 1.25rem;
+  align-items: center;
   flex: 1;
 }
 
-.scanner-stage {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 1.25rem;
+/* Left Visual Column: Vertical Scale Ruler + 3D Glass Chamber */
+.scanner-visual-col {
+  display: flex;
   align-items: center;
+  gap: 0.55rem;
   position: relative;
 }
 
-/* 3D Glass Body Chamber */
-.holo-chamber-box {
-  width: 140px;
-  height: 206px;
+/* Left Vertical Scale Ruler */
+.scanner-scale-ruler {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 224px;
+  width: 64px;
+  box-sizing: border-box;
+  padding: 8px 0;
+}
+
+.ssr-tick {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.ssr-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+}
+
+.ssr-val {
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.ssr-sub {
+  font-family: var(--font-main);
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.ssr-line {
+  width: 10px;
+  height: 1.5px;
+  background: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.55);
+  flex-shrink: 0;
+}
+
+.ssr-tick-minor {
+  width: 5px;
+  height: 1px;
+  background: rgba(56, 189, 248, 0.35);
+  align-self: flex-end;
+  margin-right: 0;
+}
+
+/* 3D Glass Chamber Capsule */
+.scanner-chamber-3d {
+  width: 136px;
+  height: 224px;
   position: relative;
-  border-radius: 14px;
-  background: radial-gradient(circle at 50% 40%, rgba(56, 189, 248, 0.06) 0%, rgba(15, 23, 42, 0.6) 80%);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.12) 0%, rgba(10, 20, 32, 0.88) 85%);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
   box-shadow: 
-    inset 0 0 25px rgba(56, 189, 248, 0.08),
-    inset 0 1px 2px rgba(255, 255, 255, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.5);
+    inset 0 0 32px rgba(56, 189, 248, 0.2),
+    inset 0 1.5px 3px rgba(255, 255, 255, 0.38),
+    0 10px 32px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   box-sizing: border-box;
 }
 
-/* Chamber Corner Brackets (HUD Styling) */
-.chamber-bracket {
+.chamber-glass-bevel {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  border-color: rgba(56, 189, 248, 0.6);
-  border-style: solid;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.04) 40%, transparent 60%);
   pointer-events: none;
   z-index: 4;
 }
 
-.chamber-bracket.top-left {
-  top: 5px;
-  left: 6px;
-  border-width: 2px 0 0 2px;
-}
-
-.chamber-bracket.top-right {
-  top: 5px;
-  right: 6px;
-  border-width: 2px 2px 0 0;
-}
-
-.chamber-bracket.bottom-left {
-  bottom: 5px;
-  left: 6px;
-  border-width: 0 0 2px 2px;
-}
-
-.chamber-bracket.bottom-right {
-  bottom: 5px;
-  right: 6px;
-  border-width: 0 2px 2px 0;
-}
-
-/* Sweeping Holographic Laser Scan Line */
-.scanner-laser-line {
+.chamber-ambient-light {
   position: absolute;
-  left: 6px;
-  right: 6px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), #38bdf8, rgba(56, 189, 248, 0.8), transparent);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.85), 0 0 20px rgba(56, 189, 248, 0.4);
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
   pointer-events: none;
-  z-index: 5;
-  animation: laserScan 4s ease-in-out infinite alternate;
+  z-index: 1;
 }
 
-@keyframes laserScan {
-  0% { top: 8px; opacity: 0.35; }
-  50% { opacity: 0.95; }
-  100% { top: 196px; opacity: 0.35; }
-}
-
-/* SVG Holographic Anatomy Model */
-.holo-body-svg {
-  width: 120px;
-  height: 206px;
+.scanner-body-svg {
+  width: 130px;
+  height: 216px;
   display: block;
   overflow: visible;
   filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.6));
+  position: relative;
+  z-index: 2;
 }
 
 #bloodFluidRect {
   transition: y 1.2s cubic-bezier(0.4, 0, 0.2, 1), height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.meniscus-wave {
+.meniscus-surface-line {
   transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: meniscusPulse 2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 8px #f43f5e) drop-shadow(0 0 16px #e11d48);
+  animation: meniscusFlow 3s ease-in-out infinite alternate;
 }
 
-@keyframes meniscusPulse {
-  0% { opacity: 0.75; transform: scaleY(0.9); }
-  100% { opacity: 1; transform: scaleY(1.3); }
+@keyframes meniscusFlow {
+  0% { transform: translateY(var(--meniscus-y, 0px)) scaleY(0.9); }
+  100% { transform: translateY(var(--meniscus-y, 0px)) scaleY(1.35); }
 }
 
-/* Cardiac Pulse Beacon at Chest */
-.cardiac-node {
-  fill: #f87171;
-  filter: drop-shadow(0 0 6px #ef4444);
-}
-
-.cardiac-pulse {
-  fill: none;
-  stroke: #ef4444;
-  stroke-width: 1.2;
-  opacity: 0.7;
-  animation: cardiacPulseRing 2s ease-out infinite;
-  transform-origin: 60px 58px;
-}
-
-@keyframes cardiacPulseRing {
-  0% { transform: scale(0.6); opacity: 0.9; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-
-/* Anatomy Scale Milestones (Beside 3D Figure) */
-.anatomy-scale-panel {
+/* Right Telemetry Column (Matching image) */
+.scanner-telemetry-col {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 206px;
-  padding: 4px 0 4px 0.25rem;
-  box-sizing: border-box;
+  justify-content: center;
+  gap: 0.55rem;
+  padding-left: 0.25rem;
 }
 
-.scale-tick-item {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.sti-bar {
-  width: 22px;
-  height: 2px;
-  background: rgba(56, 189, 248, 0.45);
-  box-shadow: 0 0 6px rgba(56, 189, 248, 0.35);
-  flex-shrink: 0;
-  position: relative;
-}
-
-.sti-bar::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 8px #38bdf8;
-}
-
-.scale-tick-item.tick-top .sti-bar {
-  background: rgba(16, 185, 129, 0.6);
-}
-.scale-tick-item.tick-top .sti-bar::before {
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-}
-
-.scale-tick-item.tick-mid .sti-bar {
-  background: rgba(56, 189, 248, 0.55);
-}
-.scale-tick-item.tick-mid .sti-bar::before {
-  background: #38bdf8;
-  box-shadow: 0 0 8px #38bdf8;
-}
-
-.scale-tick-item.tick-base .sti-bar {
-  background: rgba(239, 68, 68, 0.5);
-}
-.scale-tick-item.tick-base .sti-bar::before {
-  background: #ef4444;
-  box-shadow: 0 0 8px #ef4444;
-}
-
-.sti-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sti-val {
+.stc-primary-val {
   font-family: var(--font-main);
-  font-size: 0.95rem;
+  font-size: 2.2rem;
   font-weight: 800;
   color: #ffffff;
   line-height: 1;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
 }
 
-.scale-tick-item.tick-top .sti-val {
-  color: #34d399;
-}
-
-.scale-tick-item.tick-mid .sti-val {
-  color: #38bdf8;
-}
-
-.scale-tick-item.tick-base .sti-val {
-  color: #fca5a5;
-}
-
-.sti-txt {
+.stc-primary-lbl {
   font-family: var(--font-main);
-  font-size: 0.74rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #94a3b8;
-  font-weight: 500;
-  line-height: 1.15;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 1px;
 }
 
-/* Telemetry Readout Directly Below Body */
-.scanner-telemetry-readout {
+.stc-secondary-row {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 3px;
-  padding-top: 0.4rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 2px;
   margin-top: 0.2rem;
 }
 
-.str-metric {
+.stc-recovered-val {
   font-family: var(--font-main);
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  color: #f8fafc;
-  line-height: 1.1;
+  color: #ffffff;
   letter-spacing: -0.2px;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
-  transition: color 0.3s ease;
+  line-height: 1.1;
 }
 
-.str-badge-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 2px 0;
+.stc-recovered-sub {
+  font-family: var(--font-main);
+  font-size: 0.76rem;
+  color: #64748b;
+  font-weight: 500;
 }
 
-.scanner-chip {
+.stc-pill-container {
+  margin: 3px 0;
+}
+
+.stc-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 12px;
+  padding: 4px 12px;
   border-radius: 9999px;
   font-family: var(--font-main);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
   backdrop-filter: blur(8px);
   transition: all 0.3s ease;
-  white-space: nowrap;
 }
 
-.scanner-chip.chip-eligible {
+.stc-pill.pill-cooldown {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.12);
+}
+
+.stc-pill.pill-eligible {
   background: rgba(16, 185, 129, 0.14);
   border: 1px solid rgba(52, 211, 153, 0.35);
   color: #34d399;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.12);
 }
 
-.scanner-chip.chip-cooldown {
-  background: rgba(239, 68, 68, 0.14);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  color: #f87171;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.18);
-}
-
-.sc-dot {
+.stc-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -1136,98 +1067,243 @@ body.donor-profile-body {
   flex-shrink: 0;
 }
 
-.sc-dot.dot-green {
+.stc-dot.dot-green {
   background: #34d399;
   box-shadow: 0 0 8px #34d399;
 }
 
-.str-subtitle {
-  font-family: var(--font-main);
-  font-size: 0.76rem;
-  color: #94a3b8;
-  font-weight: 500;
-  line-height: 1.25;
-  text-align: center;
-  max-width: 380px;
-}
-
-/* Right Column: 3-Point Checklist */
-.eligibility-checklist {
+.stc-checklist-container {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
-  flex: 1;
-  padding-left: 0.75rem;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
 }
 
-.check-item {
+.stc-check-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.92rem;
-  color: #e2e8f0;
-  font-weight: 500;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: #cbd5e1;
   font-family: var(--font-main);
+  font-weight: 500;
 }
 
-.check-item i {
+.stc-check-item i {
   color: #10b981;
-  font-size: 1rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
   filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.45));
 }
 
-.check-item.pending i {
-  color: #f87171;
-  filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.45));
+.stc-check-item.pending i {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.45));
 }
 
-.check-item.pending span {
-  color: #cbd5e1;
-}
-
-.check-item b {
-  color: #f8fafc;
+.stc-check-item b {
+  color: #ffffff;
   font-weight: 700;
 }
+
+/* ==================== CARD 3: DONOR IMPACT MILESTONES (3x2 3D GLASSMORPHIC GRID) ==================== */
+.badges-meta-counter {
+  color: #38bdf8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
 }
 
-/* ==================== CARD 3: DONOR IMPACT MILESTONES (Dimmed Glassmorphic) ==================== */
-.milestones-grid-container {
+.milestones-3x2-grid {
   display: grid;
-  grid-template-columns: 100px 100px 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.85rem;
   flex: 1;
   align-items: stretch;
 }
 
-.milestone-badge-card {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 0.85rem 0.5rem;
+@media (max-width: 1100px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .milestones-3x2-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.milestone-badge-tile {
+  background: #10141d;
+  border-radius: 14px;
+  padding: 0.85rem 0.65rem 0.75rem 0.65rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  min-height: 155px;
+  justify-content: space-between;
+}
+
+/* 45-Degree Diagonal Glass Glare Overlay */
+.milestone-badge-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 60%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Locked Badge State (Monochrome Slate, 30% opacity, faint dashed border) */
+.milestone-badge-tile.locked {
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.milestone-badge-tile.locked:hover {
+  opacity: 0.65;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Unlocked Badge State (Rich glowing border, hover lift, volumetric glow) */
+.milestone-badge-tile.unlocked {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.milestone-badge-tile.unlocked:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+}
+
+/* Theme-Specific Glows for Unlocked Badges */
+.milestone-badge-tile.unlocked.theme-emerald {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.16), inset 0 0 15px rgba(16, 185, 129, 0.06);
+}
+
+.milestone-badge-tile.unlocked.theme-amber {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.16), inset 0 0 15px rgba(245, 158, 11, 0.06);
+}
+
+.milestone-badge-tile.unlocked.theme-indigo {
+  border-color: rgba(129, 140, 248, 0.5);
+  box-shadow: 0 4px 18px rgba(129, 140, 248, 0.16), inset 0 0 15px rgba(129, 140, 248, 0.06);
+}
+
+.milestone-badge-tile.unlocked.theme-ruby {
+  border-color: rgba(220, 38, 38, 0.5);
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.16), inset 0 0 15px rgba(220, 38, 38, 0.06);
+}
+
+.milestone-badge-tile.unlocked.theme-cyan {
+  border-color: rgba(14, 165, 233, 0.5);
+  box-shadow: 0 4px 18px rgba(14, 165, 233, 0.16), inset 0 0 15px rgba(14, 165, 233, 0.06);
+}
+
+.milestone-badge-tile.unlocked.theme-gold {
+  border-color: rgba(234, 179, 8, 0.5);
+  box-shadow: 0 4px 18px rgba(234, 179, 8, 0.16), inset 0 0 15px rgba(234, 179, 8, 0.06);
+}
+
+/* Badge Top Lock Icon */
+.mbt-lock-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.72rem;
+  color: #64748b;
+  z-index: 3;
+}
+
+/* Badge Icon Wrap */
+.mbt-icon-wrap {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.35rem;
+  position: relative;
+  z-index: 3;
+}
+
+.mbt-icon-wrap svg {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+  transition: transform 0.25s ease;
+}
+
+.milestone-badge-tile.unlocked:hover .mbt-icon-wrap svg {
+  transform: scale(1.08);
+}
+
+/* Badge Body Info */
+.mbt-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+  z-index: 3;
+  width: 100%;
+}
+
+.mbt-name {
+  font-family: var(--font-main);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.15;
+  margin-bottom: 2px;
+}
+
+.mbt-sub {
+  font-family: var(--font-main);
+  font-size: 0.68rem;
+  color: #94a3b8;
+  line-height: 1.25;
+  margin-bottom: 6px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
   justify-content: center;
   text-align: center;
+  padding: 0 2px;
+}
+
+/* Badge Status Pill */
+.mbt-pill {
+  padding: 2px 9px;
+  border-radius: 9999px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  font-family: var(--font-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mbt-pill.pill-locked {
+  background: rgba(255, 255, 255, 0.05);
   color: #64748b;
-  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.milestone-badge-card.tall {
-  min-height: 135px;
-}
-
-.milestone-badge-card .mbc-icon-wrap {
-  font-size: 2.2rem;
-  color: #475569;
-  margin-bottom: 0.65rem;
-}
-
-.milestone-badge-card .mbc-icon-wrap.mini {
-  font-size: 1.4rem;
-  margin-bottom: 0.35rem;
+.mbt-pill.pill-unlocked {
+  background: rgba(16, 185, 129, 0.14);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
 }
 
 .milestone-badge-card .mbc-name {

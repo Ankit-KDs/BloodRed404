@@ -163,6 +163,7 @@
     }
 
     renderDonationHistory();
+    evaluateAndRenderMilestones();
   }
 
   // ======================== 3. AI HEALTH EVALUATION & VITALS ========================
@@ -170,6 +171,7 @@
     renderVitalsCard();
     renderAIHealthSuggestion();
     renderMedicalEligibilityTracker();
+    evaluateAndRenderMilestones();
   }
 
   function isBpNormal(bpStr) {
@@ -291,20 +293,18 @@
   }
 
   // ======================== 4. 3D HOLOGRAPHIC ANATOMICAL SCANNER ========================
-  // Real-time volumetric blood fill inside 3D human body silhouette
-  // State A: Pre-Donation OR 90 Days Completed (Universal 100% Eligible)
-  // State B: Post-Donation Recovery (Day-by-Day Upward Fill from feet to head)
+  // Real-time volumetric blood fill inside 3D human body silhouette matching reference image
   function renderMedicalEligibilityTracker() {
     const bloodFluidRect = document.getElementById('bloodFluidRect');
     const bloodMeniscusWave = document.getElementById('bloodMeniscusWave');
-    const metricVal = document.getElementById('scannerMetricVal');
-    const badgeWrap = document.getElementById('scannerBadgeWrap');
-    const subtitle = document.getElementById('scannerSubtitle');
+    const daysVal = document.getElementById('scannerDaysVal');
+    const daysLbl = document.getElementById('scannerDaysLbl');
+    const recoveredVal = document.getElementById('scannerRecoveredVal');
+    const recoveredSub = document.getElementById('scannerRecoveredSub');
+    const pillWrap = document.getElementById('scannerStatusPillWrap');
+    const checklistWrap = document.getElementById('scannerChecklistWrap');
     const metaTag = document.getElementById('eligibilityMetaTag');
 
-    // 1. Dynamic Data Handling:
-    // Read lastDonationDate from donor's backend record.
-    // If null/undefined -> treat as NEVER DONATED.
     const lastDonation = currentDonor.lastDonationDate;
     let isNeverDonated = !lastDonation;
     let daysPassed = 90;
@@ -316,7 +316,7 @@
       if (!isNaN(donationDate.getTime())) {
         const now = new Date();
         daysPassed = Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24));
-        remainingDays = 90 - daysPassed;
+        remainingDays = Math.max(0, 90 - daysPassed);
       } else {
         isNeverDonated = true;
         daysPassed = 90;
@@ -325,14 +325,13 @@
     }
 
     // Body silhouette dimensions:
-    // Feet: Y = 196, Head top: Y = 10, Total height = 186 units
+    // Feet: Y = 198, Head top: Y = 12, Total height = 186 units
     const totalHeight = 186;
 
-    // State A: Pre-Donation OR 90 Days Completed (Universal 100% Eligible)
     if (isNeverDonated || daysPassed >= 90) {
-      // 100% completely filled from feet to head
+      // State A: 100% Eligible (Pre-donation OR 90 days satisfied)
       const fluidHeight = 186;
-      const fluidY = 10;
+      const fluidY = 12;
 
       if (bloodFluidRect) {
         bloodFluidRect.setAttribute('y', String(fluidY));
@@ -340,40 +339,61 @@
       }
 
       if (bloodMeniscusWave) {
-        bloodMeniscusWave.style.transform = `translateY(${fluidY - 10}px)`;
+        bloodMeniscusWave.style.setProperty('--meniscus-y', '0px');
+        bloodMeniscusWave.style.transform = 'translateY(0px)';
       }
 
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-ready';
-        metaTag.innerHTML = `<i class="fas fa-shield-alt"></i> Bio-Scan: 100% Full Volume`;
+        metaTag.innerHTML = `<i class="fas fa-check-circle"></i> Safety Cooldown`;
       }
 
-      // Large Bold Metric: '100% RESTORED' (color: #f8fafc)
-      if (metricVal) {
-        metricVal.style.color = '#f8fafc';
-        metricVal.textContent = '100% RESTORED';
+      if (daysVal) daysVal.textContent = '90 DAYS';
+      if (daysLbl) {
+        daysLbl.textContent = 'ELIGIBLE TO DONATE';
+        daysLbl.style.color = '#34d399';
       }
 
-      // Status Badge: '🟢 ELIGIBLE TO DONATE • READY' in soothing mint-green glass chip
-      if (badgeWrap) {
-        badgeWrap.innerHTML = `
-          <div class="scanner-chip chip-eligible">
-            <span class="sc-dot dot-green"></span>
+      if (recoveredVal) {
+        recoveredVal.textContent = '100% RESTORED';
+        recoveredVal.style.color = '#f8fafc';
+      }
+
+      if (recoveredSub) {
+        recoveredSub.textContent = '(optimal biological volume)';
+      }
+
+      if (pillWrap) {
+        pillWrap.innerHTML = `
+          <div class="stc-pill pill-eligible">
+            <span class="stc-dot dot-green"></span>
             <span>ELIGIBLE TO DONATE • READY</span>
           </div>
         `;
       }
 
-      // Subtitle: 'Full biological blood volume available for emergency dispatch'
-      if (subtitle) {
-        subtitle.textContent = 'Full biological blood volume available for emergency dispatch';
+      if (checklistWrap) {
+        checklistWrap.innerHTML = `
+          <div class="stc-check-item">
+            <i class="fas fa-check"></i>
+            <span>90-day wait period met</span>
+          </div>
+          <div class="stc-check-item">
+            <i class="fas fa-check"></i>
+            <span>Health indicators optimal</span>
+          </div>
+          <div class="stc-check-item">
+            <i class="fas fa-check"></i>
+            <span>Not currently on medication</span>
+          </div>
+        `;
       }
     } else {
       // State B: Post-Donation Recovery (Day-by-Day Upward Fill)
-      // Percentage calculated strictly from daysPassed
-      const percentage = Math.min(Math.floor((daysPassed / 90) * 100), 99);
-      const fluidHeight = Math.max(8, (percentage / 100) * totalHeight);
-      const fluidY = 196 - fluidHeight;
+      const percentage = Math.min(Math.max(1, Math.floor((daysPassed / 90) * 100)), 99);
+      const fluidHeight = Math.max(12, (percentage / 100) * totalHeight);
+      const fluidY = 198 - fluidHeight;
+      const meniscusOffsetY = fluidY - 12;
 
       if (bloodFluidRect) {
         bloodFluidRect.setAttribute('y', String(fluidY));
@@ -381,42 +401,282 @@
       }
 
       if (bloodMeniscusWave) {
-        bloodMeniscusWave.style.transform = `translateY(${fluidY - 10}px)`;
+        bloodMeniscusWave.style.setProperty('--meniscus-y', `${meniscusOffsetY}px`);
+        bloodMeniscusWave.style.transform = `translateY(${meniscusOffsetY}px)`;
       }
 
       const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
-      const targetDateStr = targetDate.toLocaleDateString('en-US', {
+      const targetDateStr = targetDate.toLocaleDateString('en-GB', {
+        day: 'numeric',
         month: 'short',
-        day: '2-digit',
         year: 'numeric'
       });
 
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-cooldown';
-        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Recovery Scan Active (${remainingDays}d left)`;
+        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Safety Cooldown`;
       }
 
-      // Large Bold Metric: `${percentage}% RECOVERED` (or `${remainingDays} DAYS LEFT`)
-      if (metricVal) {
-        metricVal.style.color = '#f8fafc';
-        metricVal.textContent = `${percentage}% RECOVERED (${remainingDays} DAYS LEFT)`;
+      if (daysVal) daysVal.textContent = `${remainingDays} DAYS`;
+      if (daysLbl) {
+        daysLbl.textContent = 'REMAINING';
+        daysLbl.style.color = '#94a3b8';
       }
 
-      // Status Badge: '⏳ COOLDOWN ACTIVE • RECOVERY IN PROGRESS' in soft coral-amber chip
-      if (badgeWrap) {
-        badgeWrap.innerHTML = `
-          <div class="scanner-chip chip-cooldown">
+      if (recoveredVal) {
+        recoveredVal.textContent = `${percentage}% RECOVERED`;
+        recoveredVal.style.color = '#ffffff';
+      }
+
+      if (recoveredSub) {
+        recoveredSub.textContent = '(reducing day by day post-donation)';
+      }
+
+      if (pillWrap) {
+        pillWrap.innerHTML = `
+          <div class="stc-pill pill-cooldown">
             <i class="fas fa-hourglass-half" style="font-size:0.75rem;"></i>
-            <span>COOLDOWN ACTIVE • RECOVERY IN PROGRESS</span>
+            <span>COOLDOWN ACTIVE • Recovery in Progress</span>
           </div>
         `;
       }
 
-      // Subtitle: Estimated full restoration
-      if (subtitle) {
-        subtitle.textContent = `Estimated full restoration: ${targetDateStr}`;
+      if (checklistWrap) {
+        checklistWrap.innerHTML = `
+          <div class="stc-check-item pending">
+            <i class="fas fa-hourglass-half"></i>
+            <span>Recovery interval: ${remainingDays} days left</span>
+          </div>
+          <div class="stc-check-item">
+            <i class="fas fa-check"></i>
+            <span>Vitals regeneration in progress</span>
+          </div>
+          <div class="stc-check-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Next Available: <b>${targetDateStr}</b></span>
+          </div>
+        `;
       }
     }
+  }
+
+  // ======================== CARD 3: DONOR IMPACT MILESTONES ========================
+  // 3x2 responsive grid of 3D glassmorphic achievement badges evaluated dynamically
+  function evaluateAndRenderMilestones() {
+    const grid = document.getElementById('milestonesGrid');
+    const counter = document.getElementById('badgesEarnedCounter');
+    if (!grid) return;
+
+    const hist = Array.isArray(donationHistory) ? donationHistory : [];
+    const donorBloodType = String(currentDonor.bloodType || '').trim().toUpperCase();
+
+    // 1. Badge 1: 'First Savior' - Completed >= 1 verified donation
+    const isFirstSavior = hist.length >= 1;
+
+    // 2. Badge 2: 'Golden Hour Hero' - Emergency intake response <= 45 min or critical tag
+    const isGoldenHour = hist.some(d => {
+      const respTime = d.responseTime !== undefined && d.responseTime !== null ? Number(d.responseTime) : null;
+      if (respTime !== null && respTime <= 45) return true;
+      const urg = String(d.urgency || d.priority || d.tag || d.donationType || '').toUpperCase();
+      return urg.includes('CRITICAL') || urg.includes('EMERGENCY');
+    });
+
+    // 3. Badge 3: 'Night Owl' - Donation logged between 10:00 PM (22:00) and 6:00 AM (06:00)
+    const isNightOwl = hist.some(d => {
+      const dt = d.donationDate || d.date || d.createdAt;
+      if (!dt) return false;
+      const parsed = new Date(dt);
+      if (isNaN(parsed.getTime())) return false;
+      const hour = parsed.getHours();
+      return hour >= 22 || hour <= 6;
+    });
+
+    // 4. Badge 4: 'Rare Vanguard' - Rare / Rh-negative blood type (O-, A-, B-, AB-) AND >= 1 verified donation
+    const isRhNegative = ['O-', 'A-', 'B-', 'AB-'].some(t => donorBloodType.includes(t));
+    const isRareVanguard = isRhNegative && hist.length >= 1;
+
+    // 5. Badge 5: 'Life Giver V' - Completed >= 5 lifetime donations
+    const isLifeGiver5 = hist.length >= 5;
+
+    // 6. Badge 6: 'Apex Guardian' - Completed >= 10 lifetime donations
+    const isApexGuardian = hist.length >= 10;
+
+    const badges = [
+      {
+        id: 'first-savior',
+        title: 'First Savior',
+        theme: 'emerald',
+        unlocked: isFirstSavior,
+        lockedSub: 'Complete 1 verified blood donation',
+        unlockedSub: '1st Verified Donation Completed',
+        svg: `
+          <svg viewBox="0 0 52 52" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="shieldGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#34d399"/>
+                <stop offset="60%" stop-color="#10b981"/>
+                <stop offset="100%" stop-color="#047857"/>
+              </linearGradient>
+              <linearGradient id="dropGrad1" x1="30%" y1="0%" x2="70%" y2="100%">
+                <stop offset="0%" stop-color="#a7f3d0"/>
+                <stop offset="50%" stop-color="#34d399"/>
+                <stop offset="100%" stop-color="#065f46"/>
+              </linearGradient>
+            </defs>
+            <path d="M26 4 L42 9 C42 26 35 39 26 48 C17 39 10 26 10 9 Z" fill="rgba(16, 185, 129, 0.15)" stroke="url(#shieldGrad1)" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M26 8 L38 12 C38 24 32 35 26 43 C20 35 14 24 14 12 Z" fill="rgba(6, 95, 70, 0.3)" stroke="rgba(52, 211, 153, 0.3)" stroke-width="1"/>
+            <path d="M26 16 C26 16 19 25 19 29 C19 32.8 22.1 36 26 36 C29.9 36 33 32.8 33 29 C33 25 26 16 26 16 Z" fill="url(#dropGrad1)"/>
+            <path d="M16 29 L21 29 L23 24 L26 34 L29 27 L31 29 L36 29" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+          </svg>
+        `
+      },
+      {
+        id: 'golden-hour',
+        title: 'Golden Hour Hero',
+        theme: 'amber',
+        unlocked: isGoldenHour,
+        lockedSub: 'Respond to critical alert in <45 mins',
+        unlockedSub: 'Rapid Emergency Response Logged',
+        svg: `
+          <svg viewBox="0 0 52 52" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="amberGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fde68a"/>
+                <stop offset="50%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#b45309"/>
+              </linearGradient>
+            </defs>
+            <polygon points="17,5 35,5 47,17 47,35 35,47 17,47 5,35 5,17" fill="rgba(245, 158, 11, 0.14)" stroke="url(#amberGrad2)" stroke-width="2"/>
+            <circle cx="26" cy="27" r="14" stroke="rgba(251, 191, 36, 0.4)" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <rect x="24" y="9" width="4" height="4" rx="1" fill="#f59e0b"/>
+            <path d="M27 16 L20 27 L25 27 L23 37 L33 24 L27 24 Z" fill="url(#amberGrad2)" stroke="#ffffff" stroke-width="0.8"/>
+          </svg>
+        `
+      },
+      {
+        id: 'night-owl',
+        title: 'Night Owl',
+        theme: 'indigo',
+        unlocked: isNightOwl,
+        lockedSub: 'Log donation between 10 PM and 6 AM',
+        unlockedSub: 'Off-Hours Night Dispatch Logged',
+        svg: `
+          <svg viewBox="0 0 52 52" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="indigoGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#c7d2fe"/>
+                <stop offset="50%" stop-color="#818cf8"/>
+                <stop offset="100%" stop-color="#4338ca"/>
+              </linearGradient>
+            </defs>
+            <polygon points="26,4 48,26 26,48 4,26" fill="rgba(129, 140, 248, 0.14)" stroke="url(#indigoGrad3)" stroke-width="2"/>
+            <polygon points="26,9 43,26 26,43 9,26" fill="rgba(49, 46, 129, 0.35)" stroke="rgba(129, 140, 248, 0.3)" stroke-width="1"/>
+            <path d="M30 15 C26 15 22 18 22 23 C22 28 26 31 30 31 C27 31 24 28 24 23 C24 18 27 15 30 15 Z" fill="#c7d2fe" opacity="0.85"/>
+            <circle cx="21" cy="27" r="3.5" fill="none" stroke="#818cf8" stroke-width="1.2"/>
+            <circle cx="21" cy="27" r="1.5" fill="#38bdf8"/>
+            <circle cx="31" cy="27" r="3.5" fill="none" stroke="#818cf8" stroke-width="1.2"/>
+            <circle cx="31" cy="27" r="1.5" fill="#38bdf8"/>
+            <polygon points="26,29 24,33 28,33" fill="#fbbf24"/>
+          </svg>
+        `
+      },
+      {
+        id: 'rare-vanguard',
+        title: 'Rare Vanguard',
+        theme: 'ruby',
+        unlocked: isRareVanguard,
+        lockedSub: 'Rh-negative blood & 1+ donation',
+        unlockedSub: 'Rare Rh-Negative Contributor',
+        svg: `
+          <svg viewBox="0 0 52 52" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="rubyGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fca5a5"/>
+                <stop offset="50%" stop-color="#dc2626"/>
+                <stop offset="100%" stop-color="#7f1d1d"/>
+              </linearGradient>
+            </defs>
+            <polygon points="26,5 45,15 45,37 26,47 7,37 7,15" fill="rgba(220, 38, 38, 0.14)" stroke="url(#rubyGrad4)" stroke-width="2"/>
+            <path d="M14 20 Q26 15 38 20 M14 32 Q26 37 38 32" stroke="rgba(248, 113, 113, 0.35)" stroke-width="1.2" stroke-dasharray="2 2"/>
+            <path d="M26 16 C26 16 18 26 18 31 C18 35.4 21.6 39 26 39 C30.4 39 34 35.4 34 31 C34 26 26 16 26 16 Z" fill="url(#rubyGrad4)"/>
+            <rect x="22" y="29" width="8" height="2.5" rx="1.25" fill="#ffffff"/>
+          </svg>
+        `
+      },
+      {
+        id: 'life-giver-5',
+        title: 'Life Giver V',
+        theme: 'cyan',
+        unlocked: isLifeGiver5,
+        lockedSub: `Complete 5 verified donations (${hist.length}/5)`,
+        unlockedSub: '5+ Lifetime Donations Completed',
+        svg: `
+          <svg viewBox="0 0 52 52" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="cyanGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7dd3fc"/>
+                <stop offset="50%" stop-color="#0ea5e9"/>
+                <stop offset="100%" stop-color="#0369a1"/>
+              </linearGradient>
+            </defs>
+            <path d="M26 6 C34 6 43 9 46 17 C46 29 37 40 26 46 C15 40 6 29 6 17 C9 9 18 6 26 6 Z" fill="rgba(14, 165, 233, 0.14)" stroke="url(#cyanGrad5)" stroke-width="2"/>
+            <line x1="26" y1="12" x2="26" y2="39" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="26" cy="11" r="2.5" fill="#38bdf8"/>
+            <path d="M19 18 Q26 24 33 18 M18 25 Q26 31 34 25" fill="none" stroke="url(#cyanGrad5)" stroke-width="1.4"/>
+            <circle cx="15" cy="38" r="2" fill="#38bdf8"/>
+            <circle cx="20" cy="41" r="2" fill="#38bdf8"/>
+            <circle cx="26" cy="43" r="2.2" fill="#ffffff"/>
+            <circle cx="32" cy="41" r="2" fill="#38bdf8"/>
+            <circle cx="37" cy="38" r="2" fill="#38bdf8"/>
+          </svg>
+        `
+      },
+      {
+        id: 'apex-guardian',
+        title: 'Apex Guardian',
+        theme: 'gold',
+        unlocked: isApexGuardian,
+        lockedSub: `Complete 10 verified donations (${hist.length}/10)`,
+        unlockedSub: '10+ Veteran Donations Recorded',
+        svg: `
+          <svg viewBox="0 0 52 52" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="goldGrad6" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fef08a"/>
+                <stop offset="50%" stop-color="#eab308"/>
+                <stop offset="100%" stop-color="#854d0e"/>
+              </linearGradient>
+            </defs>
+            <circle cx="26" cy="27" r="19" fill="rgba(234, 179, 8, 0.14)" stroke="url(#goldGrad6)" stroke-width="2"/>
+            <path d="M18 13 L21 17 L26 11 L31 17 L34 13 L33 20 L19 20 Z" fill="url(#goldGrad6)" stroke="#fef08a" stroke-width="0.7"/>
+            <path d="M13 25 C13 32 18 39 26 40 C34 39 39 32 39 25" fill="none" stroke="rgba(250, 204, 21, 0.6)" stroke-width="1.4" stroke-dasharray="3 2"/>
+            <path d="M26 21 C26 21 21 27 21 31 C21 33.8 23.2 36 26 36 C28.8 36 31 33.8 31 31 C31 27 26 21 26 21 Z" fill="url(#goldGrad6)"/>
+            <circle cx="24.8" cy="29.5" r="1" fill="#ffffff" opacity="0.9"/>
+          </svg>
+        `
+      }
+    ];
+
+    const unlockedCount = badges.filter(b => b.unlocked).length;
+    if (counter) {
+      counter.textContent = `Earned Badges: ${unlockedCount} / 6`;
+    }
+
+    grid.innerHTML = badges.map(b => `
+      <div class="milestone-badge-tile ${b.unlocked ? `unlocked theme-${b.theme}` : 'locked'}" title="${escapeHtml(b.title)}">
+        ${!b.unlocked ? '<i class="fas fa-lock mbt-lock-icon"></i>' : ''}
+        <div class="mbt-icon-wrap">
+          ${b.svg}
+        </div>
+        <div class="mbt-info">
+          <div class="mbt-name">${escapeHtml(b.title)}</div>
+          <div class="mbt-sub">${escapeHtml(b.unlocked ? b.unlockedSub : b.lockedSub)}</div>
+          <span class="mbt-pill ${b.unlocked ? 'pill-unlocked' : 'pill-locked'}">
+            ${b.unlocked ? '<i class="fas fa-check" style="font-size:0.55rem;"></i> UNLOCKED' : '<i class="fas fa-lock" style="font-size:0.55rem;"></i> LOCKED'}
+          </span>
+        </div>
+      </div>
+    `).join('');
   }
 
   // ======================== 5. RENDER DONATION HISTORY ========================
