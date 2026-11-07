@@ -15,8 +15,8 @@
 
   <!-- Core Profile CSS -->
   <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_fill100_v5">
-      <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_wave_v6">
+        <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
     .body-scanner-layout {
       display: grid !important;
@@ -74,57 +74,66 @@
       width: 61% !important;
       top: 10% !important;
       bottom: 10% !important;
-      border-radius: 10px !important;
+      border-radius: 8px !important;
       overflow: hidden !important;
       pointer-events: none !important;
       z-index: 4 !important;
       background: transparent !important;
     }
-    /* 100% blood fluid fill rising up to 90d */
-    .dynamic-blood-fluid {
+    /* Anchored at bottom, height dynamically controlled by JS */
+    .liquid-level-wrapper {
       position: absolute !important;
       bottom: 0 !important;
       left: 0 !important;
       width: 100% !important;
-      height: 100% !important;
-      background: linear-gradient(180deg, rgba(225, 29, 72, 0.42) 0%, rgba(190, 18, 60, 0.52) 25%, rgba(136, 19, 55, 0.6) 65%, rgba(76, 5, 25, 0.72) 100%) !important;
-      box-shadow: inset 0 0 20px rgba(244, 63, 94, 0.35) !important;
-      transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-    /* Wave moving and bobbing at the fluid surface */
-    .fluid-wave-surface {
-      position: absolute !important;
-      top: -8px !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 16px !important;
+      height: 100% !important; /* Default 100% for eligible donors */
+      transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      z-index: 2 !important;
       overflow: hidden !important;
-      z-index: 6 !important;
-      animation: waveBob 2.5s ease-in-out infinite alternate !important;
+      pointer-events: none !important;
     }
-    .moving-wave-track {
+    /* Wave positioned on the top border of the liquid */
+    .wave-meniscus {
+      position: absolute !important;
+      top: -24px !important;
+      left: 0 !important;
+      width: 200% !important; /* Double width to allow seamless infinite translation */
+      height: 35px !important;
       display: flex !important;
-      width: 200% !important;
-      height: 100% !important;
-      animation: waveScroll 3.5s linear infinite !important;
     }
-    .moving-wave-svg {
+    .wave-svg {
       width: 100% !important;
       height: 100% !important;
       display: block !important;
     }
-    @keyframes waveScroll {
+    /* Flowing ruby liquid waves */
+    .wave-path-front {
+      fill: rgba(153, 27, 27, 0.65) !important;
+      stroke: #f87171 !important;
+      stroke-width: 2 !important;
+      filter: drop-shadow(0 -3px 8px #ef4444) !important;
+      animation: flowWaveFront 4s linear infinite !important;
+    }
+    .wave-path-back {
+      fill: rgba(127, 29, 29, 0.45) !important;
+      opacity: 0.6 !important;
+      animation: flowWaveBack 7s linear infinite !important;
+    }
+    /* Continuous Horizontal Wave Motion */
+    @keyframes flowWaveFront {
       0% { transform: translateX(0); }
       100% { transform: translateX(-50%); }
     }
-    @keyframes waveBob {
-      0% { transform: translateY(-1.5px); }
-      100% { transform: translateY(1.5px); }
+    @keyframes flowWaveBack {
+      0% { transform: translateX(-50%); }
+      100% { transform: translateX(0); }
     }
-    .wave-crest {
-      stroke: #fb7185 !important;
-      stroke-width: 2.6 !important;
-      filter: drop-shadow(0 0 8px #f43f5e) !important;
+    /* Deep Blood Base Gradient */
+    .blood-fluid-body {
+      width: 100% !important;
+      height: 100% !important;
+      background: linear-gradient(180deg, rgba(153, 27, 27, 0.5) 0%, rgba(69, 10, 10, 0.65) 70%, rgba(30, 2, 10, 0.78) 100%) !important;
+      box-shadow: 0 0 25px rgba(220, 38, 38, 0.4) !important;
     }
   </style>
 </head>
@@ -344,6 +353,7 @@
           <div class="body-scanner-layout">
                                                 <!-- Left: 3D Biometric Glass Cuboid Body Scanner -->
                         <!-- Left: 3D Biometric Glass Cuboid Body Scanner (100% Filled Moving Wave) -->
+                        <!-- Left: 3D Biometric Glass Cuboid Body Scanner with Seamless Moving Wave -->
             <div class="scanner-visual-col">
               <div class="biometric-cuboid-display" id="cryoPodContainer">
                 <!-- Base Photorealistic 3D Glass Cuboid & Athletic Mannequin Render -->
@@ -352,18 +362,19 @@
                      class="cuboid-base-img" 
                      id="cuboidBaseImg" />
 
-                <!-- Blood Fluid Chamber (Confined strictly inside the cuboid) -->
+                <!-- Cuboid Fluid Chamber (Confined strictly inside the capsule) -->
                 <div class="cuboid-fluid-chamber">
-                  <div class="dynamic-blood-fluid" id="bloodFluid" style="height: 100%;">
-                    <!-- Moving Wave Meniscus at Fluid Surface -->
-                    <div class="fluid-wave-surface">
-                      <div class="moving-wave-track">
-                        <svg class="moving-wave-svg" viewBox="0 0 400 16" preserveAspectRatio="none">
-                          <path d="M 0,8 Q 50,1 100,8 T 200,8 T 300,8 T 400,8" fill="none" stroke="#fda4af" stroke-width="4.5" opacity="0.4" style="filter:blur(2px);" />
-                          <path d="M 0,8 Q 50,1 100,8 T 200,8 T 300,8 T 400,8" fill="none" stroke="#fb7185" stroke-width="2.6" class="wave-crest" />
-                        </svg>
-                      </div>
+                  <div class="liquid-level-wrapper" id="liquidLevelWrapper" style="height: 100%;">
+                    <!-- Animated SVG Wave Meniscus (Top surface of the blood) -->
+                    <div class="wave-meniscus">
+                      <svg class="wave-svg" viewBox="0 0 1000 60" preserveAspectRatio="none">
+                        <!-- 2 Identical consecutive sine waves for seamless infinite loop -->
+                        <path class="wave-path-back" d="M0,25 C150,50 350,0 500,25 C650,50 850,0 1000,25 L1000,60 L0,60 Z" />
+                        <path class="wave-path-front" d="M0,20 C180,45 320,5 500,20 C680,45 820,5 1000,20 L1000,60 L0,60 Z" />
+                      </svg>
                     </div>
+                    <!-- Deep Red Blood Fluid Column -->
+                    <div class="blood-fluid-body"></div>
                   </div>
                 </div>
               </div>
@@ -377,7 +388,7 @@
 
               <!-- Secondary Recovered % Metric -->
               <div class="stc-secondary-row">
-                <div class="stc-recovered-val" id="scannerRecoveredVal" style="color: #f8fafc;">100% RESTORED • READY</div>
+                <div class="stc-recovered-val" id="scannerRecoveredVal" data-role="telemetryPercent" style="color: #f8fafc;">100% RESTORED • READY</div>
                 <div class="stc-recovered-sub" id="scannerRecoveredSub">(optimal biological volume • ready to donate)</div>
               </div>
 
@@ -454,6 +465,6 @@
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
-  <script src="js/donor-profile.js?v=20261108_fill100_v5"></script>
+  <script src="js/donor-profile.js?v=20261108_wave_v6"></script>
 </body>
 </html>
