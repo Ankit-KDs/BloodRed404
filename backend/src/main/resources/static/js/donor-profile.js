@@ -242,16 +242,10 @@
     if (tempVal) tempVal.textContent = hasTemp ? currentDonor.bodyTemp : '--';
   }
 
-  // ======================== AI HEALTH EVALUATION ADVISORY ========================
+  // ======================== AI HEALTH EVALUATION ========================
   // Automatically runs AI safety audit once hospital fills vitals
   function renderAIHealthSuggestion() {
     const evalBadge = document.getElementById('aiHealthEvalBadge');
-    const advisoryText = document.getElementById('aiAdvisoryText');
-    const pillsContainer = document.getElementById('aiMetricsPills');
-    const hospitalNameEl = document.getElementById('intakeHospitalName');
-
-    const facility = currentDonor.verifiedFacility || 'City General Hospital';
-    if (hospitalNameEl) hospitalNameEl.textContent = facility;
 
     const hb = currentDonor.hemoglobin;
     const bp = currentDonor.bloodPressure;
@@ -268,12 +262,6 @@
       if (evalBadge) {
         evalBadge.className = 'health-eval-badge badge-awaiting';
         evalBadge.innerHTML = `<i class="fas fa-clock" style="margin-right:6px;"></i><span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>`;
-      }
-      if (advisoryText) {
-        advisoryText.innerHTML = `<strong>Awaiting Hospital Physical Intake:</strong> No blood screening data has been uploaded yet. Once blood is donated or physical checkup is completed through the hospital dashboard, these vitals will automatically populate, and the RED404 AI Engine will evaluate your clinical eligibility.`;
-      }
-      if (pillsContainer) {
-        pillsContainer.innerHTML = `<span class="amp-pill amp-awaiting"><i class="fas fa-clock"></i> Hospital checkup pending</span>`;
       }
       return;
     }
@@ -295,37 +283,6 @@
       } else {
         evalBadge.className = 'health-eval-badge badge-unfit';
         evalBadge.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><span>HEALTH STATUS: MEDICAL REVIEW REQUIRED</span>`;
-      }
-    }
-
-    // Build micro chips
-    if (pillsContainer) {
-      let pillsHtml = '';
-      pillsHtml += `<span class="amp-pill ${isHbOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isHbOk ? 'check-circle' : 'exclamation-circle'}"></i> Hb: ${hb} g/dL (${isHbOk ? 'Safe ≥ 12.5' : 'Low < 12.5'})</span>`;
-      pillsHtml += `<span class="amp-pill ${isBpOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isBpOk ? 'check-circle' : 'exclamation-circle'}"></i> BP: ${bp} mmHg (${isBpOk ? 'Normal' : 'Out of range'})</span>`;
-      pillsHtml += `<span class="amp-pill ${isWeightOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isWeightOk ? 'check-circle' : 'exclamation-circle'}"></i> Weight: ${weight} kg (${isWeightOk ? '≥ 50 kg' : '< 50 kg'})</span>`;
-      if (pulse !== null && pulse !== undefined) {
-        pillsHtml += `<span class="amp-pill ${isPulseOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isPulseOk ? 'check-circle' : 'exclamation-circle'}"></i> Pulse: ${pulse} bpm (${isPulseOk ? 'Optimal' : 'Abnormal'})</span>`;
-      }
-      if (temp !== null && temp !== undefined) {
-        pillsHtml += `<span class="amp-pill ${isTempOk ? 'amp-pass' : 'amp-warn'}"><i class="fas fa-${isTempOk ? 'check-circle' : 'exclamation-circle'}"></i> Temp: ${temp}° F (${isTempOk ? 'Normal' : 'Elevated'})</span>`;
-      }
-      pillsContainer.innerHTML = pillsHtml;
-    }
-
-    // AI Clinical diagnosis & advice
-    if (advisoryText) {
-      if (isFit) {
-        advisoryText.innerHTML = `<strong>✨ AI Clinical Evaluation: FIT TO DONATE.</strong> All vital parameters satisfy WHO & NBTC international blood safety standards. Your hemoglobin (<strong>${hb} g/dL</strong>), weight (<strong>${weight} kg</strong>), and cardiovascular indicators (BP: <strong>${bp}</strong>, Pulse: <strong>${pulse || 72} bpm</strong>) are optimal for whole blood collection. You are fully cleared to accept incoming emergency alerts.`;
-      } else {
-        const issues = [];
-        if (!isHbOk) issues.push(`Hemoglobin level (${hb} g/dL) is below the minimum safe threshold (12.5 g/dL)`);
-        if (!isBpOk) issues.push(`Blood pressure (${bp} mmHg) is outside the 100/60 to 140/90 safety window`);
-        if (!isWeightOk) issues.push(`Body weight (${weight} kg) is below the 50 kg whole-blood safety requirement`);
-        if (!isPulseOk) issues.push(`Resting pulse (${pulse} bpm) is outside the 60-100 bpm range`);
-        if (!isTempOk) issues.push(`Body temperature (${temp}° F) is elevated above 99.0° F`);
-
-        advisoryText.innerHTML = `<strong>⚠️ AI Clinical Recommendation: MEDICAL REVIEW REQUIRED.</strong> ${issues.join('. ')}. Donation is temporarily deferred for donor safety. Recommended: Rest, hydrate, and complete a physical re-screening at ${escapeHtml(facility)} before accepting emergency alerts.`;
       }
     }
   }
@@ -351,8 +308,8 @@
     const checkWaitItem = document.getElementById('checkWaitItem');
     const nextAvailableEl = document.getElementById('nextAvailableText');
 
-    // Total arc circumference for radius 65 over 270 deg ~ 306px
-    const totalArcLength = 306;
+    // Total arc circumference for radius 60 over 270 deg: 2 * PI * 60 * (270 / 360) = 282.74 ~ 283px
+    const totalArcLength = 283;
 
     if (daysPassed >= 90) {
       // Cooldown Completed -> Eligible
@@ -360,19 +317,22 @@
         arc.classList.remove('cooldown');
         arc.style.strokeDashoffset = '0';
       }
-      if (statusText) statusText.textContent = 'ELIGIBLE TO DONATE';
+      if (statusText) {
+        statusText.innerHTML = '<span>ELIGIBLE</span><span>TO DONATE</span>';
+        statusText.style.color = '#00e676';
+      }
       if (daysText) daysText.textContent = '90 DAYS';
-      if (subText) subText.textContent = 'COOLDOWN COMPLETED';
+      if (subText) subText.innerHTML = '<span>COOLDOWN</span><span>COMPLETED</span>';
       if (percentText) {
         percentText.textContent = '100%';
-        percentText.style.color = 'var(--green-neon)';
+        percentText.style.color = '#00e676';
       }
       if (checkWaitItem) {
         checkWaitItem.className = 'check-item';
         checkWaitItem.innerHTML = `<i class="fas fa-check"></i> <span>90-day wait period met</span>`;
       }
       if (nextAvailableEl) {
-        nextAvailableEl.style.color = 'var(--green-neon)';
+        nextAvailableEl.style.color = '#00e676';
         nextAvailableEl.textContent = 'Immediate / READY';
       }
     } else {
@@ -386,11 +346,11 @@
         arc.style.strokeDashoffset = String(dashOffset);
       }
       if (statusText) {
-        statusText.textContent = 'COOLDOWN ACTIVE';
+        statusText.innerHTML = '<span>COOLDOWN</span><span>ACTIVE</span>';
         statusText.style.color = '#ff9100';
       }
       if (daysText) daysText.textContent = `${remainingDays} DAYS`;
-      if (subText) subText.textContent = 'REMAINING IN COOLDOWN';
+      if (subText) subText.innerHTML = '<span>COOLDOWN</span><span>REMAINING</span>';
       if (percentText) {
         percentText.textContent = `${percentage}%`;
         percentText.style.color = '#ff9100';

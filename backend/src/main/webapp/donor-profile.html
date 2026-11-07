@@ -212,28 +212,10 @@
               </div>
 
               <!-- Automated AI Health Evaluation Banner -->
-              <div class="health-eval-badge badge-awaiting" id="aiHealthEvalBadge" role="button" title="Click to view AI Clinical Safety Assessment">
+              <div class="health-eval-badge badge-awaiting" id="aiHealthEvalBadge" role="button" title="Hospital Intake Health Status">
                 <i class="fas fa-clock" style="margin-right:6px;"></i>
                 <span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>
               </div>
-            </div>
-          </div>
-
-          <!-- AI Clinical Health Evaluation & Hospital Intake Advisory -->
-          <div class="ai-eval-box" id="aiHealthAdvisoryBox">
-            <div class="ai-eval-header">
-              <span class="aeb-tag"><i class="fas fa-brain"></i> AI CLINICAL EVALUATION</span>
-              <span class="aeb-who"><i class="fas fa-shield-halved"></i> WHO NBTC Safety Standard</span>
-            </div>
-            <p class="ai-eval-message" id="aiAdvisoryText">
-              Awaiting Hospital Physical Intake: No blood screening data has been uploaded yet. Once blood is donated or physical checkup is completed through the hospital dashboard, these vitals will automatically populate, and the RED404 AI Engine will evaluate your clinical eligibility.
-            </p>
-            <div class="ai-metrics-pills" id="aiMetricsPills">
-              <span class="amp-pill amp-awaiting"><i class="fas fa-clock"></i> Hospital checkup pending</span>
-            </div>
-            <div class="hospital-intake-note">
-              <i class="fas fa-hospital-user"></i>
-              <span>All vital health parameters are verified by hospital physical intake at <b id="intakeHospitalName">City General Hospital</b>.</span>
             </div>
           </div>
         </section>
@@ -253,27 +235,47 @@
               <div class="gauge-wrapper">
                 <svg class="gauge-svg" viewBox="0 0 160 160">
                   <defs>
+                    <!-- Intense Neon Emerald-to-Mint Gradient -->
                     <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#10b981" />
+                      <stop offset="0%" stop-color="#00e676" />
+                      <stop offset="60%" stop-color="#10b981" />
                       <stop offset="100%" stop-color="#34d399" />
                     </linearGradient>
+
+                    <!-- Atmospheric Neon Glow Halo -->
+                    <filter id="gaugeGlowHalo" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="glow1"/>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="glow2"/>
+                      <feMerge>
+                        <feMergeNode in="glow2"/>
+                        <feMergeNode in="glow1"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
                   </defs>
-                  <!-- Background Arc -->
-                  <circle class="gauge-bg-arc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
-                  <!-- Dynamic Fill Arc -->
-                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
+
+                  <!-- Subtle Dark Background Track -->
+                  <circle class="gauge-bg-arc" cx="80" cy="80" r="60" stroke-dasharray="283 377" stroke-dashoffset="0" transform="rotate(135 80 80)"></circle>
+                  <!-- Luminous Glowing Dynamic Fill Arc -->
+                  <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="60" stroke-dasharray="283 377" stroke-dashoffset="0" transform="rotate(135 80 80)" filter="url(#gaugeGlowHalo)"></circle>
                 </svg>
 
-                <!-- Center Text Content -->
+                <!-- Center Text Content (Exact 2-line layout matching image) -->
                 <div class="gauge-center-content">
-                  <span class="gcc-status" id="gaugeStatusText">ELIGIBLE TO DONATE</span>
-                  <span class="gcc-days" id="gaugeDaysText">90 DAYS</span>
-                  <span class="gcc-sub" id="gaugeSubText">COOLDOWN COMPLETED</span>
-                  <span class="gcc-percent" id="gaugePercentText">100%</span>
+                  <div class="gcc-status" id="gaugeStatusText">
+                    <span>ELIGIBLE</span>
+                    <span>TO DONATE</span>
+                  </div>
+                  <div class="gcc-days" id="gaugeDaysText">90 DAYS</div>
+                  <div class="gcc-sub" id="gaugeSubText">
+                    <span>COOLDOWN</span>
+                    <span>COMPLETED</span>
+                  </div>
+                  <div class="gcc-percent" id="gaugePercentText">100%</div>
                 </div>
               </div>
 
-              <!-- Next Available Row placed directly under the gauge matching target design -->
+              <!-- Next Available Row placed directly under the gauge -->
               <div class="eligibility-next-row">
                 Next Available: <b id="nextAvailableText">Immediate / READY</b>
               </div>
