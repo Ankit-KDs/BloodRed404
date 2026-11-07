@@ -15,7 +15,79 @@
 
   <!-- Core Profile CSS -->
   <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=3.1">
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_cuboid_v3">
+  <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
+  <style>
+    .body-scanner-layout {
+      display: grid !important;
+      grid-template-columns: 320px 1fr !important;
+      gap: 1.75rem !important;
+      align-items: center !important;
+    }
+    @media (max-width: 992px) {
+      .body-scanner-layout {
+        grid-template-columns: 1fr !important;
+        justify-items: center !important;
+      }
+    }
+    .scanner-visual-col {
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      position: relative !important;
+    }
+    .biometric-cuboid-display {
+      position: relative !important;
+      width: 320px !important;
+      height: 350px !important;
+      border-radius: 16px !important;
+      overflow: hidden !important;
+      background: #03080e !important;
+      border: 2px solid rgba(56, 189, 248, 0.45) !important;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2), inset 0 0 30px rgba(56, 189, 248, 0.15), 0 16px 36px rgba(0, 0, 0, 0.75) !important;
+      box-sizing: border-box !important;
+    }
+    .cuboid-base-img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      display: block !important;
+      pointer-events: none !important;
+    }
+    .live-wave-ripple {
+      position: absolute !important;
+      left: 28% !important;
+      width: 72% !important;
+      height: 24px !important;
+      transform: translateY(-50%) !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
+      z-index: 5 !important;
+      transition: top 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .ripple-wave-svg {
+      width: 200% !important;
+      height: 100% !important;
+      animation: waveScroll 4s linear infinite !important;
+    }
+    @keyframes waveScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ripple-crest {
+      stroke: #fb7185 !important;
+      stroke-width: 2.6 !important;
+      filter: drop-shadow(0 0 8px #f43f5e) !important;
+    }
+    .cuboid-specular-sheen {
+      position: absolute !important;
+      inset: 0 !important;
+      border-radius: 16px !important;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 35%, transparent 55%) !important;
+      pointer-events: none !important;
+      z-index: 8 !important;
+    }
+  </style>
 </head>
 <body class="donor-profile-body">
 
@@ -231,267 +303,36 @@
           </div>
 
           <div class="body-scanner-layout">
-                        <!-- Left: Calibration Scale Ticks + 3D Glass Cuboid Chamber -->
+                                    <!-- Left: 3D Biometric Glass Cuboid Body Scanner (Photorealistic 3D Cuboid & Mannequin) -->
             <div class="scanner-visual-col">
-              <!-- Left Calibration Scale Ruler -->
-              <div class="pod-scale-ruler">
-                <div class="psr-tick psr-top">
-                  <div class="psr-labels">
-                    <span class="psr-val">90d</span>
-                    <span class="psr-sub">(100% Full)</span>
-                  </div>
-                  <span class="psr-line"></span>
-                </div>
-                <div class="psr-minor-group">
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-med"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                </div>
-                <div class="psr-tick psr-mid">
-                  <div class="psr-labels">
-                    <span class="psr-val">45d</span>
-                    <span class="psr-sub">(50%)</span>
-                  </div>
-                  <span class="psr-line"></span>
-                </div>
-                <div class="psr-minor-group">
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-med"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                  <span class="psr-tick-minor"></span>
-                </div>
-                <div class="psr-tick psr-base">
-                  <div class="psr-labels">
-                    <span class="psr-val">0d</span>
-                    <span class="psr-sub">(0%)</span>
-                  </div>
-                  <span class="psr-line"></span>
-                </div>
-              </div>
+              <div class="biometric-cuboid-display" id="cryoPodContainer">
+                <!-- Base Photorealistic 3D Glass Cuboid & Athletic Mannequin Render -->
+                <img src="images/biometric-scanner-cuboid.jpg" 
+                     alt="3D Biometric Human Body Scanner" 
+                     class="cuboid-base-img" 
+                     id="cuboidBaseImg" />
 
-              <!-- High-Tech 3D Glass Cuboid Chamber (220px x 350px) -->
-              <div class="cryo-pod cryo-pod-container glass-cuboid" id="cryoPodContainer">
-                <!-- 3D Perspective Lines for Recessed Glass Box -->
-                <svg class="pod-perspective-svg" viewBox="0 0 220 350" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="leftGlassTint" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25"/>
-                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.04"/>
-                    </linearGradient>
-                    <linearGradient id="rightGlassTint" x1="100%" y1="0%" x2="0%" y2="0%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25"/>
-                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.04"/>
-                    </linearGradient>
-                    <linearGradient id="ceilBevel" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.4"/>
-                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02"/>
-                    </linearGradient>
-                    <linearGradient id="floorBevel" x1="0%" y1="100%" x2="0%" y2="0%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
-                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.03"/>
-                    </linearGradient>
-                  </defs>
-
-                  <!-- 3D Recessed Back Wall Panel -->
-                  <rect x="22" y="20" width="176" height="310" rx="8" fill="#040b12" stroke="rgba(56, 189, 248, 0.28)" stroke-width="1.2" />
-
-                  <!-- 3D Perspective Corner Seams (Connecting Front Face to Back Face) -->
-                  <line x1="0" y1="0" x2="22" y2="20" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
-                  <line x1="220" y1="0" x2="198" y2="20" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
-                  <line x1="0" y1="350" x2="22" y2="330" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
-                  <line x1="220" y1="350" x2="198" y2="330" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
-
-                  <!-- Left Glass Side Wall -->
-                  <polygon points="0,0 22,20 22,330 0,350" fill="url(#leftGlassTint)" />
-                  <line x1="6" y1="4" x2="6" y2="346" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1" />
-
-                  <!-- Right Glass Side Wall -->
-                  <polygon points="220,0 198,20 198,330 220,350" fill="url(#rightGlassTint)" />
-                  <line x1="214" y1="4" x2="214" y2="346" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1" />
-
-                  <!-- Ceiling Glass Bevel -->
-                  <polygon points="0,0 220,0 198,20 22,20" fill="url(#ceilBevel)" />
-
-                  <!-- Floor Plate Glass Bevel & Ground Glow -->
-                  <polygon points="0,350 220,350 198,330 22,330" fill="url(#floorBevel)" />
-                  <ellipse cx="110" cy="334" rx="72" ry="7" fill="rgba(56, 189, 248, 0.22)" />
-                </svg>
-
-                <!-- 3D Perspective Lamps -->
-                <div class="pod-ceiling-lamp"></div>
-                <div class="pod-floor-lamp"></div>
-
-                <!-- Layer 1: Base Cyan Holographic Muscular Male Mannequin -->
-                <div class="pod-body-layer">
-                  <svg class="hologram-body" viewBox="0 0 220 350" preserveAspectRatio="xMidYMid meet">
-                    <defs>
-                      <!-- 3D Triangular Polygonal Wireframe Mesh Pattern -->
-                      <pattern id="cyanPolyMesh" width="6" height="6" patternUnits="userSpaceOnUse">
-                        <path d="M 0 0 L 6 0 L 6 6 L 0 6 Z M 0 0 L 6 6" fill="none" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.5" />
-                        <circle cx="0" cy="0" r="0.6" fill="rgba(56, 189, 248, 0.7)" />
-                        <circle cx="6" cy="6" r="0.6" fill="rgba(56, 189, 248, 0.7)" />
-                      </pattern>
-
-                      <clipPath id="cyanMannequinClip">
-                        <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" />
-                      </clipPath>
-
-                      <linearGradient id="body3DShadingCyan" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
-                        <stop offset="35%" stop-color="#0284c7" stop-opacity="0.22"/>
-                        <stop offset="70%" stop-color="#0369a1" stop-opacity="0.14"/>
-                        <stop offset="100%" stop-color="#082f49" stop-opacity="0.06"/>
-                      </linearGradient>
-
-                      <linearGradient id="bodyCyanRim" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#f0f9ff" stop-opacity="0.95"/>
-                        <stop offset="30%" stop-color="#38bdf8" stop-opacity="0.9"/>
-                        <stop offset="70%" stop-color="#0284c7" stop-opacity="0.65"/>
-                        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.85"/>
-                      </linearGradient>
-                    </defs>
-
-                    <!-- Semi-Transparent 3D Volumetric Fill -->
-                    <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" fill="url(#body3DShadingCyan)" />
-
-                    <!-- 3D Polygonal Wireframe Mesh inside Silhouette -->
-                    <rect x="30" y="20" width="160" height="320" fill="url(#cyanPolyMesh)" clip-path="url(#cyanMannequinClip)" opacity="0.9" />
-
-                    <!-- High-Fidelity 3D Muscular Anatomy Contours -->
-                    <g clip-path="url(#cyanMannequinClip)">
-                      <!-- Head & Facial Contours -->
-                      <path d="M 103,53 Q 110,54 117,53" stroke="rgba(56, 189, 248, 0.7)" stroke-width="0.8" fill="none" />
-                      <line x1="104" y1="56" x2="108" y2="56" stroke="rgba(56, 189, 248, 0.8)" stroke-width="0.9" />
-                      <line x1="112" y1="56" x2="116" y2="56" stroke="rgba(56, 189, 248, 0.8)" stroke-width="0.9" />
-                      <path d="M 110,55 L 110,65 L 108,67 L 112,67" stroke="rgba(56, 189, 248, 0.7)" stroke-width="0.9" fill="none" />
-                      <path d="M 106,71 Q 110,72 114,71" stroke="rgba(56, 189, 248, 0.6)" stroke-width="0.8" fill="none" />
-                      <path d="M 103,73 C 105,77 108,79 110,79 C 112,79 115,77 117,73" stroke="rgba(56, 189, 248, 0.8)" stroke-width="1.1" fill="none" />
-
-                      <!-- Trapezius Muscle Contours -->
-                      <path d="M 101,84 L 98,92 L 84,98 M 119,84 L 122,92 L 136,98" stroke="rgba(56, 189, 248, 0.55)" stroke-width="1.1" fill="none" />
-                      <!-- Powerful Clavicles (Collarbones) -->
-                      <path d="M 76,96 Q 110,102 144,96" stroke="rgba(56, 189, 248, 0.8)" stroke-width="1.3" fill="none" />
-                      <!-- Sternal Centerline (Linea Alba) -->
-                      <line x1="110" y1="99" x2="110" y2="185" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.1" />
-
-                      <!-- Left Muscular Pectoral Chest Slab -->
-                      <path d="M 76,98 L 108,98 L 108,126 C 98,129 82,128 76,116 Z" fill="rgba(56, 189, 248, 0.14)" stroke="rgba(56, 189, 248, 0.75)" stroke-width="1.3" />
-                      <!-- Right Muscular Pectoral Chest Slab -->
-                      <path d="M 144,98 L 112,98 L 112,126 C 122,129 138,128 144,116 Z" fill="rgba(56, 189, 248, 0.14)" stroke="rgba(56, 189, 248, 0.75)" stroke-width="1.3" />
-
-                      <!-- Deltoid Shoulder Cleft Lines -->
-                      <path d="M 75,99 C 68,107 66,116 66,126" stroke="rgba(56, 189, 248, 0.65)" stroke-width="1.2" fill="none" />
-                      <path d="M 145,99 C 152,107 154,116 154,126" stroke="rgba(56, 189, 248, 0.65)" stroke-width="1.2" fill="none" />
-
-                      <!-- Bicep & Arm Muscle Contours -->
-                      <path d="M 66,132 C 65,144 65,154 66,162" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1" fill="none" />
-                      <path d="M 154,132 C 155,144 155,154 154,162" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1" fill="none" />
-                      <path d="M 64,170 C 63,184 62,198 62,206" stroke="rgba(56, 189, 248, 0.45)" stroke-width="0.9" fill="none" />
-                      <path d="M 156,170 C 157,184 158,198 158,206" stroke="rgba(56, 189, 248, 0.45)" stroke-width="0.9" fill="none" />
-
-                      <!-- Serratus Anterior Rib Arches -->
-                      <path d="M 78,130 Q 86,135 92,139 M 142,130 Q 134,135 128,139" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1" fill="none" />
-                      <path d="M 80,141 Q 87,146 92,150 M 140,141 Q 133,146 128,150" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1" fill="none" />
-
-                      <!-- Chiseled 6-Pack Abs Tiers (Natural Athletic Curves) -->
-                      <rect x="92" y="132" width="15" height="11" rx="2.5" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(56, 189, 248, 0.55)" stroke-width="0.9" />
-                      <rect x="113" y="132" width="15" height="11" rx="2.5" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(56, 189, 248, 0.55)" stroke-width="0.9" />
-                      <rect x="91" y="147" width="16" height="11" rx="2.5" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(56, 189, 248, 0.55)" stroke-width="0.9" />
-                      <rect x="113" y="147" width="16" height="11" rx="2.5" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(56, 189, 248, 0.55)" stroke-width="0.9" />
-                      <rect x="92" y="162" width="15" height="11" rx="2.5" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(56, 189, 248, 0.55)" stroke-width="0.9" />
-                      <rect x="113" y="162" width="15" height="11" rx="2.5" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(56, 189, 248, 0.55)" stroke-width="0.9" />
-
-                      <!-- Umbilicus (Navel) -->
-                      <circle cx="110" cy="167" r="1.5" fill="rgba(56, 189, 248, 0.8)" />
-
-                      <!-- Inguinal Pelvic V-Groove (Adonis Belt) -->
-                      <path d="M 84,174 L 107,192 M 136,174 L 113,192" stroke="rgba(56, 189, 248, 0.6)" stroke-width="1.2" />
-
-                      <!-- Muscular Quadriceps Sweep & Divisions -->
-                      <path d="M 86,198 C 84,212 83,226 84,238" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1" fill="none" />
-                      <path d="M 134,198 C 136,212 137,226 136,238" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1" fill="none" />
-                      <path d="M 95,224 C 93,234 91,240 88,244" stroke="rgba(56, 189, 248, 0.55)" stroke-width="1" fill="none" />
-                      <path d="M 125,224 C 127,234 129,240 132,244" stroke="rgba(56, 189, 248, 0.55)" stroke-width="1" fill="none" />
-
-                      <!-- Defined Kneecaps (Patellae) -->
-                      <ellipse cx="85" cy="248" rx="4" ry="5" fill="none" stroke="rgba(56, 189, 248, 0.65)" stroke-width="1.1" />
-                      <ellipse cx="135" cy="248" rx="4" ry="5" fill="none" stroke="rgba(56, 189, 248, 0.65)" stroke-width="1.1" />
-
-                      <!-- Shin / Tibia Crest Lines -->
-                      <line x1="85" y1="258" x2="85" y2="302" stroke="rgba(56, 189, 248, 0.45)" stroke-width="0.9" />
-                      <line x1="135" y1="258" x2="135" y2="302" stroke="rgba(56, 189, 248, 0.45)" stroke-width="0.9" />
-                    </g>
-
-                    <!-- Outer Hologram Cyan Rim Glow -->
-                    <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" 
+                <!-- Dynamic Fluid Meniscus Wave Layer -->
+                <div class="live-wave-ripple" id="liveWaveRipple" style="top: 50%;">
+                  <svg class="ripple-wave-svg" viewBox="0 0 440 24" preserveAspectRatio="none">
+                    <!-- Soft Meniscus Ambient Glow -->
+                    <path d="M 0,12 Q 55,2 110,12 T 220,12 T 330,12 T 440,12" 
                           fill="none" 
-                          stroke="url(#bodyCyanRim)" 
-                          stroke-width="1.5" 
-                          class="hologram-contour" />
+                          stroke="#fda4af" 
+                          stroke-width="5" 
+                          opacity="0.45" 
+                          style="filter: blur(2px);" />
+                    <!-- Crisp Radiant Meniscus Crest -->
+                    <path d="M 0,12 Q 55,2 110,12 T 220,12 T 330,12 T 440,12" 
+                          fill="none" 
+                          stroke="#fb7185" 
+                          stroke-width="2.6" 
+                          class="ripple-crest" />
                   </svg>
                 </div>
 
-                <!-- Layer 2: Dynamic Liquid Blood Fluid Column with Live Flowing Meniscus -->
-                <div class="blood-liquid-column" id="bloodLiquidColumn" style="height: 100%;">
-                  <!-- Submerged Body Silhouette (Pinned to Bottom) -->
-                  <div class="submerged-body-wrap">
-                    <svg class="submerged-body-svg" viewBox="0 0 220 350" preserveAspectRatio="xMidYMid meet">
-                      <defs>
-                        <clipPath id="submergedClip">
-                          <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" />
-                        </clipPath>
-                      </defs>
-
-                      <!-- Dark Ruby Submerged Silhouette -->
-                      <path d="M 110,36 C 102,36 96,42 96,52 C 96,62 98,70 101,76 C 102,78 101,84 101,92 C 98,94 86,98 76,104 C 68,109 64,118 64,128 C 64,138 62,150 61,162 C 60,174 58,190 56,204 C 55,212 53,222 54,228 C 55,230 59,226 60,220 C 61,214 64,208 65,202 C 66,190 68,176 69,162 C 70,150 72,138 75,128 C 77,138 78,152 78,166 C 78,178 76,190 74,200 C 72,214 72,232 74,248 C 75,254 74,262 73,270 C 72,280 73,294 77,308 C 79,314 79,320 80,322 L 94,322 C 94,318 92,312 91,306 C 89,296 88,282 89,272 C 90,264 91,256 91,248 C 92,236 96,218 102,206 C 106,198 109,196 110,196 C 111,196 114,198 118,206 C 124,218 128,236 129,248 C 129,256 130,264 131,272 C 132,282 131,296 129,306 C 128,312 126,318 126,322 L 140,322 C 141,320 141,314 143,308 C 147,294 148,280 147,270 C 146,262 145,254 146,248 C 148,232 148,214 146,200 C 144,190 142,178 142,166 C 142,152 143,138 145,128 C 148,138 150,150 151,162 C 152,176 154,190 155,202 C 156,208 159,214 160,220 C 161,226 165,230 166,228 C 167,222 165,212 164,204 C 162,190 160,174 159,162 C 158,150 156,138 156,128 C 156,118 152,109 144,104 C 134,98 122,94 119,92 C 119,84 118,78 119,76 C 122,70 124,62 124,52 C 124,42 118,36 110,36 Z" fill="rgba(26, 3, 7, 0.92)" stroke="rgba(244, 63, 94, 0.45)" stroke-width="1.4" />
-
-                      <!-- Submerged Body Interior Shading -->
-                      <g clip-path="url(#submergedClip)">
-                        <path d="M 76,96 Q 110,102 144,96" stroke="rgba(244, 63, 94, 0.25)" stroke-width="1" fill="none" />
-                        <line x1="110" y1="99" x2="110" y2="185" stroke="rgba(244, 63, 94, 0.22)" stroke-width="1" />
-                        <path d="M 76,98 L 108,98 L 108,126 C 98,129 82,128 76,116 Z" fill="rgba(244, 63, 94, 0.1)" stroke="rgba(244, 63, 94, 0.25)" stroke-width="1" />
-                        <path d="M 144,98 L 112,98 L 112,126 C 122,129 138,128 144,116 Z" fill="rgba(244, 63, 94, 0.1)" stroke="rgba(244, 63, 94, 0.25)" stroke-width="1" />
-                        <path d="M 84,174 L 107,192 M 136,174 L 113,192" stroke="rgba(244, 63, 94, 0.25)" stroke-width="1" />
-                        <path d="M 86,198 C 84,212 83,226 84,238 M 134,198 C 136,212 137,226 136,238" stroke="rgba(244, 63, 94, 0.22)" stroke-width="0.9" fill="none" />
-                        <ellipse cx="85" cy="248" rx="4" ry="5" fill="none" stroke="rgba(244, 63, 94, 0.3)" stroke-width="1" />
-                        <ellipse cx="135" cy="248" rx="4" ry="5" fill="none" stroke="rgba(244, 63, 94, 0.3)" stroke-width="1" />
-                      </g>
-                    </svg>
-                  </div>
-
-                  <!-- Undulating Flowing Sine Wave Meniscus at Fluid Surface -->
-                  <div class="flowing-wave-track">
-                    <svg class="flowing-wave-svg" viewBox="0 0 440 32" preserveAspectRatio="none">
-                      <!-- Base Ambient Glow -->
-                      <path d="M 0,16 Q 55,6 110,16 T 220,16 T 330,16 T 440,16" 
-                            fill="none" 
-                            stroke="#fda4af" 
-                            stroke-width="5" 
-                            opacity="0.38" 
-                            style="filter: blur(2px);" />
-                      <!-- Crisp Radiant Wave Crest Line -->
-                      <path d="M 0,16 Q 55,6 110,16 T 220,16 T 330,16 T 440,16" 
-                            fill="none" 
-                            stroke="#fb7185" 
-                            stroke-width="2.6" 
-                            class="wave-crest-line" />
-                    </svg>
-                  </div>
-                </div>
-
-                <!-- Layer 3: Glass Shell Highlights & Rim Lighting -->
-                <div class="pod-rim-overlay"></div>
+                <!-- Glass Front Face Specular Reflection Sheen -->
+                <div class="cuboid-specular-sheen"></div>
               </div>
             </div>
 
@@ -580,6 +421,6 @@
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
-  <script src="js/donor-profile.js?v=3.1"></script>
+  <script src="js/donor-profile.js?v=20261108_cuboid_v3"></script>
 </body>
 </html>

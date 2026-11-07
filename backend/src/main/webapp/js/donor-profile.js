@@ -295,6 +295,7 @@
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
   function renderMedicalEligibilityTracker() {
+    const liveWave = document.getElementById('liveWaveRipple');
     const bloodColumn = document.getElementById('bloodLiquidColumn');
     const daysVal = document.getElementById('scannerDaysVal');
     const daysLbl = document.getElementById('scannerDaysLbl');
@@ -347,6 +348,9 @@
 
     if (isEligible) {
       // State 1: 100% Eligible (Pre-Donation or Cooldown Completed)
+      if (liveWave) {
+        liveWave.style.top = '50%'; // Aligns with reference image's wave position
+      }
       if (bloodColumn) {
         bloodColumn.style.height = '100%';
       }
@@ -402,6 +406,10 @@
       }
     } else {
       // State 2: Cooldown Active (Fluid rises day by day from 0% to 100% post-donation)
+      const waveTopPercent = Math.max(15, Math.min(90, 100 - percentage));
+      if (liveWave) {
+        liveWave.style.top = `${waveTopPercent}%`;
+      }
       if (bloodColumn) {
         bloodColumn.style.height = `${percentage}%`;
       }
@@ -454,8 +462,6 @@
     }
   }
 
-  // ======================== CARD 3: DONOR IMPACT MILESTONES ========================
-  // 3x2 responsive grid of 3D glassmorphic achievement badges evaluated dynamically
   function evaluateAndRenderMilestones() {
     const grid = document.getElementById('milestonesGrid');
     const counter = document.getElementById('badgesEarnedCounter');

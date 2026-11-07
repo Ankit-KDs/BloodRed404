@@ -1715,3 +1715,66 @@ body.donor-profile-body {
   }
 }
 
+
+
+/* ==================== 3D BIOMETRIC CUBOID & MANNEQUIN DISPLAY ==================== */
+.biometric-cuboid-display {
+  position: relative;
+  width: 320px;
+  height: 350px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #03080e;
+  border: 2px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 
+    0 0 25px rgba(56, 189, 248, 0.2), 
+    inset 0 0 30px rgba(56, 189, 248, 0.15), 
+    0 16px 36px rgba(0, 0, 0, 0.75);
+  box-sizing: border-box;
+}
+
+.cuboid-base-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.live-wave-ripple {
+  position: absolute;
+  left: 28%;
+  width: 72%;
+  height: 24px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+  transition: top 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ripple-wave-svg {
+  width: 200%;
+  height: 100%;
+  animation: waveScroll 4s linear infinite;
+}
+
+@keyframes waveScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ripple-crest {
+  stroke: #fb7185;
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 8px #f43f5e);
+}
+
+.cuboid-specular-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 35%, transparent 55%);
+  pointer-events: none;
+  z-index: 8;
+}
