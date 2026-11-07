@@ -336,7 +336,7 @@
         bead.style.display = 'block';
       }
       if (statusText) {
-        statusText.textContent = 'ELIGIBLE TO DONATE';
+        statusText.innerHTML = '<span>ELIGIBLE</span><span>TO DONATE</span>';
         statusText.style.color = '#34d399';
       }
       if (daysText) {
@@ -345,7 +345,7 @@
         daysText.classList.remove('cooldown');
       }
       if (subText) {
-        subText.textContent = 'COOLDOWN COMPLETED';
+        subText.innerHTML = '<span>COOLDOWN</span><span>COMPLETED</span>';
         subText.style.color = '#64748b';
       }
       if (chipContainer) chipContainer.classList.remove('cooldown');
@@ -384,16 +384,16 @@
         bead.style.display = 'block';
       }
       if (statusText) {
-        statusText.textContent = 'COOLDOWN ACTIVE';
+        statusText.innerHTML = '<span>COOLDOWN</span><span>ACTIVE</span>';
         statusText.style.color = '#f87171';
       }
       if (daysText) {
-        daysText.textContent = `${remainingDays} DAYS REMAINING`;
+        daysText.textContent = `${remainingDays} DAYS`;
         daysText.style.color = '#f8fafc';
-        daysText.classList.add('cooldown');
+        daysText.classList.remove('cooldown');
       }
       if (subText) {
-        subText.textContent = 'RECOVERY IN PROGRESS';
+        subText.innerHTML = '<span>REMAINING IN</span><span>COOLDOWN</span>';
         subText.style.color = '#94a3b8';
       }
       if (chipContainer) chipContainer.classList.add('cooldown');
