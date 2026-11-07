@@ -114,51 +114,51 @@
         <section class="profile-card" id="donorVitalsCard">
           <div class="card-header-row">
             <h2 class="card-title">Donor Profile & Vital Health Stats</h2>
-            <span class="card-meta-tag"><i class="fas fa-hospital-user" style="color:var(--green-neon);margin-right:3px;"></i> Hospital Intake Feed</span>
           </div>
 
           <div class="vitals-split-layout">
-            <!-- Left Red Blood Group Block -->
+            <!-- Left Crimson Glass Blood Emblem -->
             <div class="blood-emblem-box">
-              <div class="beb-type" id="vitalBloodType">O-</div>
-              <div class="beb-label" id="vitalBloodLabel">NEGATIVE</div>
+              <div class="beb-type" id="vitalBloodType">A+</div>
+              <div class="beb-label" id="vitalBloodLabel">POSITIVE</div>
               <div class="beb-icon">
-                <i class="fas fa-heartbeat"></i>
+                <i class="fas fa-heart-pulse"></i>
               </div>
             </div>
 
             <!-- Right Verified Vitals Details -->
             <div class="vitals-details-box">
               <div class="vitals-top-meta">
-                Age: <b id="vitalAge">24</b> | Weight: <b id="vitalWeight">72</b> kg | Pulse: <b id="vitalPulse">72</b> bpm
+                Age: <b id="vitalAge">22</b> &nbsp;|&nbsp; Weight: <b id="vitalWeight">76</b> kg &nbsp;|&nbsp; Pulse: <b id="vitalPulse">72</b> bpm
               </div>
               <div class="vitals-verified-sub" id="vitalsVerifiedSub">
-                Verified on Aug 05, 2026 • City General Hospital
+                Verified on Aug 05, 2026
               </div>
 
               <div class="vital-row">
-                <span>Hemoglobin:</span>
-                <b id="vitalHemoglobin">14.8</b> g/dL • 
+                <span class="vr-label">Hemoglobin:</span>
+                <b class="vr-val"><span id="vitalHemoglobin">14.8</span> g/dL</b>
+                <span class="vr-dot">•</span>
                 <span class="vital-pill pill-normal" id="hbPill">NORMAL</span>
               </div>
 
               <div class="vital-row">
-                <span>Blood Pressure:</span>
-                <b id="vitalBP">120/80</b> mmHg • 
+                <span class="vr-label">Blood Pressure:</span>
+                <b class="vr-val"><span id="vitalBP">120/80</span> mmHg</b>
+                <span class="vr-dot">•</span>
                 <span class="vital-pill pill-normal" id="bpPill">NORMAL</span>
               </div>
 
               <div class="vital-row">
-                <span>Body Temperature:</span>
-                <b id="vitalTemp">98.6</b>° F
+                <span class="vr-label">Body Temperature:</span>
+                <b class="vr-val"><span id="vitalTemp">98.6</span>° F</b>
+              </div>
+
+              <!-- Automated AI Health Evaluation Banner -->
+              <div class="health-eval-badge badge-fit" id="aiHealthEvalBadge">
+                <span>HEALTH STATUS: FIT TO DONATE</span>
               </div>
             </div>
-          </div>
-
-          <!-- Automated AI Health Evaluation Banner -->
-          <div class="health-eval-badge badge-fit" id="aiHealthEvalBadge">
-            <span class="heb-dot"></span>
-            <span>HEALTH STATUS: FIT TO DONATE</span>
           </div>
         </section>
 
@@ -166,17 +166,25 @@
         <section class="profile-card" id="eligibilityTrackerCard">
           <div class="card-header-row">
             <h2 class="card-title">Medical Eligibility Tracker</h2>
-            <span class="card-meta-tag"><i class="fas fa-shield-alt" style="color:var(--green-neon);margin-right:3px;"></i> Safety Cooldown</span>
+            <span class="card-meta-tag eligibility-tag">
+              <i class="fas fa-shield-alt"></i> Safety Cooldown
+            </span>
           </div>
 
           <div class="eligibility-layout">
-            <!-- Circular Radial Gauge -->
+            <!-- Circular Radial Gauge with Soft Emerald-to-Mint Gradient -->
             <div class="gauge-wrapper">
               <svg class="gauge-svg" viewBox="0 0 160 160">
-                <!-- Background Arc: radius 65, total ~306px -->
-                <circle class="gauge-bg-arc" cx="80" cy="80" r="65" stroke-dasharray="306" stroke-dashoffset="0"></circle>
+                <defs>
+                  <linearGradient id="emeraldMintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#10b981" />
+                    <stop offset="100%" stop-color="#34d399" />
+                  </linearGradient>
+                </defs>
+                <!-- Background Arc -->
+                <circle class="gauge-bg-arc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
                 <!-- Dynamic Fill Arc -->
-                <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="65" stroke-dasharray="306" stroke-dashoffset="0"></circle>
+                <circle class="gauge-fill-arc" id="gaugeFillArc" cx="80" cy="80" r="62" stroke-dasharray="306" stroke-dashoffset="0"></circle>
               </svg>
 
               <!-- Center Text Content -->
@@ -210,42 +218,75 @@
           </div>
         </section>
 
-        <!-- CARD 4: DONOR IMPACT MILESTONES (Clean Placeholder) -->
+        <!-- CARD 3: DONOR IMPACT MILESTONES (Dimmed Glassmorphic Placeholder) -->
         <section class="profile-card" id="milestonesCard">
           <div class="card-header-row">
             <h2 class="card-title">Donor Impact Milestones</h2>
             <span class="card-meta-tag">Earned badges</span>
           </div>
 
-          <!-- Milestones & Badges section intentionally reserved for upcoming badge engine -->
-          <div class="milestones-empty-placeholder">
-            <div class="mep-icon-row">
-              <div class="mep-icon-badge"><i class="fas fa-award"></i></div>
-              <div class="mep-icon-badge"><i class="fas fa-shield-halved"></i></div>
-              <div class="mep-icon-badge"><i class="fas fa-medal"></i></div>
+          <div class="milestones-grid-container">
+            <!-- Left Tall Badge: Elite Savior -->
+            <div class="milestone-badge-card tall">
+              <div class="mbc-icon-wrap">
+                <i class="fas fa-shield-cat"></i>
+              </div>
+              <div class="mbc-name">Elite Savior</div>
             </div>
-            <div class="mep-title">Milestones & Achievements</div>
-            <div class="mep-sub">Milestones & badges engine will be integrated soon.</div>
+
+            <!-- Middle Tall Badge: Vanguard Medal -->
+            <div class="milestone-badge-card tall">
+              <div class="mbc-icon-wrap">
+                <i class="fas fa-shield-halved"></i>
+              </div>
+              <div class="mbc-name">Vanguard Medal</div>
+            </div>
+
+            <!-- Right Subgrid: Fast Responder, Life Giver, Night Owl -->
+            <div class="milestones-subgrid">
+              <div class="milestone-badge-card wide">
+                <div class="mbc-icon-wrap mini">
+                  <i class="fas fa-stopwatch"></i>
+                </div>
+                <div class="mbc-name">Fast Responder Badge</div>
+              </div>
+
+              <div class="milestones-subrow">
+                <div class="milestone-badge-card small">
+                  <div class="mbc-name-accent">Life Giver</div>
+                  <div class="mbc-name-sub">x5</div>
+                </div>
+
+                <div class="milestone-badge-card small">
+                  <div class="mbc-icon-wrap mini">
+                    <i class="fas fa-medal"></i>
+                  </div>
+                  <div class="mbc-name">Night Owl</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="milestones-placeholder-notice">
+            <i class="fas fa-info-circle"></i>
+            <span>Badges & Gamified Milestones engine will be integrated soon.</span>
           </div>
         </section>
 
-        <!-- CARD 3: PAST DONATION HISTORY (Direct Database Feed) -->
-        <section class="profile-card" id="donationHistoryCard">
+        <!-- CARD 4: PAST DONATION HISTORY (Direct Database Feed) -->
+        <section class="profile-card" id="pastDonationHistoryCard">
           <div class="card-header-row">
             <h2 class="card-title">Past Donation History</h2>
             <span class="card-meta-tag">(MySQL feed)</span>
           </div>
 
-          <div style="font-size:0.85rem;font-weight:700;color:var(--text-secondary);margin-bottom:0.85rem;font-family:var(--font-tech);letter-spacing:0.5px;">
+          <div class="history-section-subtitle">
             Verified Donation History Logs
           </div>
 
           <!-- Dynamic Container for verified donation logs -->
           <div class="history-table-container" id="donationHistoryContainer">
-            <div class="empty-history-state">
-              <i class="fas fa-circle-notch fa-spin"></i>
-              <p>Retrieving verified donation records from database...</p>
-            </div>
+            <!-- Dynamically populated by renderDonationHistory() -->
           </div>
         </section>
 

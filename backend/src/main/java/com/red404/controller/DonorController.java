@@ -76,7 +76,7 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/donations", "/donation-history"})
+    @GetMapping({"/donations", "/donation-history", "/history"})
     public ResponseEntity<ApiResponse> getDonations(
             @RequestParam(required = false) Integer donorId,
             HttpServletRequest request) {
