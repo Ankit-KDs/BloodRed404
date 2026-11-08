@@ -15,7 +15,7 @@
 
   <!-- Core Profile CSS -->
   <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_sidebyside_v4">
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_equalheight_badge_v5">
       <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
     /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
@@ -301,28 +301,48 @@
   
 
 
-/* ==================== 1. PREVENT PROFILE CARDS VERTICAL STRETCHING ==================== */
+/* ==================== 1. EQUAL CARD HEIGHTS & MATCHED BACKGROUND ==================== */
 .profile-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
   gap: 1.5rem !important;
-  align-items: start !important; /* Prevents cards from stretching vertically */
+  align-items: stretch !important; /* Forces both cards to always match height */
 }
 
 @media (max-width: 1200px) {
   .profile-grid {
     grid-template-columns: 1fr !important;
-    align-items: start !important;
+    align-items: stretch !important;
   }
 }
 
 .profile-card {
-  align-self: start !important;
-  height: fit-content !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+#donorVitalsCard.profile-card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#donorVitalsCard .vitals-split-layout {
+  flex: 1 !important;
 }
 
 #eligibilityTrackerCard.profile-card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
   overflow: visible !important;
+}
+
+#eligibilityTrackerCard .dna-tracker-layout {
+  flex: 1 !important;
 }
 
 /* ==================== 2. STRICT SIDE-BY-SIDE CAPSULE & TELEMETRY LAYOUT ==================== */
@@ -462,15 +482,15 @@
   line-height: 1.35 !important;
 }
 
-/* Status Pill Wrapping */
+/* Status Pill Styles (100% Ready & Active Cooldown) */
 .status-badge {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 5px 12px !important;
+  gap: 7px !important;
+  padding: 6px 14px !important;
   border-radius: 9999px !important;
-  font-size: clamp(0.68rem, 0.95vw, 0.74rem) !important;
-  font-weight: bold !important;
+  font-size: clamp(0.7rem, 0.95vw, 0.76rem) !important;
+  font-weight: 700 !important;
   width: fit-content !important;
   max-width: 100% !important;
   white-space: normal !important;
@@ -482,7 +502,28 @@
   box-sizing: border-box !important;
 }
 
-.status-badge i {
+.status-badge.eligible-ready {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.2), inset 0 0 10px rgba(16, 185, 129, 0.08) !important;
+}
+
+.status-badge.eligible-ready i {
+  color: #34d399 !important;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.6)) !important;
+  flex-shrink: 0 !important;
+}
+
+.status-badge.cooldown-active {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(245, 158, 11, 0.38) !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.15) !important;
+}
+
+.status-badge.cooldown-active i {
+  color: #fbbf24 !important;
   flex-shrink: 0 !important;
 }
 
@@ -1095,38 +1136,38 @@
             <div class="capsule-telemetry-panel">
               <!-- Huge Countdown / Status Display -->
               <div class="telemetry-header">
-                <h1 id="telemetryPrimary">42 DAYS</h1>
-                <h3 id="telemetryPrimaryLabel">REMAINING</h3>
+                <h1 id="telemetryPrimary" style="color: #10b981;">READY</h1>
+                <h3 id="telemetryPrimaryLabel" style="color: #34d399;">TO DONATE</h3>
               </div>
 
               <!-- Live Recovery Percentage -->
               <div class="telemetry-percentage-box">
-                <h2 id="telemetryPercent">53% RECOVERED</h2>
-                <span id="telemetryCaption" class="telemetry-caption">(reducing day by day post-donation)</span>
+                <h2 id="telemetryPercent">100% RECOVERED</h2>
+                <span id="telemetryCaption" class="telemetry-caption">(biological volume fully restored)</span>
               </div>
 
               <!-- Pill Status Badge -->
-              <div id="telemetryBadge" class="status-badge cooldown-active">
-                <i class="fa-solid fa-hourglass-half"></i> 
-                <span id="badgeText">COOLDOWN ACTIVE • Recovery in Progress</span>
+              <div id="telemetryBadge" class="status-badge eligible-ready">
+                <i class="fa-solid fa-shield-halved"></i> 
+                <span id="badgeText">ELIGIBLE TO DONATE • Safe to Proceed</span>
               </div>
 
               <!-- Fine Checklist Details -->
               <ul class="telemetry-checklist">
                 <li id="checkRecoveryInterval">
-                  <i id="iconRecovery" class="fa-solid fa-hourglass"></i> 
-                  <span id="textRecovery">Recovery interval: 42 days left</span>
+                  <i id="iconRecovery" class="fa-solid fa-check" style="color: #10b981;"></i> 
+                  <span id="textRecovery">Recovery interval: complete</span>
                 </li>
                 <li id="checkVitals">
-                  <i id="iconVitals" class="fa-solid fa-check"></i> 
-                  <span id="textVitals">Vitals regeneration in progress</span>
+                  <i id="iconVitals" class="fa-solid fa-circle-check" style="color: #10b981;"></i> 
+                  <span id="textVitals">Biological markers fully restocked</span>
                 </li>
               </ul>
 
               <!-- Calendar Unlock Info -->
               <div class="telemetry-calendar">
                 <span class="calendar-label">Next Available:</span>
-                <strong id="dateUnlock">15 Oct 2026</strong>
+                <strong id="dateUnlock">IMMEDIATE / NOW AVAILABLE</strong>
               </div>
             </div>
           </div>
@@ -1174,6 +1215,6 @@
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
-  <script src="js/donor-profile.js?v=20261108_sidebyside_v4"></script>
+  <script src="js/donor-profile.js?v=20261108_equalheight_badge_v5"></script>
 </body>
 </html>

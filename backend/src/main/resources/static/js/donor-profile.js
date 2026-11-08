@@ -338,7 +338,7 @@
       // Set green badge
       if (badge) {
         badge.className = "status-badge eligible-ready";
-        badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>ELIGIBLE TO DONATE • Safe to Proceed</span>`;
+        badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span id="badgeText">ELIGIBLE TO DONATE • Safe to Proceed</span>`;
       }
 
       // Checklist 100% complete
@@ -396,7 +396,7 @@
       // Amber Badge
       if (badge) {
         badge.className = "status-badge cooldown-active";
-        badge.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> <span>COOLDOWN ACTIVE • Recovery in Progress</span>`;
+        badge.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> <span id="badgeText">COOLDOWN ACTIVE • Recovery in Progress</span>`;
       }
 
       // Cooldown active details
