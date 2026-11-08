@@ -294,8 +294,10 @@
 
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
+    // ======================== 4. CYBERNETIC DNA REGENERATION PILLAR TRACKER ========================
+  // Real-time animated flowing blood chamber with glowing DNA double-helix
   function renderMedicalEligibilityTracker() {
-    const bloodFluid = document.getElementById('bloodFluid');
+    const fluidContainer = document.getElementById('dnaFluidContainer') || document.getElementById('bloodFluid');
     const daysVal = document.getElementById('scannerDaysVal');
     const daysLbl = document.getElementById('scannerDaysLbl');
     const recoveredVal = document.getElementById('scannerRecoveredVal');
@@ -312,7 +314,7 @@
     let targetDateStr = 'Immediate / READY';
 
     if (!lastDonation) {
-      // Donor has NOT donated any blood yet -> Real-time 100% Eligible!
+      // Donor has NOT donated any blood yet -> Real-time 100% Regenerated & Eligible!
       isEligible = true;
       percentage = 100;
       remainingDays = 0;
@@ -329,7 +331,7 @@
         } else {
           isEligible = false;
           remainingDays = Math.max(0, 90 - daysPassed);
-          // After donation starts at 0% and increases day by day with blood flow
+          // Starts at 0% after donation and increases day by day with blood flow & DNA regeneration
           percentage = Math.min(Math.max(0, Math.floor((daysPassed / 90) * 100)), 99);
           const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
           targetDateStr = targetDate.toLocaleDateString('en-GB', {
@@ -346,36 +348,36 @@
     }
 
     if (isEligible) {
-      // State 1: 100% Eligible (Pre-Donation or Cooldown Completed) -> Fill fluid 100% to the top!
-      if (bloodFluid) {
-        bloodFluid.style.height = '100%';
+      // State 1: 100% Regenerated State (Pre-Donation or Cooldown Completed) -> Fill fluid 100% to the top!
+      if (fluidContainer) {
+        fluidContainer.style.height = '100%';
       }
 
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-ready';
-        metaTag.innerHTML = `<i class="fas fa-check-circle"></i> Safety Cooldown`;
+        metaTag.innerHTML = `<i class="fas fa-check-circle"></i> 100% Regenerated`;
       }
 
-      if (daysVal) daysVal.textContent = '90 DAYS';
+      if (daysVal) daysVal.textContent = '100% REGENERATED';
       if (daysLbl) {
         daysLbl.textContent = 'ELIGIBLE TO DONATE';
         daysLbl.style.color = '#34d399';
       }
 
       if (recoveredVal) {
-        recoveredVal.textContent = '100% RESTORED • READY';
+        recoveredVal.textContent = '100% REGENERATED • ELIGIBLE';
         recoveredVal.style.color = '#f8fafc';
       }
 
       if (recoveredSub) {
-        recoveredSub.textContent = '(optimal biological volume • ready to donate)';
+        recoveredSub.textContent = '(cellular DNA matrix regenerated • ready for transfusion)';
       }
 
       if (pillWrap) {
         pillWrap.innerHTML = `
           <div class="stc-pill pill-eligible">
             <span class="stc-dot dot-green"></span>
-            <span>ELIGIBLE TO DONATE • READY</span>
+            <span>🟢 100% REGENERATED • ELIGIBLE</span>
           </div>
         `;
       }
@@ -384,15 +386,15 @@
         checklistWrap.innerHTML = `
           <div class="stc-check-item">
             <i class="fas fa-check"></i>
-            <span>90-day wait period met</span>
+            <span>Cellular DNA regeneration complete</span>
           </div>
           <div class="stc-check-item">
             <i class="fas fa-check"></i>
-            <span>Health indicators optimal</span>
+            <span>Optimal hematocrit & hemoglobin levels</span>
           </div>
           <div class="stc-check-item">
             <i class="fas fa-check"></i>
-            <span>Not currently on medication</span>
+            <span>Minimum 90-day safe blood interval met</span>
           </div>
           <div class="stc-check-item">
             <i class="fas fa-calendar-check"></i>
@@ -401,36 +403,36 @@
         `;
       }
     } else {
-      // State 2: Cooldown Active (Fluid rises day by day from 0% to 100% post-donation)
-      if (bloodFluid) {
-        bloodFluid.style.height = `${percentage}%`;
+      // State 2: Cooldown Active (Fluid rises day by day from 0% to 100% post-donation, lighting up DNA)
+      if (fluidContainer) {
+        fluidContainer.style.height = `${percentage}%`;
       }
 
       if (metaTag) {
         metaTag.className = 'card-meta-tag scanner-meta-tag tag-cooldown';
-        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Safety Cooldown`;
+        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Regeneration in Progress`;
       }
 
-      if (daysVal) daysVal.textContent = `${remainingDays} DAYS`;
+      if (daysVal) daysVal.textContent = `${remainingDays} DAYS REMAINING`;
       if (daysLbl) {
-        daysLbl.textContent = 'REMAINING';
-        daysLbl.style.color = '#94a3b8';
+        daysLbl.textContent = `${daysPassed} / 90 DAYS COMPLETED (${percentage}%)`;
+        daysLbl.style.color = '#f87171';
       }
 
       if (recoveredVal) {
-        recoveredVal.textContent = `${percentage}% RECOVERED`;
+        recoveredVal.textContent = `${remainingDays} DAYS REMAINING • ${percentage}% RESTORED`;
         recoveredVal.style.color = '#ffffff';
       }
 
       if (recoveredSub) {
-        recoveredSub.textContent = '(reducing day by day post-donation)';
+        recoveredSub.textContent = '(cellular DNA helix regenerating day by day post-donation)';
       }
 
       if (pillWrap) {
         pillWrap.innerHTML = `
           <div class="stc-pill pill-cooldown">
-            <i class="fas fa-hourglass-half" style="font-size:0.75rem;"></i>
-            <span>COOLDOWN ACTIVE • Recovery in Progress</span>
+            <i class="fas fa-circle-notch fa-spin" style="font-size:0.75rem;"></i>
+            <span>🟡 REGENERATION PROTOCOL ACTIVE</span>
           </div>
         `;
       }
@@ -439,11 +441,11 @@
         checklistWrap.innerHTML = `
           <div class="stc-check-item pending">
             <i class="fas fa-hourglass-half"></i>
-            <span>Recovery interval: ${remainingDays} days left</span>
+            <span>DNA matrix regeneration in progress (${remainingDays}d left)</span>
           </div>
           <div class="stc-check-item">
             <i class="fas fa-check"></i>
-            <span>Vitals regeneration in progress</span>
+            <span>Minimum 90-day safe blood interval</span>
           </div>
           <div class="stc-check-item next-avail">
             <i class="fas fa-calendar-alt"></i>

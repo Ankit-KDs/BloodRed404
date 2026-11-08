@@ -1820,3 +1820,278 @@ body.donor-profile-body {
   background: linear-gradient(180deg, rgba(225, 29, 72, 0.42) 0%, rgba(190, 18, 60, 0.52) 25%, rgba(136, 19, 55, 0.62) 65%, rgba(76, 5, 25, 0.75) 100%);
   box-shadow: inset 0 0 25px rgba(244, 63, 94, 0.45);
 }
+
+/* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
+.dna-tracker-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+@media (max-width: 992px) {
+  .dna-tracker-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+.dna-visual-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 0.5rem 0;
+}
+.dna-pillar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.dna-telemetry-ruler {
+  position: relative;
+  width: 100px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.telemetry-tick {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(50%);
+}
+.tick-label {
+  font-family: 'Inter', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.tick-label.ready {
+  color: #34d399;
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+}
+.tag-ready {
+  color: #34d399;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin-left: 2px;
+}
+.tick-dash {
+  width: 14px;
+  height: 2px;
+  background: rgba(56, 189, 248, 0.45);
+  border-radius: 1px;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.3);
+}
+.tick-dash.sub {
+  width: 7px;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.28);
+  box-shadow: none;
+}
+.dna-pillar-cylinder {
+  width: 140px;
+  height: 300px;
+  position: relative;
+  border-radius: 40px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.15);
+  box-sizing: border-box;
+  background: transparent;
+}
+.pillar-cap-top {
+  height: 28px;
+  width: 100%;
+  border-radius: 20px 20px 4px 4px;
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 35%, #334155 70%, #1e293b 100%);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5), inset 0 -2px 4px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pillar-cap-bottom {
+  height: 28px;
+  width: 100%;
+  border-radius: 4px 4px 20px 20px;
+  background: linear-gradient(180deg, #1e293b 0%, #334155 30%, #64748b 65%, #94a3b8 100%);
+  box-shadow: inset 0 -2px 4px rgba(255, 255, 255, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 6px 14px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cap-step-lip {
+  width: 70%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  filter: blur(0.5px);
+}
+.pillar-glass-body {
+  flex: 1;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(8, 20, 28, 0.85) 0%, rgba(4, 10, 15, 0.95) 100%);
+  border-left: 2px solid rgba(56, 189, 248, 0.35);
+  border-right: 2px solid rgba(56, 189, 248, 0.35);
+  box-shadow: inset 0 0 25px rgba(56, 189, 248, 0.15), inset 0 4px 10px rgba(255, 255, 255, 0.2);
+}
+.glass-specular-edge-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.35) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 8;
+}
+.glass-specular-edge-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(270deg, rgba(56, 189, 248, 0.35) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 8;
+}
+.glass-specular-streak {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  width: 22px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 35%, transparent 100%);
+  pointer-events: none;
+  z-index: 8;
+}
+.dna-strand-layer {
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+}
+.dna-strand-layer.strand-inactive {
+  inset: 0;
+  height: 100%;
+  z-index: 1;
+}
+.dna-strand-layer.strand-active {
+  bottom: 0;
+  left: 0;
+  height: 244px;
+  z-index: 4;
+}
+.dna-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.dna-svg-inactive .dna-backbone {
+  stroke: rgba(255, 255, 255, 0.14);
+}
+.dna-svg-inactive .dna-rungs line {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+.dna-svg-inactive .dna-rungs circle {
+  fill: rgba(255, 255, 255, 0.18);
+}
+.dna-svg-inactive .dna-tech-nodes circle.dna-node-dot {
+  fill: rgba(255, 255, 255, 0.22);
+}
+.dna-svg-inactive .dna-tech-nodes circle.dna-orbit-ring,
+.dna-svg-inactive .dna-tech-nodes circle.dna-central-orbit {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+.dna-svg-active .dna-backbone {
+  stroke: #34d399;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)) drop-shadow(0 0 14px rgba(56, 189, 248, 0.6));
+}
+.dna-svg-active .dna-rungs line {
+  stroke: #38bdf8;
+  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.8));
+}
+.dna-svg-active .dna-rungs circle {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 4px #34d399);
+}
+.dna-svg-active .dna-tech-nodes circle.dna-node-dot {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 6px #34d399);
+}
+.dna-svg-active .dna-tech-nodes circle.dna-orbit-ring {
+  stroke: #38bdf8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7));
+}
+.dna-svg-active .dna-tech-nodes circle.dna-central-orbit {
+  stroke: #34d399;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.6));
+}
+.dna-fluid-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 2;
+  pointer-events: none;
+  transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dna-blood-column {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #dc2626 0%, #b91c1c 30%, #7f1d1d 75%, #450a0a 100%);
+  box-shadow: inset 0 0 25px rgba(239, 68, 68, 0.45), 0 0 30px rgba(220, 38, 38, 0.35);
+  opacity: 0.85;
+}
+.dna-wave-meniscus {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+  z-index: 6;
+  animation: dnaWaveBob 2.5s ease-in-out infinite alternate;
+}
+.dna-wave-track {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  animation: dnaWaveScroll 3.5s linear infinite;
+}
+.dna-wave-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@keyframes dnaWaveScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes dnaWaveBob {
+  0% { transform: translateY(-1.5px); }
+  100% { transform: translateY(1.5px); }
+}
+.dna-wave-crest {
+  stroke: #fca5a5;
+  stroke-width: 2.8;
+  filter: drop-shadow(0 0 8px #ef4444);
+}
