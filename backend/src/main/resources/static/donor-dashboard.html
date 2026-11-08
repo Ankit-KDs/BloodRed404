@@ -46,6 +46,11 @@
           <i class="fa-solid fa-gauge-high"></i>
           <span>Live Dashboard</span>
         </a>
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Real-time Incoming SOS & Live Proximity Radar">
+          <i class="fa-solid fa-tower-broadcast"></i>
+          <span>Active Alerts / Live Radar</span>
+          <span class="tab-radar-pulse"></span>
+        </a>
         <a href="donor-profile.html" class="command-tab-link" title="Donor Profile & Vitals">
           <i class="fa-solid fa-heart-pulse"></i>
           <span>Health Profile</span>
@@ -111,16 +116,16 @@
   <!-- ==================== MAIN BENTO BOX GRID LAYOUT ==================== -->
   <main class="dashboard-bento-container">
 
-    <!-- ROW 1: WELCOME & BASIC DETAILS (FULL WIDTH) -->
+    <!-- ROW 1: WELCOME & BASIC DETAILS (FULL WIDTH - PURE DYNAMIC PLACEHOLDERS) -->
     <section class="bento-card bento-welcome-card">
       <div class="welcome-info">
         <h1 class="welcome-title">
-          Welcome back, <span id="welcomeDonorName">Ankit Kumar</span>
+          Welcome back, <span id="user-name"></span>
         </h1>
         <div class="welcome-sub">
-          <span>Registered Lifesaver</span>
+          <span id="user-role">Registered Lifesaver</span>
           <span>•</span>
-          <span class="node-tag">NODE #RED-DL-7956 // SUBHARTI SECTOR</span>
+          <span class="node-tag" id="user-node-tag">NODE #<span id="user-node-id"></span> // <span id="user-sector"></span> SECTOR</span>
         </div>
       </div>
 
@@ -128,19 +133,19 @@
         <!-- Blood Group Pill -->
         <div class="welcome-stat-pill blood-pill" title="Verified ABO / Rh Phenotype">
           <i class="fa-solid fa-droplet"></i>
-          <span>Blood Group: <b id="bentoBloodGroup">O-</b></span>
+          <span>Blood Group: <b id="user-blood-group"></b></span>
         </div>
 
         <!-- Location Pill -->
         <div class="welcome-stat-pill" title="Live Telemetry Location">
           <i class="fa-solid fa-location-dot"></i>
-          <span id="bentoLocation">Meerut, UP</span>
+          <span id="user-location"></span>
         </div>
 
         <!-- Node Status Pill -->
         <div class="welcome-stat-pill status-pill" title="Donor Node Dispatch Status">
           <span class="live-status-dot"></span>
-          <span>Node Status: <b id="bentoNodeStatus">Active</b></span>
+          <span>Node Status: <b id="user-node-status">Active</b></span>
         </div>
       </div>
     </section>
@@ -148,8 +153,8 @@
     <!-- ROW 2: CORE ACTION CARDS (SIDE-BY-SIDE) -->
     <section class="bento-row-actions">
 
-      <!-- CARD 1: EMERGENCY SOS DISPATCH (RED PULSING OUTLINE) -->
-      <a href="donor-alerts.html" class="bento-card bento-action-card card-sos" title="Open Live Emergency Radar Map">
+      <!-- CARD 1: EMERGENCY SOS DISPATCH (DYNAMIC EMPTY/ACTIVE STATE) -->
+      <div class="bento-card bento-action-card card-sos" id="emergencyCardWrap">
         <div>
           <div class="action-header-row">
             <div class="action-icon-title">
@@ -158,19 +163,18 @@
               </div>
               <h2 class="action-title">Emergency SOS Dispatch</h2>
             </div>
-            <span class="action-badge">3 ACTIVE ALERTS</span>
+            <span class="action-badge" id="sos-badge"></span>
           </div>
 
-          <p class="action-summary-text">
-            <strong>Active Sector Emergencies:</strong> 2 Trauma Cases reported at Prem Hospital &amp; 1 Critical Surgery pending blood matching at Subharti Medical College.
-          </p>
+          <div id="sos-summary-container">
+            <!-- Dynamic State injected by dashboard-logic.js -->
+          </div>
         </div>
 
-        <div class="action-footer-link">
-          <span>Open Live Radar Map &amp; Dispatch</span>
-          <i class="fa-solid fa-arrow-right"></i>
+        <div id="sos-action-container">
+          <!-- Dynamic Action link injected by dashboard-logic.js -->
         </div>
-      </a>
+      </div>
 
       <!-- CARD 2: FIND NEARBY BLOOD BANKS (CYAN TECH GLOW) -->
       <a href="blood-availability.html" class="bento-card bento-action-card card-inventory" title="Open Real-time Hospital Blood Inventory Search">
@@ -186,7 +190,7 @@
           </div>
 
           <p class="action-summary-text">
-            <strong>Clinical Inventory Engine:</strong> 14 Regional network hospitals actively reporting real-time component reserves. Over <strong>280+ blood units</strong> cataloged.
+            <strong>Clinical Inventory Engine:</strong> Regional network hospitals actively reporting real-time component reserves and availability status.
           </p>
         </div>
 
@@ -201,7 +205,7 @@
     <!-- ROW 3: SPLIT GRID (FEED & MINI DONATIONS) -->
     <section class="bento-row-split">
 
-      <!-- THIRD ROW LEFT: GLOBAL NOTIFICATION & SYSTEM FEED (TERMINAL FEED STYLE) -->
+      <!-- THIRD ROW LEFT: GLOBAL NOTIFICATION & SYSTEM FEED (PURE VERIFIED STATE) -->
       <section class="bento-card" id="systemFeedCard">
         <div class="card-header-bar">
           <h3 class="chb-title">
@@ -211,88 +215,8 @@
           <span class="chb-tag">REAL-TIME TELEMETRY FEED</span>
         </div>
 
-        <div class="terminal-feed-container">
-
-          <!-- Feed Item 1: Incoming SOS Request -->
-          <div class="terminal-log-item sos">
-            <div class="log-icon-wrap">
-              <i class="fa-solid fa-tower-broadcast"></i>
-            </div>
-            <div class="log-content">
-              <div class="log-meta-row">
-                <span class="log-time">[16:22:10]</span>
-                <span class="log-type-tag">CRITICAL SOS</span>
-              </div>
-              <div class="log-message">
-                <strong>O- Negative</strong> Whole Blood urgently required for trauma intake at <strong>Prem Hospital</strong> (2.4 km away).
-              </div>
-            </div>
-          </div>
-
-          <!-- Feed Item 2: Badge Unlock -->
-          <div class="terminal-log-item badge-unlock">
-            <div class="log-icon-wrap">
-              <i class="fa-solid fa-award"></i>
-            </div>
-            <div class="log-content">
-              <div class="log-meta-row">
-                <span class="log-time">[15:45:00]</span>
-                <span class="log-type-tag">ACHIEVEMENT UNLOCKED</span>
-              </div>
-              <div class="log-message">
-                You earned the 3D Trophy <strong>"Night Owl"</strong> for successfully completing an off-hours emergency hospital response.
-              </div>
-            </div>
-          </div>
-
-          <!-- Feed Item 3: Profile Verification -->
-          <div class="terminal-log-item verify">
-            <div class="log-icon-wrap">
-              <i class="fa-solid fa-circle-check"></i>
-            </div>
-            <div class="log-content">
-              <div class="log-meta-row">
-                <span class="log-time">[14:10:32]</span>
-                <span class="log-type-tag">VERIFIED BY CLINIC</span>
-              </div>
-              <div class="log-message">
-                Clinical vitals and donor health markers officially verified by <strong>District Hospital Medical Team</strong>.
-              </div>
-            </div>
-          </div>
-
-          <!-- Feed Item 4: Blood Camp Alert -->
-          <div class="terminal-log-item camp">
-            <div class="log-icon-wrap">
-              <i class="fa-solid fa-calendar-check"></i>
-            </div>
-            <div class="log-content">
-              <div class="log-meta-row">
-                <span class="log-time">[11:00:15]</span>
-                <span class="log-type-tag">COMMUNITY DISPATCH</span>
-              </div>
-              <div class="log-message">
-                RED404 Mega Blood Drive scheduled at <strong>Subharti University Campus</strong> tomorrow at 09:00 AM.
-              </div>
-            </div>
-          </div>
-
-          <!-- Feed Item 5: Network Inventory Sync -->
-          <div class="terminal-log-item verify">
-            <div class="log-icon-wrap">
-              <i class="fa-solid fa-arrows-rotate"></i>
-            </div>
-            <div class="log-content">
-              <div class="log-meta-row">
-                <span class="log-time">[09:30:00]</span>
-                <span class="log-type-tag">NETWORK SYNC</span>
-              </div>
-              <div class="log-message">
-                Meerut District Blood Bank catalog synchronized (+15 PRBC units verified and ready for reserve allocation).
-              </div>
-            </div>
-          </div>
-
+        <div class="terminal-feed-container" id="system-logs-container">
+          <!-- Injected dynamically by dashboard-logic.js: only verified profile creation by default -->
         </div>
       </section>
 
@@ -308,46 +232,8 @@
           </div>
 
           <!-- Mini Logs List -->
-          <div class="mini-history-list" id="miniHistoryContainer">
-            <!-- Dynamically populated by dashboard.js with fallback mock -->
-            <div class="mini-history-item">
-              <div class="mhi-left">
-                <div class="mhi-icon"><i class="fa-solid fa-droplet"></i></div>
-                <div>
-                  <div class="mhi-hosp">Prem Hospital</div>
-                  <div class="mhi-date">12 Aug 2026 • Whole Blood</div>
-                </div>
-              </div>
-              <div class="mhi-right">
-                <span class="mhi-unit-pill">1 Unit</span>
-              </div>
-            </div>
-
-            <div class="mini-history-item">
-              <div class="mhi-left">
-                <div class="mhi-icon"><i class="fa-solid fa-droplet"></i></div>
-                <div>
-                  <div class="mhi-hosp">KMC Hospital</div>
-                  <div class="mhi-date">15 May 2026 • Platelets</div>
-                </div>
-              </div>
-              <div class="mhi-right">
-                <span class="mhi-unit-pill">1 Unit</span>
-              </div>
-            </div>
-
-            <div class="mini-history-item">
-              <div class="mhi-left">
-                <div class="mhi-icon"><i class="fa-solid fa-droplet"></i></div>
-                <div>
-                  <div class="mhi-hosp">Subharti Blood Bank</div>
-                  <div class="mhi-date">04 Feb 2026 • Whole Blood</div>
-                </div>
-              </div>
-              <div class="mhi-right">
-                <span class="mhi-unit-pill">1 Unit</span>
-              </div>
-            </div>
+          <div class="mini-history-list" id="mini-history-container">
+            <!-- Injected dynamically by dashboard-logic.js with empty state when 0 records -->
           </div>
         </div>
 
@@ -359,9 +245,9 @@
           </a>
 
           <!-- Tiny Ultra-Minimal Eligibility Strip -->
-          <div class="mini-eligibility-strip eligible" id="bentoEligibilityStrip">
+          <div class="mini-eligibility-strip eligible" id="mini-eligibility-strip">
             <span class="strip-pulse-dot"></span>
-            <span>Status: ELIGIBLE TO DONATE • Cooldown Complete</span>
+            <span>Status: ELIGIBLE TO DONATE • Safe to Proceed</span>
           </div>
         </div>
       </section>
@@ -373,6 +259,6 @@
   <!-- Scripts -->
   <script src="js/common.js"></script>
   <script src="js/command-nav.js"></script>
-  <script src="js/dashboard.js"></script>
+  <script src="js/dashboard-logic.js"></script>
 </body>
 </html>

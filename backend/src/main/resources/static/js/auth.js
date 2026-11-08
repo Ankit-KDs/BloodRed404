@@ -354,7 +354,7 @@ function initDonorRegisterForm() {
       if (modal) modal.style.display = 'flex';
       showToast('Registration successful! Redirecting to donor dashboard...', 'success', 2000);
       setTimeout(() => {
-        window.location.href = 'donor-alerts.html';
+        window.location.href = 'dashboard.html';
       }, 2000);
     } else {
       showToast(result.error || 'Registration failed. Please try again.', 'error');
@@ -426,7 +426,7 @@ function initDonorLoginForm() {
       Auth.saveSession(result.data.donor);
       Store.set('donorToken', result.data.token);
       showToast('Login successful! Redirecting...', 'success', 1500);
-      setTimeout(() => { window.location.href = 'donor-alerts.html'; }, 1500);
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
     } else {
       showToast(result.error || 'Invalid credentials. Please try again.', 'error');
       shakeInput(document.getElementById('loginPassword'));

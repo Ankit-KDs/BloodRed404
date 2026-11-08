@@ -1,81 +1,14 @@
 /**
  * RED404 — Clinical Donation History & Verified Certificates Engine
+ * Dynamic Zero-Demo-Data Architecture
  */
 
 (function () {
   'use strict';
 
-  const DEFAULT_DONATION_RECORDS = [
-    {
-      refCode: 'RED-01042',
-      date: '12 Aug 2026',
-      hospital: 'Prem Hospital Blood Bank',
-      location: 'Delhi Road, Meerut',
-      type: 'Whole Blood',
-      volume: '450 mL',
-      units: '1 Unit',
-      verified: true,
-      certId: 'CERT-2026-0812'
-    },
-    {
-      refCode: 'RED-00985',
-      date: '15 May 2026',
-      hospital: 'KMC Hospital & Research Centre',
-      location: 'Baghpat Bypass, Meerut',
-      type: 'Platelets',
-      volume: '350 mL',
-      units: '1 Unit',
-      verified: true,
-      certId: 'CERT-2026-0515'
-    },
-    {
-      refCode: 'RED-00871',
-      date: '04 Feb 2026',
-      hospital: 'Subharti Blood Bank & Trauma Center',
-      location: 'NH-58, Meerut',
-      type: 'Whole Blood',
-      volume: '450 mL',
-      units: '1 Unit',
-      verified: true,
-      certId: 'CERT-2026-0204'
-    },
-    {
-      refCode: 'RED-00760',
-      date: '10 Nov 2025',
-      hospital: 'Anand Hospital Blood Depot',
-      location: 'Garh Road, Meerut',
-      type: 'Whole Blood',
-      volume: '450 mL',
-      units: '1 Unit',
-      verified: true,
-      certId: 'CERT-2025-1110'
-    },
-    {
-      refCode: 'RED-00624',
-      date: '02 Aug 2025',
-      hospital: 'District Hospital Blood Bank',
-      location: 'Civil Lines, Meerut',
-      type: 'Whole Blood',
-      volume: '450 mL',
-      units: '1 Unit',
-      verified: true,
-      certId: 'CERT-2025-0802'
-    },
-    {
-      refCode: 'RED-00511',
-      date: '24 Apr 2025',
-      hospital: 'Prem Hospital Blood Bank',
-      location: 'Delhi Road, Meerut',
-      type: 'Whole Blood',
-      volume: '450 mL',
-      units: '1 Unit',
-      verified: true,
-      certId: 'CERT-2025-0424'
-    }
-  ];
-
   let donorName = 'Ankit Kumar';
-  let donorBloodGroup = 'O-';
+  let donorBloodGroup = 'A+';
+  let donationRecords = [];
 
   function initMyDonations() {
     // 1. Session lookup
@@ -83,11 +16,23 @@
       const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
       if (raw) {
         const session = JSON.parse(raw);
-        donorName = session.name || (session.user && session.user.name) || donorName;
-        donorBloodGroup = session.bloodGroup || (session.user && session.user.bloodGroup) || donorBloodGroup;
+        const user = session.user || session;
+        donorName = user.name || (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : donorName);
+        donorBloodGroup = user.bloodGroup || donorBloodGroup;
+
+        if (Array.isArray(user.donations)) {
+          donationRecords = user.donations;
+        }
       }
     } catch (e) {
       console.warn('Session parse notice:', e);
+    }
+
+    // Check if RED404_STATE has donations
+    if (window.RED404_STATE && Array.isArray(window.RED404_STATE.donorData.donations)) {
+      donationRecords = window.RED404_STATE.donorData.donations;
+      donorName = window.RED404_STATE.donorData.name || donorName;
+      donorBloodGroup = window.RED404_STATE.donorData.bloodGroup || donorBloodGroup;
     }
 
     renderImpactStats();
@@ -100,47 +45,68 @@
     const totalCountEl = document.getElementById('statTotalDonations');
     const livesSavedEl = document.getElementById('statLivesSaved');
     const totalVolumeEl = document.getElementById('statTotalVolume');
+    const tierEl = document.getElementById('statActiveTier');
 
-    const totalDonations = DEFAULT_DONATION_RECORDS.length;
-    const livesSaved = totalDonations * 3; // Standard clinical impact factor
-    const totalVolume = totalDonations * 450; // In mL
+    const totalDonations = donationRecords.length;
+    const livesSaved = totalDonations * 3; // (Total Donations * 3)
+    const totalVolume = totalDonations * 450; // (Total Donations * 450 mL)
 
     if (totalCountEl) totalCountEl.textContent = totalDonations;
     if (livesSavedEl) livesSavedEl.textContent = `${livesSaved} Lives`;
     if (totalVolumeEl) totalVolumeEl.textContent = `${totalVolume.toLocaleString()} mL`;
+
+    if (tierEl) {
+      if (totalDonations >= 10) tierEl.textContent = 'Apex Guardian';
+      else if (totalDonations >= 5) tierEl.textContent = 'Platinum Lifesaver';
+      else if (totalDonations >= 1) tierEl.textContent = 'Bronze Guardian';
+      else tierEl.textContent = 'Novice Rescuer';
+    }
   }
 
   function renderDonationsTable() {
     const tableBody = document.getElementById('donationsTableBody');
     if (!tableBody) return;
 
-    tableBody.innerHTML = DEFAULT_DONATION_RECORDS.map((rec) => {
-      const compClass = rec.type.toLowerCase().includes('platelet') ? 'platelets' : 'whole-blood';
-      const icon = rec.type.toLowerCase().includes('platelet') ? 'fa-vial' : 'fa-droplet';
+    if (!donationRecords || donationRecords.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px 16px; color: #94a3b8;">
+            <i class="fa-solid fa-heart-circle-plus" style="font-size: 2rem; color: #64748b; margin-bottom: 10px; display: block;"></i>
+            <strong style="color: #ffffff; display: block; margin-bottom: 4px;">No Verified Donations Yet</strong>
+            <span>No verified donations yet. Awaiting your first rescue.</span>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tableBody.innerHTML = donationRecords.map((rec) => {
+      const compClass = (rec.type || '').toLowerCase().includes('platelet') ? 'platelets' : 'whole-blood';
+      const icon = (rec.type || '').toLowerCase().includes('platelet') ? 'fa-vial' : 'fa-droplet';
 
       return `
         <tr>
           <td>
-            <span class="ref-code">${rec.refCode}</span>
+            <span class="ref-code">${rec.refCode || 'RED-00000'}</span>
           </td>
           <td>
-            <strong style="color: #ffffff;">${rec.date}</strong>
+            <strong style="color: #ffffff;">${rec.date || 'N/A'}</strong>
           </td>
           <td>
             <div class="hosp-info-cell">
-              <span class="hosp-info-name">${rec.hospital}</span>
-              <span class="hosp-info-loc"><i class="fa-solid fa-location-dot" style="font-size:0.7rem;margin-right:4px;"></i>${rec.location}</span>
+              <span class="hosp-info-name">${rec.hospital || 'Clinical Blood Depot'}</span>
+              <span class="hosp-info-loc"><i class="fa-solid fa-location-dot" style="font-size:0.7rem;margin-right:4px;"></i>${rec.location || 'Meerut'}</span>
             </div>
           </td>
           <td>
             <span class="badge-component ${compClass}">
               <i class="fa-solid ${icon}"></i>
-              ${rec.type}
+              ${rec.type || 'Whole Blood'}
             </span>
           </td>
           <td>
-            <strong style="color: #ffffff;">${rec.volume}</strong>
-            <div style="font-size: 0.74rem; color: #64748b;">(${rec.units})</div>
+            <strong style="color: #ffffff;">${rec.volume || '450 mL'}</strong>
+            <div style="font-size: 0.74rem; color: #64748b;">(${rec.units || '1 Unit'})</div>
           </td>
           <td>
             <span class="badge-status-verified">
@@ -149,7 +115,7 @@
             </span>
           </td>
           <td style="text-align: right;">
-            <button class="btn-cert-download" onclick="window.openCertificate('${rec.certId}', '${rec.refCode}', '${rec.date}', '${rec.hospital}', '${rec.type}')">
+            <button class="btn-cert-download" onclick="window.openCertificate('${rec.certId || 'CERT-00'}', '${rec.refCode || 'RED-00'}', '${rec.date || ''}', '${rec.hospital || ''}', '${rec.type || ''}')">
               <i class="fa-solid fa-award"></i>
               <span>Certificate</span>
             </button>
@@ -164,13 +130,21 @@
     const modal = document.getElementById('certModalBackdrop');
     if (!modal) return;
 
-    document.getElementById('modalCertDonorName').textContent = donorName;
-    document.getElementById('modalCertBloodGroup').textContent = donorBloodGroup;
-    document.getElementById('modalCertRefCode').textContent = refCode;
-    document.getElementById('modalCertDate').textContent = date;
-    document.getElementById('modalCertHospital').textContent = hospital;
-    document.getElementById('modalCertType').textContent = type;
-    document.getElementById('modalCertId').textContent = certId;
+    const modalName = document.getElementById('modalCertDonorName');
+    const modalBlood = document.getElementById('modalCertBloodGroup');
+    const modalRef = document.getElementById('modalCertRefCode');
+    const modalDate = document.getElementById('modalCertDate');
+    const modalHosp = document.getElementById('modalCertHospital');
+    const modalType = document.getElementById('modalCertType');
+    const modalId = document.getElementById('modalCertId');
+
+    if (modalName) modalName.textContent = donorName;
+    if (modalBlood) modalBlood.textContent = donorBloodGroup;
+    if (modalRef) modalRef.textContent = refCode;
+    if (modalDate) modalDate.textContent = date;
+    if (modalHosp) modalHosp.textContent = hospital;
+    if (modalType) modalType.textContent = type;
+    if (modalId) modalId.textContent = certId;
 
     modal.classList.add('show');
   };
@@ -202,16 +176,25 @@
     if (!exportBtn) return;
 
     exportBtn.addEventListener('click', () => {
+      if (donationRecords.length === 0) {
+        if (typeof showToast === 'function') {
+          showToast('No donation records available to export.', 'info');
+        } else {
+          alert('No donation records available to export.');
+        }
+        return;
+      }
+
       const headers = ['Reference Code', 'Date', 'Hospital', 'Type', 'Volume', 'Units', 'Status', 'Certificate ID'];
-      const rows = DEFAULT_DONATION_RECORDS.map(r => [
-        r.refCode,
-        `"${r.date}"`,
-        `"${r.hospital}"`,
-        `"${r.type}"`,
-        `"${r.volume}"`,
-        `"${r.units}"`,
+      const rows = donationRecords.map(r => [
+        r.refCode || 'RED-00',
+        `"${r.date || ''}"`,
+        `"${r.hospital || ''}"`,
+        `"${r.type || ''}"`,
+        `"${r.volume || ''}"`,
+        `"${r.units || ''}"`,
         'VERIFIED',
-        r.certId
+        r.certId || ''
       ]);
 
       const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');

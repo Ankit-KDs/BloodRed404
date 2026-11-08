@@ -111,6 +111,31 @@
   filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6));
 }
 
+/* Active Alerts / Radar Tab Highlight */
+.command-tab-link.alert-radar-tab {
+  position: relative;
+}
+
+.command-tab-link.alert-radar-tab i {
+  color: #f87171;
+}
+
+.tab-radar-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  animation: radarDotPulse 1.8s infinite;
+  display: inline-block;
+  margin-left: 2px;
+}
+
+@keyframes radarDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.75); }
+}
+
 /* RIGHT: WIDGETS */
 .command-nav-right {
   display: flex;
@@ -354,3 +379,4 @@
     display: none;
   }
 }
+

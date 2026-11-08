@@ -19,25 +19,26 @@
 
   <!-- Core Dashboard CSS -->
   <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/command-nav.css" />
   <link rel="stylesheet" href="css/donor-alerts.css">
 
   <style>
     .hub-layout {
-      display: grid;
-      grid-template-columns: 260px 1fr 380px !important;
-      flex: 1;
-      min-height: calc(100vh - 74px);
+      display: grid !important;
+      grid-template-columns: 1fr 380px !important;
+      gap: 20px !important;
+      max-width: 1440px !important;
+      margin: 0 auto !important;
+      padding: 10px 24px 60px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      min-height: calc(100vh - 120px) !important;
     }
 
-    @media (max-width: 1360px) {
+    @media (max-width: 1080px) {
       .hub-layout {
-        grid-template-columns: 260px 1fr 360px !important;
-      }
-    }
-
-    @media (max-width: 1200px) {
-      .hub-layout {
-        grid-template-columns: 260px 1fr 340px !important;
+        grid-template-columns: 1fr !important;
+        padding: 10px 14px 40px !important;
       }
     }
     .nav-map-container {
@@ -199,86 +200,95 @@
 
 <body class="donor-hub-body">
 
-  <!-- TOP HEADER -->
-  <header class="hub-header">
-    <div class="hub-header-left">
-      <button class="hub-notif-btn hub-mobile-menu-btn" id="mobileMenuBtn" style="display:none;"
-        aria-label="Toggle menu">
-        <i class="fas fa-bars"></i>
-      </button>
-
-      <a href="index.html" class="hub-brand" title="RED404 Emergency Blood Network">
-        <div class="hub-brand-icon">
-          <i class="fas fa-tint"></i>
-        </div>
-        <span class="hub-brand-name">RED404</span>
-      </a>
-
-      <div class="hub-title-block">
-        <h1 class="hub-main-title">
-          Donor Dashboard <span>• Turn-by-Turn Route Navigation</span>
-        </h1>
-        <div class="hub-user-greeting">
-          Welcome, <b id="donorGreetingName">Ankit Kumar</b> • <span id="destHospitalSub" style="color:var(--text-secondary);font-size:0.8rem;font-weight:normal;">Checking active mission...</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="hub-header-right">
-      <div class="gps-sync-capsule" id="routeGpsCapsule">
-        <i class="fas fa-satellite-dish gps-icon-spin"></i>
-        <div class="gps-meta">
-          <div class="gps-title-row">
-            <span>LIVE GPS LOCK:</span>
-            <span class="gps-pulse-dot"></span>
+  <!-- ==================== FLOATING GLASS COMMAND PILL TOP NAVIGATION ==================== -->
+  <header class="command-nav-wrapper">
+    <div class="command-nav-pill">
+      
+      <!-- LEFT: LOGO WITH RED GLOW -->
+      <div class="command-nav-left">
+        <a href="dashboard.html" class="command-brand" title="RED404 Blood Rescue Command Network">
+          <div class="brand-icon-drop">
+            <i class="fa-solid fa-droplet"></i>
           </div>
-          <div class="gps-coords-txt" id="routeGpsText">ACQUIRING GPS...</div>
-        </div>
+          <span class="brand-text">RED<span>404</span></span>
+        </a>
       </div>
+
+      <!-- CENTER: HORIZONTAL COMMAND TABS -->
+      <nav class="command-nav-center">
+        <a href="dashboard.html" class="command-tab-link" title="Command Center Dashboard">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Live Dashboard</span>
+        </a>
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab active" title="Real-time Incoming SOS & Live Proximity Radar">
+          <i class="fa-solid fa-tower-broadcast"></i>
+          <span>Active Alerts / Live Radar</span>
+          <span class="tab-radar-pulse"></span>
+        </a>
+        <a href="donor-profile.html" class="command-tab-link" title="Donor Profile & Vitals">
+          <i class="fa-solid fa-heart-pulse"></i>
+          <span>Health Profile</span>
+        </a>
+        <a href="donor-profile.html#milestonesCard" class="command-tab-link" title="Gamified 3D Milestones & Badges">
+          <i class="fa-solid fa-award"></i>
+          <span>Impact & Milestones</span>
+        </a>
+        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Donation History</span>
+        </a>
+      </nav>
+
+      <!-- RIGHT: WIDGETS (GPS, NOTIFICATIONS, AVATAR DROPDOWN) -->
+      <div class="command-nav-right">
+        
+        <!-- Live GPS Indicator -->
+        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location">
+          <span class="gps-dot-pulse"></span>
+          <span>Live GPS: Connected</span>
+        </div>
+
+        <!-- Notification Bell -->
+        <button class="nav-icon-btn" id="navNotifBtn" title="Emergency Broadcasts" aria-label="Notifications">
+          <i class="fa-solid fa-bell"></i>
+          <span class="nav-badge-dot"></span>
+        </button>
+
+        <!-- User Profile Avatar with Online Dot -->
+        <div class="user-avatar-wrap" id="userProfileTrigger" title="Donor Profile Settings" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+          <span id="userAvatarInitials">AK</span>
+          <span class="avatar-online-dot"></span>
+
+          <!-- SLEEK GLASSMORPHISM USER DROPDOWN COMPONENT -->
+          <div class="user-dropdown-menu" id="userProfileDropdown">
+            <div class="dropdown-user-header">
+              <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
+              <div class="duh-email" id="dropdownUserEmail">Signed in as ankit@red404.in</div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="donor-profile.html" class="dropdown-item">
+              <i class="fa-solid fa-user-gear"></i>
+              <span>Account Settings</span>
+            </a>
+            <button class="dropdown-item" id="privacySettingsBtn">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Privacy & Security</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout-btn" id="dropdownLogoutBtn">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </header>
 
   <!-- MAIN NAVIGATION LAYOUT -->
   <div class="hub-layout">
-
-    <!-- LEFT SIDEBAR -->
-    <aside class="hub-sidebar" id="hubSidebar">
-      <nav class="hub-nav-menu">
-        <a href="donor-alerts.html" class="hub-nav-item" title="Real-time incoming SOS requests">
-          <i class="fas fa-bell"></i>
-          <span>Active Alerts</span>
-        </a>
-        <a href="donor-route.html" class="hub-nav-item active" title="Turn-by-turn emergency navigation">
-          <i class="fas fa-route"></i>
-          <span>Route Navigation</span>
-        </a>
-        <a href="donor-profile.html" class="hub-nav-item" title="Medical eligibility & credentials">
-          <i class="fas fa-heartbeat"></i>
-          <span>Health Profile</span>
-        </a>
-        <a href="donor-profile.html#pastDonationHistoryCard" class="hub-nav-item" title="Past donation records & impact">
-          <i class="fas fa-history"></i>
-          <span>Donation History</span>
-        </a>
-        <a href="donor-dashboard.html#settings" class="hub-nav-item" title="Preferences & notification radius">
-          <i class="fas fa-cog"></i>
-          <span>Settings</span>
-        </a>
-      </nav>
-
-      <div class="hub-sidebar-bottom">
-        <div class="hub-engine-status-card">
-          <div class="hes-row" id="sidebarModeRow">
-            <span class="hes-dot"></span>
-            <span id="sidebarModeText">Donor Status: <b>ACTIVE</b></span>
-          </div>
-          <div class="hes-sub" id="sidebarModeSub">
-            <i class="fas fa-shield-virus" style="color:var(--green-neon);margin-right:3px;"></i>
-            Radar Engine: ONLINE • 3 Zones
-          </div>
-        </div>
-      </div>
-    </aside>
 
     <!-- CENTER NAVIGATION MAP -->
     <main class="nav-map-container">
@@ -373,6 +383,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/common.js"></script>
+  <script src="js/command-nav.js"></script>
 
   <script>
     let map = null;

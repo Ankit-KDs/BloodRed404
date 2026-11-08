@@ -46,6 +46,11 @@
           <i class="fa-solid fa-gauge-high"></i>
           <span>Live Dashboard</span>
         </a>
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Real-time Incoming SOS & Live Proximity Radar">
+          <i class="fa-solid fa-tower-broadcast"></i>
+          <span>Active Alerts / Live Radar</span>
+          <span class="tab-radar-pulse"></span>
+        </a>
         <a href="donor-profile.html" class="command-tab-link" title="Donor Profile & Vitals">
           <i class="fa-solid fa-heart-pulse"></i>
           <span>Health Profile</span>
@@ -120,7 +125,7 @@
           <i class="fa-solid fa-droplet"></i>
         </div>
         <div class="stat-meta">
-          <span class="stat-value" id="statTotalDonations">6</span>
+          <span class="stat-value" id="statTotalDonations">0</span>
           <span class="stat-label">Total Verified Donations</span>
         </div>
       </div>
@@ -131,7 +136,7 @@
           <i class="fa-solid fa-heart-pulse"></i>
         </div>
         <div class="stat-meta">
-          <span class="stat-value" id="statLivesSaved">18 Lives</span>
+          <span class="stat-value" id="statLivesSaved">0 Lives</span>
           <span class="stat-label">Estimated Lives Saved</span>
         </div>
       </div>
@@ -142,7 +147,7 @@
           <i class="fa-solid fa-flask-vial"></i>
         </div>
         <div class="stat-meta">
-          <span class="stat-value" id="statTotalVolume">2,700 mL</span>
+          <span class="stat-value" id="statTotalVolume">0 mL</span>
           <span class="stat-label">Total Volume Restocked</span>
         </div>
       </div>
@@ -153,7 +158,7 @@
           <i class="fa-solid fa-award"></i>
         </div>
         <div class="stat-meta">
-          <span class="stat-value" style="font-size: 1.15rem;">Platinum</span>
+          <span class="stat-value" id="statActiveTier" style="font-size: 1.15rem;">Novice Rescuer</span>
           <span class="stat-label">Rescue Tier Honor</span>
         </div>
       </div>
@@ -195,7 +200,13 @@
             </tr>
           </thead>
           <tbody id="donationsTableBody">
-            <!-- Dynamically populated by my-donations.js -->
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px 16px; color: #94a3b8;">
+                <i class="fa-solid fa-heart-circle-plus" style="font-size: 2rem; color: #64748b; margin-bottom: 10px; display: block;"></i>
+                <strong style="color: #ffffff; display: block; margin-bottom: 4px;">No Verified Donations Yet</strong>
+                <span>No verified donations yet. Awaiting your first rescue.</span>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -269,6 +280,8 @@
   <!-- Scripts -->
   <script src="js/common.js"></script>
   <script src="js/command-nav.js"></script>
+  <script src="js/dashboard-logic.js"></script>
   <script src="js/my-donations.js"></script>
 </body>
 </html>
+

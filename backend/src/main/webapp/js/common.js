@@ -1104,7 +1104,7 @@ const Auth = {
     }
   },
 
-  redirectIfLoggedIn(redirectUrl = 'donor-dashboard.html') {
+  redirectIfLoggedIn(redirectUrl = 'dashboard.html') {
     if (this.isLoggedIn()) {
       window.location.href = redirectUrl;
     }
