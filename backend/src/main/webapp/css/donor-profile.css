@@ -390,6 +390,7 @@ body.donor-profile-body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+  align-items: start !important;
 }
 
 /* ==================== COMMON CARD STYLING ==================== */
@@ -2097,42 +2098,103 @@ body.donor-profile-body {
 }
 
 
-/* ==================== RESPONSIVE DNA TRACKER & TELEMETRY PANEL ==================== */
+
+/* ==================== 1. PREVENT PROFILE CARDS VERTICAL STRETCHING ==================== */
+.profile-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1.5rem !important;
+  align-items: start !important; /* Prevents cards from stretching vertically */
+}
+
+@media (max-width: 1200px) {
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+    align-items: start !important;
+  }
+}
+
+.profile-card {
+  align-self: start !important;
+  height: fit-content !important;
+}
+
 #eligibilityTrackerCard.profile-card {
   overflow: visible !important;
 }
 
+/* ==================== 2. STRICT SIDE-BY-SIDE CAPSULE & TELEMETRY LAYOUT ==================== */
 .dna-tracker-layout {
   display: flex !important;
   flex-direction: row !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important; /* FORCED single horizontal row: never drops below */
   align-items: center !important;
-  gap: 1.75rem !important;
+  justify-content: flex-start !important;
+  gap: 1.25rem !important;
   width: 100% !important;
   min-width: 0 !important;
+  overflow-x: auto !important; /* Subtle scroll on extreme zoom instead of dropping text */
+  overflow-y: hidden !important;
   box-sizing: border-box !important;
+  padding-bottom: 4px !important;
 }
 
+/* Subtle scrollbar if extreme zoom occurs */
+.dna-tracker-layout::-webkit-scrollbar {
+  height: 4px !important;
+}
+.dna-tracker-layout::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.25) !important;
+  border-radius: 4px !important;
+}
+
+/* 3. Lock Capsule Width: Neither grows nor shrinks */
 .dna-visual-col {
   flex: 0 0 auto !important;
+  width: max-content !important;
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
   min-width: 0 !important;
-  padding: 0.5rem 0 !important;
+  flex-shrink: 0 !important;
+  padding: 0.25rem 0 !important;
 }
 
 .dna-pillar-wrapper {
   position: relative !important;
   display: flex !important;
   align-items: center !important;
-  gap: 14px !important;
+  gap: 10px !important;
   flex-shrink: 0 !important;
 }
 
-/* Flexible Text Panel (Telemetry Readout) */
+.dna-telemetry-ruler {
+  position: relative !important;
+  width: 80px !important;
+  height: 300px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  pointer-events: none !important;
+  flex-shrink: 0 !important;
+}
+
+.dna-pillar-cylinder {
+  width: 140px !important;
+  height: 300px !important;
+  position: relative !important;
+  border-radius: 40px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.15) !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  flex-shrink: 0 !important;
+}
+
+/* 4. Flexible Text Panel: Takes remaining space (flex: 1 1 0%) and allows shrink (min-width: 0) */
 .capsule-telemetry-panel {
-  flex: 1 1 320px !important;
+  flex: 1 1 0% !important;
   min-width: 0 !important;
   width: auto !important;
   max-width: 100% !important;
@@ -2141,21 +2203,21 @@ body.donor-profile-body {
   white-space: normal !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 12px !important;
+  gap: 10px !important;
   color: #94a3b8 !important;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-  padding-left: 0.5rem !important;
+  padding-left: 0.25rem !important;
   box-sizing: border-box !important;
 }
 
-/* Fluid Typography */
+/* 5. Aggressive Fluid Typography (clamp) */
 .telemetry-header {
   min-width: 0 !important;
   overflow-wrap: break-word !important;
 }
 
 .telemetry-header h1 {
-  font-size: clamp(1.75rem, 3.8vw, 2.5rem) !important;
+  font-size: clamp(1.35rem, 2.3vw, 2.2rem) !important;
   font-weight: 800 !important;
   color: #f8fafc !important;
   line-height: 1.1 !important;
@@ -2166,9 +2228,9 @@ body.donor-profile-body {
 }
 
 .telemetry-header h3 {
-  font-size: clamp(0.82rem, 1.8vw, 1rem) !important;
+  font-size: clamp(0.72rem, 1.1vw, 0.95rem) !important;
   color: #64748b !important;
-  margin: 4px 0 0 !important;
+  margin: 3px 0 0 !important;
   letter-spacing: 1px !important;
   font-weight: 700 !important;
   overflow-wrap: break-word !important;
@@ -2180,7 +2242,7 @@ body.donor-profile-body {
 }
 
 .telemetry-percentage-box h2 {
-  font-size: clamp(1.2rem, 2.8vw, 1.8rem) !important;
+  font-size: clamp(1.05rem, 1.8vw, 1.55rem) !important;
   font-weight: 700 !important;
   color: #cbd5e1 !important;
   margin: 0 !important;
@@ -2190,30 +2252,30 @@ body.donor-profile-body {
 }
 
 .telemetry-caption {
-  font-size: 0.75rem !important;
+  font-size: clamp(0.68rem, 0.95vw, 0.75rem) !important;
   color: #64748b !important;
   white-space: normal !important;
   overflow-wrap: break-word !important;
   display: block !important;
-  line-height: 1.4 !important;
+  line-height: 1.35 !important;
 }
 
-/* Dynamic Pill Status Badge (Text Wrapping) */
+/* Status Pill Wrapping */
 .status-badge {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  padding: 6px 14px !important;
+  gap: 6px !important;
+  padding: 5px 12px !important;
   border-radius: 9999px !important;
-  font-size: 0.75rem !important;
+  font-size: clamp(0.68rem, 0.95vw, 0.74rem) !important;
   font-weight: bold !important;
   width: fit-content !important;
   max-width: 100% !important;
   white-space: normal !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
-  line-height: 1.4 !important;
-  margin-top: 6px !important;
+  line-height: 1.35 !important;
+  margin-top: 4px !important;
   transition: all 0.3s ease !important;
   box-sizing: border-box !important;
 }
@@ -2228,38 +2290,26 @@ body.donor-profile-body {
   overflow-wrap: break-word !important;
 }
 
-.status-badge.cooldown-active {
-  background: rgba(245, 158, 11, 0.08) !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-  color: #fbbf24 !important;
-}
-
-.status-badge.eligible-ready {
-  background: rgba(16, 185, 129, 0.08) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
-  color: #34d399 !important;
-}
-
-/* Checklist Items (Wrapping text without breaking icon alignment) */
+/* Checklist Items Wrapping */
 .telemetry-checklist {
   list-style: none !important;
   padding: 0 !important;
-  margin: 8px 0 !important;
+  margin: 6px 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 10px !important;
-  font-size: 0.85rem !important;
+  gap: 8px !important;
+  font-size: clamp(0.72rem, 1.05vw, 0.82rem) !important;
   width: 100% !important;
 }
 
 .telemetry-checklist li {
   display: flex !important;
   align-items: flex-start !important;
-  gap: 10px !important;
+  gap: 8px !important;
   white-space: normal !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
-  line-height: 1.4 !important;
+  line-height: 1.35 !important;
 }
 
 .telemetry-checklist li i {
@@ -2274,61 +2324,19 @@ body.donor-profile-body {
   min-width: 0 !important;
 }
 
-.telemetry-checklist i.fa-hourglass { color: #f59e0b !important; }
-.telemetry-checklist i.fa-check { color: #10b981 !important; }
-.telemetry-checklist i.fa-circle-check { color: #10b981 !important; }
-
 /* Calendar Unlock Info */
 .telemetry-calendar {
-  font-size: 0.85rem !important;
+  font-size: clamp(0.72rem, 1.05vw, 0.82rem) !important;
   color: #64748b !important;
   margin-top: 4px !important;
   white-space: normal !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
-  line-height: 1.4 !important;
+  line-height: 1.35 !important;
 }
 
 .telemetry-calendar strong {
   color: #cbd5e1 !important;
   margin-left: 4px !important;
   word-break: break-word !important;
-}
-
-/* Mobile & High-Zoom Stacking (< 768px) */
-@media (max-width: 768px) {
-  .dna-tracker-layout {
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-    gap: 1.5rem !important;
-  }
-
-  .dna-visual-col {
-    width: 100% !important;
-    justify-content: center !important;
-  }
-
-  .capsule-telemetry-panel {
-    width: 100% !important;
-    align-items: center !important;
-    text-align: center !important;
-    padding-left: 0 !important;
-  }
-
-  .status-badge {
-    justify-content: center !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-
-  .telemetry-checklist {
-    align-items: center !important;
-  }
-
-  .telemetry-checklist li {
-    justify-content: center !important;
-    text-align: left !important;
-    max-width: 320px !important;
-  }
 }
