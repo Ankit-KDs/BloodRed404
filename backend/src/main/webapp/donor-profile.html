@@ -15,6 +15,7 @@
 
   <!-- Core Profile CSS -->
   <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/command-nav.css" />
   <link rel="stylesheet" href="css/donor-profile.css?v=20261108_dynamic_badges_v7">
       <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
@@ -770,101 +771,124 @@
   font-size: 0.8rem !important;
   color: #6b7280 !important;
 }
+
+/* ==================== UNIFIED COMMAND WORKSPACE LAYOUT ==================== */
+.profile-workspace-unified,
+.profile-workspace {
+  max-width: 1340px !important;
+  margin: 0 auto !important;
+  padding: 10px 24px 60px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-y: visible !important;
+  max-height: none !important;
+}
+
+.profile-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+
+@media (max-width: 1024px) {
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .profile-workspace-unified,
+  .profile-workspace {
+    padding: 10px 14px 40px !important;
+  }
+}
   </style>
 </head>
 <body class="donor-profile-body">
 
-  <!-- TOP HEADER -->
-  <header class="hub-header">
-    <div class="hub-header-left">
-      <button class="hub-notif-btn hub-mobile-menu-btn" id="mobileMenuBtn" style="display:none;"
-        aria-label="Toggle menu">
-        <i class="fas fa-bars"></i>
-      </button>
-
-      <a href="index.html" class="hub-brand" title="RED404 Emergency Blood Network">
-        <div class="hub-brand-icon">
-          <i class="fas fa-tint"></i>
-        </div>
-        <span class="hub-brand-name">RED404</span>
-      </a>
-
-      <div class="hub-title-block">
-        <h1 class="hub-main-title">
-          Donor Dashboard <span>• Health Profile & Medical Eligibility</span>
-        </h1>
-        <div class="hub-user-greeting">
-          Welcome, <b id="donorGreetingName">Ankit Kumar</b>
-        </div>
+  <!-- ==================== FLOATING GLASS COMMAND PILL TOP NAVIGATION ==================== -->
+  <header class="command-nav-wrapper">
+    <div class="command-nav-pill">
+      
+      <!-- LEFT: LOGO WITH RED GLOW -->
+      <div class="command-nav-left">
+        <a href="dashboard.html" class="command-brand" title="RED404 Blood Rescue Command Network">
+          <div class="brand-icon-drop">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+          <span class="brand-text">RED<span>404</span></span>
+        </a>
       </div>
-    </div>
 
-    <div class="hub-header-right">
-      <!-- LIVE GPS SYNC CAPSULE BUTTON -->
-      <button class="gps-sync-capsule" id="gpsSyncBtn" title="Click to refresh browser GPS location via Geolocation API">
-        <div class="gps-pulse-dot"></div>
-        <div class="gps-title-row">
-          <span>LIVE GPS SYNC:</span>
-        </div>
-        <div class="gps-coords-txt" id="gpsCoordsText">CONNECTED (28.3486° N, 79.5619° E)</div>
-      </button>
-
-      <!-- Search & Notification Buttons -->
-      <button class="hub-icon-btn" title="Search Medical Records" aria-label="Search">
-        <i class="fas fa-search"></i>
-      </button>
-
-      <button class="hub-icon-btn" title="Emergency Broadcasts" aria-label="Notifications">
-        <i class="fas fa-bell"></i>
-      </button>
-    </div>
-  </header>
-
-  <!-- MAIN DASHBOARD LAYOUT -->
-  <div class="hub-layout">
-
-    <!-- LEFT SIDEBAR -->
-    <aside class="hub-sidebar" id="hubSidebar">
-      <nav class="hub-nav-menu">
-        <a href="donor-alerts.html" class="hub-nav-item" title="Real-time incoming SOS requests">
-          <i class="fas fa-bell"></i>
-          <span>Active Alerts</span>
+      <!-- CENTER: HORIZONTAL COMMAND TABS -->
+      <nav class="command-nav-center">
+        <a href="dashboard.html" class="command-tab-link" title="Command Center Dashboard">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Live Dashboard</span>
         </a>
-        <a href="donor-route.html" class="hub-nav-item" title="Turn-by-turn emergency navigation">
-          <i class="fas fa-route"></i>
-          <span>Route Navigation</span>
-        </a>
-        <a href="donor-profile.html" class="hub-nav-item active" title="Medical eligibility & credentials">
-          <i class="fas fa-heartbeat"></i>
+        <a href="donor-profile.html" class="command-tab-link active" title="Donor Profile & Vitals">
+          <i class="fa-solid fa-heart-pulse"></i>
           <span>Health Profile</span>
         </a>
-        <a href="donor-profile.html#pastDonationHistoryCard" class="hub-nav-item" title="Past donation records & impact">
-          <i class="fas fa-history"></i>
-          <span>Donation History</span>
+        <a href="donor-profile.html#milestonesCard" class="command-tab-link" title="Gamified 3D Milestones & Badges">
+          <i class="fa-solid fa-award"></i>
+          <span>Impact & Milestones</span>
         </a>
-        <a href="donor-dashboard.html#settings" class="hub-nav-item" title="Preferences & notification radius">
-          <i class="fas fa-cog"></i>
-          <span>Settings</span>
+        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Donation History</span>
         </a>
       </nav>
 
-      <div class="hub-sidebar-bottom">
-        <div class="hub-engine-status-card">
-          <div class="hes-row" id="sidebarDonorStatus">
-            <span class="hes-dot"></span>
-            <span>Donor Status: <b>ACTIVE</b></span>
-          </div>
-          <div class="hes-sub" id="sidebarEngineSub">
-            <i class="fas fa-shield-virus" style="color:var(--green-neon);margin-right:3px;"></i>
-            Radar Engine: ONLINE • 3 Zones
+      <!-- RIGHT: WIDGETS (GPS, NOTIFICATIONS, AVATAR DROPDOWN) -->
+      <div class="command-nav-right">
+        
+        <!-- Live GPS Indicator -->
+        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location">
+          <span class="gps-dot-pulse"></span>
+          <span>Live GPS: Connected</span>
+        </div>
+
+        <!-- Notification Bell -->
+        <button class="nav-icon-btn" id="navNotifBtn" title="Emergency Broadcasts" aria-label="Notifications">
+          <i class="fa-solid fa-bell"></i>
+          <span class="nav-badge-dot"></span>
+        </button>
+
+        <!-- User Profile Avatar with Online Dot -->
+        <div class="user-avatar-wrap" id="userProfileTrigger" title="Donor Profile Settings" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+          <span id="userAvatarInitials">AK</span>
+          <span class="avatar-online-dot"></span>
+
+          <!-- SLEEK GLASSMORPHISM USER DROPDOWN COMPONENT -->
+          <div class="user-dropdown-menu" id="userProfileDropdown">
+            <div class="dropdown-user-header">
+              <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
+              <div class="duh-email" id="dropdownUserEmail">Signed in as ankit@red404.in</div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="donor-profile.html" class="dropdown-item">
+              <i class="fa-solid fa-user-gear"></i>
+              <span>Account Settings</span>
+            </a>
+            <button class="dropdown-item" id="privacySettingsBtn">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Privacy & Security</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout-btn" id="dropdownLogoutBtn">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
           </div>
         </div>
-      </div>
-    </aside>
 
-    <!-- CENTER 2x2 HEALTH PROFILE WORKSPACE -->
-    <main class="profile-workspace">
-      <div class="profile-grid">
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN 2x2 HEALTH PROFILE WORKSPACE ==================== -->
+  <main class="profile-workspace-unified">
+    <div class="profile-grid">
 
         <!-- CARD 1: DONOR PROFILE & VITAL HEALTH STATS (Hospital-Fed + AI Check) -->
         <section class="profile-card" id="donorVitalsCard">
@@ -1723,15 +1747,11 @@
         </section>
 
       </div>
-    </main>
-
-  </div>
-
-  <!-- Mobile Sidebar Overlay Backdrop -->
-  <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1900;backdrop-filter:blur(5px);"></div>
+  </main>
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
+  <script src="js/command-nav.js"></script>
   <script src="js/donor-profile.js?v=20261108_dynamic_badges_v7"></script>
 </body>
 </html>
