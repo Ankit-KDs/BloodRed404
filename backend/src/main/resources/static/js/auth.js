@@ -455,6 +455,14 @@ function initHospitalRegisterForm() {
       if (result.data && result.data.hospital) {
         Auth.saveSession(result.data.hospital);
         Store.set('hospitalToken', result.data.token);
+        try {
+          const list = JSON.parse(localStorage.getItem('red404_registered_hospitals') || '[]');
+          const hosp = result.data.hospital;
+          if (!list.some(h => (h.id && h.id === hosp.id) || (h.email && h.email === hosp.email))) {
+            list.push(hosp);
+            localStorage.setItem('red404_registered_hospitals', JSON.stringify(list));
+          }
+        } catch (_) {}
       }
       form.reset();
       const modal = document.getElementById('hospSuccessModal');

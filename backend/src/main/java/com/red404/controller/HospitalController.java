@@ -27,6 +27,31 @@ public class HospitalController {
 
     // ======================== GET ========================
 
+    @GetMapping({"/directory", "/public-list", "/search", "/list"})
+    public ResponseEntity<ApiResponse> getRegisteredHospitals(
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String district) {
+        try {
+            List<Map<String, Object>> allHospitals = hospitalDao.listAll();
+            List<Map<String, Object>> filtered = new ArrayList<>();
+            for (Map<String, Object> h : allHospitals) {
+                String hState = (String) h.get("state");
+                String hCity = (String) h.get("city");
+                boolean matchesState = (state == null || state.isBlank() || (hState != null && hState.equalsIgnoreCase(state.trim())));
+                String targetDistrict = (district != null && !district.isBlank()) ? district : city;
+                boolean matchesDistrict = (targetDistrict == null || targetDistrict.isBlank() || targetDistrict.equalsIgnoreCase("ALL") || 
+                        (hCity != null && (hCity.equalsIgnoreCase(targetDistrict.trim()) || hCity.toLowerCase().contains(targetDistrict.toLowerCase()))));
+                if (matchesState && matchesDistrict) {
+                    filtered.add(h);
+                }
+            }
+            return ok("Registered hospitals loaded", filtered);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse> getProfile(HttpServletRequest request) {
         try {

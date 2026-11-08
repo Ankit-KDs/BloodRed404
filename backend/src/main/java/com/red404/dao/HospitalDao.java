@@ -7,7 +7,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HospitalDao {
@@ -83,6 +85,19 @@ public class HospitalDao {
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapHospital(rs) : null;
             }
+        }
+    }
+
+    public List<Map<String, Object>> listAll() throws SQLException {
+        String sql = "SELECT * FROM hospitals ORDER BY hospital_name ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            List<Map<String, Object>> list = new ArrayList<>();
+            while (rs.next()) {
+                list.add(mapHospital(rs));
+            }
+            return list;
         }
     }
 
