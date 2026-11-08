@@ -137,15 +137,15 @@
 
       <div class="hero-stats-group">
         <div class="hero-stat-pill">
-          <span class="hsp-val green" id="totalUnitsCount">280+ Units</span>
+          <span class="hsp-val green" id="total-cataloged-units">0</span>
           <span class="hsp-lbl">Cataloged Reserve</span>
         </div>
         <div class="hero-stat-pill">
-          <span class="hsp-val">14 Nodes</span>
+          <span class="hsp-val" id="total-reporting-nodes">0</span>
           <span class="hsp-lbl">Reporting Hospitals</span>
         </div>
         <div class="hero-stat-pill">
-          <span class="hsp-val red">3 Critical</span>
+          <span class="hsp-val red" id="total-critical-nodes">0</span>
           <span class="hsp-lbl">Rare Phenotypes</span>
         </div>
       </div>
@@ -163,11 +163,7 @@
           </label>
           <div class="filter-select-wrapper">
             <select class="filter-select" id="filterState">
-              <option value="Uttar Pradesh" selected>Uttar Pradesh</option>
-              <option value="Delhi NCR">Delhi NCR</option>
-              <option value="Haryana">Haryana</option>
-              <option value="Punjab">Punjab</option>
-              <option value="ALL">All States</option>
+              <option value="">Select State</option>
             </select>
             <i class="fa-solid fa-chevron-down filter-select-icon"></i>
           </div>
@@ -181,11 +177,7 @@
           </label>
           <div class="filter-select-wrapper">
             <select class="filter-select" id="filterDistrict">
-              <option value="Meerut" selected>Meerut (Current Zone)</option>
-              <option value="Ghaziabad">Ghaziabad</option>
-              <option value="Noida">Gautam Buddha Nagar (Noida)</option>
-              <option value="Lucknow">Lucknow</option>
-              <option value="ALL">All Districts</option>
+              <option value="">Select District</option>
             </select>
             <i class="fa-solid fa-chevron-down filter-select-icon"></i>
           </div>
@@ -242,7 +234,7 @@
       <!-- Active Filter Strip & Quick Reset -->
       <div class="active-filter-strip">
         <span class="active-filter-text" id="activeFilterSummary">
-          Showing results in <strong>Meerut, Uttar Pradesh</strong> • All Blood Types
+          Select a <strong>State</strong> and <strong>District</strong> to view live hospital stock.
         </span>
         <button class="active-filter-reset" id="filterResetBtn">
           <i class="fa-solid fa-rotate-left"></i>
@@ -256,14 +248,12 @@
       <div class="results-header-row">
         <h2 class="results-count-title">
           <span>Reporting Clinical Facilities</span>
-          <span class="results-count-badge" id="resultsCountNumber">4 Facilities Verified</span>
+          <span class="results-count-badge" id="resultsCountNumber">0 Facilities Found</span>
         </h2>
       </div>
 
-      <!-- Dynamic Hospital Cards Grid -->
-      <div class="hospital-grid" id="hospitalResultsGrid" style="margin-top: 14px;">
-        <!-- Dynamically rendered by blood-availability.js -->
-      </div>
+      <!-- Dynamic Hospital Cards Grid (Pure Empty Container Initially) -->
+      <div id="hospital-results-grid" class="hospital-grid results-grid" style="margin-top: 14px;"></div>
     </section>
 
   </main>
@@ -271,7 +261,7 @@
   <!-- Scripts -->
   <script src="js/common.js"></script>
   <script src="js/command-nav.js"></script>
-  <script src="js/blood-availability.js"></script>
+  <script src="js/inventory-logic.js"></script>
 </body>
 </html>
 

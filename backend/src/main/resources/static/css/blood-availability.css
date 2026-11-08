@@ -612,6 +612,43 @@ body.availability-body {
   transform: translateY(-1px);
 }
 
+/* ==================== EMPTY INVENTORY STATE ==================== */
+.empty-inventory-notice {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  background: #0f131c;
+  border-radius: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.empty-inventory-notice i {
+  font-size: 2.4rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.empty-inventory-notice h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.empty-inventory-notice p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  max-width: 540px;
+  line-height: 1.5;
+}
+
 /* ==================== RESPONSIVE BREAKPOINTS ==================== */
 @media (max-width: 1080px) {
   .hospital-grid {
