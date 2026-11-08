@@ -71,14 +71,10 @@
           <i class="fa-solid fa-gauge-high"></i>
           <span>Live Dashboard</span>
         </a>
-        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab active" title="Real-time Incoming SOS & Live Proximity Radar">
-          <i class="fa-solid fa-tower-broadcast"></i>
-          <span>Active Alerts / Live Radar</span>
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab active" title="Active Emergencies & Emergency Dispatch Radar">
+          <i class="fa-solid fa-truck-medical"></i>
+          <span>Emergencies</span>
           <span class="tab-radar-pulse"></span>
-        </a>
-        <a href="donor-profile.html" class="command-tab-link" title="Donor Profile & Vitals">
-          <i class="fa-solid fa-heart-pulse"></i>
-          <span>Health Profile</span>
         </a>
         <a href="donor-profile.html#milestonesCard" class="command-tab-link" title="Gamified 3D Milestones & Badges">
           <i class="fa-solid fa-award"></i>
@@ -114,9 +110,13 @@
           <div class="user-dropdown-menu" id="userProfileDropdown">
             <div class="dropdown-user-header">
               <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
-              <div class="duh-email" id="dropdownUserEmail">Signed in as ankit@red404.in</div>
+              <div class="duh-email" id="dropdownUserEmail">Signed in as <span id="dropdown-user-email"></span></div>
             </div>
             <div class="dropdown-divider"></div>
+            <a href="donor-profile.html" class="dropdown-item">
+              <i class="fa-solid fa-heart-pulse"></i>
+              <span>Health Profile</span>
+            </a>
             <a href="donor-profile.html" class="dropdown-item">
               <i class="fa-solid fa-user-gear"></i>
               <span>Account Settings</span>

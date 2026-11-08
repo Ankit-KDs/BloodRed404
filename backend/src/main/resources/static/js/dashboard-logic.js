@@ -9,6 +9,7 @@
   // Master State Object (Default: Pure Empty / Verified State)
   const donorData = {
     name: "Ankit Kumar",
+    email: "ankit@red404.in",
     bloodGroup: "A+",
     location: "Meerut, UP",
     nodeId: "RED-DL-7956",
@@ -30,6 +31,7 @@
 
         if (user.name) donorData.name = user.name;
         else if (user.firstName) donorData.name = `${user.firstName} ${user.lastName || ''}`.trim();
+        if (user.email) donorData.email = user.email;
 
         if (user.bloodGroup) donorData.bloodGroup = user.bloodGroup;
         if (user.city || user.district) {
@@ -107,6 +109,8 @@
     // Top command nav avatar fallback
     const navName = document.getElementById('dropdownUserName');
     if (navName) navName.textContent = donorData.name;
+    const navEmail = document.getElementById('dropdown-user-email');
+    if (navEmail && donorData.email) navEmail.textContent = donorData.email;
   }
 
   /**

@@ -15,6 +15,7 @@
     const avatarInitials = document.getElementById('userAvatarInitials');
     const dropdownName = document.getElementById('dropdownUserName');
     const dropdownEmail = document.getElementById('dropdownUserEmail');
+    const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
 
     // 1. Load active user session if available
     let session = null;
@@ -25,8 +26,9 @@
       console.warn('Session parse notice:', e);
     }
 
-    const userName = (session && (session.name || (session.user && session.user.name))) || 'Ankit Kumar';
-    const userEmail = (session && (session.email || (session.user && session.user.email))) || 'ankit@red404.in';
+    const currentUser = session ? (session.user || session) : null;
+    const userName = (currentUser && (currentUser.name || (currentUser.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : null))) || 'Ankit Kumar';
+    const userEmail = (currentUser && currentUser.email) || 'ankit@red404.in';
 
     // Compute initials (e.g., Ankit Kumar -> AK)
     const initials = userName
@@ -39,7 +41,11 @@
 
     if (avatarInitials) avatarInitials.textContent = initials;
     if (dropdownName) dropdownName.textContent = userName;
-    if (dropdownEmail) dropdownEmail.textContent = `Signed in as ${userEmail}`;
+    if (dropdownUserEmailSpan) {
+      dropdownUserEmailSpan.textContent = userEmail;
+    } else if (dropdownEmail) {
+      dropdownEmail.textContent = `Signed in as ${userEmail}`;
+    }
 
     // 2. Avatar dropdown toggle
     if (avatarTrigger && dropdown) {

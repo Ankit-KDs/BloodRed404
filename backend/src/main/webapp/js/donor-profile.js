@@ -10,6 +10,7 @@
   let currentDonor = {
     id: 1,
     name: 'Ankit Kumar',
+    email: 'ankit@red404.in',
     bloodType: 'A+',
     age: null,
     weight: null,
@@ -69,6 +70,7 @@
       if (session && session.user) {
         currentDonor.id = session.user.id || currentDonor.id;
         currentDonor.name = session.user.name || session.user.fullName || currentDonor.name;
+        if (session.user.email) currentDonor.email = session.user.email;
         currentDonor.bloodType = session.user.bloodType || currentDonor.bloodType;
         if (session.user.latitude && session.user.longitude) {
           currentDonor.latitude = parseFloat(session.user.latitude);
@@ -103,6 +105,7 @@
           currentDonor.id = d.id || currentDonor.id;
           currentDonor.name = d.name || d.fullName || currentDonor.name;
           currentDonor.bloodType = d.bloodType || d.blood_type || currentDonor.bloodType;
+          if (d.email) currentDonor.email = d.email;
           if (d.weight !== undefined && d.weight !== null) currentDonor.weight = parseFloat(d.weight);
           if (d.pulse !== undefined && d.pulse !== null) currentDonor.pulse = parseInt(d.pulse, 10);
           if (d.hemoglobin !== undefined && d.hemoglobin !== null) currentDonor.hemoglobin = parseFloat(d.hemoglobin);
@@ -128,6 +131,10 @@
 
     // Render top header info
     if (donorGreetingName) donorGreetingName.textContent = currentDonor.name;
+    const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
+    if (dropdownUserEmailSpan && currentDonor.email) {
+      dropdownUserEmailSpan.textContent = currentDonor.email;
+    }
     updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
   }
 
