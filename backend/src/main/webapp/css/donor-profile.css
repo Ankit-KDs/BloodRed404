@@ -1238,197 +1238,164 @@ body.donor-profile-body {
   letter-spacing: 0.4px;
 }
 
+/* ==================== CARD 3: 3D GAMIFIED ACHIEVEMENT BADGES ==================== */
 .milestones-3x2-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.85rem;
-  flex: 1;
-  align-items: stretch;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 992px) {
   .milestones-3x2-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 580px) {
   .milestones-3x2-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
 }
 
 .milestone-badge-tile {
-  background: #10141d;
-  border-radius: 14px;
-  padding: 0.85rem 0.65rem 0.75rem 0.65rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  box-sizing: border-box;
-  min-height: 155px;
-  justify-content: space-between;
+  border-radius: 12px !important;
+  padding: 20px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  position: relative !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+  box-sizing: border-box !important;
+  min-height: 180px !important;
+  overflow: visible !important;
 }
 
-/* 45-Degree Diagonal Glass Glare Overlay */
-.milestone-badge-tile::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 60%);
-  pointer-events: none;
-  z-index: 2;
+.milestone-badge-tile:hover {
+  transform: translateY(-4px) !important;
 }
 
-/* Locked Badge State (Monochrome Slate, 30% opacity, faint dashed border) */
-.milestone-badge-tile.locked {
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  opacity: 0.45;
-  filter: grayscale(1);
+.milestone-badge-tile .badge-svg-wrap {
+  width: 82px !important;
+  height: 82px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 2px !important;
 }
 
-.milestone-badge-tile.locked:hover {
-  opacity: 0.65;
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-/* Unlocked Badge State (Rich glowing border, hover lift, volumetric glow) */
-.milestone-badge-tile.unlocked {
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
-}
-
-.milestone-badge-tile.unlocked:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
-}
-
-/* Theme-Specific Glows for Unlocked Badges */
-.milestone-badge-tile.unlocked.theme-emerald {
-  border-color: rgba(16, 185, 129, 0.5);
-  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.16), inset 0 0 15px rgba(16, 185, 129, 0.06);
-}
-
-.milestone-badge-tile.unlocked.theme-amber {
-  border-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.16), inset 0 0 15px rgba(245, 158, 11, 0.06);
-}
-
-.milestone-badge-tile.unlocked.theme-indigo {
-  border-color: rgba(129, 140, 248, 0.5);
-  box-shadow: 0 4px 18px rgba(129, 140, 248, 0.16), inset 0 0 15px rgba(129, 140, 248, 0.06);
-}
-
-.milestone-badge-tile.unlocked.theme-ruby {
-  border-color: rgba(220, 38, 38, 0.5);
-  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.16), inset 0 0 15px rgba(220, 38, 38, 0.06);
-}
-
-.milestone-badge-tile.unlocked.theme-cyan {
-  border-color: rgba(14, 165, 233, 0.5);
-  box-shadow: 0 4px 18px rgba(14, 165, 233, 0.16), inset 0 0 15px rgba(14, 165, 233, 0.06);
-}
-
-.milestone-badge-tile.unlocked.theme-gold {
-  border-color: rgba(234, 179, 8, 0.5);
-  box-shadow: 0 4px 18px rgba(234, 179, 8, 0.16), inset 0 0 15px rgba(234, 179, 8, 0.06);
-}
-
-/* Badge Top Lock Icon */
-.mbt-lock-icon {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 0.72rem;
-  color: #64748b;
-  z-index: 3;
-}
-
-/* Badge Icon Wrap */
-.mbt-icon-wrap {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.35rem;
-  position: relative;
-  z-index: 3;
-}
-
-.mbt-icon-wrap svg {
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+.milestone-badge-tile .badge-svg-wrap svg {
+  width: 82px !important;
+  height: 82px !important;
+  display: block !important;
+  overflow: visible !important;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
   transition: transform 0.25s ease;
 }
 
-.milestone-badge-tile.unlocked:hover .mbt-icon-wrap svg {
-  transform: scale(1.08);
+.milestone-badge-tile.unlocked:hover .badge-svg-wrap svg {
+  transform: scale(1.06);
 }
 
-/* Badge Body Info */
-.mbt-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  position: relative;
-  z-index: 3;
-  width: 100%;
+.milestone-badge-tile .badge-title {
+  font-family: var(--font-main, Inter, sans-serif) !important;
+  font-size: clamp(0.82rem, 1.05vw, 0.92rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.4px !important;
+  line-height: 1.2 !important;
+  margin-top: 10px !important;
+  margin-bottom: 4px !important;
+  text-transform: uppercase !important;
 }
 
-.mbt-name {
-  font-family: var(--font-main);
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #f1f5f9;
-  line-height: 1.15;
-  margin-bottom: 2px;
+.milestone-badge-tile .badge-status {
+  font-family: var(--font-main, Inter, sans-serif) !important;
+  font-size: clamp(0.68rem, 0.85vw, 0.74rem) !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
 }
 
-.mbt-sub {
-  font-family: var(--font-main);
-  font-size: 0.68rem;
-  color: #94a3b8;
-  line-height: 1.25;
-  margin-bottom: 6px;
-  min-height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0 2px;
+/* 1. UNLOCKED BADGES (Top Row - Shiny & Glowing) */
+.milestone-badge-tile.unlocked {
+  cursor: pointer;
 }
 
-/* Badge Status Pill */
-.mbt-pill {
-  padding: 2px 9px;
-  border-radius: 9999px;
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  font-family: var(--font-main);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.milestone-badge-tile.unlocked .badge-title {
+  color: #ffffff !important;
 }
 
-.mbt-pill.pill-locked {
-  background: rgba(255, 255, 255, 0.05);
-  color: #64748b;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.milestone-badge-tile.unlocked .badge-status {
+  color: #2ea071 !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 10px rgba(46, 160, 113, 0.4) !important;
 }
 
-.mbt-pill.pill-unlocked {
-  background: rgba(16, 185, 129, 0.14);
-  color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.35);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+/* Badge 1: FIRST SAVIOR */
+.milestone-badge-tile.unlocked.unlocked-emerald {
+  background: radial-gradient(circle at 50% 35%, rgba(16, 75, 50, 0.5) 0%, rgba(8, 28, 20, 0.95) 75%, #071710 100%) !important;
+  border: 1.5px solid #2ea071 !important;
+  box-shadow: 0 0 18px rgba(46, 160, 113, 0.25), inset 0 0 14px rgba(46, 160, 113, 0.12) !important;
 }
+.milestone-badge-tile.unlocked.unlocked-emerald:hover {
+  box-shadow: 0 0 24px rgba(46, 160, 113, 0.4), inset 0 0 18px rgba(46, 160, 113, 0.2) !important;
+}
+
+/* Badge 2: GOLDEN HOUR HERO */
+.milestone-badge-tile.unlocked.unlocked-amber {
+  background: radial-gradient(circle at 50% 35%, rgba(120, 65, 10, 0.5) 0%, rgba(30, 18, 5, 0.95) 75%, #140b04 100%) !important;
+  border: 1.5px solid #d99b3b !important;
+  box-shadow: 0 0 18px rgba(217, 155, 59, 0.25), inset 0 0 14px rgba(217, 155, 59, 0.12) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-amber:hover {
+  box-shadow: 0 0 24px rgba(217, 155, 59, 0.4), inset 0 0 18px rgba(217, 155, 59, 0.2) !important;
+}
+
+/* Badge 3: NIGHT OWL */
+.milestone-badge-tile.unlocked.unlocked-indigo {
+  background: radial-gradient(circle at 50% 35%, rgba(90, 45, 140, 0.5) 0%, rgba(22, 12, 40, 0.95) 75%, #10081d 100%) !important;
+  border: 1.5px solid #8263b6 !important;
+  box-shadow: 0 0 18px rgba(130, 99, 182, 0.3), inset 0 0 14px rgba(130, 99, 182, 0.15) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-indigo:hover {
+  box-shadow: 0 0 24px rgba(130, 99, 182, 0.45), inset 0 0 18px rgba(130, 99, 182, 0.22) !important;
+}
+
+/* 2. LOCKED BADGES (Bottom Row - Matte & Recessed) */
+.milestone-badge-tile.locked {
+  background: #222732 !important;
+  border: 1.5px dashed #4b5563 !important;
+  box-shadow: none !important;
+}
+
+.milestone-badge-tile.locked:hover {
+  border-color: #6b7280 !important;
+}
+
+.milestone-badge-tile.locked .badge-title {
+  color: #9ca3af !important;
+}
+
+.milestone-badge-tile.locked .badge-status {
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.milestone-badge-tile.locked .mbt-card-lock {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  font-size: 0.8rem !important;
+  color: #6b7280 !important;
+}
+
+
 
 .milestone-badge-card .mbc-name {
   font-size: 0.75rem;
