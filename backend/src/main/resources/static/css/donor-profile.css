@@ -2095,3 +2095,100 @@ body.donor-profile-body {
   stroke-width: 2.8;
   filter: drop-shadow(0 0 8px #ef4444);
 }
+
+/* ==================== DYNAMIC CAPSULE TELEMETRY PANEL ==================== */
+.capsule-telemetry-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  color: #94a3b8 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  padding-left: 0.5rem !important;
+}
+
+.telemetry-header h1 {
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important;
+}
+
+.telemetry-header h3 {
+  font-size: 1rem !important;
+  color: #64748b !important;
+  margin: 4px 0 0 !important;
+  letter-spacing: 1px !important;
+  font-weight: 700 !important;
+}
+
+.telemetry-percentage-box h2 {
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  color: #cbd5e1 !important;
+  margin: 0 !important;
+  letter-spacing: -0.3px !important;
+}
+
+.telemetry-caption {
+  font-size: 0.75rem !important;
+  color: #64748b !important;
+}
+
+/* Dynamic Pill Styling */
+.status-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  font-size: 0.75rem !important;
+  font-weight: bold !important;
+  width: max-content !important;
+  margin-top: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.status-badge.cooldown-active {
+  background: rgba(245, 158, 11, 0.08) !important; /* Warm Amber */
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  color: #fbbf24 !important;
+}
+
+.status-badge.eligible-ready {
+  background: rgba(16, 185, 129, 0.08) !important; /* Emerald Green */
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+
+/* Details list */
+.telemetry-checklist {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 8px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  font-size: 0.85rem !important;
+}
+
+.telemetry-checklist li {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.telemetry-checklist i.fa-hourglass { color: #f59e0b !important; }
+.telemetry-checklist i.fa-check { color: #10b981 !important; }
+
+.telemetry-calendar {
+  font-size: 0.85rem !important;
+  color: #64748b !important;
+  margin-top: 4px !important;
+}
+
+.telemetry-calendar strong {
+  color: #cbd5e1 !important;
+  margin-left: 4px !important;
+}

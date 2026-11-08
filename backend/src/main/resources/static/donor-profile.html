@@ -15,7 +15,7 @@
 
   <!-- Core Profile CSS -->
   <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_dnapillar_v1">
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_telemetry_v2">
       <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
     /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
@@ -310,6 +310,104 @@
       stroke-width: 2.8 !important;
       filter: drop-shadow(0 0 8px #ef4444) !important;
     }
+  
+/* ==================== DYNAMIC CAPSULE TELEMETRY PANEL ==================== */
+.capsule-telemetry-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  color: #94a3b8 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  padding-left: 0.5rem !important;
+}
+
+.telemetry-header h1 {
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important;
+}
+
+.telemetry-header h3 {
+  font-size: 1rem !important;
+  color: #64748b !important;
+  margin: 4px 0 0 !important;
+  letter-spacing: 1px !important;
+  font-weight: 700 !important;
+}
+
+.telemetry-percentage-box h2 {
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  color: #cbd5e1 !important;
+  margin: 0 !important;
+  letter-spacing: -0.3px !important;
+}
+
+.telemetry-caption {
+  font-size: 0.75rem !important;
+  color: #64748b !important;
+}
+
+/* Dynamic Pill Styling */
+.status-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  font-size: 0.75rem !important;
+  font-weight: bold !important;
+  width: max-content !important;
+  margin-top: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.status-badge.cooldown-active {
+  background: rgba(245, 158, 11, 0.08) !important; /* Warm Amber */
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  color: #fbbf24 !important;
+}
+
+.status-badge.eligible-ready {
+  background: rgba(16, 185, 129, 0.08) !important; /* Emerald Green */
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+
+/* Details list */
+.telemetry-checklist {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 8px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  font-size: 0.85rem !important;
+}
+
+.telemetry-checklist li {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.telemetry-checklist i.fa-hourglass { color: #f59e0b !important; }
+.telemetry-checklist i.fa-check { color: #10b981 !important; }
+
+.telemetry-calendar {
+  font-size: 0.85rem !important;
+  color: #64748b !important;
+  margin-top: 4px !important;
+}
+
+.telemetry-calendar strong {
+  color: #cbd5e1 !important;
+  margin-left: 4px !important;
+}
+
   </style>
 </head>
 <body class="donor-profile-body">
@@ -858,44 +956,42 @@
               </div>
             </div>
 
-            <!-- Right: Telemetry & Countdown Readout Panel -->
-            <div class="scanner-telemetry-col" id="scannerTelemetryCol">
-              <!-- Big Bold Metric -->
-              <div class="stc-primary-val" id="scannerDaysVal">100% REGENERATED</div>
-              <div class="stc-primary-lbl" id="scannerDaysLbl" style="color: #34d399;">ELIGIBLE TO DONATE</div>
-
-              <!-- Secondary Recovered % Metric -->
-              <div class="stc-secondary-row">
-                <div class="stc-recovered-val" id="scannerRecoveredVal" style="color: #f8fafc;">100% REGENERATED • ELIGIBLE</div>
-                <div class="stc-recovered-sub" id="scannerRecoveredSub">(cellular DNA matrix regenerated • ready for transfusion)</div>
+                        <!-- Right: Dynamic Database-Driven Telemetry Readout -->
+            <div class="capsule-telemetry-panel">
+              <!-- Huge Countdown / Status Display -->
+              <div class="telemetry-header">
+                <h1 id="telemetryPrimary">42 DAYS</h1>
+                <h3 id="telemetryPrimaryLabel">REMAINING</h3>
               </div>
 
-              <!-- Status Pill Capsule -->
-              <div class="stc-pill-container" id="scannerStatusPillWrap">
-                <div class="stc-pill pill-eligible">
-                  <span class="stc-dot dot-green"></span>
-                  <span>🟢 100% REGENERATED • ELIGIBLE</span>
-                </div>
+              <!-- Live Recovery Percentage -->
+              <div class="telemetry-percentage-box">
+                <h2 id="telemetryPercent">53% RECOVERED</h2>
+                <span id="telemetryCaption" class="telemetry-caption">(reducing day by day post-donation)</span>
               </div>
 
-              <!-- Safety Checklist Items -->
-              <div class="stc-checklist-container" id="scannerChecklistWrap">
-                <div class="stc-check-item">
-                  <i class="fas fa-check"></i>
-                  <span>Cellular DNA regeneration complete</span>
-                </div>
-                <div class="stc-check-item">
-                  <i class="fas fa-check"></i>
-                  <span>Optimal hematocrit & hemoglobin levels</span>
-                </div>
-                <div class="stc-check-item">
-                  <i class="fas fa-check"></i>
-                  <span>Minimum 90-day safe blood interval met</span>
-                </div>
-                <div class="stc-check-item">
-                  <i class="fas fa-calendar-check"></i>
-                  <span>Next Available: <b>Immediate / READY</b></span>
-                </div>
+              <!-- Pill Status Badge -->
+              <div id="telemetryBadge" class="status-badge cooldown-active">
+                <i class="fa-solid fa-hourglass-half"></i> 
+                <span id="badgeText">COOLDOWN ACTIVE • Recovery in Progress</span>
+              </div>
+
+              <!-- Fine Checklist Details -->
+              <ul class="telemetry-checklist">
+                <li id="checkRecoveryInterval">
+                  <i id="iconRecovery" class="fa-solid fa-hourglass"></i> 
+                  <span id="textRecovery">Recovery interval: 42 days left</span>
+                </li>
+                <li id="checkVitals">
+                  <i id="iconVitals" class="fa-solid fa-check"></i> 
+                  <span id="textVitals">Vitals regeneration in progress</span>
+                </li>
+              </ul>
+
+              <!-- Calendar Unlock Info -->
+              <div class="telemetry-calendar">
+                <span class="calendar-label">Next Available:</span>
+                <strong id="dateUnlock">15 Oct 2026</strong>
               </div>
             </div>
           </div>
@@ -943,6 +1039,6 @@
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
-  <script src="js/donor-profile.js?v=20261108_dnapillar_v1"></script>
+  <script src="js/donor-profile.js?v=20261108_telemetry_v2"></script>
 </body>
 </html>

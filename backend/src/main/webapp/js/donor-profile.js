@@ -294,166 +294,153 @@
 
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
-    // ======================== 4. CYBERNETIC DNA REGENERATION PILLAR TRACKER ========================
-  // Real-time animated flowing blood chamber with glowing DNA double-helix
-  function renderMedicalEligibilityTracker() {
-    const fluidContainer = document.getElementById('dnaFluidContainer') || document.getElementById('bloodFluid');
-    const daysVal = document.getElementById('scannerDaysVal');
-    const daysLbl = document.getElementById('scannerDaysLbl');
-    const recoveredVal = document.getElementById('scannerRecoveredVal');
-    const recoveredSub = document.getElementById('scannerRecoveredSub');
-    const pillWrap = document.getElementById('scannerStatusPillWrap');
-    const checklistWrap = document.getElementById('scannerChecklistWrap');
+      // ======================== 4. PRECISE TELEMETRY DATA LOGIC ========================
+  function renderTelemetryData(lastDonationDate) {
+    const now = new Date();
+    
+    // Check elements
+    const primary = document.getElementById('telemetryPrimary');
+    const label = document.getElementById('telemetryPrimaryLabel');
+    const percent = document.getElementById('telemetryPercent');
+    const caption = document.getElementById('telemetryCaption');
+    const badge = document.getElementById('telemetryBadge');
+    const badgeTxt = document.getElementById('badgeText');
+    const textRecovery = document.getElementById('textRecovery');
+    const iconRecovery = document.getElementById('iconRecovery');
+    const textVitals = document.getElementById('textVitals');
+    const iconVitals = document.getElementById('iconVitals');
+    const dateUnlock = document.getElementById('dateUnlock');
     const metaTag = document.getElementById('eligibilityMetaTag');
+    const fluidContainer = document.getElementById('dnaFluidContainer') || document.getElementById('bloodFluid');
 
-    const lastDonation = currentDonor.lastDonationDate;
-    let isEligible = false;
-    let daysPassed = 0;
-    let remainingDays = 0;
-    let percentage = 0;
-    let targetDateStr = 'Immediate / READY';
+    // Days elapsed calculation
+    const donationDate = lastDonationDate ? new Date(lastDonationDate) : null;
+    const daysPassed = donationDate && !isNaN(donationDate.getTime()) ? Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24)) : 90;
 
-    if (!lastDonation) {
-      // Donor has NOT donated any blood yet -> Real-time 100% Regenerated & Eligible!
-      isEligible = true;
-      percentage = 100;
-      remainingDays = 0;
-    } else {
-      // Donor has a recorded donation -> calculate real-time day-by-day countdown & fluid rise
-      const donationDate = new Date(lastDonation);
-      if (!isNaN(donationDate.getTime())) {
-        const now = new Date();
-        daysPassed = Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysPassed >= 90) {
-          isEligible = true;
-          percentage = 100;
-          remainingDays = 0;
-        } else {
-          isEligible = false;
-          remainingDays = Math.max(0, 90 - daysPassed);
-          // Starts at 0% after donation and increases day by day with blood flow & DNA regeneration
-          percentage = Math.min(Math.max(0, Math.floor((daysPassed / 90) * 100)), 99);
-          const targetDate = new Date(donationDate.getTime() + 90 * 24 * 60 * 60 * 1000);
-          targetDateStr = targetDate.toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-          });
-        }
-      } else {
-        isEligible = true;
-        percentage = 100;
-        remainingDays = 0;
+    // CASE 1: Cooldown completed OR Never Donated (100% READY)
+    if (!donationDate || isNaN(donationDate.getTime()) || daysPassed >= 90) {
+      if (primary) {
+        primary.innerText = "READY";
+        primary.style.color = "#10b981"; // Vibrant Emerald
       }
-    }
+      if (label) {
+        label.innerText = "TO DONATE";
+        label.style.color = "#34d399";
+      }
+      if (percent) {
+        percent.innerText = "100% RECOVERED";
+        percent.style.color = "#cbd5e1";
+      }
+      if (caption) {
+        caption.innerText = "(biological volume fully restored)";
+      }
 
-    if (isEligible) {
-      // State 1: 100% Regenerated State (Pre-Donation or Cooldown Completed) -> Fill fluid 100% to the top!
-      if (fluidContainer) {
-        fluidContainer.style.height = '100%';
+      // Set green badge
+      if (badge) {
+        badge.className = "status-badge eligible-ready";
+        badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>ELIGIBLE TO DONATE • Safe to Proceed</span>`;
+      }
+
+      // Checklist 100% complete
+      if (iconRecovery) {
+        iconRecovery.className = "fa-solid fa-check";
+        iconRecovery.style.color = "#10b981";
+      }
+      if (textRecovery) {
+        textRecovery.innerText = "Recovery interval: complete";
+      }
+
+      if (iconVitals) {
+        iconVitals.className = "fa-solid fa-circle-check";
+        iconVitals.style.color = "#10b981";
+      }
+      if (textVitals) {
+        textVitals.innerText = "Biological markers fully restocked";
+      }
+
+      if (dateUnlock) {
+        dateUnlock.innerText = "IMMEDIATE / NOW AVAILABLE";
+        dateUnlock.style.color = "#10b981";
       }
 
       if (metaTag) {
-        metaTag.className = 'card-meta-tag scanner-meta-tag tag-ready';
+        metaTag.className = "card-meta-tag scanner-meta-tag tag-ready";
         metaTag.innerHTML = `<i class="fas fa-check-circle"></i> 100% Regenerated`;
       }
 
-      if (daysVal) daysVal.textContent = '100% REGENERATED';
-      if (daysLbl) {
-        daysLbl.textContent = 'ELIGIBLE TO DONATE';
-        daysLbl.style.color = '#34d399';
-      }
-
-      if (recoveredVal) {
-        recoveredVal.textContent = '100% REGENERATED • ELIGIBLE';
-        recoveredVal.style.color = '#f8fafc';
-      }
-
-      if (recoveredSub) {
-        recoveredSub.textContent = '(cellular DNA matrix regenerated • ready for transfusion)';
-      }
-
-      if (pillWrap) {
-        pillWrap.innerHTML = `
-          <div class="stc-pill pill-eligible">
-            <span class="stc-dot dot-green"></span>
-            <span>🟢 100% REGENERATED • ELIGIBLE</span>
-          </div>
-        `;
-      }
-
-      if (checklistWrap) {
-        checklistWrap.innerHTML = `
-          <div class="stc-check-item">
-            <i class="fas fa-check"></i>
-            <span>Cellular DNA regeneration complete</span>
-          </div>
-          <div class="stc-check-item">
-            <i class="fas fa-check"></i>
-            <span>Optimal hematocrit & hemoglobin levels</span>
-          </div>
-          <div class="stc-check-item">
-            <i class="fas fa-check"></i>
-            <span>Minimum 90-day safe blood interval met</span>
-          </div>
-          <div class="stc-check-item">
-            <i class="fas fa-calendar-check"></i>
-            <span>Next Available: <b>Immediate / READY</b></span>
-          </div>
-        `;
+      // Also sync the DNA fluid container height
+      if (fluidContainer) {
+        fluidContainer.style.height = '100%';
       }
     } else {
-      // State 2: Cooldown Active (Fluid rises day by day from 0% to 100% post-donation, lighting up DNA)
-      if (fluidContainer) {
-        fluidContainer.style.height = `${percentage}%`;
+      // CASE 2: Active Cooldown (<90 days elapsed)
+      const remainingDays = 90 - daysPassed;
+      const recoveryPercentage = Math.max(0, Math.min(100, Math.floor((daysPassed / 90) * 100)));
+
+      if (primary) {
+        primary.innerText = `${remainingDays} DAYS`;
+        primary.style.color = "#f8fafc";
+      }
+      if (label) {
+        label.innerText = "REMAINING";
+        label.style.color = "#64748b";
+      }
+      if (percent) {
+        percent.innerText = `${recoveryPercentage}% RECOVERED`;
+        percent.style.color = "#cbd5e1";
+      }
+      if (caption) {
+        caption.innerText = "(reducing day by day post-donation)";
+      }
+
+      // Amber Badge
+      if (badge) {
+        badge.className = "status-badge cooldown-active";
+        badge.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> <span>COOLDOWN ACTIVE • Recovery in Progress</span>`;
+      }
+
+      // Cooldown active details
+      if (iconRecovery) {
+        iconRecovery.className = "fa-solid fa-hourglass";
+        iconRecovery.style.color = "#f59e0b";
+      }
+      if (textRecovery) {
+        textRecovery.innerText = `Recovery interval: ${remainingDays} days left`;
+      }
+
+      if (iconVitals) {
+        iconVitals.className = "fa-solid fa-check";
+        iconVitals.style.color = "#10b981";
+      }
+      if (textVitals) {
+        textVitals.innerText = "Vitals regeneration in progress";
+      }
+
+      // Calculate custom future unlock date
+      const nextAvailableDate = new Date(donationDate);
+      nextAvailableDate.setDate(nextAvailableDate.getDate() + 90);
+      
+      // Render locale date (e.g. 15 Oct 2026)
+      const options = { day: 'numeric', month: 'short', year: 'numeric' };
+      if (dateUnlock) {
+        dateUnlock.innerText = nextAvailableDate.toLocaleDateString('en-GB', options);
+        dateUnlock.style.color = "#cbd5e1";
       }
 
       if (metaTag) {
-        metaTag.className = 'card-meta-tag scanner-meta-tag tag-cooldown';
+        metaTag.className = "card-meta-tag scanner-meta-tag tag-cooldown";
         metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Regeneration in Progress`;
       }
 
-      if (daysVal) daysVal.textContent = `${remainingDays} DAYS REMAINING`;
-      if (daysLbl) {
-        daysLbl.textContent = `${daysPassed} / 90 DAYS COMPLETED (${percentage}%)`;
-        daysLbl.style.color = '#f87171';
-      }
-
-      if (recoveredVal) {
-        recoveredVal.textContent = `${remainingDays} DAYS REMAINING • ${percentage}% RESTORED`;
-        recoveredVal.style.color = '#ffffff';
-      }
-
-      if (recoveredSub) {
-        recoveredSub.textContent = '(cellular DNA helix regenerating day by day post-donation)';
-      }
-
-      if (pillWrap) {
-        pillWrap.innerHTML = `
-          <div class="stc-pill pill-cooldown">
-            <i class="fas fa-circle-notch fa-spin" style="font-size:0.75rem;"></i>
-            <span>🟡 REGENERATION PROTOCOL ACTIVE</span>
-          </div>
-        `;
-      }
-
-      if (checklistWrap) {
-        checklistWrap.innerHTML = `
-          <div class="stc-check-item pending">
-            <i class="fas fa-hourglass-half"></i>
-            <span>DNA matrix regeneration in progress (${remainingDays}d left)</span>
-          </div>
-          <div class="stc-check-item">
-            <i class="fas fa-check"></i>
-            <span>Minimum 90-day safe blood interval</span>
-          </div>
-          <div class="stc-check-item next-avail">
-            <i class="fas fa-calendar-alt"></i>
-            <span>Next Available: <b>${targetDateStr}</b></span>
-          </div>
-        `;
+      // Also sync the DNA fluid container height
+      if (fluidContainer) {
+        fluidContainer.style.height = `${recoveryPercentage}%`;
       }
     }
+  }
+
+  function renderMedicalEligibilityTracker() {
+    renderTelemetryData(currentDonor.lastDonationDate);
   }
 
   function evaluateAndRenderMilestones() {
