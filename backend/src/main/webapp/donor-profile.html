@@ -15,22 +15,10 @@
 
   <!-- Core Profile CSS -->
   <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_telemetry_v2">
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261108_responsive_v3">
       <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
     /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
-    .dna-tracker-layout {
-      display: grid !important;
-      grid-template-columns: 280px 1fr !important;
-      gap: 2rem !important;
-      align-items: center !important;
-    }
-    @media (max-width: 992px) {
-      .dna-tracker-layout {
-        grid-template-columns: 1fr !important;
-        justify-items: center !important;
-      }
-    }
     .dna-visual-col {
       display: flex !important;
       justify-content: center !important;
@@ -311,47 +299,109 @@
       filter: drop-shadow(0 0 8px #ef4444) !important;
     }
   
-/* ==================== DYNAMIC CAPSULE TELEMETRY PANEL ==================== */
+
+/* ==================== RESPONSIVE DNA TRACKER & TELEMETRY PANEL ==================== */
+#eligibilityTrackerCard.profile-card {
+  overflow: visible !important;
+}
+
+.dna-tracker-layout {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 1.75rem !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.dna-visual-col {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  padding: 0.5rem 0 !important;
+}
+
+.dna-pillar-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Flexible Text Panel (Telemetry Readout) */
 .capsule-telemetry-panel {
+  flex: 1 1 320px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 12px !important;
   color: #94a3b8 !important;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
   padding-left: 0.5rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Fluid Typography */
+.telemetry-header {
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
 }
 
 .telemetry-header h1 {
-  font-size: 2.5rem !important;
+  font-size: clamp(1.75rem, 3.8vw, 2.5rem) !important;
   font-weight: 800 !important;
   color: #f8fafc !important;
-  line-height: 1 !important;
+  line-height: 1.1 !important;
   margin: 0 !important;
   letter-spacing: -0.5px !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
 }
 
 .telemetry-header h3 {
-  font-size: 1rem !important;
+  font-size: clamp(0.82rem, 1.8vw, 1rem) !important;
   color: #64748b !important;
   margin: 4px 0 0 !important;
   letter-spacing: 1px !important;
   font-weight: 700 !important;
+  overflow-wrap: break-word !important;
+}
+
+.telemetry-percentage-box {
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
 }
 
 .telemetry-percentage-box h2 {
-  font-size: 1.8rem !important;
+  font-size: clamp(1.2rem, 2.8vw, 1.8rem) !important;
   font-weight: 700 !important;
   color: #cbd5e1 !important;
   margin: 0 !important;
   letter-spacing: -0.3px !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
 }
 
 .telemetry-caption {
   font-size: 0.75rem !important;
   color: #64748b !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  display: block !important;
+  line-height: 1.4 !important;
 }
 
-/* Dynamic Pill Styling */
+/* Dynamic Pill Status Badge (Text Wrapping) */
 .status-badge {
   display: inline-flex !important;
   align-items: center !important;
@@ -360,24 +410,40 @@
   border-radius: 9999px !important;
   font-size: 0.75rem !important;
   font-weight: bold !important;
-  width: max-content !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.4 !important;
   margin-top: 6px !important;
   transition: all 0.3s ease !important;
+  box-sizing: border-box !important;
+}
+
+.status-badge i {
+  flex-shrink: 0 !important;
+}
+
+.status-badge span {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 .status-badge.cooldown-active {
-  background: rgba(245, 158, 11, 0.08) !important; /* Warm Amber */
+  background: rgba(245, 158, 11, 0.08) !important;
   border: 1px solid rgba(245, 158, 11, 0.3) !important;
   color: #fbbf24 !important;
 }
 
 .status-badge.eligible-ready {
-  background: rgba(16, 185, 129, 0.08) !important; /* Emerald Green */
+  background: rgba(16, 185, 129, 0.08) !important;
   border: 1px solid rgba(16, 185, 129, 0.35) !important;
   color: #34d399 !important;
 }
 
-/* Details list */
+/* Checklist Items (Wrapping text without breaking icon alignment) */
 .telemetry-checklist {
   list-style: none !important;
   padding: 0 !important;
@@ -386,26 +452,88 @@
   flex-direction: column !important;
   gap: 10px !important;
   font-size: 0.85rem !important;
+  width: 100% !important;
 }
 
 .telemetry-checklist li {
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   gap: 10px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.4 !important;
+}
+
+.telemetry-checklist li i {
+  flex-shrink: 0 !important;
+  margin-top: 3px !important;
+}
+
+.telemetry-checklist li span {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  min-width: 0 !important;
 }
 
 .telemetry-checklist i.fa-hourglass { color: #f59e0b !important; }
 .telemetry-checklist i.fa-check { color: #10b981 !important; }
+.telemetry-checklist i.fa-circle-check { color: #10b981 !important; }
 
+/* Calendar Unlock Info */
 .telemetry-calendar {
   font-size: 0.85rem !important;
   color: #64748b !important;
   margin-top: 4px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.4 !important;
 }
 
 .telemetry-calendar strong {
   color: #cbd5e1 !important;
   margin-left: 4px !important;
+  word-break: break-word !important;
+}
+
+/* Mobile & High-Zoom Stacking (< 768px) */
+@media (max-width: 768px) {
+  .dna-tracker-layout {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 1.5rem !important;
+  }
+
+  .dna-visual-col {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .capsule-telemetry-panel {
+    width: 100% !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding-left: 0 !important;
+  }
+
+  .status-badge {
+    justify-content: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .telemetry-checklist {
+    align-items: center !important;
+  }
+
+  .telemetry-checklist li {
+    justify-content: center !important;
+    text-align: left !important;
+    max-width: 320px !important;
+  }
 }
 
   </style>
@@ -1039,6 +1167,6 @@
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
-  <script src="js/donor-profile.js?v=20261108_telemetry_v2"></script>
+  <script src="js/donor-profile.js?v=20261108_responsive_v3"></script>
 </body>
 </html>
