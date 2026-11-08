@@ -66,11 +66,14 @@ public class HospitalDao {
     }
 
     public Map<String, Object> findByLogin(String email, String password) throws SQLException {
-        String sql = "SELECT * FROM hospitals WHERE hospital_email = ? AND password = ?";
+        if (email == null || password == null) return null;
+        String cleanEmail = email.trim();
+        String cleanPw = password.trim();
+        String sql = "SELECT * FROM hospitals WHERE LOWER(TRIM(hospital_email)) = LOWER(?) AND TRIM(password) = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email);
-            ps.setString(2, password);
+            ps.setString(1, cleanEmail);
+            ps.setString(2, cleanPw);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapHospital(rs) : null;
             }

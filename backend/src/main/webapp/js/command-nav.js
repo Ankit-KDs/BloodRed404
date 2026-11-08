@@ -84,9 +84,14 @@
       logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
         try {
+          if (typeof Auth !== 'undefined' && Auth.clearSession) {
+            Auth.clearSession();
+          }
           localStorage.removeItem('red404_donor_session');
           sessionStorage.removeItem('red404_donor_session');
+          localStorage.removeItem('red404_session');
           localStorage.removeItem('donorUser');
+          localStorage.removeItem('red404_donorToken');
         } catch (err) {}
         window.location.href = 'donor-login.html';
       });

@@ -12,8 +12,11 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.net.URI;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 @Configuration
 public class DynamicDataSourceConfig {
@@ -36,37 +39,42 @@ public class DynamicDataSourceConfig {
 
         // 1. Try MySQL DataSource first
         if (cfg != null && cfg.jdbcUrl != null && !cfg.jdbcUrl.isBlank()) {
-            try {
-                log.info("Attempting connection to primary MySQL database: {}", sanitizeUrl(cfg.jdbcUrl));
-                HikariConfig config = new HikariConfig();
-                config.setJdbcUrl(cfg.jdbcUrl);
-                config.setUsername(cfg.username);
-                config.setPassword(cfg.password);
-                config.setDriverClassName("com.mysql.cj.jdbc.Driver");
-                config.setMaximumPoolSize(10);
-                config.setMinimumIdle(2);
-                config.setConnectionTimeout(8000);
-                config.setInitializationFailTimeout(1);
+            DataSource ds = tryConnectMySQL(cfg.jdbcUrl, cfg.username, cfg.password);
+            if (ds != null) {
+                return ds;
+            }
 
-                HikariDataSource ds = new HikariDataSource(config);
-                try (Connection conn = ds.getConnection()) {
-                    log.info("Successfully connected to MySQL database!");
-                    runInitScript(ds);
-                    return ds;
-                } catch (Exception connEx) {
-                    ds.close();
-                    throw connEx;
+            // If port 3307 was attempted on localhost, also attempt standard port 3306
+            if (cfg.jdbcUrl.contains("127.0.0.1:3307") || cfg.jdbcUrl.contains("localhost:3307")) {
+                String altUrl = cfg.jdbcUrl.replace(":3307", ":3306");
+                DataSource altDs = tryConnectMySQL(altUrl, cfg.username, cfg.password);
+                if (altDs != null) {
+                    return altDs;
                 }
-            } catch (Throwable t) {
-                log.warn("Could not connect to primary MySQL database ({}). Activating embedded H2 fallback database...", t.getMessage());
+            } else if (cfg.jdbcUrl.contains("127.0.0.1:3306") || cfg.jdbcUrl.contains("localhost:3306")) {
+                String altUrl = cfg.jdbcUrl.replace(":3306", ":3307");
+                DataSource altDs = tryConnectMySQL(altUrl, cfg.username, cfg.password);
+                if (altDs != null) {
+                    return altDs;
+                }
             }
         }
 
-        // 2. Fallback to embedded in-memory H2 database (MySQL compatibility mode)
+        // 2. Fallback to embedded persistent file-based H2 database (MySQL compatibility mode)
         try {
-            log.info("Starting embedded H2 database (MySQL compatibility mode)...");
+            File dataDir = new File("data");
+            if (!dataDir.exists() && new File("backend/data").exists()) {
+                dataDir = new File("backend/data");
+            }
+            if (!dataDir.exists()) {
+                dataDir.mkdirs();
+            }
+            String dbPath = new File(dataDir, "red404").getAbsolutePath().replace('\\', '/');
+            String persistentH2Url = "jdbc:h2:file:" + dbPath + ";MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1";
+            log.info("Starting embedded persistent file database (H2 MySQL-mode) at: {}", persistentH2Url);
+
             HikariConfig h2Config = new HikariConfig();
-            h2Config.setJdbcUrl("jdbc:h2:mem:red404;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE");
+            h2Config.setJdbcUrl(persistentH2Url);
             h2Config.setUsername("sa");
             h2Config.setPassword("");
             h2Config.setDriverClassName("org.h2.Driver");
@@ -75,24 +83,56 @@ public class DynamicDataSourceConfig {
 
             HikariDataSource h2Ds = new HikariDataSource(h2Config);
             runInitScript(h2Ds);
-            log.info("H2 fallback database initialized successfully! Web service is ready.");
+            seedDefaultData(h2Ds);
+            log.info("Persistent H2 database initialized successfully! Data will persist across restarts.");
             return h2Ds;
         } catch (Throwable ex) {
-            log.error("Failed to initialize H2 MySQL-mode fallback: {}. Trying minimal H2...", ex.getMessage());
+            log.error("Failed to initialize persistent H2: {}. Trying in-memory H2 fallback...", ex.getMessage());
             try {
                 HikariConfig minimalConfig = new HikariConfig();
-                minimalConfig.setJdbcUrl("jdbc:h2:mem:red404;DB_CLOSE_DELAY=-1");
+                minimalConfig.setJdbcUrl("jdbc:h2:mem:red404;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE");
                 minimalConfig.setUsername("sa");
                 minimalConfig.setPassword("");
                 minimalConfig.setDriverClassName("org.h2.Driver");
                 HikariDataSource minimalDs = new HikariDataSource(minimalConfig);
                 runInitScript(minimalDs);
-                log.info("Minimal H2 database initialized successfully! Web service is ready.");
+                seedDefaultData(minimalDs);
+                log.info("Minimal in-memory H2 database initialized successfully! Web service is ready.");
                 return minimalDs;
             } catch (Exception e) {
                 log.error("Fatal database initialization error: {}", e.getMessage(), e);
                 throw new RuntimeException("Database initialization error", e);
             }
+        }
+    }
+
+    private DataSource tryConnectMySQL(String jdbcUrl, String username, String password) {
+        try {
+            log.info("Attempting connection to primary MySQL database: {}", sanitizeUrl(jdbcUrl));
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(jdbcUrl);
+            config.setUsername(username);
+            config.setPassword(password);
+            config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+            config.setMaximumPoolSize(10);
+            config.setMinimumIdle(2);
+            config.setConnectionTimeout(3000);
+            config.setInitializationFailTimeout(1);
+
+            HikariDataSource ds = new HikariDataSource(config);
+            try (Connection conn = ds.getConnection()) {
+                log.info("Successfully connected to MySQL database: {}", sanitizeUrl(jdbcUrl));
+                runInitScript(ds);
+                seedDefaultData(ds);
+                return ds;
+            } catch (Exception connEx) {
+                ds.close();
+                log.warn("MySQL connection check failed on {}: {}", sanitizeUrl(jdbcUrl), connEx.getMessage());
+                return null;
+            }
+        } catch (Throwable t) {
+            log.warn("Could not connect to MySQL database ({}).", t.getMessage());
+            return null;
         }
     }
 
@@ -105,6 +145,24 @@ public class DynamicDataSourceConfig {
             log.info("Schema initialization script executed successfully.");
         } catch (Exception e) {
             log.warn("Notice during schema.sql initialization: {}", e.getMessage());
+        }
+    }
+
+    private void seedDefaultData(DataSource ds) {
+        try (Connection conn = ds.getConnection();
+             Statement stmt = conn.createStatement()) {
+
+            // Check if donor 'ak30kr02@gmail.com' exists
+            try (ResultSet rs = stmt.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
+                if (!rs.next()) {
+                    String seedDonor = "INSERT INTO donors (name, email, phone, dob, gender, password, blood_type, weight, last_donation, availability, address, city, state, pincode, zone) " +
+                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, '2024-01-10', 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone')";
+                    stmt.executeUpdate(seedDonor);
+                    log.info("Seeded primary registered donor account: ak30kr02@gmail.com");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice checking/seeding default user: {}", e.getMessage());
         }
     }
 
@@ -123,7 +181,7 @@ public class DynamicDataSourceConfig {
             if (db == null || db.isBlank()) db = "railway";
 
             String jdbcUrl = String.format(
-                    "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=8000&socketTimeout=15000",
+                    "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=10000",
                     host, port, db
             );
             return new ResolvedConfig(jdbcUrl, user, pass);
@@ -165,7 +223,7 @@ public class DynamicDataSourceConfig {
         if (db == null || db.isBlank()) db = "red404";
 
         String jdbcUrl = String.format(
-                "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=10000",
+                "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=3000&socketTimeout=8000",
                 host, port, db
         );
         return new ResolvedConfig(jdbcUrl, user, pass);

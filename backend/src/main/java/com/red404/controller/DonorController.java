@@ -265,8 +265,9 @@ public class DonorController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
-            String email = JsonUtil.text(body, "email");
-            String phone = JsonUtil.text(body, "phone");
+            String email = JsonUtil.text(body, "email").trim().toLowerCase();
+            String phone = JsonUtil.text(body, "phone").trim();
+            String password = JsonUtil.text(body, "password").trim();
             if (donorDao.emailOrPhoneExists(email, phone)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(new ApiResponse(false, "Email or phone already registered."));
@@ -277,7 +278,7 @@ public class DonorController {
             donor.put("phone", phone);
             donor.put("dob", JsonUtil.asDate(body, "dateOfBirth"));
             donor.put("gender", JsonUtil.text(body, "gender"));
-            donor.put("password", JsonUtil.text(body, "password"));
+            donor.put("password", password);
             donor.put("bloodType", JsonUtil.text(body, "bloodType"));
             donor.put("weight", JsonUtil.asDouble(body, "weight"));
             donor.put("lastDonation", JsonUtil.asDate(body, "lastDonation"));
@@ -294,7 +295,7 @@ public class DonorController {
             donor.put("emailNotif", JsonUtil.asBoolean(body, "emailNotif", false));
 
             if (donorDao.insert(donor)) {
-                Map<String, Object> registeredDonor = donorDao.findByLogin(email, (String) donor.get("password"));
+                Map<String, Object> registeredDonor = donorDao.findByLogin(email, password);
                 if (registeredDonor == null) {
                     registeredDonor = donor;
                 }
@@ -318,8 +319,8 @@ public class DonorController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
-            String identifier = JsonUtil.text(body, "identifier");
-            String password = JsonUtil.text(body, "password");
+            String identifier = JsonUtil.text(body, "identifier").trim();
+            String password = JsonUtil.text(body, "password").trim();
             Map<String, Object> donor = donorDao.findByLogin(identifier, password);
             if (donor == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

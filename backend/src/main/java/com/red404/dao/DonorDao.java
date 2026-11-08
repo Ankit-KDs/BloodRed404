@@ -17,11 +17,13 @@ import com.red404.util.DistanceCalculator;
 public class DonorDao {
 
     public boolean emailOrPhoneExists(String email, String phone) throws SQLException {
-        String sql = "SELECT id FROM donors WHERE email = ? OR phone = ? LIMIT 1";
+        String cleanEmail = email != null ? email.trim().toLowerCase() : "";
+        String cleanPhone = phone != null ? phone.trim() : "";
+        String sql = "SELECT id FROM donors WHERE LOWER(TRIM(email)) = ? OR TRIM(phone) = ? LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email);
-            ps.setString(2, phone);
+            ps.setString(1, cleanEmail);
+            ps.setString(2, cleanPhone);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -34,12 +36,15 @@ public class DonorDao {
                 "sms_notif, push_notif, email_notif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, str(donor.get("name")));
-            ps.setString(2, str(donor.get("email")));
-            ps.setString(3, str(donor.get("phone")));
+            ps.setString(1, str(donor.get("name")).trim());
+            String email = str(donor.get("email")).trim().toLowerCase();
+            String phone = str(donor.get("phone")).trim();
+            String password = str(donor.get("password")).trim();
+            ps.setString(2, email);
+            ps.setString(3, phone);
             setDate(ps, 4, (Date) donor.get("dob"));
             ps.setString(5, str(donor.get("gender")));
-            ps.setString(6, str(donor.get("password")));
+            ps.setString(6, password);
             ps.setString(7, str(donor.get("bloodType")));
             ps.setDouble(8, donor.get("weight") == null ? 0 : ((Number) donor.get("weight")).doubleValue());
             setDate(ps, 9, (Date) donor.get("lastDonation"));
@@ -59,12 +64,15 @@ public class DonorDao {
     }
 
     public Map<String, Object> findByLogin(String identifier, String password) throws SQLException {
-        String sql = "SELECT * FROM donors WHERE (email = ? OR phone = ?) AND password = ?";
+        if (identifier == null || password == null) return null;
+        String cleanId = identifier.trim();
+        String cleanPw = password.trim();
+        String sql = "SELECT * FROM donors WHERE (LOWER(TRIM(email)) = LOWER(?) OR TRIM(phone) = ?) AND TRIM(password) = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, identifier);
-            ps.setString(2, identifier);
-            ps.setString(3, password);
+            ps.setString(1, cleanId);
+            ps.setString(2, cleanId);
+            ps.setString(3, cleanPw);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapDonor(rs, true) : null;
             }
