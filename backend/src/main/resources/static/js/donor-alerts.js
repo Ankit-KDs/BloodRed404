@@ -551,13 +551,6 @@
         });
       }
 
-      // Clicking anywhere on the map redirects to route navigation
-      leafletMap.on('click', () => {
-        window.location.href = 'donor-route.html';
-      });
-
-      mapContainer.style.cursor = 'pointer';
-
       updateRadarVisualization();
     } catch (e) {
       console.warn('Map initialization notice:', e);
@@ -675,10 +668,10 @@
       await fetch(`/api/requests/${requestId}/accept`, { method: 'POST' });
     } catch (_) {}
 
-    showToast('Alert accepted! Initializing live route navigation...', 'success');
-    setTimeout(() => {
-      window.location.href = 'donor-route.html';
-    }, 600);
+    showToast('Alert accepted! Hospital dispatch and rescue team notified.', 'success');
+    activeRequests = activeRequests.filter(r => String(r.id) !== String(requestId));
+    renderEmergencyFeed();
+    updateRadarVisualization();
   };
 
   window.declineAlert = async function (requestId) {

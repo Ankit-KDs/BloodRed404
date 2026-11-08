@@ -11,9 +11,8 @@
     name: "Ankit Kumar",
     email: "ankit@red404.in",
     bloodGroup: "A+",
-    location: "Meerut, UP",
-    nodeId: "RED-DL-7956",
-    district: "MEERUT",
+    location: sessionStorage.getItem('red404_donor_detected_location') || "Locating...",
+    district: "",
     donations: [], // Real clinical history (Empty by default)
     activeAlerts: [], // Real emergencies (Empty by default)
     profileCreatedAt: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -36,10 +35,10 @@
         if (user.bloodGroup) donorData.bloodGroup = user.bloodGroup;
         if (user.city || user.district) {
           donorData.district = (user.district || user.city).toUpperCase();
-          donorData.location = `${user.city || user.district}, ${user.state || 'UP'}`;
+          if (!sessionStorage.getItem('red404_donor_detected_location')) {
+            donorData.location = `${user.city || user.district}, ${user.state || 'India'}`;
+          }
         }
-        if (user.nodeId) donorData.nodeId = user.nodeId;
-        else if (user.id) donorData.nodeId = `RED-DL-${user.id}`;
 
         if (user.createdAt) {
           donorData.profileCreatedAt = new Date(user.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -69,6 +68,9 @@
     // 1. Render Welcome Banner & Telemetry Pills
     renderWelcomeBanner();
 
+    // Dynamically detect user's current GPS location & state/district
+    detectUserLocation();
+
     // 2. Render Emergency SOS Dispatch Card (Empty vs Active)
     renderAlerts();
 
@@ -89,19 +91,81 @@
   }
 
   /**
+   * Dynamically detect real browser geolocation & reverse geocode to District / State
+   */
+  function detectUserLocation() {
+    const locEl = document.getElementById('user-location');
+    const cached = sessionStorage.getItem('red404_donor_detected_location');
+    if (cached) {
+      donorData.location = cached;
+      if (locEl) locEl.textContent = cached;
+    }
+
+    if (!navigator.geolocation) {
+      if (!cached && locEl) {
+        locEl.textContent = donorData.location && donorData.location !== 'Locating...' ? donorData.location : 'Location Connected';
+      }
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          sessionStorage.setItem('red404_user_lat', lat);
+          sessionStorage.setItem('red404_user_lng', lng);
+
+          // Reverse geocode via OpenStreetMap Nominatim
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const district = addr.county || addr.state_district || addr.district || addr.city || addr.town || addr.village || 'Local';
+            const state = addr.state || '';
+            const locationStr = state ? `${district}, ${state}` : district;
+
+            donorData.location = locationStr;
+            donorData.district = district.toUpperCase();
+            sessionStorage.setItem('red404_donor_detected_location', locationStr);
+
+            if (locEl) locEl.textContent = locationStr;
+
+            // Sync with Command Nav Live GPS pill
+            const navGps = document.getElementById('navGpsIndicator');
+            if (navGps) {
+              const span = navGps.querySelector('span:not(.gps-dot-pulse)');
+              if (span) span.textContent = `Live GPS: ${locationStr}`;
+            }
+          }
+        } catch (e) {
+          console.warn('Geolocation geocoding notice:', e);
+          if (locEl && (!donorData.location || donorData.location === 'Locating...')) {
+            locEl.textContent = 'GPS Connected';
+          }
+        }
+      },
+      (err) => {
+        console.warn('Geolocation notice:', err.message);
+        if (locEl && (!donorData.location || donorData.location === 'Locating...')) {
+          locEl.textContent = donorData.district ? `${donorData.district}, India` : 'GPS Connected';
+        }
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  }
+
+  /**
    * 1. Welcome Banner
    */
   function renderWelcomeBanner() {
     const userNameEl = document.getElementById('user-name');
-    const userNodeIdEl = document.getElementById('user-node-id');
-    const userSectorEl = document.getElementById('user-sector');
     const userBloodGroupEl = document.getElementById('user-blood-group');
     const userLocationEl = document.getElementById('user-location');
     const userNodeStatusEl = document.getElementById('user-node-status');
 
     if (userNameEl) userNameEl.textContent = donorData.name;
-    if (userNodeIdEl) userNodeIdEl.textContent = donorData.nodeId;
-    if (userSectorEl) userSectorEl.textContent = donorData.district;
     if (userBloodGroupEl) userBloodGroupEl.textContent = donorData.bloodGroup;
     if (userLocationEl) userLocationEl.textContent = donorData.location;
     if (userNodeStatusEl) userNodeStatusEl.textContent = 'Active';

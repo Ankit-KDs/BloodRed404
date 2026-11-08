@@ -123,14 +123,32 @@
       gpsPill.addEventListener('click', () => {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-            (pos) => {
+            async (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+                if (res.ok) {
+                  const data = await res.json();
+                  const addr = data.address || {};
+                  const district = addr.county || addr.state_district || addr.district || addr.city || addr.town || 'Local';
+                  const state = addr.state || '';
+                  const locStr = state ? `${district}, ${state}` : district;
+                  const span = gpsPill.querySelector('span:not(.gps-dot-pulse)');
+                  if (span) span.textContent = `Live GPS: ${locStr}`;
+                  if (typeof showToast === 'function') {
+                    showToast(`GPS Synced: ${locStr} (${lat.toFixed(4)}°, ${lng.toFixed(4)}°)`, 'success');
+                  }
+                  return;
+                }
+              } catch (_) {}
               if (typeof showToast === 'function') {
-                showToast(`GPS Refreshed: ${pos.coords.latitude.toFixed(4)}° N, ${pos.coords.longitude.toFixed(4)}° E`, 'success');
+                showToast(`GPS Refreshed: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`, 'success');
               }
             },
             () => {
               if (typeof showToast === 'function') {
-                showToast('GPS Connected: Meerut Sector Node Active (28.3486° N, 79.5619° E)', 'info');
+                showToast('Live GPS Signal Connected', 'info');
               }
             }
           );

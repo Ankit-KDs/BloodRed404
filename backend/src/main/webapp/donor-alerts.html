@@ -192,8 +192,7 @@
         </div>
       </div>
 
-      <div class="radar-map-wrapper" onclick="window.location.href='donor-route.html'"
-        title="Click to open Live Route Navigation" style="cursor:pointer">
+      <div class="radar-map-wrapper">
         <!-- Interactive Leaflet Map Container -->
         <div id="proximityMap" class="dark-map"></div>
 
@@ -212,17 +211,12 @@
         </div>
 
         <!-- Interactive Map Controls (Zoom & Recenter) -->
-        <div class="radar-map-controls" onclick="event.stopPropagation()">
+        <div class="radar-map-controls">
           <button type="button" class="rmc-btn" id="radarZoomInBtn" title="Zoom In"><i class="fas fa-plus"></i></button>
           <button type="button" class="rmc-btn" id="radarZoomOutBtn" title="Zoom Out"><i
               class="fas fa-minus"></i></button>
           <button type="button" class="rmc-btn" id="radarCenterBtn" title="Recenter on My Location"><i
               class="fas fa-crosshairs"></i></button>
-        </div>
-
-        <div class="radar-click-hint">
-          <i class="fas fa-location-arrow"></i>
-          <span>Click Map to Open Navigation ↗</span>
         </div>
       </div>
 
