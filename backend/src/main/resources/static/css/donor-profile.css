@@ -2332,6 +2332,9 @@ body.donor-profile-body {
    ============================================================ */
 
 .digital-id-intake-card {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin-top: 1.5rem !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 1.25rem !important;

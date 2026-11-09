@@ -414,7 +414,7 @@
       // Set green badge
       if (badge) {
         badge.className = "status-badge eligible-ready";
-        badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span id="badgeText">ELIGIBLE TO DONATE • Safe to Proceed</span>`;
+        badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span id="badgeText">ELIGIBLE TO DONATE</span>`;
       }
 
       // Checklist 100% complete
@@ -764,7 +764,7 @@
     if (bpPayloadEl) bpPayloadEl.textContent = `${bpVal} mmHg`;
 
     if (eligPayloadEl) {
-      eligPayloadEl.textContent = 'ELIGIBLE • Safe to Proceed';
+      eligPayloadEl.textContent = 'ELIGIBLE TO DONATE';
     }
 
     // 6. Action Button Bindings

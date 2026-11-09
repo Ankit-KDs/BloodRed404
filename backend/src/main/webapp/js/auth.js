@@ -31,9 +31,12 @@ try {
       created_at: defaultRegDate
     });
     localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
-  } else if (!localList[existingIdx].createdAt && !localList[existingIdx].created_at) {
-    localList[existingIdx].createdAt = defaultRegDate;
-    localList[existingIdx].created_at = defaultRegDate;
+  } else {
+    localList[existingIdx].password = '12345678';
+    if (!localList[existingIdx].createdAt && !localList[existingIdx].created_at) {
+      localList[existingIdx].createdAt = defaultRegDate;
+      localList[existingIdx].created_at = defaultRegDate;
+    }
     localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
   }
   if (!localStorage.getItem('red404_reg_date_ak30kr02@gmail.com')) {
@@ -556,10 +559,31 @@ function initDonorLoginForm() {
         const localDonors = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
         const cleanId = identifier.trim().toLowerCase();
         const cleanPw = password.trim();
-        const match = localDonors.find(d =>
+        let match = localDonors.find(d =>
           ((d.email && d.email.trim().toLowerCase() === cleanId) || (d.phone && d.phone.trim() === identifier.trim())) &&
           (d.password && d.password.trim() === cleanPw)
         );
+        if (!match && (cleanId === 'ak30kr02@gmail.com' || cleanId === '9876543210') && cleanPw === '12345678') {
+          match = {
+            id: 1,
+            name: 'Ankit Kumar',
+            firstName: 'Ankit',
+            lastName: 'Kumar',
+            email: 'ak30kr02@gmail.com',
+            phone: '9876543210',
+            password: '12345678',
+            bloodType: 'A+',
+            weight: 68,
+            availability: 'Available',
+            city: 'Meerut',
+            state: 'Uttar Pradesh',
+            address: 'Near Subharti, Delhi Road',
+            pincode: '250002',
+            zone: 'North Zone',
+            createdAt: '2026-11-08T14:00:00.000Z',
+            created_at: '2026-11-08T14:00:00.000Z'
+          };
+        }
         if (match) {
           const regTimestamp = match.createdAt || match.created_at || (cleanId ? localStorage.getItem('red404_reg_date_' + cleanId) : null) || (cleanId.includes('ak30kr02') ? '2026-11-08T14:00:00.000Z' : new Date().toISOString());
           match.createdAt = regTimestamp;

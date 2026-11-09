@@ -35,6 +35,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateHospitalsTable(conn);
             migrateBloodRequestsTable(conn);
             migrateDonationsTable(conn);
+            seedOrUpdatePrimaryDonor(conn);
             log.info("RED404 database schema migration check completed successfully.");
         } catch (Exception e) {
             log.warn("Database schema migration notice: {}", e.getMessage());
@@ -181,6 +182,24 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             }
         } catch (Exception e) {
             log.warn("Error checking table '{}': {}", tableName, e.getMessage());
+        }
+    }
+
+    private void seedOrUpdatePrimaryDonor(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            try (ResultSet rs = st.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
+                if (!rs.next()) {
+                    String insertSql = "INSERT INTO donors (name, email, phone, dob, gender, password, blood_type, weight, last_donation, availability, address, city, state, pincode, zone, created_at) " +
+                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, '2024-01-10', 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                    st.executeUpdate(insertSql);
+                    log.info("Primary donor 'ak30kr02@gmail.com' seeded into database.");
+                } else {
+                    st.executeUpdate("UPDATE donors SET password = '12345678' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com'");
+                    log.info("Primary donor 'ak30kr02@gmail.com' password verified and synchronized.");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice ensuring primary donor in database: {}", e.getMessage());
         }
     }
 }

@@ -71,7 +71,7 @@
     // 0 verified donations -> 100% Eligible immediately
     if (!donationRecords || donationRecords.length === 0) {
       badge.className = 'status-eligibility-btn eligible-ready';
-      textEl.textContent = 'Status: ELIGIBLE TO DONATE • Safe to Proceed';
+      textEl.textContent = 'Status: ELIGIBLE TO DONATE';
       return;
     }
 
@@ -94,7 +94,7 @@
     }
 
     badge.className = 'status-eligibility-btn eligible-ready';
-    textEl.textContent = 'Status: ELIGIBLE TO DONATE • Safe to Proceed';
+    textEl.textContent = 'Status: ELIGIBLE TO DONATE';
   }
 
   function renderImpactStats() {
