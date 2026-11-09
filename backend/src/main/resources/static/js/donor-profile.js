@@ -937,12 +937,8 @@
       btnCancelModal.addEventListener('click', closeModal);
     }
 
-    // Close when clicking on backdrop
-    editModal.addEventListener('click', (e) => {
-      if (e.target === editModal) {
-        closeModal();
-      }
-    });
+    // Backdrop click disabled: modal closes strictly on Save or Cancel buttons
+    // (User request: do not close when clicking outside)
 
     // Form submit handler
     if (form && !form.dataset.bound) {

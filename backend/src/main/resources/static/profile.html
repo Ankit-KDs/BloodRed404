@@ -17,9 +17,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <!-- Core Profile CSS -->
-  <link rel="stylesheet" href="css/common.css?v=20261109_v13_single_qr_restore" />
-  <link rel="stylesheet" href="css/command-nav.css?v=20261109_v13_single_qr_restore" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=20261109_v13_single_qr_restore">
+  <link rel="stylesheet" href="css/common.css?v=20261109_v14_clean_form_and_scroll" />
+  <link rel="stylesheet" href="css/command-nav.css?v=20261109_v14_clean_form_and_scroll" />
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261109_v14_clean_form_and_scroll">
       <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
     /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
@@ -1830,24 +1830,6 @@
                 </button>
               </div>
 
-              <!-- Identity Subrow -->
-              <div class="card-identity-row">
-                <div class="donor-identity-left">
-                  <div class="card-avatar-initials" id="cardAvatarBox">
-                    <span id="donor-avatar-initials">AK</span>
-                  </div>
-                  <div class="donor-text-details">
-                    <h3 class="card-donor-name" id="donor-profile-name">Ankit Kumar</h3>
-                    <div class="card-donor-submeta">
-                      <div>Father's Name: <strong id="donor-father-name">Rajesh Kumar</strong></div>
-                      <div>Donor ID: <span class="donor-id-pill" id="donor-unique-id">#RED-UP-7951</span></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="card-blood-badge" id="donor-profile-blood-group">A+</div>
-              </div>
-
               <!-- Center Scannable Real QR Code Container -->
               <div class="card-qr-center-block">
                 <a id="qrDirectLink" href="user-detail-form.html" target="_blank" class="qr-card-surface" title="Scan or click to view details form directly">
@@ -1880,7 +1862,7 @@
         <button type="button" class="modal-close-btn" id="btnCloseEditModal" aria-label="Close Modal">&times;</button>
       </div>
 
-      <form id="editDonorProfileForm" class="edit-profile-form" novalidate>
+      <form id="editDonorProfileForm" class="edit-profile-form" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" novalidate>
         <div class="modal-telemetry-body">
           <p class="edit-modal-intro">
             Update your official donor telemetry details below. Saving immediately synchronizes your records with the RED404 MySQL database and updates your digital QR emergency pass.
@@ -1894,11 +1876,11 @@
           <div class="form-grid-2col">
             <div class="form-field-group">
               <label for="editDonorFullName">Full Name *</label>
-              <input type="text" id="editDonorFullName" name="fullName" required placeholder="e.g. Ankit Kumar" />
+              <input type="text" id="editDonorFullName" name="d_user_fullname" autocomplete="off" data-lpignore="true" required placeholder="e.g. Ankit Kumar" />
             </div>
             <div class="form-field-group">
               <label for="editDonorFatherName">Father's Name *</label>
-              <input type="text" id="editDonorFatherName" name="fatherName" required placeholder="e.g. Rajesh Kumar" />
+              <input type="text" id="editDonorFatherName" name="d_user_fathername" autocomplete="off" data-lpignore="true" required placeholder="e.g. Rajesh Kumar" />
             </div>
             <div class="form-field-group">
               <label for="editDonorBloodType">Blood Group *</label>
@@ -1939,27 +1921,27 @@
           <div class="form-grid-2col">
             <div class="form-field-group">
               <label for="editDonorPhone">Mobile Phone *</label>
-              <input type="tel" id="editDonorPhone" name="phone" required placeholder="e.g. 9876543210" />
+              <input type="tel" id="editDonorPhone" name="d_user_mobile" autocomplete="off" data-lpignore="true" required placeholder="e.g. 9876543210" />
             </div>
             <div class="form-field-group">
               <label for="editDonorEmail">Email Address</label>
-              <input type="email" id="editDonorEmail" name="email" placeholder="e.g. donor@red404.in" />
+              <input type="email" id="editDonorEmail" name="d_user_mail" autocomplete="off" data-lpignore="true" placeholder="e.g. donor@red404.in" />
             </div>
             <div class="form-field-group full-width">
               <label for="editDonorAddress">Residential Address</label>
-              <input type="text" id="editDonorAddress" name="address" placeholder="e.g. Near Subharti, Delhi Road" />
+              <input type="text" id="editDonorAddress" name="d_user_street" autocomplete="off" data-lpignore="true" placeholder="e.g. Near Subharti, Delhi Road" />
             </div>
             <div class="form-field-group">
               <label for="editDonorCity">City</label>
-              <input type="text" id="editDonorCity" name="city" placeholder="e.g. Meerut" />
+              <input type="text" id="editDonorCity" name="d_user_locality" autocomplete="off" data-lpignore="true" placeholder="e.g. Meerut" />
             </div>
             <div class="form-field-group">
               <label for="editDonorState">State</label>
-              <input type="text" id="editDonorState" name="state" placeholder="e.g. Uttar Pradesh" />
+              <input type="text" id="editDonorState" name="d_user_province" autocomplete="off" data-lpignore="true" placeholder="e.g. Uttar Pradesh" />
             </div>
             <div class="form-field-group">
               <label for="editDonorPincode">PIN Code</label>
-              <input type="text" id="editDonorPincode" name="pincode" placeholder="e.g. 250002" />
+              <input type="text" id="editDonorPincode" name="d_user_postalcode" autocomplete="off" data-lpignore="true" placeholder="e.g. 250002" />
             </div>
           </div>
 
@@ -2048,9 +2030,9 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/common.js?v=20261109_v13_single_qr_restore"></script>
-  <script src="js/command-nav.js?v=20261109_v13_single_qr_restore"></script>
-  <script src="js/qr-generator.js?v=20261109_v13_single_qr_restore"></script>
-  <script src="js/donor-profile.js?v=20261109_v13_single_qr_restore"></script>
+  <script src="js/common.js?v=20261109_v14_clean_form_and_scroll"></script>
+  <script src="js/command-nav.js?v=20261109_v14_clean_form_and_scroll"></script>
+  <script src="js/qr-generator.js?v=20261109_v14_clean_form_and_scroll"></script>
+  <script src="js/donor-profile.js?v=20261109_v14_clean_form_and_scroll"></script>
 </body>
 </html>

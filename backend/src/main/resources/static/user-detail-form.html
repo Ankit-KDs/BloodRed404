@@ -650,38 +650,41 @@
         padding: 20px 16px;
       }
     }
-  </style>
+  
+    /* Simple End-of-Form Buttons (No heavy design) */
+    .form-end-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin: 28px auto 40px;
+    }
+    .btn-simple-action {
+      appearance: none;
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 9px 24px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-simple-action:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    @media print {
+      .form-end-actions,
+      .hospital-toolbar-wrap {
+        display: none !important;
+      }
+    }
+</style>
 </head>
 <body>
-
-  <!-- ==================== TOP ACTION TOOLBAR (HOSPITAL UTILITIES) ==================== -->
-  <div class="hospital-toolbar-wrap" id="hospitalToolbar">
-    <div class="toolbar-left">
-      <div class="toolbar-brand">
-        <i class="fa-solid fa-droplet"></i>
-        <span>RED404 // Emergency Blood Network</span>
-      </div>
-    </div>
-
-    <div class="toolbar-actions">
-      <button type="button" class="tb-btn" id="btnPrintForm" title="Print this formal A4 clinical document">
-        <i class="fa-solid fa-print"></i>
-        <span>Print Form</span>
-      </button>
-      <button type="button" class="tb-btn" id="btnDownloadPdf" title="Export this record as an official PDF">
-        <i class="fa-solid fa-file-pdf"></i>
-        <span>Download PDF</span>
-      </button>
-      <button type="button" class="tb-btn" id="btnShareForm" title="Share or copy clinical form URL">
-        <i class="fa-solid fa-share-nodes"></i>
-        <span>Share Link</span>
-      </button>
-      <button type="button" class="tb-btn tb-btn-primary" id="btnProceedCollection" title="Log verification audit into database and proceed to phlebotomy collection">
-        <i class="fa-solid fa-heart-pulse"></i>
-        <span>Proceed to Blood Collection</span>
-      </button>
-    </div>
-  </div>
 
   <!-- ==================== A4 FORMAL CLINICAL RECORD SHEET ==================== -->
   <main class="a4-clinical-sheet" id="clinicalSheet">
@@ -718,7 +721,7 @@
       <section class="donor-identity-banner">
         <!-- Photo Container -->
         <div class="dib-photo-col" id="donorPhotoWrap">
-          <div class="dib-avatar-initials" id="donorAvatarInitials">-</div>
+          <div class="dib-avatar-initials" id="donorAvatarInitials">N/A</div>
         </div>
 
         <!-- Identity Details -->
@@ -727,24 +730,24 @@
             <i class="fa-solid fa-circle-check"></i>
             Identity Verified
           </span>
-          <h2 class="dib-donor-name" id="viewDonorName">-</h2>
+          <h2 class="dib-donor-name" id="viewDonorName">N/A</h2>
           
           <div class="dib-subdetails">
-            <div>Father's Name: <strong id="viewDonorFatherName">-</strong></div>
-            <div>Donor ID: <span class="dib-id-badge" id="viewDonorId">-</span></div>
+            <div>Father's Name: <strong id="viewDonorFatherName">N/A</strong></div>
+            <div>Donor ID: <span class="dib-id-badge" id="viewDonorId">N/A</span></div>
           </div>
           <div class="dib-subdetails">
-            <div>Gender: <strong id="viewDonorGender">-</strong></div>
-            <div>Age: <strong id="viewDonorAge">-</strong></div>
-            <div>Contact: <strong id="viewDonorPhone">-</strong></div>
+            <div>Gender: <strong id="viewDonorGender">N/A</strong></div>
+            <div>Age: <strong id="viewDonorAge">N/A</strong></div>
+            <div>Contact: <strong id="viewDonorPhone">N/A</strong></div>
           </div>
         </div>
 
         <!-- Prominent Blood Group Box -->
         <div class="dib-blood-box">
           <span class="dbb-top-label">Target Blood Group</span>
-          <span class="dbb-blood-type" id="viewBloodType">-</span>
-          <span class="dbb-rh-label" id="viewRhFactor">-</span>
+          <span class="dbb-blood-type" id="viewBloodType">N/A</span>
+          <span class="dbb-rh-label" id="viewRhFactor">N/A</span>
         </div>
       </section>
 
@@ -757,25 +760,25 @@
         <table class="clinical-table">
           <tr>
             <th>Full Legal Name</th>
-            <td id="viewTableFullName">-</td>
+            <td id="viewTableFullName">N/A</td>
             <th>Father's / Guardian Name</th>
-            <td id="viewTableFatherName">-</td>
+            <td id="viewTableFatherName">N/A</td>
           </tr>
           <tr>
             <th>Date of Birth</th>
-            <td id="viewTableDob">-</td>
+            <td id="viewTableDob">N/A</td>
             <th>Calculated Age / Gender</th>
-            <td id="viewTableAgeGender">-</td>
+            <td id="viewTableAgeGender">N/A</td>
           </tr>
           <tr>
             <th>Mobile Phone</th>
-            <td id="viewTablePhone">-</td>
+            <td id="viewTablePhone">N/A</td>
             <th>Email Address</th>
-            <td id="viewTableEmail">-</td>
+            <td id="viewTableEmail">N/A</td>
           </tr>
           <tr>
             <th>Residential Address</th>
-            <td colspan="3" id="viewTableAddress">-</td>
+            <td colspan="3" id="viewTableAddress">N/A</td>
           </tr>
         </table>
       </section>
@@ -789,21 +792,21 @@
         <table class="clinical-table">
           <tr>
             <th>Blood Group &amp; Rh Factor</th>
-            <td class="highlight-ruby" id="viewTableBloodRh">-</td>
+            <td class="highlight-ruby" id="viewTableBloodRh">N/A</td>
             <th>Donor Classification</th>
-            <td id="viewTableDonorType">-</td>
+            <td id="viewTableDonorType">N/A</td>
           </tr>
           <tr>
             <th>Verification Status</th>
-            <td class="highlight-pill" id="viewTableVerification">-</td>
+            <td class="highlight-pill" id="viewTableVerification">N/A</td>
             <th>Registration Date</th>
-            <td id="viewTableRegDate">-</td>
+            <td id="viewTableRegDate">N/A</td>
           </tr>
           <tr>
             <th>Last Donation Date</th>
-            <td id="viewTableLastDate">-</td>
+            <td id="viewTableLastDate">N/A</td>
             <th>Last Verified Facility</th>
-            <td id="viewTableFacility">-</td>
+            <td id="viewTableFacility">N/A</td>
           </tr>
         </table>
       </section>
@@ -817,39 +820,46 @@
         <table class="clinical-table">
           <tr>
             <th>Hemoglobin Level</th>
-            <td class="highlight-ruby" id="viewTableHemoglobin">-</td>
+            <td class="highlight-ruby" id="viewTableHemoglobin">N/A</td>
             <th>Blood Pressure (BP)</th>
-            <td id="viewTableBp">-</td>
+            <td id="viewTableBp">N/A</td>
           </tr>
           <tr>
             <th>Resting Pulse Rate</th>
-            <td id="viewTablePulse">-</td>
+            <td id="viewTablePulse">N/A</td>
             <th>Body Temperature</th>
-            <td id="viewTableTemp">-</td>
+            <td id="viewTableTemp">N/A</td>
           </tr>
           <tr>
             <th>Donor Weight</th>
-            <td id="viewTableWeight">-</td>
+            <td id="viewTableWeight">N/A</td>
             <th>Medical Eligibility Status</th>
-            <td class="highlight-pill" id="viewTableEligibility">-</td>
+            <td class="highlight-pill" id="viewTableEligibility">N/A</td>
           </tr>
           <tr>
             <th>Known Drug Allergies</th>
-            <td id="viewTableAllergies">-</td>
+            <td id="viewTableAllergies">N/A</td>
             <th>Existing Medical Conditions</th>
-            <td id="viewTableConditions">-</td>
+            <td id="viewTableConditions">N/A</td>
           </tr>
           <tr>
             <th>Current Medications</th>
-            <td id="viewTableMedications">-</td>
+            <td id="viewTableMedications">N/A</td>
             <th>Previous Surgeries (&lt; 12 mo)</th>
-            <td id="viewTableSurgeries">-</td>
+            <td id="viewTableSurgeries">N/A</td>
           </tr>
         </table>
       </section>
 
     </div>
   </main>
+
+  <!-- ==================== FORM ACTION BUTTONS (END OF FORM) ==================== -->
+  <div class="form-end-actions" style="margin: 28px auto 40px; display: flex; justify-content: center; gap: 14px;">
+    <button type="button" id="btnPrintForm" class="btn-simple-action">Print</button>
+    <button type="button" id="btnDownloadPdf" class="btn-simple-action">Download</button>
+    <button type="button" id="btnShareForm" class="btn-simple-action">Share</button>
+  </div>
 
   <!-- ==================== COLLECTION CONFIRMATION MODAL ==================== -->
   <div class="hospital-modal-backdrop" id="collectionModal" style="display: none;">
@@ -870,11 +880,11 @@
         <table class="hmc-meta-table">
           <tr>
             <td><strong>Donor ID:</strong></td>
-            <td id="modalDonorId">-</td>
+            <td id="modalDonorId">N/A</td>
           </tr>
           <tr>
             <td><strong>Target Blood Group:</strong></td>
-            <td id="modalBloodGroup">-</td>
+            <td id="modalBloodGroup">N/A</td>
           </tr>
           <tr>
             <td><strong>Verification Status:</strong></td>
@@ -978,10 +988,10 @@
       }
 
       function valOrNA(val, suffix) {
-        if (val === null || val === undefined) return 'NA';
+        if (val === null || val === undefined) return 'N/A';
         const str = String(val).trim();
-        if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str.toLowerCase() === 'none') {
-          return 'NA';
+        if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str.toLowerCase() === 'none' || str === '') {
+          return 'N/A';
         }
         return suffix ? (str + ' ' + suffix) : str;
       }
@@ -991,25 +1001,14 @@
         const name = valOrNA(d.name || d.fullName);
         const fatherName = valOrNA(d.fatherName || d.father_name);
         const bloodType = valOrNA(d.bloodType || d.blood_type);
-        const isPositive = !bloodType.includes('-') && bloodType !== 'NA';
-        const rhStr = bloodType === 'NA' ? 'NA' : (isPositive ? 'Rh-D Positive (Rh+)' : 'Rh-D Negative (Rh-)');
+        const isPositive = !bloodType.includes('-') && bloodType !== 'N/A';
+        const rhStr = bloodType === 'N/A' ? 'N/A' : (isPositive ? 'Rh-D Positive (Rh+)' : 'Rh-D Negative (Rh-)');
 
-        // Calculate state code & unique ID
-        let stateCode = 'DL';
-        const stateVal = (d.state || '').trim().toUpperCase();
-        if (stateVal.includes('UTTAR PRADESH')) stateCode = 'UP';
-        else if (stateVal.includes('UTTARAKHAND')) stateCode = 'UK';
-        else if (stateVal.includes('DELHI')) stateCode = 'DL';
-        else if (stateVal.includes('MAHARASHTRA')) stateCode = 'MH';
-        else if (stateVal.includes('KARNATAKA')) stateCode = 'KA';
-        else if (stateVal.includes('TAMIL NADU')) stateCode = 'TN';
-        else if (stateVal.length >= 2) stateCode = stateVal.substring(0, 2);
-
-        const idNum = 7950 + parseInt(d.id || 1, 10);
-        const uniqueId = d.id ? `#RED-${stateCode}-${idNum}` : 'NA';
+        // Donor ID strictly set to N/A per user instruction ("Also Donor ID i will tell you later how to set them")
+        const uniqueId = 'N/A';
 
         // Calculate Age
-        let ageStr = 'NA';
+        let ageStr = 'N/A';
         if (d.dob || d.dateOfBirth) {
           const birthDate = new Date(d.dob || d.dateOfBirth);
           if (!isNaN(birthDate.getTime())) {
@@ -1025,8 +1024,8 @@
         }
 
         // Initials
-        let inits = 'AK';
-        if (name !== 'NA') {
+        let inits = 'N/A';
+        if (name !== 'N/A') {
           const parts = name.trim().split(/\s+/);
           inits = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]) : name.substring(0, 2);
         }
@@ -1048,48 +1047,43 @@
         setTxt('viewTableFatherName', fatherName);
         setTxt('viewTableDob', valOrNA(d.dob || d.dateOfBirth));
         const genderVal = valOrNA(d.gender);
-        setTxt('viewTableAgeGender', (ageStr !== 'NA' || genderVal !== 'NA') ? `${ageStr} / ${genderVal}` : 'NA');
+        setTxt('viewTableAgeGender', (ageStr !== 'N/A' || genderVal !== 'N/A') ? `${ageStr} / ${genderVal}` : 'N/A');
         setTxt('viewTablePhone', valOrNA(d.phone));
         setTxt('viewTableEmail', valOrNA(d.email));
         
         const addrParts = [d.address, d.city, d.state, d.pincode].filter(p => p && String(p).trim() && String(p).trim().toLowerCase() !== 'null');
-        setTxt('viewTableAddress', addrParts.length > 0 ? addrParts.join(', ') : 'NA');
+        setTxt('viewTableAddress', addrParts.length > 0 ? addrParts.join(', ') : 'N/A');
 
         // Section 2: Blood & Verification
-        setTxt('viewTableBloodRh', (bloodType !== 'NA') ? `${bloodType} (${rhStr})` : 'NA');
+        setTxt('viewTableBloodRh', (bloodType !== 'N/A') ? `${bloodType} (${rhStr})` : 'N/A');
         setTxt('viewTableDonorType', valOrNA(d.donorType || d.donor_type));
-        setTxt('viewTableVerification', d.verifiedFacility ? 'Lab Verified • Clinical Certified' : (d.id ? 'Verified Lifesaver Node' : 'NA'));
-        setTxt('viewTableRegDate', (d.createdAt || d.created_at) ? formatDate(d.createdAt || d.created_at) : 'NA');
-        setTxt('viewTableLastDate', (d.lastDonation || d.lastDonationDate || d.last_donation) ? formatDate(d.lastDonation || d.lastDonationDate || d.last_donation) : 'NA');
+        setTxt('viewTableVerification', d.verifiedFacility ? 'Lab Verified • Clinical Certified' : 'N/A');
+        setTxt('viewTableRegDate', (d.createdAt || d.created_at) ? formatDate(d.createdAt || d.created_at) : 'N/A');
+        setTxt('viewTableLastDate', (d.lastDonation || d.lastDonationDate || d.last_donation) ? formatDate(d.lastDonation || d.lastDonationDate || d.last_donation) : 'N/A');
         setTxt('viewTableFacility', valOrNA(d.verifiedFacility || d.verified_facility));
 
         // Section 3: Medical Screening & Vitals
-        const hb = (d.hemoglobin !== null && d.hemoglobin !== undefined && String(d.hemoglobin).trim() !== '') ? `${d.hemoglobin} g/dL` : 'NA';
+        const hb = (d.hemoglobin !== null && d.hemoglobin !== undefined && String(d.hemoglobin).trim() !== '') ? `${d.hemoglobin} g/dL` : 'N/A';
         setTxt('viewTableHemoglobin', hb);
         
-        const bp = (d.bloodPressure || d.blood_pressure) ? `${d.bloodPressure || d.blood_pressure} mmHg` : 'NA';
+        const bp = (d.bloodPressure || d.blood_pressure) ? `${d.bloodPressure || d.blood_pressure} mmHg` : 'N/A';
         setTxt('viewTableBp', bp);
         
-        const pulse = (d.pulse !== null && d.pulse !== undefined && String(d.pulse).trim() !== '') ? `${d.pulse} bpm` : 'NA';
+        const pulse = (d.pulse !== null && d.pulse !== undefined && String(d.pulse).trim() !== '') ? `${d.pulse} bpm` : 'N/A';
         setTxt('viewTablePulse', pulse);
         
-        const temp = (d.bodyTemp !== null && d.bodyTemp !== undefined && String(d.bodyTemp).trim() !== '') ? `${d.bodyTemp}° F` : 'NA';
+        const temp = (d.bodyTemp !== null && d.bodyTemp !== undefined && String(d.bodyTemp).trim() !== '') ? `${d.bodyTemp}° F` : 'N/A';
         setTxt('viewTableTemp', temp);
         
-        const weightVal = (d.weight !== null && d.weight !== undefined && String(d.weight).trim() !== '') ? `${d.weight} kg` : 'NA';
+        const weightVal = (d.weight !== null && d.weight !== undefined && String(d.weight).trim() !== '') ? `${d.weight} kg` : 'N/A';
         setTxt('viewTableWeight', weightVal);
         
-        setTxt('viewTableEligibility', d.availability ? d.availability : 'ELIGIBLE TO DONATE');
+        setTxt('viewTableEligibility', d.availability ? d.availability : 'N/A');
 
         setTxt('viewTableAllergies', valOrNA(d.allergies));
         setTxt('viewTableConditions', valOrNA(d.conditions));
         setTxt('viewTableMedications', valOrNA(d.medications));
         setTxt('viewTableSurgeries', valOrNA(d.surgeries));
-
-        // Modal fields
-        setTxt('modalDonorName', name);
-        setTxt('modalDonorId', uniqueId);
-        setTxt('modalBloodGroup', (bloodType !== 'NA') ? `${bloodType} (${rhStr})` : 'NA');
       }
 
       function setTxt(id, val) {
@@ -1098,9 +1092,9 @@
       }
 
       function formatDate(dStr) {
-        if (!dStr) return '08 Nov 2026';
+        if (!dStr) return 'N/A';
         const d = new Date(dStr);
-        if (isNaN(d.getTime())) return dStr;
+        if (isNaN(d.getTime())) return 'N/A';
         return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
       }
 
