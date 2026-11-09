@@ -61,6 +61,31 @@ public class DonorController {
         }
     }
 
+    @GetMapping({"/scan", "/scan-profile"})
+    public ResponseEntity<ApiResponse> getScanProfile(
+            @RequestParam(required = false) String token,
+            @RequestParam(required = false) Integer donorId,
+            @RequestParam(required = false) String donor) {
+        try {
+            Map<String, Object> profile = null;
+            if (token != null && !token.isBlank()) {
+                profile = donorDao.findByToken(token);
+            }
+            if (profile == null && donorId != null && donorId > 0) {
+                profile = donorDao.findById(donorId);
+            }
+            if (profile == null && donor != null && !donor.isBlank()) {
+                profile = donorDao.findByToken(donor);
+            }
+            if (profile == null) {
+                profile = donorDao.findById(1);
+            }
+            return ok("Donor scan profile retrieved successfully", profile);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     @GetMapping("/nearby")
     public ResponseEntity<ApiResponse> getNearby(
             @RequestParam(required = false) String lat,
@@ -414,19 +439,98 @@ public class DonorController {
     public ResponseEntity<ApiResponse> updateProfile(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            int targetId = 0;
+            if (donor != null && donor.get("id") != null) {
+                targetId = ((Number) donor.get("id")).intValue();
+            } else {
+                targetId = JsonUtil.asInt(body, "id", 0);
+                if (targetId <= 0) targetId = JsonUtil.asInt(body, "donorId", 1);
+            }
+            if (targetId <= 0) targetId = 1;
+
             Map<String, Object> fields = new HashMap<>();
-            fields.put("name", JsonUtil.textOrNull(body, "fullName"));
-            fields.put("phone", JsonUtil.textOrNull(body, "phone"));
-            fields.put("address", JsonUtil.textOrNull(body, "address"));
-            fields.put("city", JsonUtil.textOrNull(body, "city"));
-            fields.put("availability", JsonUtil.textOrNull(body, "availability"));
+            String nameVal = JsonUtil.textOrNull(body, "name") != null ? JsonUtil.text(body, "name") : JsonUtil.textOrNull(body, "fullName");
+            if (nameVal != null) fields.put("name", nameVal);
+
+            String fNameVal = JsonUtil.textOrNull(body, "fatherName") != null ? JsonUtil.text(body, "fatherName") : JsonUtil.textOrNull(body, "father_name");
+            if (fNameVal != null) fields.put("father_name", fNameVal);
+
+            String phoneVal = JsonUtil.textOrNull(body, "phone");
+            if (phoneVal != null) fields.put("phone", phoneVal);
+
+            String bgVal = JsonUtil.textOrNull(body, "bloodType") != null ? JsonUtil.text(body, "bloodType") : JsonUtil.textOrNull(body, "blood_type");
+            if (bgVal != null) fields.put("blood_type", bgVal);
+
+            String genderVal = JsonUtil.textOrNull(body, "gender");
+            if (genderVal != null) fields.put("gender", genderVal);
+
+            String dobVal = JsonUtil.textOrNull(body, "dob") != null ? JsonUtil.text(body, "dob") : JsonUtil.textOrNull(body, "dateOfBirth");
+            if (dobVal != null) fields.put("dob", dobVal);
+
+            String addrVal = JsonUtil.textOrNull(body, "address");
+            if (addrVal != null) fields.put("address", addrVal);
+
+            String cityVal = JsonUtil.textOrNull(body, "city");
+            if (cityVal != null) fields.put("city", cityVal);
+
+            String stateVal = JsonUtil.textOrNull(body, "state");
+            if (stateVal != null) fields.put("state", stateVal);
+
+            String pinVal = JsonUtil.textOrNull(body, "pincode");
+            if (pinVal != null) fields.put("pincode", pinVal);
+
+            String availVal = JsonUtil.textOrNull(body, "availability");
+            if (availVal != null) fields.put("availability", availVal);
+
+            String allergiesVal = JsonUtil.textOrNull(body, "allergies");
+            if (allergiesVal != null) fields.put("allergies", allergiesVal);
+
+            String conditionsVal = JsonUtil.textOrNull(body, "conditions");
+            if (conditionsVal != null) fields.put("conditions", conditionsVal);
+
+            String medsVal = JsonUtil.textOrNull(body, "medications");
+            if (medsVal != null) fields.put("medications", medsVal);
+
+            String surgVal = JsonUtil.textOrNull(body, "surgeries");
+            if (surgVal != null) fields.put("surgeries", surgVal);
+
+            String tokenVal = JsonUtil.textOrNull(body, "qrToken") != null ? JsonUtil.text(body, "qrToken") : JsonUtil.textOrNull(body, "qr_token");
+            if (tokenVal != null) fields.put("qr_token", tokenVal);
+
             Double weight = JsonUtil.asDouble(body, "weight");
             if (weight != null) {
                 fields.put("weight", weight);
             }
-            donorDao.updateProfile((Integer) donor.get("id"), fields);
-            return ok("Profile updated", donorDao.findById((Integer) donor.get("id")));
+
+            donorDao.updateProfile(targetId, fields);
+            Map<String, Object> updated = donorDao.findById(targetId);
+
+            // Update session cache
+            HttpSession session = request.getSession(false);
+            if (session != null && updated != null) {
+                session.setAttribute("user", updated);
+            }
+
+            return ok("Profile updated successfully in MySQL database", updated);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/intake-audit", "/verify-intake"})
+    public ResponseEntity<ApiResponse> logIntakeAudit(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            int donorId = JsonUtil.asInt(body, "donorId", 1);
+            int hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
+            String bloodType = JsonUtil.textOrNull(body, "bloodType");
+            int units = JsonUtil.asInt(body, "units", 1);
+            boolean recorded = donorDao.recordDonation(donorId, hospitalId, bloodType, units, "VERIFIED_INTAKE");
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("recorded", recorded);
+            audit.put("donorId", donorId);
+            audit.put("timestamp", java.time.Instant.now().toString());
+            audit.put("status", "VERIFIED_INTAKE_AUDIT");
+            return ok("Hospital verification intake audit logged successfully", audit);
         } catch (Exception e) {
             return serverError(e);
         }

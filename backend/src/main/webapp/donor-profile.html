@@ -1790,21 +1790,21 @@
           </div>
         </section>
 
-        <!-- CARD 4: DIGITAL BLOOD DONOR IDENTITY CARD & QR INTAKE PROFILE -->
+        <!-- CARD 4: DIGITAL BLOOD DONOR IDENTITY CARD -->
         <section class="profile-card digital-id-intake-card" id="digitalIdIntakeCard">
           <div class="card-header-row">
             <h2 class="card-title">
               <i class="fa-solid fa-id-card-clip" style="color: #ef4444; margin-right: 8px;"></i>
-              Digital Blood Donor Identity Card &amp; QR Intake Profile
+              Digital Blood Donor Identity Card
             </h2>
             <span class="card-meta-tag secure-meta-tag">
               <i class="fa-solid fa-shield-halved"></i>
-              CLINICAL PASSPORT • SECURE QR
+              CLINICAL EMERGENCY PASS • SECURE QR
             </span>
           </div>
 
           <div class="digital-id-section-subtitle">
-            Hospital Emergency Intake Token &amp; Encrypted Clinical Telemetry
+            Verified Emergency Donor Pass &amp; Scannable Clinical Intake Code
           </div>
 
           <!-- Top Bento: 3D Holographic Donor Digital Pass -->
@@ -1843,41 +1843,54 @@
 
                   <div class="dic-name-group">
                     <span class="dic-label">REGISTERED LIFESAVER</span>
-                    <h3 class="dic-name"><span id="donor-profile-name"></span></h3>
+                    <h3 class="dic-name"><span id="donor-profile-name">Ankit Kumar</span></h3>
+                    
+                    <div class="dic-father-row">
+                      <span class="dic-father-lbl">FATHER'S NAME:</span>
+                      <strong class="dic-father-val"><span id="donor-father-name">Rajesh Kumar</span></strong>
+                    </div>
+
                     <div class="dic-id-pill">
-                      <span class="dic-id-tag">ID:</span>
-                      <strong class="dic-id-value"><span id="donor-unique-id"></span></strong>
+                      <span class="dic-id-tag">DONOR ID:</span>
+                      <strong class="dic-id-value"><span id="donor-unique-id">#RED-UP-7951</span></strong>
                     </div>
                   </div>
                 </div>
 
-                <!-- Right Blood Group & High-Tech QR Matrix -->
+                <!-- Right Blood Group & High-Tech QR Matrix with Corner Edit Button -->
                 <div class="dic-qr-and-blood">
                   <!-- Prominent Glowing Blood Group Badge -->
                   <div class="dic-blood-badge">
                     <span class="dic-bb-label">BLOOD GROUP</span>
                     <div class="dic-bb-value-wrap">
-                      <span class="dic-bb-value" id="donor-profile-blood-group"></span>
+                      <span class="dic-bb-value" id="donor-profile-blood-group">A+</span>
                     </div>
                   </div>
 
-                  <!-- QR Code Box with HUD Targeting Corners -->
-                  <div class="dic-qr-wrapper">
-                    <div class="qr-target-corners">
-                      <span class="qt-corner tl"></span>
-                      <span class="qt-corner tr"></span>
-                      <span class="qt-corner bl"></span>
-                      <span class="qt-corner br"></span>
-                    </div>
-                    <div class="qr-scan-line"></div>
-                    <div id="donor-qr-code" class="qr-matrix-box" title="Emergency Intake QR Code">
-                      <!-- Procedurally rendered via RED404_QR -->
+                  <!-- QR Code Box with HUD Targeting Corners & Corner Edit Button -->
+                  <div class="dic-qr-box-outer">
+                    <button type="button" class="qr-corner-edit-btn" id="btnEditDonorCard" title="Edit Donor Profile Details">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                      <span>Edit</span>
+                    </button>
+                    
+                    <div class="dic-qr-wrapper">
+                      <div class="qr-target-corners">
+                        <span class="qt-corner tl"></span>
+                        <span class="qt-corner tr"></span>
+                        <span class="qt-corner bl"></span>
+                        <span class="qt-corner br"></span>
+                      </div>
+                      <div class="qr-scan-line"></div>
+                      <div id="donor-qr-code" class="qr-matrix-box" title="Emergency Intake QR Code">
+                        <!-- Procedurally rendered via RED404_QR -->
+                      </div>
                     </div>
                   </div>
 
                   <div class="dic-token-caption">
                     <i class="fa-solid fa-lock"></i>
-                    <span id="donor-qr-token"></span>
+                    <span id="donor-qr-token">RED404-SEC-XXXX</span>
                   </div>
                 </div>
               </div>
@@ -1893,8 +1906,10 @@
                   <span class="df-val verified"><i class="fa-solid fa-circle-check"></i> LAB VERIFIED</span>
                 </div>
                 <div class="dic-footer-item">
-                  <span class="df-lbl">SECURITY:</span>
-                  <span class="df-val">256-BIT ENCRYPTED</span>
+                  <span class="df-lbl">HOSPITAL SCAN:</span>
+                  <a href="user-detail-form.html" id="viewScanFormLink" target="_blank" class="df-val-link">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Clinical A4 Form
+                  </a>
                 </div>
               </div>
 
@@ -1902,158 +1917,162 @@
 
             <!-- Pass Action Controls -->
             <div class="donor-pass-actions">
+              <button type="button" class="btn-qr-action btn-qr-edit" id="btnOpenEditModal" title="Modify Your Donor Profile Information">
+                <i class="fa-solid fa-user-pen"></i>
+                <span>Edit Profile</span>
+              </button>
+              <a href="user-detail-form.html" id="btnOpenScanPage" target="_blank" class="btn-qr-action" style="text-decoration:none;" title="Open Official A4 Clinical Intake Record">
+                <i class="fa-solid fa-file-medical"></i>
+                <span>View Hospital A4 Form</span>
+              </a>
               <button type="button" class="btn-qr-action btn-qr-pdf" id="btnDownloadQrPdf" title="Download Donor ID Pass as PDF">
                 <i class="fa-solid fa-file-pdf"></i>
-                <span>Download QR (PDF)</span>
+                <span>Download Card (PDF)</span>
               </button>
               <button type="button" class="btn-qr-action btn-qr-print" id="btnPrintDonorCard" title="Print Physical Donor Identification Pass">
                 <i class="fa-solid fa-print"></i>
-                <span>Print Donor Card</span>
+                <span>Print Pass</span>
               </button>
               <button type="button" class="btn-qr-action btn-qr-regen" id="btnRegenerateQr" title="Revoke and Generate a Fresh Emergency Token">
                 <i class="fa-solid fa-arrows-rotate"></i>
-                <span>Revoke / Regenerate Token</span>
+                <span>Regenerate QR</span>
               </button>
             </div>
           </div>
-
-          <!-- Bottom Bento: Encrypted Clinical & Demographic Payload (Hospital Scan View Data) -->
-          <div class="intake-payload-container">
-            
-            <div class="ipc-header-row">
-              <div class="ipc-header-title">
-                <i class="fa-solid fa-shield-virus"></i>
-                <span>Encrypted Clinical &amp; Demographic Payload</span>
-              </div>
-              <span class="ipc-role-tag">
-                <i class="fa-solid fa-lock"></i>
-                RESTRICTED HOSPITAL INTAKE VIEW
-              </span>
-            </div>
-
-            <div class="ipc-telemetry-grid">
-              
-              <!-- Block 1: Demographics & Identity -->
-              <div class="ipc-block demographics">
-                <div class="ipcb-title">
-                  <i class="fa-solid fa-user-shield"></i>
-                  <span>Demographics &amp; Identity</span>
-                  <i class="fa-solid fa-lock ipcb-lock-icon" title="Hospital Verified View"></i>
-                </div>
-                <div class="ipcb-rows">
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Age</span>
-                    <span class="ipcb-v"><span id="donor-age"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Gender</span>
-                    <span class="ipcb-v"><span id="donor-gender"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Mobile Number</span>
-                    <span class="ipcb-v"><span id="donor-phone"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Email</span>
-                    <span class="ipcb-v"><span id="donor-email"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Address</span>
-                    <span class="ipcb-v"><span id="donor-address"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">City / State / PIN</span>
-                    <span class="ipcb-v">
-                      <span id="donor-city"></span>, <span id="donor-state"></span> - <span id="donor-pincode"></span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Block 2: Blood & Verification Info -->
-              <div class="ipc-block verification">
-                <div class="ipcb-title">
-                  <i class="fa-solid fa-droplet"></i>
-                  <span>Blood &amp; Verification Info</span>
-                  <i class="fa-solid fa-lock ipcb-lock-icon" title="Hospital Verified View"></i>
-                </div>
-                <div class="ipcb-rows">
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Rh Factor</span>
-                    <span class="ipcb-v highlight-emerald"><span id="donor-rh-factor"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Donor Type</span>
-                    <span class="ipcb-v"><span id="donor-type"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Verification Status</span>
-                    <span class="ipcb-v status-ok"><span id="donor-bg-verified"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Registration Date</span>
-                    <span class="ipcb-v"><span id="donor-reg-date"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Last Donation Facility</span>
-                    <span class="ipcb-v"><span id="donor-last-location"></span></span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Block 3: Basic Medical Information (Restricted/Secure View) -->
-              <div class="ipc-block medical">
-                <div class="ipcb-title">
-                  <i class="fa-solid fa-heart-pulse"></i>
-                  <span>Basic Medical Information</span>
-                  <span class="ipcb-secure-badge"><i class="fa-solid fa-lock"></i> RESTRICTED</span>
-                </div>
-                <div class="ipcb-rows">
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Known Allergies</span>
-                    <span class="ipcb-v"><span id="donor-allergies"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Existing Conditions</span>
-                    <span class="ipcb-v"><span id="donor-conditions"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Current Medications</span>
-                    <span class="ipcb-v"><span id="donor-medications"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Previous Surgeries</span>
-                    <span class="ipcb-v"><span id="donor-surgeries"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Latest Hemoglobin</span>
-                    <span class="ipcb-v highlight-ruby"><span id="donor-hemoglobin-payload"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Blood Pressure</span>
-                    <span class="ipcb-v"><span id="donor-bp-payload"></span></span>
-                  </div>
-                  <div class="ipcb-row">
-                    <span class="ipcb-k">Medical Eligibility</span>
-                    <span class="ipcb-v highlight-pill"><span id="donor-eligibility-status-payload"></span></span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Mandatory Clinical Reassessment Notice -->
-            <div class="clinical-reassessment-notice">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              <span><strong>Notice:</strong> Emergency intake telemetry is pre-screened. Physical clinical reassessment (vital sign confirmation &amp; mini-physical screening) is mandatory by attending medical officer prior to phlebotomy collection.</span>
-            </div>
-
-          </div>
-
         </section>
 
       </div>
   </main>
+
+  <!-- ==================== EDIT DONOR PROFILE MODAL ==================== -->
+  <div class="modal-backdrop-telemetry" id="editDonorModal" style="display: none;" aria-hidden="true" role="dialog">
+    <div class="modal-card-telemetry edit-profile-modal-card">
+      <div class="modal-telemetry-header">
+        <div class="mth-title">
+          <i class="fa-solid fa-user-pen" style="color: #ef4444; margin-right: 8px;"></i>
+          <span>Edit Donor Clinical Profile</span>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseEditModal" aria-label="Close Modal">&times;</button>
+      </div>
+
+      <form id="editDonorProfileForm" class="edit-profile-form" novalidate>
+        <div class="modal-telemetry-body">
+          <p class="edit-modal-intro">
+            Update your official donor telemetry details below. Saving immediately synchronizes your records with the RED404 MySQL database and updates your digital QR emergency pass.
+          </p>
+
+          <!-- Section 1: Core Identity -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-id-card"></i>
+            <span>Identity &amp; Demographics</span>
+          </div>
+          <div class="form-grid-2col">
+            <div class="form-field-group">
+              <label for="editDonorFullName">Full Name *</label>
+              <input type="text" id="editDonorFullName" name="fullName" required placeholder="e.g. Ankit Kumar" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorFatherName">Father's Name *</label>
+              <input type="text" id="editDonorFatherName" name="fatherName" required placeholder="e.g. Rajesh Kumar" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorBloodType">Blood Group *</label>
+              <select id="editDonorBloodType" name="bloodType" required>
+                <option value="A+">A+ (A Positive)</option>
+                <option value="A-">A- (A Negative)</option>
+                <option value="B+">B+ (B Positive)</option>
+                <option value="B-">B- (B Negative)</option>
+                <option value="AB+">AB+ (AB Positive)</option>
+                <option value="AB-">AB- (AB Negative)</option>
+                <option value="O+">O+ (O Positive)</option>
+                <option value="O-">O- (O Negative)</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorGender">Gender</label>
+              <select id="editDonorGender" name="gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorDob">Date of Birth</label>
+              <input type="date" id="editDonorDob" name="dob" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorWeight">Weight (kg)</label>
+              <input type="number" id="editDonorWeight" name="weight" step="0.5" placeholder="e.g. 68" />
+            </div>
+          </div>
+
+          <!-- Section 2: Contact & Address -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>Contact &amp; Residence</span>
+          </div>
+          <div class="form-grid-2col">
+            <div class="form-field-group">
+              <label for="editDonorPhone">Mobile Phone *</label>
+              <input type="tel" id="editDonorPhone" name="phone" required placeholder="e.g. 9876543210" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorEmail">Email Address</label>
+              <input type="email" id="editDonorEmail" name="email" placeholder="e.g. donor@red404.in" />
+            </div>
+            <div class="form-field-group full-width">
+              <label for="editDonorAddress">Residential Address</label>
+              <input type="text" id="editDonorAddress" name="address" placeholder="e.g. Near Subharti, Delhi Road" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorCity">City</label>
+              <input type="text" id="editDonorCity" name="city" placeholder="e.g. Meerut" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorState">State</label>
+              <input type="text" id="editDonorState" name="state" placeholder="e.g. Uttar Pradesh" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorPincode">PIN Code</label>
+              <input type="text" id="editDonorPincode" name="pincode" placeholder="e.g. 250002" />
+            </div>
+          </div>
+
+          <!-- Section 3: Clinical & Medical Info -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-heart-pulse"></i>
+            <span>Clinical &amp; Medical Intake Screening</span>
+          </div>
+          <div class="form-grid-2col">
+            <div class="form-field-group">
+              <label for="editDonorAllergies">Known Allergies</label>
+              <input type="text" id="editDonorAllergies" name="allergies" placeholder="e.g. No Known Drug Allergies (NKDA)" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorConditions">Existing Medical Conditions</label>
+              <input type="text" id="editDonorConditions" name="conditions" placeholder="e.g. None Reported • Normal Screening" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorMedications">Current Medications</label>
+              <input type="text" id="editDonorMedications" name="medications" placeholder="e.g. None / Unrestricted" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorSurgeries">Previous Surgeries (&lt; 12 mos)</label>
+              <input type="text" id="editDonorSurgeries" name="surgeries" placeholder="e.g. None Reported" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-telemetry-footer">
+          <button type="button" class="btn-cancel" id="btnCancelEditModal">Cancel</button>
+          <button type="submit" class="btn-save-telemetry" id="btnSaveDonorProfile">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Save &amp; Update Database</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="js/common.js?v=20261109_v12_badges_restored"></script>

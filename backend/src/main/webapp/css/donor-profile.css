@@ -2824,208 +2824,272 @@ body.donor-profile-body {
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
 }
 
-/* ==================== ENCRYPTED CLINICAL INTAKE PAYLOAD ==================== */
-.intake-payload-container {
+.dic-father-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.dic-father-lbl {
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.04em;
+  font-size: 0.68rem;
+}
+
+.dic-father-val {
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+.dic-qr-box-outer {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  background: rgba(11, 14, 21, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 1.25rem 1.4rem;
-  margin-top: 0.5rem;
-}
-
-.ipc-header-row {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
 }
 
-.ipc-header-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Syne', sans-serif;
-  font-size: 0.96rem;
-  font-weight: 700;
-  color: #f1f5f9;
-}
-
-.ipc-header-title i {
-  color: #ef4444;
-}
-
-.ipc-role-tag {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
+.qr-corner-edit-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  z-index: 25;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+  padding: 3px 8px;
   font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.ipc-telemetry-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.ipc-block {
-  background: rgba(16, 20, 29, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.ipcb-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #cbd5e1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding-bottom: 6px;
-}
-
-.ipcb-title i {
-  color: #38bdf8;
-}
-
-.ipcb-lock-icon {
-  margin-left: auto;
-  font-size: 0.72rem;
-  color: #64748b;
-}
-
-.ipcb-secure-badge {
-  margin-left: auto;
-  font-size: 0.64rem;
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.12);
-  padding: 2px 6px;
-  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+  transition: all 0.2s ease;
+  text-decoration: none;
 }
 
-.ipcb-rows {
+.qr-corner-edit-btn:hover {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.7);
+}
+
+.df-val-link {
+  color: #38bdf8 !important;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  transition: color 0.2s ease;
+}
+
+.df-val-link:hover {
+  color: #7dd3fc !important;
+  text-decoration: underline;
+}
+
+/* ==================== DONOR PROFILE EDIT MODAL ==================== */
+.modal-backdrop-telemetry {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 11, 17, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.edit-profile-modal-card {
+  background: linear-gradient(135deg, rgba(16, 20, 29, 0.98) 0%, rgba(10, 13, 20, 0.99) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(239, 68, 68, 0.15);
+  overflow: hidden;
+  animation: modalAppear 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalAppear {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-telemetry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mth-title {
+  font-family: 'Syne', var(--font-brand, sans-serif);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.modal-close-btn:hover {
+  color: #ef4444;
+}
+
+.modal-telemetry-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.edit-modal-intro {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.form-section-title {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #38bdf8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
 }
 
-.ipcb-row {
+.form-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 16px;
+}
+
+.form-field-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
-.ipcb-k {
-  font-size: 0.68rem;
-  color: #64748b;
-  font-weight: 600;
+.form-field-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field-group label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #cbd5e1;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.ipcb-v {
-  font-size: 0.82rem;
-  color: #f1f5f9;
-  font-weight: 500;
-  word-break: break-word;
+.form-field-group input,
+.form-field-group select {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  width: 100%;
 }
 
-.ipcb-v.highlight-emerald {
-  color: #34d399;
-  font-weight: 700;
+.form-field-group input:focus,
+.form-field-group select:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+  background: rgba(15, 23, 42, 0.98);
 }
 
-.ipcb-v.highlight-ruby {
-  color: #f87171;
-  font-weight: 700;
-}
-
-.ipcb-v.status-ok {
-  color: #34d399;
-  font-weight: 600;
-}
-
-.ipcb-v.highlight-pill {
-  display: inline-flex;
-  align-items: center;
-}
-
-.eligibility-pill-verified {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  color: #34d399;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.eligibility-pill-deferred {
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #fbbf24;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.clinical-reassessment-notice {
+.modal-telemetry-footer {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  border-radius: 10px;
-  padding: 10px 14px;
-  color: #fde68a;
-  font-size: 0.74rem;
-  line-height: 1.45;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.clinical-reassessment-notice i {
-  color: #f59e0b;
-  font-size: 0.95rem;
-  margin-top: 2px;
-  flex-shrink: 0;
+.btn-cancel {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
 }
 
-/* Responsive Telemetry Grid */
-@media (max-width: 1200px) {
-  .ipc-telemetry-grid {
+.btn-save-telemetry {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 1px solid #f87171;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 9px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+  transition: all 0.2s ease;
+}
+.btn-save-telemetry:hover {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  box-shadow: 0 6px 22px rgba(239, 68, 68, 0.6);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .form-grid-2col {
     grid-template-columns: 1fr;
-  }
-  .dic-body-layout {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .dic-qr-and-blood {
-    width: 100%;
-    justify-content: space-between;
   }
 }
 

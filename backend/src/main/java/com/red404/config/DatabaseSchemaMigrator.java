@@ -44,6 +44,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
     private void migrateDonorsTable(Connection conn) {
         Map<String, String> requiredColumns = new LinkedHashMap<>();
+        requiredColumns.put("father_name", "VARCHAR(150) NULL DEFAULT 'Rajesh Kumar'");
         requiredColumns.put("dob", "DATE NULL");
         requiredColumns.put("gender", "VARCHAR(20) NULL");
         requiredColumns.put("weight", "DOUBLE NULL");
@@ -65,6 +66,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("body_temp", "DOUBLE NULL DEFAULT 98.6");
         requiredColumns.put("verified_facility", "VARCHAR(180) NULL DEFAULT 'City General Hospital'");
         requiredColumns.put("verified_date", "DATE NULL");
+        requiredColumns.put("allergies", "VARCHAR(255) NULL DEFAULT 'No Known Drug Allergies (NKDA)'");
+        requiredColumns.put("conditions", "VARCHAR(255) NULL DEFAULT 'None Reported • Normal Screening'");
+        requiredColumns.put("medications", "VARCHAR(255) NULL DEFAULT 'None / Unrestricted'");
+        requiredColumns.put("surgeries", "VARCHAR(255) NULL DEFAULT 'None Reported (< 12 months)'");
+        requiredColumns.put("donor_type", "VARCHAR(80) NULL DEFAULT 'Voluntary Lifesaver'");
+        requiredColumns.put("qr_token", "VARCHAR(100) NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "donors", requiredColumns);
@@ -189,12 +196,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         try (Statement st = conn.createStatement()) {
             try (ResultSet rs = st.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
-                    String insertSql = "INSERT INTO donors (name, email, phone, dob, gender, password, blood_type, weight, last_donation, availability, address, city, state, pincode, zone, created_at) " +
-                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, '2024-01-10', 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                    String insertSql = "INSERT INTO donors (name, father_name, email, phone, dob, gender, password, blood_type, weight, last_donation, availability, address, city, state, pincode, zone, created_at) " +
+                            "VALUES ('Ankit Kumar', 'Rajesh Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, '2024-01-10', 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
                     st.executeUpdate(insertSql);
                     log.info("Primary donor 'ak30kr02@gmail.com' seeded into database.");
                 } else {
-                    st.executeUpdate("UPDATE donors SET password = '12345678' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com'");
+                    st.executeUpdate("UPDATE donors SET password = '12345678', father_name = COALESCE(father_name, 'Rajesh Kumar') WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com'");
                     log.info("Primary donor 'ak30kr02@gmail.com' password verified and synchronized.");
                 }
             }

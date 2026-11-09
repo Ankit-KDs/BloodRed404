@@ -101,24 +101,86 @@ public class DonorDao {
     }
 
     public boolean updateProfile(int id, Map<String, Object> fields) throws SQLException {
-        String sql = "UPDATE donors SET name = COALESCE(?, name), phone = COALESCE(?, phone), " +
-                "address = COALESCE(?, address), city = COALESCE(?, city), weight = COALESCE(?, weight), " +
-                "availability = COALESCE(?, availability) WHERE id = ?";
+        String sql = "UPDATE donors SET " +
+                "name = COALESCE(?, name), " +
+                "father_name = COALESCE(?, father_name), " +
+                "phone = COALESCE(?, phone), " +
+                "blood_type = COALESCE(?, blood_type), " +
+                "gender = COALESCE(?, gender), " +
+                "dob = COALESCE(?, dob), " +
+                "address = COALESCE(?, address), " +
+                "city = COALESCE(?, city), " +
+                "state = COALESCE(?, state), " +
+                "pincode = COALESCE(?, pincode), " +
+                "weight = COALESCE(?, weight), " +
+                "allergies = COALESCE(?, allergies), " +
+                "conditions = COALESCE(?, conditions), " +
+                "medications = COALESCE(?, medications), " +
+                "surgeries = COALESCE(?, surgeries), " +
+                "qr_token = COALESCE(?, qr_token), " +
+                "availability = COALESCE(?, availability) " +
+                "WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, emptyToNull(str(fields.get("name"))));
-            ps.setString(2, emptyToNull(str(fields.get("phone"))));
-            ps.setString(3, emptyToNull(str(fields.get("address"))));
-            ps.setString(4, emptyToNull(str(fields.get("city"))));
-            if (fields.get("weight") == null) {
-                ps.setNull(5, Types.DOUBLE);
-            } else {
-                ps.setDouble(5, ((Number) fields.get("weight")).doubleValue());
+            int idx = 1;
+            ps.setString(idx++, emptyToNull(str(fields.get("name") != null ? fields.get("name") : fields.get("fullName"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("father_name") != null ? fields.get("father_name") : fields.get("fatherName"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("phone"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("blood_type") != null ? fields.get("blood_type") : fields.get("bloodType"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("gender"))));
+
+            Date dob = null;
+            Object dobObj = fields.get("dob") != null ? fields.get("dob") : fields.get("dateOfBirth");
+            if (dobObj instanceof Date) dob = (Date) dobObj;
+            else if (dobObj instanceof java.util.Date) dob = new Date(((java.util.Date) dobObj).getTime());
+            else if (dobObj != null && !str(dobObj).isBlank()) {
+                try { dob = Date.valueOf(str(dobObj).trim()); } catch (Exception ignored) {}
             }
-            ps.setString(6, emptyToNull(str(fields.get("availability"))));
-            ps.setInt(7, id);
+            setDate(ps, idx++, dob);
+
+            ps.setString(idx++, emptyToNull(str(fields.get("address"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("city"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("state"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("pincode"))));
+
+            if (fields.get("weight") == null) {
+                ps.setNull(idx++, Types.DOUBLE);
+            } else {
+                ps.setDouble(idx++, ((Number) fields.get("weight")).doubleValue());
+            }
+
+            ps.setString(idx++, emptyToNull(str(fields.get("allergies"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("conditions"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("medications"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("surgeries"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("qr_token") != null ? fields.get("qr_token") : fields.get("qrToken"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("availability"))));
+            ps.setInt(idx, id);
+
             return ps.executeUpdate() > 0;
         }
+    }
+
+    public Map<String, Object> findByToken(String token) throws SQLException {
+        if (token == null || token.isBlank()) return null;
+        String trimmed = token.trim();
+        String sql = "SELECT * FROM donors WHERE qr_token = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, trimmed);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapDonor(rs, true);
+            }
+        }
+        // Extract numeric ID from token e.g. #RED-UP-7951 or 7951 or 1
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(trimmed);
+        if (m.find()) {
+            int num = Integer.parseInt(m.group(1));
+            int id = num > 7950 ? num - 7950 : num;
+            Map<String, Object> found = findById(id);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     public boolean updatePassword(int id, String currentPassword, String newPassword) throws SQLException {
@@ -248,6 +310,14 @@ public class DonorDao {
             donor.put("firstName", name);
             donor.put("lastName", "");
         }
+        try {
+            String fName = rs.getString("father_name");
+            donor.put("fatherName", fName != null ? fName : "Rajesh Kumar");
+            donor.put("father_name", fName != null ? fName : "Rajesh Kumar");
+        } catch (SQLException ignored) {
+            donor.put("fatherName", "Rajesh Kumar");
+            donor.put("father_name", "Rajesh Kumar");
+        }
         donor.put("email", rs.getString("email"));
         donor.put("phone", rs.getString("phone"));
         donor.put("bloodType", rs.getString("blood_type"));
@@ -295,6 +365,16 @@ public class DonorDao {
         if (includePrivate) {
             donor.put("gender", rs.getString("gender"));
         }
+        try {
+            donor.put("allergies", rs.getString("allergies") != null ? rs.getString("allergies") : "No Known Drug Allergies (NKDA)");
+            donor.put("conditions", rs.getString("conditions") != null ? rs.getString("conditions") : "None Reported • Normal Screening");
+            donor.put("medications", rs.getString("medications") != null ? rs.getString("medications") : "None / Unrestricted");
+            donor.put("surgeries", rs.getString("surgeries") != null ? rs.getString("surgeries") : "None Reported (< 12 months)");
+            donor.put("donorType", rs.getString("donor_type") != null ? rs.getString("donor_type") : "Voluntary Lifesaver");
+            donor.put("donor_type", rs.getString("donor_type") != null ? rs.getString("donor_type") : "Voluntary Lifesaver");
+            donor.put("qrToken", rs.getString("qr_token"));
+            donor.put("qr_token", rs.getString("qr_token"));
+        } catch (SQLException ignored) {}
         return donor;
     }
 

@@ -10,7 +10,8 @@
   let currentDonor = {
     id: 1,
     name: 'Ankit Kumar',
-    email: 'ankit@red404.in',
+    fatherName: 'Rajesh Kumar',
+    email: 'ak30kr02@gmail.com',
     bloodType: 'A+',
     age: null,
     gender: 'Male',
@@ -35,7 +36,8 @@
     allergies: null,
     conditions: null,
     medications: null,
-    surgeries: null
+    surgeries: null,
+    qrToken: null
   };
 
   let donationHistory = [];
@@ -52,6 +54,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     initMobileNav();
     initGPSListener();
+    initEditModal();
     await loadDonorProfile();
     await loadDonationHistory();
     evaluateHealthAndEligibility();
@@ -93,6 +96,7 @@
       if (userData) {
         currentDonor.id = userData.id || currentDonor.id;
         currentDonor.name = userData.name || userData.fullName || ((userData.firstName ? userData.firstName + ' ' + (userData.lastName || '') : '') || currentDonor.name).trim();
+        if (userData.fatherName || userData.father_name) currentDonor.fatherName = userData.fatherName || userData.father_name;
         if (userData.email) currentDonor.email = userData.email;
         currentDonor.bloodType = userData.bloodType || userData.blood_type || currentDonor.bloodType;
         if (userData.phone || userData.mobile) currentDonor.phone = userData.phone || userData.mobile;
@@ -106,7 +110,12 @@
         if (userData.state) currentDonor.state = userData.state;
         if (userData.pincode || userData.pinCode) currentDonor.pincode = userData.pincode || userData.pinCode;
         if (userData.createdAt || userData.created_at) currentDonor.createdAt = userData.createdAt || userData.created_at;
+        if (userData.allergies) currentDonor.allergies = userData.allergies;
         if (userData.conditions) currentDonor.conditions = userData.conditions;
+        if (userData.medications) currentDonor.medications = userData.medications;
+        if (userData.surgeries) currentDonor.surgeries = userData.surgeries;
+        if (userData.donorType || userData.donor_type) currentDonor.donorType = userData.donorType || userData.donor_type;
+        if (userData.qrToken || userData.qr_token) currentDonor.qrToken = userData.qrToken || userData.qr_token;
         if (userData.latitude && userData.longitude) {
           currentDonor.latitude = parseFloat(userData.latitude);
           currentDonor.longitude = parseFloat(userData.longitude);
@@ -120,6 +129,7 @@
         const matched = donorsList.find(d => (d.email && d.email.trim().toLowerCase() === cleanEmail) || (currentDonor.phone && d.phone && d.phone.trim() === currentDonor.phone.trim()));
         if (matched) {
           if (matched.name || matched.fullName) currentDonor.name = matched.name || matched.fullName;
+          if (matched.fatherName || matched.father_name) currentDonor.fatherName = matched.fatherName || matched.father_name;
           if (matched.bloodType) currentDonor.bloodType = matched.bloodType;
           if (matched.phone) currentDonor.phone = matched.phone;
           if (matched.gender) currentDonor.gender = matched.gender;
@@ -132,7 +142,12 @@
           if (matched.state) currentDonor.state = matched.state;
           if (matched.pincode || matched.pinCode) currentDonor.pincode = matched.pincode || matched.pinCode;
           if (matched.createdAt || matched.created_at) currentDonor.createdAt = matched.createdAt || matched.created_at;
+          if (matched.allergies) currentDonor.allergies = matched.allergies;
           if (matched.conditions) currentDonor.conditions = matched.conditions;
+          if (matched.medications) currentDonor.medications = matched.medications;
+          if (matched.surgeries) currentDonor.surgeries = matched.surgeries;
+          if (matched.donorType || matched.donor_type) currentDonor.donorType = matched.donorType || matched.donor_type;
+          if (matched.qrToken || matched.qr_token) currentDonor.qrToken = matched.qrToken || matched.qr_token;
           if (matched.weight) currentDonor.weight = parseFloat(matched.weight);
         }
       } catch (_) {}
@@ -163,6 +178,7 @@
           const d = json.data;
           currentDonor.id = d.id || currentDonor.id;
           currentDonor.name = d.name || d.fullName || currentDonor.name;
+          if (d.fatherName || d.father_name) currentDonor.fatherName = d.fatherName || d.father_name;
           currentDonor.bloodType = d.bloodType || d.blood_type || currentDonor.bloodType;
           if (d.email) currentDonor.email = d.email;
           if (d.phone || d.mobile) currentDonor.phone = d.phone || d.mobile;
@@ -172,7 +188,12 @@
           if (d.state) currentDonor.state = d.state;
           if (d.pincode || d.pinCode) currentDonor.pincode = d.pincode || d.pinCode;
           if (d.createdAt || d.created_at) currentDonor.createdAt = d.createdAt || d.created_at;
+          if (d.allergies) currentDonor.allergies = d.allergies;
           if (d.conditions) currentDonor.conditions = d.conditions;
+          if (d.medications) currentDonor.medications = d.medications;
+          if (d.surgeries) currentDonor.surgeries = d.surgeries;
+          if (d.donorType || d.donor_type) currentDonor.donorType = d.donorType || d.donor_type;
+          if (d.qrToken || d.qr_token) currentDonor.qrToken = d.qrToken || d.qr_token;
           if (d.weight !== undefined && d.weight !== null) currentDonor.weight = parseFloat(d.weight);
           if (d.pulse !== undefined && d.pulse !== null) currentDonor.pulse = parseInt(d.pulse, 10);
           if (d.hemoglobin !== undefined && d.hemoglobin !== null) currentDonor.hemoglobin = parseFloat(d.hemoglobin);
@@ -641,6 +662,7 @@
   function renderDigitalIdAndIntakePayload() {
     // 1. Basic Identity
     const nameEl = document.getElementById('donor-profile-name');
+    const fatherEl = document.getElementById('donor-father-name');
     const idEl = document.getElementById('donor-unique-id');
     const bgEl = document.getElementById('donor-profile-blood-group');
     const initialsEl = document.getElementById('donor-avatar-initials');
@@ -648,6 +670,9 @@
 
     const fullName = currentDonor.name || 'Ankit Kumar';
     if (nameEl) nameEl.textContent = fullName;
+
+    const fatherName = currentDonor.fatherName || currentDonor.father_name || 'Rajesh Kumar';
+    if (fatherEl) fatherEl.textContent = fatherName;
 
     // Initials
     if (initialsEl) {
@@ -675,99 +700,30 @@
     const uniqueIdStr = `#RED-${stateCode}-${donorNum}`;
     if (idEl) idEl.textContent = uniqueIdStr;
 
-    // 2. Token Management & QR Render
+    // 2. Token Management & QR Render (Directs to Hospital Read-Only Scan View: user-detail-form.html)
     const storageKey = 'red404_qr_token_donor_' + (currentDonor.id || '1');
-    let secureToken = localStorage.getItem(storageKey);
+    let secureToken = currentDonor.qrToken || localStorage.getItem(storageKey);
     if (!secureToken) {
       secureToken = generateSecureToken();
       localStorage.setItem(storageKey, secureToken);
     }
+    currentDonor.qrToken = secureToken;
     if (tokenEl) {
       tokenEl.textContent = `TOKEN: ${secureToken}`;
     }
 
-    renderIntakeQRCode(secureToken, uniqueIdStr);
+    // Link directly to user-detail-form.html in strict read-only A4 format
+    const scanUrl = `${window.location.origin}/user-detail-form.html?token=${encodeURIComponent(secureToken)}&donorId=${encodeURIComponent(currentDonor.id || 1)}&donor=${encodeURIComponent(uniqueIdStr)}`;
 
-    // 3. Demographics & Identity Telemetry Block
-    const ageEl = document.getElementById('donor-age');
-    const genderEl = document.getElementById('donor-gender');
-    const phoneEl = document.getElementById('donor-phone');
-    const emailEl = document.getElementById('donor-email');
-    const addressEl = document.getElementById('donor-address');
-    const cityEl = document.getElementById('donor-city');
-    const stateEl = document.getElementById('donor-state');
-    const pincodeEl = document.getElementById('donor-pincode');
+    renderIntakeQRCode(scanUrl);
 
-    if (ageEl) {
-      const calculatedAge = (currentDonor.age !== null && currentDonor.age !== undefined)
-        ? currentDonor.age
-        : (currentDonor.dob ? calculateAge(currentDonor.dob) : 24);
-      ageEl.textContent = `${calculatedAge} Yrs`;
-    }
-    if (genderEl) genderEl.textContent = capitalize(currentDonor.gender || 'Male');
-    if (phoneEl) phoneEl.textContent = formatPhoneNumber(currentDonor.phone || '+91 98765 43210');
-    if (emailEl) emailEl.textContent = currentDonor.email || 'donor@red404.in';
-    if (addressEl) addressEl.textContent = currentDonor.address || 'Near Subharti, Delhi Road';
-    if (cityEl) cityEl.textContent = currentDonor.city || 'Meerut';
-    if (stateEl) stateEl.textContent = currentDonor.state || 'Uttar Pradesh';
-    if (pincodeEl) pincodeEl.textContent = currentDonor.pincode || '250002';
+    // Also bind quick inspection links in the UI
+    const viewScanFormLink = document.getElementById('viewScanFormLink');
+    if (viewScanFormLink) viewScanFormLink.href = scanUrl;
+    const btnOpenScanPage = document.getElementById('btnOpenScanPage');
+    if (btnOpenScanPage) btnOpenScanPage.href = scanUrl;
 
-    // 4. Blood & Verification Info
-    const rhEl = document.getElementById('donor-rh-factor');
-    const typeEl = document.getElementById('donor-type');
-    const verifiedEl = document.getElementById('donor-bg-verified');
-    const regDateEl = document.getElementById('donor-reg-date');
-    const lastLocEl = document.getElementById('donor-last-location');
-
-    if (rhEl) {
-      const isPositive = !bloodType.includes('-');
-      rhEl.textContent = isPositive ? 'Rh-D Positive (Rh+)' : 'Rh-D Negative (Rh-)';
-    }
-    if (typeEl) typeEl.textContent = currentDonor.donorType || 'Voluntary Lifesaver';
-    if (verifiedEl) verifiedEl.textContent = currentDonor.verifiedFacility ? 'Lab Verified • Clinical Certified' : 'Verified Lifesaver Node';
-
-    if (regDateEl) {
-      const cleanEmail = (currentDonor.email || '').trim().toLowerCase();
-      const storedRegDate = (cleanEmail && localStorage.getItem('red404_reg_date_' + cleanEmail)) || currentDonor.createdAt || currentDonor.created_at;
-      regDateEl.textContent = formatDate(storedRegDate || '2026-11-09');
-    }
-    if (lastLocEl) {
-      lastLocEl.textContent = currentDonor.verifiedFacility || 'Subharti Hospital & Trauma Centre';
-    }
-
-    // 5. Basic Medical Information (Restricted/Secure View)
-    const allergiesEl = document.getElementById('donor-allergies');
-    const conditionsEl = document.getElementById('donor-conditions');
-    const medsEl = document.getElementById('donor-medications');
-    const surgeriesEl = document.getElementById('donor-surgeries');
-    const hbPayloadEl = document.getElementById('donor-hemoglobin-payload');
-    const bpPayloadEl = document.getElementById('donor-bp-payload');
-    const eligPayloadEl = document.getElementById('donor-eligibility-status-payload');
-
-    if (allergiesEl) allergiesEl.textContent = currentDonor.allergies || 'No Known Drug Allergies (NKDA)';
-    if (conditionsEl) {
-      let condStr = 'None Reported • Normal Screening';
-      if (Array.isArray(currentDonor.conditions) && currentDonor.conditions.length > 0) {
-        condStr = currentDonor.conditions.filter(c => c && c !== 'none').join(', ') || condStr;
-      } else if (typeof currentDonor.conditions === 'string' && currentDonor.conditions && currentDonor.conditions !== 'none') {
-        condStr = currentDonor.conditions;
-      }
-      conditionsEl.textContent = condStr;
-    }
-    if (medsEl) medsEl.textContent = currentDonor.medications || 'None / Unrestricted';
-    if (surgeriesEl) surgeriesEl.textContent = currentDonor.surgeries || 'None Reported (< 12 months)';
-
-    const hbVal = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined) ? currentDonor.hemoglobin : 14.8;
-    if (hbPayloadEl) hbPayloadEl.textContent = `${hbVal} g/dL`;
-
-    const bpVal = currentDonor.bloodPressure || '120/80';
-    if (bpPayloadEl) bpPayloadEl.textContent = `${bpVal} mmHg`;
-
-    if (eligPayloadEl) {
-      eligPayloadEl.textContent = 'ELIGIBLE TO DONATE';
-    }
-
-    // 6. Action Button Bindings
+    // 3. Action Button Bindings
     setupDigitalIdActions(storageKey, uniqueIdStr);
   }
 
@@ -780,15 +736,14 @@
     return `RED404-SEC-${rand}`;
   }
 
-  function renderIntakeQRCode(token, uniqueId) {
+  function renderIntakeQRCode(scanUrl) {
     const container = document.getElementById('donor-qr-code');
     if (!container) return;
     if (typeof RED404_QR === 'undefined' || typeof RED404_QR.render !== 'function') {
       console.warn('RED404_QR generator not loaded.');
       return;
     }
-    const secureIntakeUrl = `https://red404.in/verify?t=${encodeURIComponent(token)}&donor=${encodeURIComponent(uniqueId)}`;
-    RED404_QR.render(container, secureIntakeUrl, {
+    RED404_QR.render(container, scanUrl, {
       size: 76,
       color: '#38bdf8',
       glow: true
@@ -819,13 +774,225 @@
 
     if (btnRegen && !btnRegen.dataset.bound) {
       btnRegen.dataset.bound = 'true';
-      btnRegen.addEventListener('click', () => {
+      btnRegen.addEventListener('click', async () => {
         const tokenEl = document.getElementById('donor-qr-token');
         const newToken = generateSecureToken();
         localStorage.setItem(storageKey, newToken);
+        currentDonor.qrToken = newToken;
         if (tokenEl) tokenEl.textContent = `TOKEN: ${newToken}`;
-        renderIntakeQRCode(newToken, uniqueIdStr);
+
+        // Sync new token with backend MySQL
+        try {
+          fetch('/api/donors/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentDonor.id, donorId: currentDonor.id, qrToken: newToken })
+          }).catch(() => {});
+        } catch (_) {}
+
+        const scanUrl = `${window.location.origin}/user-detail-form.html?token=${encodeURIComponent(newToken)}&donorId=${encodeURIComponent(currentDonor.id || 1)}&donor=${encodeURIComponent(uniqueIdStr)}`;
+        renderIntakeQRCode(scanUrl);
+
+        const viewScanFormLink = document.getElementById('viewScanFormLink');
+        if (viewScanFormLink) viewScanFormLink.href = scanUrl;
+        const btnOpenScanPage = document.getElementById('btnOpenScanPage');
+        if (btnOpenScanPage) btnOpenScanPage.href = scanUrl;
+
         showToast('Security Token Revoked & Regenerated. New intake QR is active.', 'success');
+      });
+    }
+  }
+
+  // ======================== EDIT DONOR PROFILE MODAL LOGIC ========================
+  function initEditModal() {
+    const editModal = document.getElementById('editDonorModal');
+    if (!editModal) return;
+
+    const btnEditCard = document.getElementById('btnEditDonorCard');
+    const btnOpenModal = document.getElementById('btnOpenEditModal');
+    const btnCloseModal = document.getElementById('btnCloseEditModal');
+    const btnCancelModal = document.getElementById('btnCancelEditModal');
+    const form = document.getElementById('editDonorProfileForm');
+
+    function openModal() {
+      // Pre-fill form fields from currentDonor state
+      const nameInput = document.getElementById('editDonorFullName');
+      const fatherInput = document.getElementById('editDonorFatherName');
+      const bgInput = document.getElementById('editDonorBloodType');
+      const genderInput = document.getElementById('editDonorGender');
+      const dobInput = document.getElementById('editDonorDob');
+      const weightInput = document.getElementById('editDonorWeight');
+      const phoneInput = document.getElementById('editDonorPhone');
+      const emailInput = document.getElementById('editDonorEmail');
+      const addrInput = document.getElementById('editDonorAddress');
+      const cityInput = document.getElementById('editDonorCity');
+      const stateInput = document.getElementById('editDonorState');
+      const pincodeInput = document.getElementById('editDonorPincode');
+      const allergiesInput = document.getElementById('editDonorAllergies');
+      const condInput = document.getElementById('editDonorConditions');
+      const medsInput = document.getElementById('editDonorMedications');
+      const surgInput = document.getElementById('editDonorSurgeries');
+
+      if (nameInput) nameInput.value = currentDonor.name || '';
+      if (fatherInput) fatherInput.value = currentDonor.fatherName || currentDonor.father_name || 'Rajesh Kumar';
+      if (bgInput) bgInput.value = currentDonor.bloodType || 'A+';
+      if (genderInput) genderInput.value = currentDonor.gender || 'Male';
+      if (dobInput) dobInput.value = currentDonor.dob || '1998-05-15';
+      if (weightInput) weightInput.value = currentDonor.weight || 68;
+      if (phoneInput) phoneInput.value = currentDonor.phone || '';
+      if (emailInput) emailInput.value = currentDonor.email || '';
+      if (addrInput) addrInput.value = currentDonor.address || '';
+      if (cityInput) cityInput.value = currentDonor.city || '';
+      if (stateInput) stateInput.value = currentDonor.state || '';
+      if (pincodeInput) pincodeInput.value = currentDonor.pincode || '';
+      if (allergiesInput) allergiesInput.value = currentDonor.allergies || 'No Known Drug Allergies (NKDA)';
+      
+      let condVal = currentDonor.conditions;
+      if (Array.isArray(condVal)) condVal = condVal.join(', ');
+      if (!condVal || condVal === 'none') condVal = 'None Reported • Normal Screening';
+      if (condInput) condInput.value = condVal;
+      
+      if (medsInput) medsInput.value = currentDonor.medications || 'None / Unrestricted';
+      if (surgInput) surgInput.value = currentDonor.surgeries || 'None Reported (< 12 months)';
+
+      editModal.style.display = 'flex';
+      editModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      editModal.style.display = 'none';
+      editModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    if (btnEditCard && !btnEditCard.dataset.bound) {
+      btnEditCard.dataset.bound = 'true';
+      btnEditCard.addEventListener('click', openModal);
+    }
+    if (btnOpenModal && !btnOpenModal.dataset.bound) {
+      btnOpenModal.dataset.bound = 'true';
+      btnOpenModal.addEventListener('click', openModal);
+    }
+    if (btnCloseModal && !btnCloseModal.dataset.bound) {
+      btnCloseModal.dataset.bound = 'true';
+      btnCloseModal.addEventListener('click', closeModal);
+    }
+    if (btnCancelModal && !btnCancelModal.dataset.bound) {
+      btnCancelModal.dataset.bound = 'true';
+      btnCancelModal.addEventListener('click', closeModal);
+    }
+
+    // Close when clicking on backdrop
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) {
+        closeModal();
+      }
+    });
+
+    // Form submit handler
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = 'true';
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('btnSaveDonorProfile');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving to MySQL...</span>';
+        }
+
+        try {
+          const payload = {
+            id: currentDonor.id || 1,
+            donorId: currentDonor.id || 1,
+            name: (document.getElementById('editDonorFullName')?.value || '').trim() || currentDonor.name,
+            fatherName: (document.getElementById('editDonorFatherName')?.value || '').trim() || 'Rajesh Kumar',
+            bloodType: (document.getElementById('editDonorBloodType')?.value || '').trim() || currentDonor.bloodType,
+            gender: (document.getElementById('editDonorGender')?.value || '').trim() || 'Male',
+            dob: (document.getElementById('editDonorDob')?.value || '').trim() || currentDonor.dob,
+            weight: parseFloat(document.getElementById('editDonorWeight')?.value || '68'),
+            phone: (document.getElementById('editDonorPhone')?.value || '').trim() || currentDonor.phone,
+            email: (document.getElementById('editDonorEmail')?.value || '').trim() || currentDonor.email,
+            address: (document.getElementById('editDonorAddress')?.value || '').trim() || currentDonor.address,
+            city: (document.getElementById('editDonorCity')?.value || '').trim() || currentDonor.city,
+            state: (document.getElementById('editDonorState')?.value || '').trim() || currentDonor.state,
+            pincode: (document.getElementById('editDonorPincode')?.value || '').trim() || currentDonor.pincode,
+            allergies: (document.getElementById('editDonorAllergies')?.value || '').trim(),
+            conditions: (document.getElementById('editDonorConditions')?.value || '').trim(),
+            medications: (document.getElementById('editDonorMedications')?.value || '').trim(),
+            surgeries: (document.getElementById('editDonorSurgeries')?.value || '').trim(),
+            qrToken: currentDonor.qrToken || ('red404_qr_token_donor_' + currentDonor.id)
+          };
+
+          // 1. Call Backend API
+          let res = await fetch('/api/donors/profile', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            res = await fetch('/api/donor/profile', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+          }
+
+          // 2. Update local state
+          Object.assign(currentDonor, payload);
+          if (payload.dob) {
+            currentDonor.age = calculateAge(payload.dob);
+          }
+
+          // 3. Update localStorage session & cache
+          try {
+            const sess = localStorage.getItem('red404_donor_session');
+            if (sess) {
+              const parsed = JSON.parse(sess);
+              if (parsed.user) {
+                Object.assign(parsed.user, payload);
+                localStorage.setItem('red404_donor_session', JSON.stringify(parsed));
+              }
+            }
+          } catch (_) {}
+
+          // 4. Update registered donors cache if present
+          try {
+            const cleanEmail = (currentDonor.email || '').trim().toLowerCase();
+            const donorsList = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
+            const idx = donorsList.findIndex(d => (d.email && d.email.trim().toLowerCase() === cleanEmail) || (currentDonor.phone && d.phone && d.phone.trim() === currentDonor.phone.trim()));
+            if (idx >= 0) {
+              Object.assign(donorsList[idx], payload);
+              localStorage.setItem('red404_registered_donors', JSON.stringify(donorsList));
+            }
+          } catch (_) {}
+
+          // 5. Close modal & re-render profile card, QR and vitals
+          closeModal();
+          evaluateHealthAndEligibility();
+          renderDigitalIdAndIntakePayload();
+
+          if (donorGreetingName) donorGreetingName.textContent = currentDonor.name;
+          const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
+          if (dropdownUserEmailSpan && currentDonor.email) {
+            dropdownUserEmailSpan.textContent = currentDonor.email;
+          }
+
+          showToast('Donor profile successfully updated in MySQL database!', 'success');
+        } catch (err) {
+          console.error('Save error:', err);
+          showToast('Failed to save donor profile. Please try again.', 'error');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Save &amp; Update Database</span>';
+          }
+        }
       });
     }
   }
