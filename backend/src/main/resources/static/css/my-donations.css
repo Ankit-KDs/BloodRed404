@@ -684,12 +684,62 @@ body.donations-body {
   }
 }
 
+@media (max-width: 768px) {
+  .donations-header-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    padding: 16px !important;
+  }
+  .dhb-left {
+    width: 100% !important;
+  }
+  .dhb-title {
+    font-size: 1.55rem !important;
+  }
+  .dhb-subtitle {
+    font-size: 0.85rem !important;
+  }
+  .dhb-right {
+    width: 100% !important;
+  }
+  .status-eligibility-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 10px 14px !important;
+    font-size: 0.82rem !important;
+    box-sizing: border-box !important;
+  }
+}
+
 @media (max-width: 600px) {
   .donations-container {
     padding: 10px 14px 40px;
   }
   .impact-hero-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .donations-header-bar {
+    padding: 12px 10px !important;
+    gap: 10px !important;
+  }
+  .dhb-title {
+    font-size: 1.35rem !important;
+    gap: 8px !important;
+  }
+  .dhb-title i {
+    font-size: 1.25rem !important;
+  }
+  .status-eligibility-btn {
+    font-size: 0.74rem !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+  }
+  .badge-status-text {
+    font-size: 0.72rem !important;
   }
 }
 

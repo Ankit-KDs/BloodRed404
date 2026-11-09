@@ -753,50 +753,53 @@
           correctLevel: QRCode.CorrectLevel.M
         });
 
-        // Anti-Double QR Fix with rock-solid Mobile Support:
-        // Ensure that mobile browsers that draw to canvas first stay visible,
-        // and when img src data is populated, canvas is hidden so only ONE element displays.
+        // Anti-Double QR Fix with rock-solid Mobile & Zoom Support:
+        // Physically remove the non-active element from the DOM so two elements can NEVER sit side-by-side!
         let attempts = 0;
         const ensureSingleDisplay = () => {
-          const canvas = container.querySelector('canvas');
-          const img = container.querySelector('img');
+          const canvases = container.querySelectorAll('canvas');
+          const imgs = container.querySelectorAll('img');
 
-          if (img && img.src && img.src.length > 50 && img.naturalWidth !== 0) {
-            // High-res Image is ready
-            if (canvas) {
-              canvas.style.display = 'none';
-              canvas.style.visibility = 'hidden';
+          if (imgs.length > 0 && imgs[0].src && imgs[0].src.length > 50 && imgs[0].naturalWidth !== 0) {
+            // High-res Image is ready: physically remove canvases
+            canvases.forEach(c => c.remove());
+            imgs[0].style.display = 'block';
+            imgs[0].style.visibility = 'visible';
+            imgs[0].style.width = '100%';
+            imgs[0].style.height = '100%';
+            imgs[0].style.maxWidth = size + 'px';
+            imgs[0].style.maxHeight = size + 'px';
+            imgs[0].style.margin = '0 auto';
+            imgs[0].style.borderRadius = '8px';
+            for (let i = 1; i < imgs.length; i++) imgs[i].remove();
+          } else if (canvases.length > 0) {
+            // Keep first canvas visible; remove empty/unpopulated images
+            canvases[0].style.display = 'block';
+            canvases[0].style.visibility = 'visible';
+            canvases[0].style.width = '100%';
+            canvases[0].style.height = '100%';
+            canvases[0].style.maxWidth = size + 'px';
+            canvases[0].style.maxHeight = size + 'px';
+            canvases[0].style.margin = '0 auto';
+            canvases[0].style.borderRadius = '8px';
+            for (let i = 1; i < canvases.length; i++) canvases[i].remove();
+
+            if (imgs.length > 0 && (!imgs[0].src || imgs[0].src.length <= 50)) {
+              imgs[0].remove();
             }
-            img.style.display = 'block';
-            img.style.visibility = 'visible';
-            img.style.width = size + 'px';
-            img.style.height = size + 'px';
-            img.style.margin = '0 auto';
-            img.style.borderRadius = '6px';
-          } else if (canvas) {
-            // Keep canvas visible (especially on mobile!)
-            canvas.style.display = 'block';
-            canvas.style.visibility = 'visible';
-            canvas.style.width = size + 'px';
-            canvas.style.height = size + 'px';
-            canvas.style.margin = '0 auto';
-            canvas.style.borderRadius = '6px';
-            if (img) {
-              img.style.display = 'none';
-              img.style.visibility = 'hidden';
-            }
-            if (attempts++ < 12) {
-              setTimeout(ensureSingleDisplay, 50);
+
+            if (attempts++ < 15) {
+              setTimeout(ensureSingleDisplay, 40);
             }
           }
         };
         setTimeout(ensureSingleDisplay, 20);
       } else {
-        container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:${size}px;height:${size}px;margin:0 auto;border-radius:6px;" />`;
+        container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:100%;height:100%;max-width:${size}px;max-height:${size}px;margin:0 auto;border-radius:8px;" />`;
       }
     } catch (e) {
       console.warn('QR Code generation notice:', e);
-      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:${size}px;height:${size}px;margin:0 auto;border-radius:6px;" />`;
+      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:100%;height:100%;max-width:${size}px;max-height:${size}px;margin:0 auto;border-radius:8px;" />`;
     }
   }
 

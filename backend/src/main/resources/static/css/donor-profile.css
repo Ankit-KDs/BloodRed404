@@ -1261,7 +1261,7 @@ body.donor-profile-body {
 .milestones-3x2-grid {
   display: grid !important;
   grid-template-columns: repeat(6, 1fr) !important;
-  gap: 16px !important;
+  gap: 12px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
@@ -1269,34 +1269,27 @@ body.donor-profile-body {
 @media (max-width: 1280px) {
   .milestones-3x2-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
 }
 
 @media (max-width: 768px) {
   .milestones-3x2-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px !important;
-  }
-}
-
-@media (max-width: 520px) {
-  .milestones-3x2-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
-  }
-}
-
-@media (max-width: 360px) {
-  .milestones-3x2-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
     gap: 6px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
   }
 }
 
 .milestone-badge-tile {
   border-radius: 12px !important;
-  padding: 16px 10px !important;
+  padding: 14px 8px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -1305,37 +1298,30 @@ body.donor-profile-body {
   position: relative !important;
   transition: transform 0.25s ease, box-shadow 0.3s ease, background 0.4s ease, border-color 0.4s ease !important;
   box-sizing: border-box !important;
-  min-height: 160px !important;
+  min-height: 135px !important;
   overflow: visible !important;
 }
 
 @media (max-width: 1280px) {
   .milestone-badge-tile {
-    min-height: 140px !important;
-    padding: 14px 8px !important;
+    min-height: 115px !important;
+    padding: 10px 6px !important;
   }
 }
 
 @media (max-width: 768px) {
   .milestone-badge-tile {
-    min-height: 105px !important;
-    padding: 8px 6px !important;
-    border-radius: 10px !important;
-  }
-}
-
-@media (max-width: 520px) {
-  .milestone-badge-tile {
-    min-height: 94px !important;
-    padding: 8px 6px !important;
-    border-radius: 10px !important;
-  }
-}
-
-@media (max-width: 360px) {
-  .milestone-badge-tile {
-    min-height: 86px !important;
+    min-height: 84px !important;
     padding: 6px 4px !important;
+    border-radius: 8px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestone-badge-tile {
+    min-height: 76px !important;
+    padding: 4px 2px !important;
+    border-radius: 6px !important;
   }
 }
 
@@ -1344,8 +1330,8 @@ body.donor-profile-body {
 }
 
 .milestone-badge-tile .badge-svg-wrap {
-  width: 72px !important;
-  height: 72px !important;
+  width: 56px !important;
+  height: 56px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1354,43 +1340,35 @@ body.donor-profile-body {
 }
 
 .milestone-badge-tile .badge-svg-wrap svg {
-  width: 72px !important;
-  height: 72px !important;
+  width: 56px !important;
+  height: 56px !important;
   display: block !important;
   overflow: visible !important;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
   transition: transform 0.25s ease;
 }
 
 @media (max-width: 1280px) {
   .milestone-badge-tile .badge-svg-wrap,
   .milestone-badge-tile .badge-svg-wrap svg {
-    width: 60px !important;
-    height: 60px !important;
+    width: 46px !important;
+    height: 46px !important;
   }
 }
 
 @media (max-width: 768px) {
   .milestone-badge-tile .badge-svg-wrap,
   .milestone-badge-tile .badge-svg-wrap svg {
-    width: 44px !important;
-    height: 44px !important;
+    width: 36px !important;
+    height: 36px !important;
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 380px) {
   .milestone-badge-tile .badge-svg-wrap,
   .milestone-badge-tile .badge-svg-wrap svg {
-    width: 38px !important;
-    height: 38px !important;
-  }
-}
-
-@media (max-width: 360px) {
-  .milestone-badge-tile .badge-svg-wrap,
-  .milestone-badge-tile .badge-svg-wrap svg {
-    width: 34px !important;
-    height: 34px !important;
+    width: 30px !important;
+    height: 30px !important;
   }
 }
 
@@ -1400,61 +1378,65 @@ body.donor-profile-body {
 
 .milestone-badge-tile .badge-title {
   font-family: var(--font-main, Inter, sans-serif) !important;
-  font-size: clamp(0.78rem, 1vw, 0.88rem) !important;
+  font-size: clamp(0.72rem, 0.9vw, 0.82rem) !important;
   font-weight: 800 !important;
   letter-spacing: 0.3px !important;
-  line-height: 1.2 !important;
-  margin-top: 8px !important;
-  margin-bottom: 3px !important;
+  line-height: 1.15 !important;
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
   text-transform: uppercase !important;
 }
 
 @media (max-width: 768px) {
   .milestone-badge-tile .badge-title {
-    font-size: 0.68rem !important;
-    margin-top: 4px !important;
-    margin-bottom: 2px !important;
-  }
-}
-
-@media (max-width: 520px) {
-  .milestone-badge-tile .badge-title {
-    font-size: 0.66rem !important;
+    font-size: 0.62rem !important;
     margin-top: 3px !important;
     margin-bottom: 2px !important;
+    letter-spacing: 0.1px !important;
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .milestone-badge-tile .badge-title {
-    font-size: 0.62rem !important;
+    font-size: 0.56rem !important;
+    letter-spacing: 0 !important;
   }
 }
 
 .milestone-badge-tile .badge-status {
   font-family: var(--font-main, Inter, sans-serif) !important;
-  font-size: clamp(0.64rem, 0.8vw, 0.72rem) !important;
-  letter-spacing: 0.6px !important;
+  font-size: clamp(0.6rem, 0.75vw, 0.68rem) !important;
+  letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
-  line-height: 1.2 !important;
+  line-height: 1.15 !important;
 }
 
 @media (max-width: 768px) {
   .milestone-badge-tile .badge-status {
-    font-size: 0.58rem !important;
-    letter-spacing: 0.4px !important;
-  }
-}
-
-@media (max-width: 520px) {
-  .milestone-badge-tile .badge-status {
-    font-size: 0.56rem !important;
-  }
-}
-
-@media (max-width: 360px) {
-  .milestone-badge-tile .badge-status {
     font-size: 0.52rem !important;
+    letter-spacing: 0.2px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestone-badge-tile .badge-status {
+    font-size: 0.48rem !important;
+  }
+}
+
+.milestone-badge-tile.locked .mbt-card-lock {
+  position: absolute !important;
+  top: 6px !important;
+  right: 6px !important;
+  font-size: 0.7rem !important;
+  color: #6b7280 !important;
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile.locked .mbt-card-lock {
+    top: 4px !important;
+    right: 4px !important;
+    font-size: 0.6rem !important;
   }
 }
 
@@ -3606,32 +3588,39 @@ body.donor-profile-body {
 
 .qr-zoom-display-frame {
   background: #ffffff !important;
-  padding: 16px !important;
+  padding: 14px !important;
   border-radius: 20px !important;
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5) !important;
   margin: 0 auto !important;
+  width: fit-content !important;
+  max-width: calc(100vw - 48px) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 #zoomQrCodeContainer {
-  width: 250px !important;
-  height: 250px !important;
-  min-height: 250px !important;
+  width: 240px !important;
+  height: 240px !important;
+  max-width: 68vw !important;
+  max-height: 68vw !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   margin: 0 auto !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
 #zoomQrCodeContainer canvas,
 #zoomQrCodeContainer img {
-  display: block !important;
-  width: 250px !important;
-  height: 250px !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 240px !important;
+  max-height: 240px !important;
+  object-fit: contain !important;
   margin: 0 auto !important;
   border-radius: 8px !important;
 }
@@ -3649,20 +3638,14 @@ body.donor-profile-body {
 
 @media (max-width: 360px) {
   .qr-zoom-card {
-    padding: 20px 14px 16px !important;
+    padding: 18px 12px 14px !important;
   }
   .qr-zoom-display-frame {
-    padding: 10px !important;
+    padding: 8px !important;
   }
   #zoomQrCodeContainer {
-    width: 200px !important;
-    height: 200px !important;
-    min-height: 200px !important;
-  }
-  #zoomQrCodeContainer canvas,
-  #zoomQrCodeContainer img {
-    width: 200px !important;
-    height: 200px !important;
+    width: 190px !important;
+    height: 190px !important;
   }
 }
 

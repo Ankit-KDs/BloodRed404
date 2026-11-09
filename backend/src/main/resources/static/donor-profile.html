@@ -591,29 +591,36 @@
   /* ==================== CARD 3: 3D GAMIFIED ACHIEVEMENT BADGES ==================== */
 .milestones-3x2-grid {
   display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 16px !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 12px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1280px) {
   .milestones-3x2-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 14px !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
   }
 }
 
-@media (max-width: 580px) {
+@media (max-width: 768px) {
   .milestones-3x2-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
   }
 }
 
 .milestone-badge-tile {
   border-radius: 12px !important;
-  padding: 20px 12px !important;
+  padding: 14px 8px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -622,8 +629,31 @@
   position: relative !important;
   transition: transform 0.25s ease, box-shadow 0.3s ease, background 0.4s ease, border-color 0.4s ease !important;
   box-sizing: border-box !important;
-  min-height: 180px !important;
+  min-height: 135px !important;
   overflow: visible !important;
+}
+
+@media (max-width: 1280px) {
+  .milestone-badge-tile {
+    min-height: 115px !important;
+    padding: 10px 6px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile {
+    min-height: 84px !important;
+    padding: 6px 4px !important;
+    border-radius: 8px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestone-badge-tile {
+    min-height: 76px !important;
+    padding: 4px 2px !important;
+    border-radius: 6px !important;
+  }
 }
 
 .milestone-badge-tile:hover {
@@ -631,21 +661,46 @@
 }
 
 .milestone-badge-tile .badge-svg-wrap {
-  width: 82px !important;
-  height: 82px !important;
+  width: 56px !important;
+  height: 56px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   margin-bottom: 2px !important;
+  flex-shrink: 0 !important;
 }
 
 .milestone-badge-tile .badge-svg-wrap svg {
-  width: 82px !important;
-  height: 82px !important;
+  width: 56px !important;
+  height: 56px !important;
   display: block !important;
   overflow: visible !important;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
   transition: transform 0.25s ease;
+}
+
+@media (max-width: 1280px) {
+  .milestone-badge-tile .badge-svg-wrap,
+  .milestone-badge-tile .badge-svg-wrap svg {
+    width: 46px !important;
+    height: 46px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile .badge-svg-wrap,
+  .milestone-badge-tile .badge-svg-wrap svg {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestone-badge-tile .badge-svg-wrap,
+  .milestone-badge-tile .badge-svg-wrap svg {
+    width: 30px !important;
+    height: 30px !important;
+  }
 }
 
 .milestone-badge-tile.unlocked:hover .badge-svg-wrap svg {
@@ -654,21 +709,50 @@
 
 .milestone-badge-tile .badge-title {
   font-family: var(--font-main, Inter, sans-serif) !important;
-  font-size: clamp(0.82rem, 1.05vw, 0.92rem) !important;
+  font-size: clamp(0.72rem, 0.9vw, 0.82rem) !important;
   font-weight: 800 !important;
-  letter-spacing: 0.4px !important;
-  line-height: 1.2 !important;
-  margin-top: 10px !important;
-  margin-bottom: 4px !important;
+  letter-spacing: 0.3px !important;
+  line-height: 1.15 !important;
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
   text-transform: uppercase !important;
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile .badge-title {
+    font-size: 0.62rem !important;
+    margin-top: 3px !important;
+    margin-bottom: 2px !important;
+    letter-spacing: 0.1px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestone-badge-tile .badge-title {
+    font-size: 0.56rem !important;
+    letter-spacing: 0 !important;
+  }
 }
 
 .milestone-badge-tile .badge-status {
   font-family: var(--font-main, Inter, sans-serif) !important;
-  font-size: clamp(0.68rem, 0.85vw, 0.74rem) !important;
-  letter-spacing: 0.8px !important;
+  font-size: clamp(0.6rem, 0.75vw, 0.68rem) !important;
+  letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
-  line-height: 1.2 !important;
+  line-height: 1.15 !important;
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile .badge-status {
+    font-size: 0.52rem !important;
+    letter-spacing: 0.2px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .milestone-badge-tile .badge-status {
+    font-size: 0.48rem !important;
+  }
 }
 
 /* 1. UNLOCKED BADGES (Shiny & Glowing) */
@@ -821,34 +905,6 @@
   align-items: center !important;
   justify-content: space-between !important;
   margin-bottom: 1.25rem !important;
-}
-
-.milestones-3x2-grid {
-  display: grid !important;
-  grid-template-columns: repeat(6, 1fr) !important;
-  gap: 16px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-@media (max-width: 1280px) {
-  .milestones-3x2-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 14px !important;
-  }
-}
-
-@media (max-width: 680px) {
-  .milestones-3x2-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
-  }
-}
-
-@media (max-width: 440px) {
-  .milestones-3x2-grid {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 .digital-id-intake-card {
