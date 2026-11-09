@@ -1,1419 +1,2056 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>RED404 — Digital Blood Donor Identity Card</title>
+  <title>RED404 — Donor Health Profile & Medical Eligibility</title>
 
   <!-- Google Fonts & Font Awesome -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@600;700&display=swap"
-    rel="stylesheet"
-  />
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-  <!-- Real QR Code Library (Local + CDN fallback) -->
+  <!-- Core Profile CSS -->
+  <link rel="stylesheet" href="css/common.css?v=20261109_v13_single_qr_restore" />
+  <link rel="stylesheet" href="css/command-nav.css?v=20261109_v13_single_qr_restore" />
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261109_v13_single_qr_restore">
+      <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
+  <style>
+    /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
+    .dna-visual-col {
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      position: relative !important;
+      padding: 0.5rem 0 !important;
+    }
+    .dna-pillar-wrapper {
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 14px !important;
+    }
+
+    /* Left Telemetry Ruler */
+    .dna-telemetry-ruler {
+      position: relative !important;
+      width: 100px !important;
+      height: 300px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      pointer-events: none !important;
+    }
+    .telemetry-tick {
+      position: absolute !important;
+      right: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      transform: translateY(50%) !important;
+    }
+    .tick-label {
+      font-family: 'Inter', monospace !important;
+      font-size: 0.78rem !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      letter-spacing: 0.5px !important;
+      white-space: nowrap !important;
+    }
+    .tick-label.ready {
+      color: #34d399 !important;
+      font-weight: 800 !important;
+      text-shadow: 0 0 8px rgba(52, 211, 153, 0.4) !important;
+    }
+    .tag-ready {
+      color: #34d399 !important;
+      font-size: 0.68rem !important;
+      font-weight: 700 !important;
+      margin-left: 2px !important;
+    }
+    .tick-dash {
+      width: 14px !important;
+      height: 2px !important;
+      background: rgba(56, 189, 248, 0.45) !important;
+      border-radius: 1px !important;
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.3) !important;
+    }
+    .tick-dash.sub {
+      width: 7px !important;
+      height: 1px !important;
+      background: rgba(148, 163, 184, 0.28) !important;
+      box-shadow: none !important;
+    }
+
+    /* 1. Vertical Glass Pillar (140px x 300px) */
+    .dna-pillar-cylinder {
+      width: 140px !important;
+      height: 300px !important;
+      position: relative !important;
+      border-radius: 40px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.15) !important;
+      box-sizing: border-box !important;
+      background: transparent !important;
+    }
+
+    /* Top & Bottom Machined Metallic Collars */
+    .pillar-cap-top {
+      height: 28px !important;
+      width: 100% !important;
+      border-radius: 20px 20px 4px 4px !important;
+      background: linear-gradient(180deg, #94a3b8 0%, #64748b 35%, #334155 70%, #1e293b 100%) !important;
+      box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5), inset 0 -2px 4px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      position: relative !important;
+      z-index: 10 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .pillar-cap-bottom {
+      height: 28px !important;
+      width: 100% !important;
+      border-radius: 4px 4px 20px 20px !important;
+      background: linear-gradient(180deg, #1e293b 0%, #334155 30%, #64748b 65%, #94a3b8 100%) !important;
+      box-shadow: inset 0 -2px 4px rgba(255, 255, 255, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 6px 14px rgba(0, 0, 0, 0.6) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      position: relative !important;
+      z-index: 10 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .cap-step-lip {
+      width: 70% !important;
+      height: 4px !important;
+      background: rgba(255, 255, 255, 0.3) !important;
+      border-radius: 2px !important;
+      filter: blur(0.5px) !important;
+    }
+
+    /* Central Quartz Glass Body */
+    .pillar-glass-body {
+      flex: 1 !important;
+      width: 100% !important;
+      position: relative !important;
+      overflow: hidden !important;
+      background: linear-gradient(180deg, rgba(8, 20, 28, 0.85) 0%, rgba(4, 10, 15, 0.95) 100%) !important;
+      border-left: 2px solid rgba(56, 189, 248, 0.35) !important;
+      border-right: 2px solid rgba(56, 189, 248, 0.35) !important;
+      box-shadow: inset 0 0 25px rgba(56, 189, 248, 0.15), inset 0 4px 10px rgba(255, 255, 255, 0.2) !important;
+    }
+
+    /* 3D Specular Glare Highlights */
+    .glass-specular-edge-left {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 6px !important;
+      height: 100% !important;
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.35) 0%, transparent 100%) !important;
+      pointer-events: none !important;
+      z-index: 8 !important;
+    }
+    .glass-specular-edge-right {
+      position: absolute !important;
+      top: 0 !important;
+      right: 0 !important;
+      width: 6px !important;
+      height: 100% !important;
+      background: linear-gradient(270deg, rgba(56, 189, 248, 0.35) 0%, transparent 100%) !important;
+      pointer-events: none !important;
+      z-index: 8 !important;
+    }
+    .glass-specular-streak {
+      position: absolute !important;
+      top: 0 !important;
+      left: 8px !important;
+      width: 22px !important;
+      height: 100% !important;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 35%, transparent 100%) !important;
+      pointer-events: none !important;
+      z-index: 8 !important;
+    }
+
+    /* 2. DNA Double-Helix Layers */
+    .dna-strand-layer {
+      position: absolute !important;
+      width: 100% !important;
+      pointer-events: none !important;
+    }
+    .dna-strand-layer.strand-inactive {
+      inset: 0 !important;
+      height: 100% !important;
+      z-index: 1 !important;
+    }
+    .dna-strand-layer.strand-active {
+      bottom: 0 !important;
+      left: 0 !important;
+      height: 244px !important; /* Fixed height matching pillar-glass-body for 1:1 coordinate alignment */
+      z-index: 4 !important;
+    }
+    .dna-svg {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+    }
+
+    /* Inactive State (Upper portion): Faint, muted wireframe */
+    .dna-svg-inactive .dna-backbone {
+      stroke: rgba(255, 255, 255, 0.14) !important;
+    }
+    .dna-svg-inactive .dna-rungs line {
+      stroke: rgba(255, 255, 255, 0.12) !important;
+    }
+    .dna-svg-inactive .dna-rungs circle {
+      fill: rgba(255, 255, 255, 0.18) !important;
+    }
+    .dna-svg-inactive .dna-tech-nodes circle.dna-node-dot {
+      fill: rgba(255, 255, 255, 0.22) !important;
+    }
+    .dna-svg-inactive .dna-tech-nodes circle.dna-orbit-ring,
+    .dna-svg-inactive .dna-tech-nodes circle.dna-central-orbit {
+      stroke: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Active State (Lower submerged portion): Glowing bright cyan/mint */
+    .dna-svg-active .dna-backbone {
+      stroke: #34d399 !important;
+      filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)) drop-shadow(0 0 14px rgba(56, 189, 248, 0.6)) !important;
+    }
+    .dna-svg-active .dna-rungs line {
+      stroke: #38bdf8 !important;
+      filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.8)) !important;
+    }
+    .dna-svg-active .dna-rungs circle {
+      fill: #ffffff !important;
+      filter: drop-shadow(0 0 4px #34d399) !important;
+    }
+    .dna-svg-active .dna-tech-nodes circle.dna-node-dot {
+      fill: #ffffff !important;
+      filter: drop-shadow(0 0 6px #34d399) !important;
+    }
+    .dna-svg-active .dna-tech-nodes circle.dna-orbit-ring {
+      stroke: #38bdf8 !important;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7)) !important;
+    }
+    .dna-svg-active .dna-tech-nodes circle.dna-central-orbit {
+      stroke: #34d399 !important;
+      filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.6)) !important;
+    }
+
+    /* 3. Dynamic Liquid Blood Column */
+    .dna-fluid-container {
+      position: absolute !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow: hidden !important;
+      z-index: 2 !important;
+      pointer-events: none !important;
+      transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .dna-blood-column {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: linear-gradient(180deg, #dc2626 0%, #b91c1c 30%, #7f1d1d 75%, #450a0a 100%) !important;
+      box-shadow: inset 0 0 25px rgba(239, 68, 68, 0.45), 0 0 30px rgba(220, 38, 38, 0.35) !important;
+      opacity: 0.85 !important;
+    }
+    .dna-wave-meniscus {
+      position: absolute !important;
+      top: -10px !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 22px !important;
+      overflow: hidden !important;
+      z-index: 6 !important;
+      animation: dnaWaveBob 2.5s ease-in-out infinite alternate !important;
+    }
+    .dna-wave-track {
+      display: flex !important;
+      width: 200% !important;
+      height: 100% !important;
+      animation: dnaWaveScroll 3.5s linear infinite !important;
+    }
+    .dna-wave-svg {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+    }
+    @keyframes dnaWaveScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes dnaWaveBob {
+      0% { transform: translateY(-1.5px); }
+      100% { transform: translateY(1.5px); }
+    }
+    .dna-wave-crest {
+      stroke: #fca5a5 !important;
+      stroke-width: 2.8 !important;
+      filter: drop-shadow(0 0 8px #ef4444) !important;
+    }
+  
+
+
+/* ==================== 1. EQUAL CARD HEIGHTS & MATCHED BACKGROUND ==================== */
+.profile-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1.5rem !important;
+  align-items: stretch !important; /* Forces both cards to always match height */
+}
+
+@media (max-width: 1200px) {
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
+}
+
+.profile-card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+#donorVitalsCard.profile-card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#donorVitalsCard .vitals-split-layout {
+  flex: 1 !important;
+}
+
+#eligibilityTrackerCard.profile-card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+}
+
+#eligibilityTrackerCard .dna-tracker-layout {
+  flex: 1 !important;
+}
+
+/* ==================== 2. STRICT SIDE-BY-SIDE CAPSULE & TELEMETRY LAYOUT ==================== */
+.dna-tracker-layout {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important; /* FORCED single horizontal row: never drops below */
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 1.25rem !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important; /* Subtle scroll on extreme zoom instead of dropping text */
+  overflow-y: hidden !important;
+  box-sizing: border-box !important;
+  padding-bottom: 4px !important;
+}
+
+/* Subtle scrollbar if extreme zoom occurs */
+.dna-tracker-layout::-webkit-scrollbar {
+  height: 4px !important;
+}
+.dna-tracker-layout::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.25) !important;
+  border-radius: 4px !important;
+}
+
+/* 3. Lock Capsule Width: Neither grows nor shrinks */
+.dna-visual-col {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  flex-shrink: 0 !important;
+  padding: 0.25rem 0 !important;
+}
+
+.dna-pillar-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.dna-telemetry-ruler {
+  position: relative !important;
+  width: 80px !important;
+  height: 300px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  pointer-events: none !important;
+  flex-shrink: 0 !important;
+}
+
+.dna-pillar-cylinder {
+  width: 140px !important;
+  height: 300px !important;
+  position: relative !important;
+  border-radius: 40px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.15) !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  flex-shrink: 0 !important;
+}
+
+/* 4. Flexible Text Panel: Takes remaining space (flex: 1 1 0%) and allows shrink (min-width: 0) */
+.capsule-telemetry-panel {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  color: #94a3b8 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  padding-left: 0.25rem !important;
+  box-sizing: border-box !important;
+}
+
+/* 5. Aggressive Fluid Typography (clamp) */
+.telemetry-header {
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
+}
+
+.telemetry-header h1 {
+  font-size: clamp(1.35rem, 2.3vw, 2.2rem) !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.telemetry-header h3 {
+  font-size: clamp(0.72rem, 1.1vw, 0.95rem) !important;
+  color: #64748b !important;
+  margin: 3px 0 0 !important;
+  letter-spacing: 1px !important;
+  font-weight: 700 !important;
+  overflow-wrap: break-word !important;
+}
+
+.telemetry-percentage-box {
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
+}
+
+.telemetry-percentage-box h2 {
+  font-size: clamp(1.05rem, 1.8vw, 1.55rem) !important;
+  font-weight: 700 !important;
+  color: #cbd5e1 !important;
+  margin: 0 !important;
+  letter-spacing: -0.3px !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.telemetry-caption {
+  font-size: clamp(0.68rem, 0.95vw, 0.75rem) !important;
+  color: #64748b !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  display: block !important;
+  line-height: 1.35 !important;
+}
+
+/* Status Pill Styles (100% Ready & Active Cooldown) */
+.status-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  font-size: clamp(0.7rem, 0.95vw, 0.76rem) !important;
+  font-weight: 700 !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.35 !important;
+  margin-top: 4px !important;
+  transition: all 0.3s ease !important;
+  box-sizing: border-box !important;
+}
+
+.status-badge.eligible-ready {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.2), inset 0 0 10px rgba(16, 185, 129, 0.08) !important;
+}
+
+.status-badge.eligible-ready i {
+  color: #34d399 !important;
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.6)) !important;
+  flex-shrink: 0 !important;
+}
+
+.status-badge.cooldown-active {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(245, 158, 11, 0.38) !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.15) !important;
+}
+
+.status-badge.cooldown-active i {
+  color: #fbbf24 !important;
+  flex-shrink: 0 !important;
+}
+
+.status-badge span {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Checklist Items Wrapping */
+.telemetry-checklist {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 6px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  font-size: clamp(0.72rem, 1.05vw, 0.82rem) !important;
+  width: 100% !important;
+}
+
+.telemetry-checklist li {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.35 !important;
+}
+
+.telemetry-checklist li i {
+  flex-shrink: 0 !important;
+  margin-top: 3px !important;
+}
+
+.telemetry-checklist li span {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  min-width: 0 !important;
+}
+
+/* Calendar Unlock Info */
+.telemetry-calendar {
+  font-size: clamp(0.72rem, 1.05vw, 0.82rem) !important;
+  color: #64748b !important;
+  margin-top: 4px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.35 !important;
+}
+
+.telemetry-calendar strong {
+  color: #cbd5e1 !important;
+  margin-left: 4px !important;
+  word-break: break-word !important;
+}
+
+  /* ==================== CARD 3: 3D GAMIFIED ACHIEVEMENT BADGES ==================== */
+.milestones-3x2-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 992px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 580px) {
+  .milestones-3x2-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+.milestone-badge-tile {
+  border-radius: 12px !important;
+  padding: 20px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  position: relative !important;
+  transition: transform 0.25s ease, box-shadow 0.3s ease, background 0.4s ease, border-color 0.4s ease !important;
+  box-sizing: border-box !important;
+  min-height: 180px !important;
+  overflow: visible !important;
+}
+
+.milestone-badge-tile:hover {
+  transform: translateY(-4px) !important;
+}
+
+.milestone-badge-tile .badge-svg-wrap {
+  width: 82px !important;
+  height: 82px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 2px !important;
+}
+
+.milestone-badge-tile .badge-svg-wrap svg {
+  width: 82px !important;
+  height: 82px !important;
+  display: block !important;
+  overflow: visible !important;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+  transition: transform 0.25s ease;
+}
+
+.milestone-badge-tile.unlocked:hover .badge-svg-wrap svg {
+  transform: scale(1.06);
+}
+
+.milestone-badge-tile .badge-title {
+  font-family: var(--font-main, Inter, sans-serif) !important;
+  font-size: clamp(0.82rem, 1.05vw, 0.92rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.4px !important;
+  line-height: 1.2 !important;
+  margin-top: 10px !important;
+  margin-bottom: 4px !important;
+  text-transform: uppercase !important;
+}
+
+.milestone-badge-tile .badge-status {
+  font-family: var(--font-main, Inter, sans-serif) !important;
+  font-size: clamp(0.68rem, 0.85vw, 0.74rem) !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+}
+
+/* 1. UNLOCKED BADGES (Shiny & Glowing) */
+.milestone-badge-tile.unlocked {
+  cursor: pointer;
+}
+
+.milestone-badge-tile.unlocked .badge-title {
+  color: #ffffff !important;
+}
+
+.milestone-badge-tile.unlocked .badge-status {
+  color: #2ea071 !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 10px rgba(46, 160, 113, 0.4) !important;
+}
+
+/* Badge 1: FIRST SAVIOR */
+.milestone-badge-tile.unlocked.unlocked-emerald {
+  background: radial-gradient(circle at 50% 35%, rgba(16, 75, 50, 0.5) 0%, rgba(8, 28, 20, 0.95) 75%, #071710 100%) !important;
+  border: 1.5px solid #2ea071 !important;
+  box-shadow: 0 0 18px rgba(46, 160, 113, 0.25), inset 0 0 14px rgba(46, 160, 113, 0.12) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-emerald:hover {
+  box-shadow: 0 0 24px rgba(46, 160, 113, 0.4), inset 0 0 18px rgba(46, 160, 113, 0.2) !important;
+}
+
+/* Badge 2: GOLDEN HOUR HERO */
+.milestone-badge-tile.unlocked.unlocked-amber {
+  background: radial-gradient(circle at 50% 35%, rgba(120, 65, 10, 0.5) 0%, rgba(30, 18, 5, 0.95) 75%, #140b04 100%) !important;
+  border: 1.5px solid #d99b3b !important;
+  box-shadow: 0 0 18px rgba(217, 155, 59, 0.25), inset 0 0 14px rgba(217, 155, 59, 0.12) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-amber:hover {
+  box-shadow: 0 0 24px rgba(217, 155, 59, 0.4), inset 0 0 18px rgba(217, 155, 59, 0.2) !important;
+}
+
+/* Badge 3: NIGHT OWL */
+.milestone-badge-tile.unlocked.unlocked-indigo {
+  background: radial-gradient(circle at 50% 35%, rgba(90, 45, 140, 0.5) 0%, rgba(22, 12, 40, 0.95) 75%, #10081d 100%) !important;
+  border: 1.5px solid #8263b6 !important;
+  box-shadow: 0 0 18px rgba(130, 99, 182, 0.3), inset 0 0 14px rgba(130, 99, 182, 0.15) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-indigo:hover {
+  box-shadow: 0 0 24px rgba(130, 99, 182, 0.45), inset 0 0 18px rgba(130, 99, 182, 0.22) !important;
+}
+
+/* Badge 4: RARE VANGUARD */
+.milestone-badge-tile.unlocked.unlocked-ruby {
+  background: radial-gradient(circle at 50% 35%, rgba(140, 20, 20, 0.5) 0%, rgba(35, 10, 10, 0.95) 75%, #160404 100%) !important;
+  border: 1.5px solid #dc2626 !important;
+  box-shadow: 0 0 18px rgba(220, 38, 38, 0.28), inset 0 0 14px rgba(220, 38, 38, 0.15) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-ruby:hover {
+  box-shadow: 0 0 24px rgba(220, 38, 38, 0.45), inset 0 0 18px rgba(220, 38, 38, 0.22) !important;
+}
+
+/* Badge 5: LIFE GIVER V */
+.milestone-badge-tile.unlocked.unlocked-cyan {
+  background: radial-gradient(circle at 50% 35%, rgba(14, 165, 233, 0.4) 0%, rgba(10, 28, 40, 0.95) 75%, #08141e 100%) !important;
+  border: 1.5px solid #0ea5e9 !important;
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.25), inset 0 0 14px rgba(14, 165, 233, 0.12) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-cyan:hover {
+  box-shadow: 0 0 24px rgba(14, 165, 233, 0.4), inset 0 0 18px rgba(14, 165, 233, 0.2) !important;
+}
+
+/* Badge 6: APEX GUARDIAN */
+.milestone-badge-tile.unlocked.unlocked-gold {
+  background: radial-gradient(circle at 50% 35%, rgba(140, 100, 15, 0.5) 0%, rgba(35, 25, 5, 0.95) 75%, #181204 100%) !important;
+  border: 1.5px solid #eab308 !important;
+  box-shadow: 0 0 18px rgba(234, 179, 8, 0.28), inset 0 0 14px rgba(234, 179, 8, 0.15) !important;
+}
+.milestone-badge-tile.unlocked.unlocked-gold:hover {
+  box-shadow: 0 0 24px rgba(234, 179, 8, 0.45), inset 0 0 18px rgba(234, 179, 8, 0.22) !important;
+}
+
+/* 2. LOCKED BADGES (Matte & Recessed) */
+.milestone-badge-tile.locked {
+  background: #222732 !important;
+  border: 1.5px dashed #4b5563 !important;
+  box-shadow: none !important;
+}
+
+.milestone-badge-tile.locked:hover {
+  border-color: #6b7280 !important;
+}
+
+.milestone-badge-tile.locked .badge-title {
+  color: #9ca3af !important;
+}
+
+.milestone-badge-tile.locked .badge-status {
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.milestone-badge-tile.locked .mbt-card-lock {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  font-size: 0.8rem !important;
+  color: #6b7280 !important;
+}
+
+/* ==================== UNIFIED COMMAND WORKSPACE LAYOUT ==================== */
+.profile-workspace-unified,
+.profile-workspace {
+  max-width: 1340px !important;
+  margin: 0 auto !important;
+  padding: 10px 24px 60px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-y: visible !important;
+  max-height: none !important;
+}
+
+.profile-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+
+@media (max-width: 1024px) {
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .profile-workspace-unified,
+  .profile-workspace {
+    padding: 10px 14px 40px !important;
+  }
+}
+
+#milestonesCard.profile-card,
+#milestonesCard {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin-top: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+#milestonesCard .card-header-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.milestones-3x2-grid {
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 1280px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .milestones-3x2-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.digital-id-intake-card {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin-top: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.25rem !important;
+  overflow: hidden !important;
+}
+  </style>
+  <!-- Real Scannable QR Code Library -->
   <script src="js/qrcode.min.js"></script>
   <script>
     if (typeof QRCode === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');
     }
   </script>
-
-  <style>
-    :root {
-      --bg-core: #090b10;
-      --bg-nav: #0d1117;
-      --bg-card: rgba(15, 23, 42, 0.88);
-      --border-card: rgba(255, 255, 255, 0.12);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --red-brand: #ef4444;
-      --red-hover: #dc2626;
-      --emerald-brand: #10b981;
-      --emerald-glow: rgba(16, 185, 129, 0.25);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-brand: 'Orbitron', -apple-system, sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg-core);
-      color: var(--text-main);
-      font-family: var(--font-body);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background-image:
-        radial-gradient(ellipse 60% 40% at 50% -10%, rgba(239, 68, 68, 0.12), transparent 70%),
-        radial-gradient(ellipse 50% 30% at 50% 110%, rgba(16, 185, 129, 0.08), transparent 70%);
-      background-attachment: fixed;
-    }
-
-    /* ==================== GLOBAL NAVBAR ==================== */
-    .red-navbar {
-      height: 72px;
-      background: var(--bg-nav);
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 28px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-
-    .nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: #ffffff;
-      font-family: var(--font-brand);
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-    }
-
-    .nav-brand i {
-      color: var(--red-brand);
-      font-size: 1.35rem;
-      filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
-    }
-
-    .nav-tabs {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      list-style: none;
-    }
-
-    .nav-tab-link {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: all 0.2s ease;
-      border: 1px solid transparent;
-    }
-
-    .nav-tab-link:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .nav-tab-link.active {
-      color: #ffffff;
-      background: rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.35);
-    }
-
-    .nav-tab-link.active i {
-      color: var(--red-brand);
-    }
-
-    .nav-user-area {
-      position: relative;
-    }
-
-    .user-avatar-btn {
-      appearance: none;
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      border: 1.5px solid rgba(255, 255, 255, 0.2);
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      color: #ffffff;
-      font-family: var(--font-brand);
-      font-weight: 700;
-      font-size: 0.95rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .user-avatar-btn:hover {
-      border-color: var(--red-brand);
-      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
-    }
-
-    .user-dropdown-menu {
-      position: absolute;
-      top: calc(100% + 10px);
-      right: 0;
-      width: 230px;
-      background: #0f172a;
-      border: 1px solid var(--border-card);
-      border-radius: 12px;
-      padding: 8px;
-      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
-      display: none;
-      flex-direction: column;
-      z-index: 100;
-    }
-
-    .user-dropdown-menu.show {
-      display: flex;
-    }
-
-    .udm-header {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border-subtle);
-      margin-bottom: 6px;
-    }
-
-    .udm-header-name {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #ffffff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .udm-header-email {
-      font-size: 0.78rem;
-      color: var(--text-dim);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .udm-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: all 0.15s ease;
-    }
-
-    .udm-link:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .udm-link.logout-link {
-      color: #f87171;
-    }
-
-    .udm-link.logout-link:hover {
-      background: rgba(239, 68, 68, 0.12);
-      color: #ef4444;
-    }
-
-    /* ==================== MAIN PAGE CONTAINER ==================== */
-    .profile-main-wrap {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 16px;
-    }
-
-    /* ==================== 1. COMPACT PROFILE CARD ==================== */
-    .compact-donor-card {
-      width: 100%;
-      max-width: 440px;
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-card);
-      border-radius: 24px;
-      box-shadow:
-        0 25px 50px -12px rgba(0, 0, 0, 0.7),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
-      padding: 26px 26px 30px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Subtle top ruby accent border */
-    .compact-donor-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 10%;
-      right: 10%;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #ef4444, #10b981, transparent);
-      opacity: 0.85;
-    }
-
-    /* Top Row: Title Left, Edit Detail Right */
-    .card-top-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--border-subtle);
-      margin-bottom: 22px;
-    }
-
-    .card-top-left-title {
-      font-family: var(--font-brand);
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: #f8fafc;
-      letter-spacing: 0.4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .card-top-left-title i {
-      color: var(--red-brand);
-      font-size: 1rem;
-    }
-
-    .btn-edit-detail {
-      appearance: none;
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      background: rgba(239, 68, 68, 0.1);
-      color: #fca5a5;
-      font-family: var(--font-body);
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 7px 14px;
-      border-radius: 9999px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      transition: all 0.2s ease;
-    }
-
-    .btn-edit-detail:hover {
-      background: var(--red-brand);
-      color: #ffffff;
-      border-color: var(--red-brand);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
-    }
-
-    /* Donor Identity Row */
-    .card-identity-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .donor-identity-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .card-avatar-initials {
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      border: 1.5px solid rgba(239, 68, 68, 0.5);
-      color: #ffffff;
-      font-family: var(--font-brand);
-      font-weight: 800;
-      font-size: 1.15rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-    }
-
-    .donor-text-details {
-      min-width: 0;
-    }
-
-    .card-donor-name {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #ffffff;
-      line-height: 1.3;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .card-donor-submeta {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-top: 3px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .card-donor-submeta strong {
-      color: #cbd5e1;
-    }
-
-    .donor-id-pill {
-      font-family: var(--font-brand);
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.1);
-      padding: 2px 7px;
-      border-radius: 4px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      display: inline-block;
-      width: fit-content;
-      margin-top: 2px;
-    }
-
-    .card-blood-badge {
-      min-width: 54px;
-      height: 54px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(153, 27, 27, 0.35));
-      border: 1.5px solid rgba(239, 68, 68, 0.6);
-      color: #f87171;
-      font-family: var(--font-brand);
-      font-weight: 900;
-      font-size: 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
-    }
-
-    /* Center Scannable Real QR Code Container */
-    .card-qr-center-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 0 6px;
-    }
-
-    .qr-card-surface {
-      background: #ffffff;
-      padding: 14px;
-      border-radius: 18px;
-      box-shadow:
-        0 14px 30px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .qr-card-surface:hover {
-      transform: scale(1.025);
-      box-shadow:
-        0 20px 40px rgba(239, 68, 68, 0.25),
-        0 0 0 2px var(--red-brand);
-    }
-
-    /* Real QR canvas / img generated by qrcode.js */
-    #donorRealQrCode {
-      width: 190px;
-      height: 190px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #donorRealQrCode img,
-    #donorRealQrCode canvas {
-      display: block !important;
-      width: 190px !important;
-      height: 190px !important;
-      border-radius: 4px;
-    }
-
-    /* Label exactly below QR code */
-    .scan-to-see-details-label {
-      font-family: var(--font-body);
-      font-size: 0.84rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-top: 16px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      letter-spacing: 0.2px;
-    }
-
-    .scan-to-see-details-label i {
-      color: #38bdf8;
-      font-size: 0.95rem;
-    }
-
-    /* ==================== COMPREHENSIVE EDIT DETAIL MODAL ==================== */
-    .modal-backdrop-custom {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.82);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 1000;
-    }
-
-    .modal-card-custom {
-      background: #0f172a;
-      border: 1px solid var(--border-card);
-      border-radius: 20px;
-      width: 100%;
-      max-width: 680px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
-      overflow: hidden;
-      animation: modalSlideIn 0.22s ease-out;
-    }
-
-    @keyframes modalSlideIn {
-      from { transform: translateY(16px) scale(0.98); opacity: 0; }
-      to { transform: translateY(0) scale(1); opacity: 1; }
-    }
-
-    .modal-head-row {
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .modal-head-title {
-      font-family: var(--font-brand);
-      font-size: 1rem;
-      font-weight: 800;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .modal-head-title i {
-      color: var(--red-brand);
-    }
-
-    .modal-close-icon {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 1.4rem;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 6px;
-      line-height: 1;
-      transition: color 0.15s ease;
-    }
-
-    .modal-close-icon:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .modal-form-scroll-body {
-      padding: 22px 24px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    .form-group-section-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: #38bdf8;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 18px 0 12px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-    }
-
-    .form-group-section-title:first-of-type {
-      margin-top: 0;
-    }
-
-    .form-2col-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    @media (max-width: 600px) {
-      .form-2col-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .form-field-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .form-field-wrap.full-width {
-      grid-column: 1 / -1;
-    }
-
-    .form-field-wrap label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    .form-field-wrap input,
-    .form-field-wrap select {
-      background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 8px;
-      color: #f8fafc;
-      font-family: var(--font-body);
-      font-size: 0.86rem;
-      padding: 9px 12px;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-
-    .form-field-wrap input:focus,
-    .form-field-wrap select:focus {
-      border-color: var(--red-brand);
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-    }
-
-    .modal-footer-row {
-      padding: 16px 24px;
-      border-top: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .btn-modal-cancel {
-      appearance: none;
-      border: 1px solid var(--border-card);
-      background: #1e293b;
-      color: var(--text-muted);
-      font-family: var(--font-body);
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 9px 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-modal-cancel:hover {
-      background: #334155;
-      color: #ffffff;
-    }
-
-    .btn-modal-save {
-      appearance: none;
-      border: none;
-      background: linear-gradient(135deg, #ef4444, #dc2626);
-      color: #ffffff;
-      font-family: var(--font-body);
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 9px 22px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
-      transition: all 0.2s ease;
-    }
-
-    .btn-modal-save:hover {
-      background: linear-gradient(135deg, #dc2626, #b91c1c);
-      transform: translateY(-1px);
-    }
-
-    .btn-modal-save:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* ==================== LOGOUT CONFIRM MODAL ==================== */
-    .logout-confirm-card {
-      max-width: 420px;
-      padding: 24px;
-      text-align: center;
-    }
-
-    .logout-warn-icon {
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: var(--red-brand);
-      font-size: 1.4rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-    }
-
-    .logout-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 8px;
-    }
-
-    .logout-msg {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.45;
-      margin-bottom: 22px;
-    }
-
-    .logout-btn-group {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
-
-    /* Toast Notification */
-    .red-toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: #0f172a;
-      border: 1px solid #10b981;
-      color: #34d399;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      display: none;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      animation: toastIn 0.25s ease-out;
-    }
-
-    .red-toast.error {
-      border-color: #ef4444;
-      color: #f87171;
-    }
-
-    @keyframes toastIn {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-  </style>
 </head>
-<body>
+<body class="donor-profile-body">
 
-  <!-- ==================== TOP NAVIGATION BAR ==================== -->
-  <header class="red-navbar">
-    <a href="dashboard.html" class="nav-brand">
-      <i class="fa-solid fa-droplet"></i>
-      <span>RED404</span>
-    </a>
-
-    <nav>
-      <ul class="nav-tabs">
-        <li>
-          <a href="dashboard.html" class="nav-tab-link">
-            <i class="fa-solid fa-chart-line"></i>
-            <span>Dashboard</span>
-          </a>
-        </li>
-        <li>
-          <a href="donor-alerts.html" class="nav-tab-link">
-            <i class="fa-solid fa-truck-medical"></i>
-            <span>Emergencies</span>
-          </a>
-        </li>
-        <li>
-          <a href="donation-history.html" class="nav-tab-link">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Donation History</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
-
-    <div class="nav-user-area">
-      <button type="button" class="user-avatar-btn" id="userMenuBtn" aria-label="Open User Menu">
-        <span id="navAvatarInitials">AK</span>
-      </button>
-
-      <div class="user-dropdown-menu" id="userDropdownMenu">
-        <div class="udm-header">
-          <div class="udm-header-name" id="dropdownUserName">Ankit Kumar</div>
-          <div class="udm-header-email" id="dropdownUserEmail">ak30kr02@gmail.com</div>
-        </div>
-        <a href="profile.html" class="udm-link">
-          <i class="fa-solid fa-id-card"></i>
-          <span>View Profile</span>
-        </a>
-        <a href="#" class="udm-link logout-link" id="btnLogoutTrigger">
-          <i class="fa-solid fa-right-from-bracket"></i>
-          <span>Logout</span>
+  <!-- ==================== FLOATING GLASS COMMAND PILL TOP NAVIGATION ==================== -->
+  <header class="command-nav-wrapper">
+    <div class="command-nav-pill">
+      
+      <!-- LEFT: LOGO WITH RED GLOW -->
+      <div class="command-nav-left">
+        <a href="dashboard.html" class="command-brand" title="RED404 Blood Rescue Command Network">
+          <div class="brand-icon-drop">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+          <span class="brand-text">RED<span>404</span></span>
         </a>
       </div>
+
+      <!-- CENTER: HORIZONTAL COMMAND TABS -->
+      <nav class="command-nav-center">
+        <a href="dashboard.html" class="command-tab-link" title="Command Center Dashboard">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Active Emergencies & Emergency Dispatch Radar">
+          <i class="fa-solid fa-truck-medical"></i>
+          <span>Emergencies</span>
+          <span class="tab-radar-pulse"></span>
+        </a>
+        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Donation History</span>
+        </a>
+      </nav>
+
+      <!-- RIGHT: WIDGETS (GPS, NOTIFICATIONS, AVATAR DROPDOWN) -->
+      <div class="command-nav-right">
+        
+        <!-- Live GPS Indicator -->
+        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location">
+          <span class="gps-dot-pulse"></span>
+          <span>Live GPS: Connected</span>
+        </div>
+
+        <!-- Notification Bell -->
+        <button class="nav-icon-btn" id="navNotifBtn" title="Emergency Broadcasts" aria-label="Notifications">
+          <i class="fa-solid fa-bell"></i>
+          <span class="nav-badge-dot"></span>
+        </button>
+
+        <!-- User Profile Avatar with Online Dot -->
+        <div class="user-avatar-wrap" id="userProfileTrigger" title="Donor Profile Settings" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+          <span id="userAvatarInitials">AK</span>
+          <span class="avatar-online-dot"></span>
+
+          <!-- SLEEK GLASSMORPHISM USER DROPDOWN COMPONENT -->
+          <div class="user-dropdown-menu" id="userProfileDropdown">
+            <div class="dropdown-user-header">
+              <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
+              <div class="duh-email" id="dropdownUserEmail">Signed in as <span id="dropdown-user-email"></span></div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="donor-profile.html" class="dropdown-item">
+              <i class="fa-solid fa-heart-pulse"></i>
+              <span>Health Profile</span>
+            </a>
+            <a href="donor-profile.html" class="dropdown-item">
+              <i class="fa-solid fa-user-gear"></i>
+              <span>Account Settings</span>
+            </a>
+            <button class="dropdown-item" id="privacySettingsBtn">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Privacy & Security</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout-btn" id="dropdownLogoutBtn">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </header>
 
-  <!-- ==================== MAIN CONTENT: COMPACT PROFILE CARD ==================== -->
-  <main class="profile-main-wrap">
-    <div class="compact-donor-card" id="compactDonorCard">
+  <!-- ==================== MAIN 2x2 HEALTH PROFILE WORKSPACE ==================== -->
+  <main class="profile-workspace-unified">
+    <div class="profile-grid">
+
+        <!-- CARD 1: DONOR PROFILE & VITAL HEALTH STATS (Hospital-Fed + AI Check) -->
+        <section class="profile-card" id="donorVitalsCard">
+          <div class="card-header-row">
+            <h2 class="card-title">Donor Profile & Vital Health Stats</h2>
+          </div>
+
+          <div class="vitals-split-layout">
+            <!-- Left Crimson 3D Glossy Glass Blood Emblem -->
+            <div class="blood-emblem-box">
+              <div class="beb-type" id="vitalBloodType">A+</div>
+              <div class="beb-label" id="vitalBloodLabel">POSITIVE</div>
+              <div class="beb-icon">
+                <svg class="heart-drop-3d" viewBox="0 0 54 54" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <!-- Glass reflection gradient for top of heart -->
+                    <linearGradient id="heartGlassGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+                      <stop offset="45%" stop-color="#fca5a5" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+                    </linearGradient>
+                    
+                    <!-- Blood fill 3D gradient -->
+                    <linearGradient id="blood3DFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#ef4444"/>
+                      <stop offset="60%" stop-color="#dc2626"/>
+                      <stop offset="100%" stop-color="#7f1d1d"/>
+                    </linearGradient>
+
+                    <!-- Droplet 3D gradient -->
+                    <radialGradient id="drop3DGrad" cx="35%" cy="35%" r="65%">
+                      <stop offset="0%" stop-color="#fca5a5"/>
+                      <stop offset="40%" stop-color="#ef4444"/>
+                      <stop offset="100%" stop-color="#7f1d1d"/>
+                    </radialGradient>
+                    
+                    <!-- Filter for soft ambient glow -->
+                    <filter id="heartGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#ef4444" flood-opacity="0.35"/>
+                    </filter>
+                  </defs>
+
+                  <!-- Heart Base Outline & Glass Body -->
+                  <path d="M26 40C26 40 8 28 8 17C8 10.5 13 6 19 6C22.8 6 25 8.2 26 9.5C27 8.2 29.2 6 33 6C39 6 44 10.5 44 17C44 28 26 40 26 40Z" 
+                        fill="rgba(153, 27, 27, 0.35)" 
+                        stroke="rgba(248, 113, 113, 0.45)" 
+                        stroke-width="1.8" 
+                        stroke-linejoin="round"
+                        filter="url(#heartGlow)"/>
+
+                  <!-- Blood Liquid Fill (Lower half with wavy meniscus surface) -->
+                  <path d="M9.5 20C14 22 18 18 26 21C34 24 38 19 42.5 20C43.5 23 42 27 38 31.5C32.5 37 26 40 26 40C26 40 19.5 37 14 31.5C10 27 8.5 23 9.5 20Z" 
+                        fill="url(#blood3DFill)" 
+                        opacity="0.95"/>
+
+                  <!-- Top Specular Glass Sheen -->
+                  <path d="M19 8C14.5 8 10.5 11.5 10.5 16.5C10.5 18 11.5 20 13 21C16 19 20 18 25 20C25.5 14 23 8 19 8Z" 
+                        fill="url(#heartGlassGloss)" 
+                        opacity="0.85"/>
+                  <path d="M33 8C37.5 8 41.5 11.5 41.5 16.5C41.5 18 40.5 20 39 21C36 19 32 18 27 20C26.5 14 29 8 33 8Z" 
+                        fill="url(#heartGlassGloss)" 
+                        opacity="0.75"/>
+
+                  <!-- 3D Dripping Blood Drop hanging at bottom right -->
+                  <path d="M35 44C33 41 30.5 36.5 30.5 33.5C30.5 30.5 32.5 28.5 35 28.5C37.5 28.5 39.5 30.5 39.5 33.5C39.5 36.5 37 41 35 44Z" 
+                        fill="url(#drop3DGrad)" 
+                        stroke="rgba(254, 202, 202, 0.6)" 
+                        stroke-width="0.8"/>
+                  <!-- Specular highlight dot on droplet -->
+                  <circle cx="33.8" cy="32" r="1.2" fill="#ffffff" opacity="0.9"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Right Verified Vitals Details (Empty by default, auto-filled by hospital dashboard) -->
+            <div class="vitals-details-box">
+              <div class="vitals-top-meta">
+                Age: <b id="vitalAge">--</b> &nbsp;|&nbsp; Weight: <b id="vitalWeight">--</b> kg &nbsp;|&nbsp; Pulse: <b id="vitalPulse">--</b> bpm
+              </div>
+              <div class="vitals-verified-sub" id="vitalsVerifiedSub">
+                Awaiting Hospital Health Verification
+              </div>
+
+              <div class="vital-row">
+                <span class="vr-label">Hemoglobin:</span>
+                <b class="vr-val"><span id="vitalHemoglobin">--</span> g/dL</b>
+                <span class="vr-dot">•</span>
+                <span class="vital-pill pill-awaiting" id="hbPill">PENDING</span>
+              </div>
+
+              <div class="vital-row">
+                <span class="vr-label">Blood Pressure:</span>
+                <b class="vr-val"><span id="vitalBP">--/--</span> mmHg</b>
+                <span class="vr-dot">•</span>
+                <span class="vital-pill pill-awaiting" id="bpPill">PENDING</span>
+              </div>
+
+              <div class="vital-row">
+                <span class="vr-label">Body Temperature:</span>
+                <b class="vr-val"><span id="vitalTemp">--</span>° F</b>
+              </div>
+
+              <!-- Automated AI Health Evaluation Banner -->
+              <div class="health-eval-badge badge-awaiting" id="aiHealthEvalBadge" role="button" title="Hospital Intake Health Status">
+                <i class="fas fa-clock" style="margin-right:6px;"></i>
+                <span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (Cybernetic DNA Regeneration Pillar) -->
+        <section class="profile-card" id="eligibilityTrackerCard">
+          <div class="card-header-row">
+            <h2 class="card-title">Medical Eligibility Tracker</h2>
+            <span class="card-meta-tag scanner-meta-tag" id="eligibilityMetaTag">
+              <i class="fas fa-dna"></i> Cybernetic DNA Pillar
+            </span>
+          </div>
+
+          <div class="dna-tracker-layout">
+            <!-- Left: Vertical Cybernetic DNA Regeneration Pillar (140px x 300px) -->
+            <div class="dna-visual-col">
+              <div class="dna-pillar-wrapper" id="dnaPillarWrapper">
+                
+                <!-- Telemetry Ticks along left side of pillar -->
+                <div class="dna-telemetry-ruler">
+                  <div class="telemetry-tick tick-90" style="bottom: 88%;">
+                    <span class="tick-label ready">90d <span class="tag-ready">[READY]</span></span>
+                    <span class="tick-dash"></span>
+                  </div>
+                  <div class="telemetry-tick tick-sub" style="bottom: 78%;"><span class="tick-dash sub"></span></div>
+                  <div class="telemetry-tick tick-sub" style="bottom: 69%;"><span class="tick-dash sub"></span></div>
+                  <div class="telemetry-tick tick-60" style="bottom: 60%;">
+                    <span class="tick-label">60d</span>
+                    <span class="tick-dash"></span>
+                  </div>
+                  <div class="telemetry-tick tick-sub" style="bottom: 50%;"><span class="tick-dash sub"></span></div>
+                  <div class="telemetry-tick tick-sub" style="bottom: 41%;"><span class="tick-dash sub"></span></div>
+                  <div class="telemetry-tick tick-30" style="bottom: 32%;">
+                    <span class="tick-label">30d</span>
+                    <span class="tick-dash"></span>
+                  </div>
+                  <div class="telemetry-tick tick-sub" style="bottom: 23%;"><span class="tick-dash sub"></span></div>
+                  <div class="telemetry-tick tick-sub" style="bottom: 14%;"><span class="tick-dash sub"></span></div>
+                  <div class="telemetry-tick tick-0" style="bottom: 6%;">
+                    <span class="tick-label">0d</span>
+                    <span class="tick-dash"></span>
+                  </div>
+                </div>
+
+                <!-- Vertical Glass Cylinder Pillar (140px x 300px) -->
+                <div class="dna-pillar-cylinder" id="dnaPillarCylinder">
+                  <!-- Top Machined Titanium Collar -->
+                  <div class="pillar-cap-top">
+                    <div class="cap-step-lip"></div>
+                    <div class="cap-specular-rim"></div>
+                  </div>
+
+                  <!-- Central Quartz Glass Body -->
+                  <div class="pillar-glass-body">
+                    <!-- Glass Surface Optics & 3D Glare Reflections -->
+                    <div class="glass-specular-edge-left"></div>
+                    <div class="glass-specular-edge-right"></div>
+                    <div class="glass-specular-streak"></div>
+
+                    <!-- Layer A: Base Inactive DNA Strand (Full Height, faint muted wireframe) -->
+                    <div class="dna-strand-layer strand-inactive">
+                      <svg class="dna-svg dna-svg-inactive" viewBox="0 0 120 244" preserveAspectRatio="none">
+    <!-- Backbone Strands -->
+    <path d="M 60.00,8.00 L 65.61,10.28 L 71.04,12.56 L 76.13,14.84 L 80.73,17.12 L 84.68,19.40 L 87.87,21.68 L 90.19,23.96 L 91.58,26.24 L 92.00,28.52 L 91.42,30.80 L 89.87,33.08 L 87.40,35.36 L 84.08,37.64 L 80.01,39.92 L 75.33,42.20 L 70.17,44.48 L 64.69,46.76 L 59.07,49.04 L 53.48,51.32 L 48.09,53.60 L 43.07,55.88 L 38.58,58.16 L 34.74,60.44 L 31.69,62.72 L 29.51,65.00 L 28.28,67.28 L 28.03,69.56 L 28.77,71.84 L 30.47,74.12 L 33.09,76.40 L 36.54,78.68 L 40.72,80.96 L 45.49,83.24 L 50.72,85.52 L 56.23,87.80 L 61.85,90.08 L 67.42,92.36 L 72.76,94.64 L 77.71,96.92 L 82.10,99.20 L 85.82,101.48 L 88.73,103.76 L 90.76,106.04 L 91.83,108.32 L 91.92,110.60 L 91.02,112.88 L 89.16,115.16 L 86.40,117.44 L 82.82,119.72 L 78.53,122.00 L 73.67,124.28 L 68.39,126.56 L 62.85,128.84 L 57.22,131.12 L 51.68,133.40 L 46.39,135.68 L 41.53,137.96 L 37.24,140.24 L 33.65,142.52 L 30.87,144.80 L 29.00,147.08 L 28.09,149.36 L 28.16,151.64 L 29.22,153.92 L 31.24,156.20 L 34.14,158.48 L 37.84,160.76 L 42.23,163.04 L 47.17,165.32 L 52.51,167.60 L 58.07,169.88 L 63.70,172.16 L 69.21,174.44 L 74.44,176.72 L 79.22,179.00 L 83.41,181.28 L 86.87,183.56 L 89.50,185.84 L 91.22,188.12 L 91.97,190.40 L 91.73,192.68 L 90.51,194.96 L 88.34,197.24 L 85.30,199.52 L 81.48,201.80 L 76.99,204.08 L 71.98,206.36 L 66.59,208.64 L 61.00,210.92 L 55.38,213.20 L 49.90,215.48 L 44.74,217.76 L 40.05,220.04 L 35.97,222.32 L 32.64,224.60 L 30.15,226.88 L 28.59,229.16 L 28.00,231.44 L 28.41,233.72 L 29.78,236.00" class="dna-backbone backbone-a" fill="none" stroke-width="2.6" stroke-linecap="round" />
+    <path d="M 60.00,8.00 L 54.39,10.28 L 48.96,12.56 L 43.87,14.84 L 39.27,17.12 L 35.32,19.40 L 32.13,21.68 L 29.81,23.96 L 28.42,26.24 L 28.00,28.52 L 28.58,30.80 L 30.13,33.08 L 32.60,35.36 L 35.92,37.64 L 39.99,39.92 L 44.67,42.20 L 49.83,44.48 L 55.31,46.76 L 60.93,49.04 L 66.52,51.32 L 71.91,53.60 L 76.93,55.88 L 81.42,58.16 L 85.26,60.44 L 88.31,62.72 L 90.49,65.00 L 91.72,67.28 L 91.97,69.56 L 91.23,71.84 L 89.53,74.12 L 86.91,76.40 L 83.46,78.68 L 79.28,80.96 L 74.51,83.24 L 69.28,85.52 L 63.77,87.80 L 58.15,90.08 L 52.58,92.36 L 47.24,94.64 L 42.29,96.92 L 37.90,99.20 L 34.18,101.48 L 31.27,103.76 L 29.24,106.04 L 28.17,108.32 L 28.08,110.60 L 28.98,112.88 L 30.84,115.16 L 33.60,117.44 L 37.18,119.72 L 41.47,122.00 L 46.33,124.28 L 51.61,126.56 L 57.15,128.84 L 62.78,131.12 L 68.32,133.40 L 73.61,135.68 L 78.47,137.96 L 82.76,140.24 L 86.35,142.52 L 89.13,144.80 L 91.00,147.08 L 91.91,149.36 L 91.84,151.64 L 90.78,153.92 L 88.76,156.20 L 85.86,158.48 L 82.16,160.76 L 77.77,163.04 L 72.83,165.32 L 67.49,167.60 L 61.93,169.88 L 56.30,172.16 L 50.79,174.44 L 45.56,176.72 L 40.78,179.00 L 36.59,181.28 L 33.13,183.56 L 30.50,185.84 L 28.78,188.12 L 28.03,190.40 L 28.27,192.68 L 29.49,194.96 L 31.66,197.24 L 34.70,199.52 L 38.52,201.80 L 43.01,204.08 L 48.02,206.36 L 53.41,208.64 L 59.00,210.92 L 64.62,213.20 L 70.10,215.48 L 75.26,217.76 L 79.95,220.04 L 84.03,222.32 L 87.36,224.60 L 89.85,226.88 L 91.41,229.16 L 92.00,231.44 L 91.59,233.72 L 90.22,236.00" class="dna-backbone backbone-b" fill="none" stroke-width="2.6" stroke-linecap="round" />
+    <!-- Base Pair Rungs -->
+    <g class="dna-rungs">
       
-      <!-- Top Row: Title Left, Edit Detail Right -->
-      <div class="card-top-row">
-        <div class="card-top-left-title">
-          <i class="fa-solid fa-id-card"></i>
-          <span>Digital Blood Donor Identity Card</span>
+      <line x1="60.00" y1="8.00" x2="60.00" y2="8.00" stroke-width="1.8" stroke-opacity="1.00" />
+      <circle cx="60" cy="8.00" r="1.5" opacity="1.00" />
+    
+      <line x1="81.43" y1="17.50" x2="38.57" y2="17.50" stroke-width="1.8" stroke-opacity="0.87" />
+      <circle cx="60" cy="17.50" r="1.5" opacity="0.87" />
+    
+      <line x1="91.83" y1="27.00" x2="28.17" y2="27.00" stroke-width="1.8" stroke-opacity="0.55" />
+      <circle cx="60" cy="27.00" r="1.5" opacity="0.55" />
+    
+      <line x1="85.84" y1="36.50" x2="34.16" y2="36.50" stroke-width="1.2" stroke-opacity="0.79" />
+      <circle cx="60" cy="36.50" r="1.5" opacity="0.79" />
+    
+      <line x1="66.54" y1="46.00" x2="53.46" y2="46.00" stroke-width="1.2" stroke-opacity="0.99" />
+      <circle cx="60" cy="46.00" r="1.5" opacity="0.99" />
+    
+      <line x1="43.88" y1="55.50" x2="76.12" y2="55.50" stroke-width="1.2" stroke-opacity="0.93" />
+      <circle cx="60" cy="55.50" r="1.5" opacity="0.93" />
+    
+      <line x1="29.51" y1="65.00" x2="90.49" y2="65.00" stroke-width="1.2" stroke-opacity="0.65" />
+      <circle cx="60" cy="65.00" r="1.5" opacity="0.65" />
+    
+      <line x1="30.85" y1="74.50" x2="89.15" y2="74.50" stroke-width="1.8" stroke-opacity="0.71" />
+      <circle cx="60" cy="74.50" r="1.5" opacity="0.71" />
+    
+      <line x1="47.19" y1="84.00" x2="72.81" y2="84.00" stroke-width="1.8" stroke-opacity="0.96" />
+      <circle cx="60" cy="84.00" r="1.5" opacity="0.96" />
+    
+      <line x1="70.13" y1="93.50" x2="49.87" y2="93.50" stroke-width="1.8" stroke-opacity="0.97" />
+      <circle cx="60" cy="93.50" r="1.5" opacity="0.97" />
+    
+      <line x1="87.85" y1="103.00" x2="32.15" y2="103.00" stroke-width="1.8" stroke-opacity="0.75" />
+      <circle cx="60" cy="103.00" r="1.5" opacity="0.75" />
+    
+      <line x1="91.23" y1="112.50" x2="28.77" y2="112.50" stroke-width="1.2" stroke-opacity="0.61" />
+      <circle cx="60" cy="112.50" r="1.5" opacity="0.61" />
+    
+      <line x1="78.53" y1="122.00" x2="41.47" y2="122.00" stroke-width="1.2" stroke-opacity="0.91" />
+      <circle cx="60" cy="122.00" r="1.5" opacity="0.91" />
+    
+      <line x1="56.29" y1="131.50" x2="63.71" y2="131.50" stroke-width="1.2" stroke-opacity="1.00" />
+      <circle cx="60" cy="131.50" r="1.5" opacity="1.00" />
+    
+      <line x1="35.95" y1="141.00" x2="84.05" y2="141.00" stroke-width="1.2" stroke-opacity="0.83" />
+      <circle cx="60" cy="141.00" r="1.5" opacity="0.83" />
+    
+      <line x1="28.00" y1="150.50" x2="92.00" y2="150.50" stroke-width="1.8" stroke-opacity="0.51" />
+      <circle cx="60" cy="150.50" r="1.5" opacity="0.51" />
+    
+      <line x1="36.53" y1="160.00" x2="83.47" y2="160.00" stroke-width="1.8" stroke-opacity="0.84" />
+      <circle cx="60" cy="160.00" r="1.5" opacity="0.84" />
+    
+      <line x1="57.14" y1="169.50" x2="62.86" y2="169.50" stroke-width="1.8" stroke-opacity="1.00" />
+      <circle cx="60" cy="169.50" r="1.5" opacity="1.00" />
+    
+      <line x1="79.22" y1="179.00" x2="40.78" y2="179.00" stroke-width="1.8" stroke-opacity="0.90" />
+      <circle cx="60" cy="179.00" r="1.5" opacity="0.90" />
+    
+      <line x1="91.41" y1="188.50" x2="28.59" y2="188.50" stroke-width="1.8" stroke-opacity="0.60" />
+      <circle cx="60" cy="188.50" r="1.5" opacity="0.60" />
+    
+      <line x1="87.42" y1="198.00" x2="32.58" y2="198.00" stroke-width="1.2" stroke-opacity="0.76" />
+      <circle cx="60" cy="198.00" r="1.5" opacity="0.76" />
+    
+      <line x1="69.32" y1="207.50" x2="50.68" y2="207.50" stroke-width="1.2" stroke-opacity="0.98" />
+      <circle cx="60" cy="207.50" r="1.5" opacity="0.98" />
+    
+      <line x1="46.42" y1="217.00" x2="73.58" y2="217.00" stroke-width="1.2" stroke-opacity="0.95" />
+      <circle cx="60" cy="217.00" r="1.5" opacity="0.95" />
+    
+      <line x1="30.51" y1="226.50" x2="89.49" y2="226.50" stroke-width="1.2" stroke-opacity="0.69" />
+      <circle cx="60" cy="226.50" r="1.5" opacity="0.69" />
+    
+      <line x1="29.78" y1="236.00" x2="90.22" y2="236.00" stroke-width="1.8" stroke-opacity="0.66" />
+      <circle cx="60" cy="236.00" r="1.5" opacity="0.66" />
+    
+    </g>
+    <!-- Technical Nodes & Rings -->
+    <g class="dna-tech-nodes">
+      
+        <circle cx="92.00" cy="28.33" r="3" class="dna-node-dot" />
+        <circle cx="92.00" cy="28.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="28.00" cy="69.00" r="3" class="dna-node-dot" />
+        <circle cx="28.00" cy="69.00" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="92.00" cy="109.66" r="3" class="dna-node-dot" />
+        <circle cx="92.00" cy="109.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="28.00" cy="150.33" r="3" class="dna-node-dot" />
+        <circle cx="28.00" cy="150.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="92.00" cy="190.99" r="3" class="dna-node-dot" />
+        <circle cx="92.00" cy="190.99" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="28.00" cy="231.66" r="3" class="dna-node-dot" />
+        <circle cx="28.00" cy="231.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+      <circle cx="60" cy="48.66" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="48.66" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="48.66" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="89.33" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="89.33" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="89.33" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="130.00" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="130.00" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="130.00" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="170.66" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="170.66" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="170.66" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="211.32" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="211.32" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="211.32" r="1.8" class="dna-node-dot" />
+    
+    </g>
+  </svg>
+                    </div>
+
+                    <!-- Layer B: Dynamic Liquid Blood Column (Anchored to bottom, height: ${percentage}%) -->
+                    <div class="dna-fluid-container" id="dnaFluidContainer" style="height: 100%;">
+                      <!-- Flowing Wave Meniscus at Fluid Surface -->
+                      <div class="dna-wave-meniscus">
+                        <div class="dna-wave-track">
+                          <svg class="dna-wave-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
+                            <path d="M 0,10 Q 50,2 100,10 T 200,10 T 300,10 T 400,10" fill="none" stroke="#fca5a5" stroke-width="4.5" opacity="0.4" style="filter:blur(2px);" />
+                            <path d="M 0,10 Q 50,2 100,10 T 200,10 T 300,10 T 400,10" fill="none" stroke="#fca5a5" stroke-width="2.6" class="dna-wave-crest" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      <!-- Deep Ruby Arterial Blood Column -->
+                      <div class="dna-blood-column"></div>
+
+                      <!-- Layer C: Active Glowing Cyan/Mint DNA Strand (Submerged portion, reveals as fluid rises) -->
+                      <div class="dna-strand-layer strand-active">
+                        <svg class="dna-svg dna-svg-active" viewBox="0 0 120 244" preserveAspectRatio="none">
+    <!-- Backbone Strands -->
+    <path d="M 60.00,8.00 L 65.61,10.28 L 71.04,12.56 L 76.13,14.84 L 80.73,17.12 L 84.68,19.40 L 87.87,21.68 L 90.19,23.96 L 91.58,26.24 L 92.00,28.52 L 91.42,30.80 L 89.87,33.08 L 87.40,35.36 L 84.08,37.64 L 80.01,39.92 L 75.33,42.20 L 70.17,44.48 L 64.69,46.76 L 59.07,49.04 L 53.48,51.32 L 48.09,53.60 L 43.07,55.88 L 38.58,58.16 L 34.74,60.44 L 31.69,62.72 L 29.51,65.00 L 28.28,67.28 L 28.03,69.56 L 28.77,71.84 L 30.47,74.12 L 33.09,76.40 L 36.54,78.68 L 40.72,80.96 L 45.49,83.24 L 50.72,85.52 L 56.23,87.80 L 61.85,90.08 L 67.42,92.36 L 72.76,94.64 L 77.71,96.92 L 82.10,99.20 L 85.82,101.48 L 88.73,103.76 L 90.76,106.04 L 91.83,108.32 L 91.92,110.60 L 91.02,112.88 L 89.16,115.16 L 86.40,117.44 L 82.82,119.72 L 78.53,122.00 L 73.67,124.28 L 68.39,126.56 L 62.85,128.84 L 57.22,131.12 L 51.68,133.40 L 46.39,135.68 L 41.53,137.96 L 37.24,140.24 L 33.65,142.52 L 30.87,144.80 L 29.00,147.08 L 28.09,149.36 L 28.16,151.64 L 29.22,153.92 L 31.24,156.20 L 34.14,158.48 L 37.84,160.76 L 42.23,163.04 L 47.17,165.32 L 52.51,167.60 L 58.07,169.88 L 63.70,172.16 L 69.21,174.44 L 74.44,176.72 L 79.22,179.00 L 83.41,181.28 L 86.87,183.56 L 89.50,185.84 L 91.22,188.12 L 91.97,190.40 L 91.73,192.68 L 90.51,194.96 L 88.34,197.24 L 85.30,199.52 L 81.48,201.80 L 76.99,204.08 L 71.98,206.36 L 66.59,208.64 L 61.00,210.92 L 55.38,213.20 L 49.90,215.48 L 44.74,217.76 L 40.05,220.04 L 35.97,222.32 L 32.64,224.60 L 30.15,226.88 L 28.59,229.16 L 28.00,231.44 L 28.41,233.72 L 29.78,236.00" class="dna-backbone backbone-a" fill="none" stroke-width="2.6" stroke-linecap="round" />
+    <path d="M 60.00,8.00 L 54.39,10.28 L 48.96,12.56 L 43.87,14.84 L 39.27,17.12 L 35.32,19.40 L 32.13,21.68 L 29.81,23.96 L 28.42,26.24 L 28.00,28.52 L 28.58,30.80 L 30.13,33.08 L 32.60,35.36 L 35.92,37.64 L 39.99,39.92 L 44.67,42.20 L 49.83,44.48 L 55.31,46.76 L 60.93,49.04 L 66.52,51.32 L 71.91,53.60 L 76.93,55.88 L 81.42,58.16 L 85.26,60.44 L 88.31,62.72 L 90.49,65.00 L 91.72,67.28 L 91.97,69.56 L 91.23,71.84 L 89.53,74.12 L 86.91,76.40 L 83.46,78.68 L 79.28,80.96 L 74.51,83.24 L 69.28,85.52 L 63.77,87.80 L 58.15,90.08 L 52.58,92.36 L 47.24,94.64 L 42.29,96.92 L 37.90,99.20 L 34.18,101.48 L 31.27,103.76 L 29.24,106.04 L 28.17,108.32 L 28.08,110.60 L 28.98,112.88 L 30.84,115.16 L 33.60,117.44 L 37.18,119.72 L 41.47,122.00 L 46.33,124.28 L 51.61,126.56 L 57.15,128.84 L 62.78,131.12 L 68.32,133.40 L 73.61,135.68 L 78.47,137.96 L 82.76,140.24 L 86.35,142.52 L 89.13,144.80 L 91.00,147.08 L 91.91,149.36 L 91.84,151.64 L 90.78,153.92 L 88.76,156.20 L 85.86,158.48 L 82.16,160.76 L 77.77,163.04 L 72.83,165.32 L 67.49,167.60 L 61.93,169.88 L 56.30,172.16 L 50.79,174.44 L 45.56,176.72 L 40.78,179.00 L 36.59,181.28 L 33.13,183.56 L 30.50,185.84 L 28.78,188.12 L 28.03,190.40 L 28.27,192.68 L 29.49,194.96 L 31.66,197.24 L 34.70,199.52 L 38.52,201.80 L 43.01,204.08 L 48.02,206.36 L 53.41,208.64 L 59.00,210.92 L 64.62,213.20 L 70.10,215.48 L 75.26,217.76 L 79.95,220.04 L 84.03,222.32 L 87.36,224.60 L 89.85,226.88 L 91.41,229.16 L 92.00,231.44 L 91.59,233.72 L 90.22,236.00" class="dna-backbone backbone-b" fill="none" stroke-width="2.6" stroke-linecap="round" />
+    <!-- Base Pair Rungs -->
+    <g class="dna-rungs">
+      
+      <line x1="60.00" y1="8.00" x2="60.00" y2="8.00" stroke-width="1.8" stroke-opacity="1.00" />
+      <circle cx="60" cy="8.00" r="1.5" opacity="1.00" />
+    
+      <line x1="81.43" y1="17.50" x2="38.57" y2="17.50" stroke-width="1.8" stroke-opacity="0.87" />
+      <circle cx="60" cy="17.50" r="1.5" opacity="0.87" />
+    
+      <line x1="91.83" y1="27.00" x2="28.17" y2="27.00" stroke-width="1.8" stroke-opacity="0.55" />
+      <circle cx="60" cy="27.00" r="1.5" opacity="0.55" />
+    
+      <line x1="85.84" y1="36.50" x2="34.16" y2="36.50" stroke-width="1.2" stroke-opacity="0.79" />
+      <circle cx="60" cy="36.50" r="1.5" opacity="0.79" />
+    
+      <line x1="66.54" y1="46.00" x2="53.46" y2="46.00" stroke-width="1.2" stroke-opacity="0.99" />
+      <circle cx="60" cy="46.00" r="1.5" opacity="0.99" />
+    
+      <line x1="43.88" y1="55.50" x2="76.12" y2="55.50" stroke-width="1.2" stroke-opacity="0.93" />
+      <circle cx="60" cy="55.50" r="1.5" opacity="0.93" />
+    
+      <line x1="29.51" y1="65.00" x2="90.49" y2="65.00" stroke-width="1.2" stroke-opacity="0.65" />
+      <circle cx="60" cy="65.00" r="1.5" opacity="0.65" />
+    
+      <line x1="30.85" y1="74.50" x2="89.15" y2="74.50" stroke-width="1.8" stroke-opacity="0.71" />
+      <circle cx="60" cy="74.50" r="1.5" opacity="0.71" />
+    
+      <line x1="47.19" y1="84.00" x2="72.81" y2="84.00" stroke-width="1.8" stroke-opacity="0.96" />
+      <circle cx="60" cy="84.00" r="1.5" opacity="0.96" />
+    
+      <line x1="70.13" y1="93.50" x2="49.87" y2="93.50" stroke-width="1.8" stroke-opacity="0.97" />
+      <circle cx="60" cy="93.50" r="1.5" opacity="0.97" />
+    
+      <line x1="87.85" y1="103.00" x2="32.15" y2="103.00" stroke-width="1.8" stroke-opacity="0.75" />
+      <circle cx="60" cy="103.00" r="1.5" opacity="0.75" />
+    
+      <line x1="91.23" y1="112.50" x2="28.77" y2="112.50" stroke-width="1.2" stroke-opacity="0.61" />
+      <circle cx="60" cy="112.50" r="1.5" opacity="0.61" />
+    
+      <line x1="78.53" y1="122.00" x2="41.47" y2="122.00" stroke-width="1.2" stroke-opacity="0.91" />
+      <circle cx="60" cy="122.00" r="1.5" opacity="0.91" />
+    
+      <line x1="56.29" y1="131.50" x2="63.71" y2="131.50" stroke-width="1.2" stroke-opacity="1.00" />
+      <circle cx="60" cy="131.50" r="1.5" opacity="1.00" />
+    
+      <line x1="35.95" y1="141.00" x2="84.05" y2="141.00" stroke-width="1.2" stroke-opacity="0.83" />
+      <circle cx="60" cy="141.00" r="1.5" opacity="0.83" />
+    
+      <line x1="28.00" y1="150.50" x2="92.00" y2="150.50" stroke-width="1.8" stroke-opacity="0.51" />
+      <circle cx="60" cy="150.50" r="1.5" opacity="0.51" />
+    
+      <line x1="36.53" y1="160.00" x2="83.47" y2="160.00" stroke-width="1.8" stroke-opacity="0.84" />
+      <circle cx="60" cy="160.00" r="1.5" opacity="0.84" />
+    
+      <line x1="57.14" y1="169.50" x2="62.86" y2="169.50" stroke-width="1.8" stroke-opacity="1.00" />
+      <circle cx="60" cy="169.50" r="1.5" opacity="1.00" />
+    
+      <line x1="79.22" y1="179.00" x2="40.78" y2="179.00" stroke-width="1.8" stroke-opacity="0.90" />
+      <circle cx="60" cy="179.00" r="1.5" opacity="0.90" />
+    
+      <line x1="91.41" y1="188.50" x2="28.59" y2="188.50" stroke-width="1.8" stroke-opacity="0.60" />
+      <circle cx="60" cy="188.50" r="1.5" opacity="0.60" />
+    
+      <line x1="87.42" y1="198.00" x2="32.58" y2="198.00" stroke-width="1.2" stroke-opacity="0.76" />
+      <circle cx="60" cy="198.00" r="1.5" opacity="0.76" />
+    
+      <line x1="69.32" y1="207.50" x2="50.68" y2="207.50" stroke-width="1.2" stroke-opacity="0.98" />
+      <circle cx="60" cy="207.50" r="1.5" opacity="0.98" />
+    
+      <line x1="46.42" y1="217.00" x2="73.58" y2="217.00" stroke-width="1.2" stroke-opacity="0.95" />
+      <circle cx="60" cy="217.00" r="1.5" opacity="0.95" />
+    
+      <line x1="30.51" y1="226.50" x2="89.49" y2="226.50" stroke-width="1.2" stroke-opacity="0.69" />
+      <circle cx="60" cy="226.50" r="1.5" opacity="0.69" />
+    
+      <line x1="29.78" y1="236.00" x2="90.22" y2="236.00" stroke-width="1.8" stroke-opacity="0.66" />
+      <circle cx="60" cy="236.00" r="1.5" opacity="0.66" />
+    
+    </g>
+    <!-- Technical Nodes & Rings -->
+    <g class="dna-tech-nodes">
+      
+        <circle cx="92.00" cy="28.33" r="3" class="dna-node-dot" />
+        <circle cx="92.00" cy="28.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="28.00" cy="69.00" r="3" class="dna-node-dot" />
+        <circle cx="28.00" cy="69.00" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="92.00" cy="109.66" r="3" class="dna-node-dot" />
+        <circle cx="92.00" cy="109.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="28.00" cy="150.33" r="3" class="dna-node-dot" />
+        <circle cx="28.00" cy="150.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="92.00" cy="190.99" r="3" class="dna-node-dot" />
+        <circle cx="92.00" cy="190.99" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+        <circle cx="28.00" cy="231.66" r="3" class="dna-node-dot" />
+        <circle cx="28.00" cy="231.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2" class="dna-orbit-ring" fill="none" />
+      
+      <circle cx="60" cy="48.66" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="48.66" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="48.66" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="89.33" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="89.33" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="89.33" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="130.00" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="130.00" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="130.00" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="170.66" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="170.66" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="170.66" r="1.8" class="dna-node-dot" />
+    
+      <circle cx="60" cy="211.32" r="16" stroke-width="0.75" stroke-dasharray="3,3" class="dna-central-orbit" fill="none" opacity="0.6" />
+      <circle cx="44.00" cy="211.32" r="1.8" class="dna-node-dot" />
+      <circle cx="76.00" cy="211.32" r="1.8" class="dna-node-dot" />
+    
+    </g>
+  </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bottom Machined Titanium Base Dock -->
+                  <div class="pillar-cap-bottom">
+                    <div class="cap-specular-rim"></div>
+                    <div class="cap-step-lip"></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+                        <!-- Right: Dynamic Database-Driven Telemetry Readout -->
+            <div class="capsule-telemetry-panel">
+              <!-- Huge Countdown / Status Display -->
+              <div class="telemetry-header">
+                <h1 id="telemetryPrimary" style="color: #10b981;">READY</h1>
+                <h3 id="telemetryPrimaryLabel" style="color: #34d399;">TO DONATE</h3>
+              </div>
+
+              <!-- Live Recovery Percentage -->
+              <div class="telemetry-percentage-box">
+                <h2 id="telemetryPercent">100% RECOVERED</h2>
+                <span id="telemetryCaption" class="telemetry-caption">(biological volume fully restored)</span>
+              </div>
+
+              <!-- Pill Status Badge -->
+              <div id="telemetryBadge" class="status-badge eligible-ready">
+                <i class="fa-solid fa-shield-halved"></i> 
+                <span id="badgeText">ELIGIBLE TO DONATE</span>
+              </div>
+
+              <!-- Fine Checklist Details -->
+              <ul class="telemetry-checklist">
+                <li id="checkRecoveryInterval">
+                  <i id="iconRecovery" class="fa-solid fa-check" style="color: #10b981;"></i> 
+                  <span id="textRecovery">Recovery interval: complete</span>
+                </li>
+                <li id="checkVitals">
+                  <i id="iconVitals" class="fa-solid fa-circle-check" style="color: #10b981;"></i> 
+                  <span id="textVitals">Biological markers fully restocked</span>
+                </li>
+              </ul>
+
+              <!-- Calendar Unlock Info -->
+              <div class="telemetry-calendar">
+                <span class="calendar-label">Next Available:</span>
+                <strong id="dateUnlock">IMMEDIATE / NOW AVAILABLE</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CARD 3: DONOR IMPACT MILESTONES (3x2 3D Glassmorphic Grid) -->
+        <section class="profile-card" id="milestonesCard">
+          <div class="card-header-row">
+            <h2 class="card-title">Donor Impact Milestones</h2>
+            <span class="card-meta-tag badges-meta-counter" id="badgesEarnedCounter">
+              Earned Badges: 0 / 6
+            </span>
+          </div>
+
+          <!-- 3x2 Responsive Grid of 3D Gaming Achievement Badges (Default: Locked) -->
+          <div class="milestones-3x2-grid" id="milestonesGrid">
+            <!-- 1. FIRST SAVIOR (LOCKED BY DEFAULT) -->
+            <div class="milestone-badge-tile locked" data-badge="first-savior" title="First Savior">
+              <i class="fa-solid fa-lock mbt-card-lock"></i>
+              <div class="badge-svg-wrap">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="fs_glowDrop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#10b981" flood-opacity="0.5"/>
+    </filter>
+    <linearGradient id="fs_shieldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#cbd5e1"/>
+      <stop offset="60%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="fs_shieldField" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="45%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#022c22"/>
+    </linearGradient>
+    <radialGradient id="fs_emeraldDropGrad" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#a7f3d0"/>
+      <stop offset="25%" stop-color="#34d399"/>
+      <stop offset="65%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#022c22"/>
+    </radialGradient>
+    <linearGradient id="fs_dropSpec" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path d="M40 7 L68 16 C68 46 56 67 40 76 C24 67 12 46 12 16 Z" fill="rgba(0,0,0,0.4)"/>
+  <path d="M40 5 L68 14 C68 44 56 65 40 74 C24 65 12 44 12 14 Z" fill="url(#fs_shieldRim)" stroke="#ffffff" stroke-width="0.8"/>
+  <path d="M40 9 L64 17 C64 42 53 60 40 68 C27 60 16 42 16 17 Z" fill="#1e293b"/>
+  <path d="M40 12 L61 19 C61 40 51 57 40 65 C29 57 19 40 19 19 Z" fill="url(#fs_shieldField)" stroke="#34d399" stroke-width="0.8"/>
+  <path d="M40 13 L60 19 C60 32 50 48 40 52 C30 48 20 32 20 19 Z" fill="rgba(255,255,255,0.1)"/>
+  <g filter="url(#fs_glowDrop)">
+    <path d="M40 24 C40 24 27 41 27 50 C27 58 32.8 63 40 63 C47.2 63 53 58 53 50 C53 41 40 24 40 24 Z" fill="url(#fs_emeraldDropGrad)" stroke="#6ee7b7" stroke-width="0.6"/>
+    <path d="M38 29 C38 29 31 42 31 49 C31 52 32 55 34 56 C33 53 33 48 36 43 C38 39 39.5 33 38 29 Z" fill="url(#fs_dropSpec)"/>
+    <circle cx="45" cy="53" r="2.2" fill="#a7f3d0" opacity="0.4"/>
+    <path d="M34 58 C37 60.5 43 60.5 46 58" stroke="#a7f3d0" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+  </g>
+</svg>
+              </div>
+              <div class="badge-title">FIRST SAVIOR</div>
+              <div class="badge-status">LOCKED</div>
+            </div>
+
+            <!-- 2. GOLDEN HOUR HERO (LOCKED BY DEFAULT) -->
+            <div class="milestone-badge-tile locked" data-badge="golden-hour" title="Golden Hour Hero">
+              <i class="fa-solid fa-lock mbt-card-lock"></i>
+              <div class="badge-svg-wrap">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="gh_goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#f59e0b" flood-opacity="0.45"/>
+    </filter>
+    <linearGradient id="gh_goldFeatherGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="35%" stop-color="#f59e0b"/>
+      <stop offset="75%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+    <linearGradient id="gh_goldOctRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="25%" stop-color="#fde047"/>
+      <stop offset="50%" stop-color="#d97706"/>
+      <stop offset="75%" stop-color="#92400e"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+    <radialGradient id="gh_dialGrad" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="45%" stop-color="#d97706"/>
+      <stop offset="80%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#3b1d06"/>
+    </radialGradient>
+  </defs>
+  <g filter="url(#gh_goldGlow)">
+    <path d="M26 36 C22 28 14 20 6 18 C12 25 16 33 22 42 Z" fill="url(#gh_goldFeatherGrad)" stroke="#fef08a" stroke-width="0.5"/>
+    <path d="M24 43 C19 36 12 30 7 28 C12 34 16 41 21 48 Z" fill="url(#gh_goldFeatherGrad)" stroke="#fde047" stroke-width="0.5"/>
+    <path d="M22 50 C17 45 12 40 9 39 C13 44 17 50 20 54 Z" fill="url(#gh_goldFeatherGrad)" stroke="#d97706" stroke-width="0.5"/>
+    <path d="M54 36 C58 28 66 20 74 18 C68 25 64 33 58 42 Z" fill="url(#gh_goldFeatherGrad)" stroke="#fef08a" stroke-width="0.5"/>
+    <path d="M56 43 C61 36 68 30 73 28 C68 34 64 41 59 48 Z" fill="url(#gh_goldFeatherGrad)" stroke="#fde047" stroke-width="0.5"/>
+    <path d="M58 50 C63 45 68 40 71 39 C67 44 63 50 60 54 Z" fill="url(#gh_goldFeatherGrad)" stroke="#d97706" stroke-width="0.5"/>
+
+    <path d="M40 8 C43.3 8 46 10.7 46 14 C46 17.3 43.3 20 40 20 C36.7 20 34 17.3 34 14 C34 10.7 36.7 8 40 8 Z" stroke="url(#gh_goldOctRim)" stroke-width="2.5" fill="none"/>
+    <rect x="37" y="16" width="6" height="5" rx="1.5" fill="url(#gh_goldOctRim)"/>
+
+    <polygon points="28,21 52,21 66,35 66,57 52,71 28,71 14,57 14,35" fill="url(#gh_goldOctRim)" stroke="#fef08a" stroke-width="0.7"/>
+    <polygon points="29,23 51,23 64,36 64,56 51,69 29,69 16,56 16,36" fill="#451a03"/>
+    <polygon points="30,25 50,25 62,37 62,55 50,67 30,67 18,55 18,37" fill="url(#gh_dialGrad)" stroke="#f59e0b" stroke-width="0.8"/>
+
+    <circle cx="40" cy="46" r="15" stroke="rgba(254, 240, 138, 0.35)" stroke-width="1" stroke-dasharray="2 3"/>
+    <circle cx="40" cy="33" r="1.5" fill="#fef08a"/>
+    <circle cx="53" cy="46" r="1.5" fill="#fef08a"/>
+    <circle cx="40" cy="59" r="1.5" fill="#fef08a"/>
+    <circle cx="27" cy="46" r="1.5" fill="#fef08a"/>
+
+    <line x1="40" y1="46" x2="31" y2="39" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+    <line x1="40" y1="46" x2="49" y2="36" stroke="#fef08a" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="40" cy="46" r="2.8" fill="#fef08a" stroke="#78350f" stroke-width="0.8"/>
+    <circle cx="39.3" cy="45.3" r="0.8" fill="#ffffff"/>
+  </g>
+</svg>
+              </div>
+              <div class="badge-title">GOLDEN HOUR HERO</div>
+              <div class="badge-status">LOCKED</div>
+            </div>
+
+            <!-- 3. NIGHT OWL (LOCKED BY DEFAULT) -->
+            <div class="milestone-badge-tile locked" data-badge="night-owl" title="Night Owl">
+              <i class="fa-solid fa-lock mbt-card-lock"></i>
+              <div class="badge-svg-wrap">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="no_owlNeon" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#8b5cf6" flood-opacity="0.5"/>
+    </filter>
+    <linearGradient id="no_diamondRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0e7ff"/>
+      <stop offset="25%" stop-color="#38bdf8"/>
+      <stop offset="60%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+    <linearGradient id="no_owlFeatherPurple" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e9d5ff"/>
+      <stop offset="30%" stop-color="#c084fc"/>
+      <stop offset="70%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+    <radialGradient id="no_owlEyeCyan" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#38bdf8"/>
+      <stop offset="75%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#082f49"/>
+    </radialGradient>
+  </defs>
+  <g filter="url(#no_owlNeon)">
+    <polygon points="40,5 73,38 40,71 7,38" fill="url(#no_diamondRim)" stroke="#38bdf8" stroke-width="0.8"/>
+    <polygon points="40,8 70,38 40,68 10,38" fill="#110926"/>
+    <polygon points="40,11 67,38 40,65 13,38" fill="none" stroke="rgba(168, 85, 247, 0.4)" stroke-width="1"/>
+
+    <polygon points="26,27 18,14 34,22" fill="url(#no_owlFeatherPurple)" stroke="#38bdf8" stroke-width="0.7"/>
+    <polygon points="54,27 62,14 46,22" fill="url(#no_owlFeatherPurple)" stroke="#38bdf8" stroke-width="0.7"/>
+
+    <path d="M40 14 C42 14 43.5 15.2 43.5 17 C43.5 18.8 42 20 40 20 C38.5 20 39.5 18.6 39.5 17 C39.5 15.4 38.5 14 40 14 Z" fill="#38bdf8" filter="drop-shadow(0 0 3px #38bdf8)"/>
+
+    <polygon points="40,29 25,23 30,30 40,34 50,30 55,23" fill="#a855f7" stroke="#e0e7ff" stroke-width="0.6"/>
+
+    <polygon points="24,30 36,32 34,39 22,37" fill="#0c0720" stroke="#38bdf8" stroke-width="0.8"/>
+    <ellipse cx="29" cy="35" rx="4" ry="3" fill="url(#no_owlEyeCyan)"/>
+    <circle cx="28" cy="34" r="1.2" fill="#ffffff"/>
+
+    <polygon points="56,30 44,32 46,39 58,37" fill="#0c0720" stroke="#38bdf8" stroke-width="0.8"/>
+    <ellipse cx="51" cy="35" rx="4" ry="3" fill="url(#no_owlEyeCyan)"/>
+    <circle cx="50" cy="34" r="1.2" fill="#ffffff"/>
+
+    <polygon points="40,32 43,44 40,49 37,44" fill="#38bdf8" stroke="#ffffff" stroke-width="0.6"/>
+
+    <polygon points="26,41 37,44 32,53 23,48" fill="#7c3aed" stroke="#38bdf8" stroke-width="0.5"/>
+    <polygon points="54,41 43,44 48,53 57,48" fill="#7c3aed" stroke="#38bdf8" stroke-width="0.5"/>
+    <polygon points="40,49 46,55 40,64 34,55" fill="url(#no_owlFeatherPurple)" stroke="#38bdf8" stroke-width="0.6"/>
+    <line x1="40" y1="49" x2="40" y2="64" stroke="#38bdf8" stroke-width="0.8"/>
+  </g>
+</svg>
+              </div>
+              <div class="badge-title">NIGHT OWL</div>
+              <div class="badge-status">LOCKED</div>
+            </div>
+
+            <!-- 4. RARE VANGUARD (LOCKED BY DEFAULT) -->
+            <div class="milestone-badge-tile locked" data-badge="rare-vanguard" title="Rare Vanguard">
+              <i class="fa-solid fa-lock mbt-card-lock"></i>
+              <div class="badge-svg-wrap">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="rv_shadowPlate" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <linearGradient id="rv_ironBevel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="30%" stop-color="#475569"/>
+      <stop offset="70%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="rv_gemFacetTopLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f87171"/>
+      <stop offset="30%" stop-color="#b91c1c"/>
+      <stop offset="100%" stop-color="#450a0a"/>
+    </linearGradient>
+    <linearGradient id="rv_gemFacetTopRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="40%" stop-color="#7f1d1d"/>
+      <stop offset="100%" stop-color="#2a0505"/>
+    </linearGradient>
+    <linearGradient id="rv_gemFacetBottomLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#991b1b"/>
+      <stop offset="70%" stop-color="#450a0a"/>
+      <stop offset="100%" stop-color="#1c0404"/>
+    </linearGradient>
+    <linearGradient id="rv_gemFacetBottomRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7f1d1d"/>
+      <stop offset="60%" stop-color="#300707"/>
+      <stop offset="100%" stop-color="#0f0202"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#rv_shadowPlate)">
+    <polygon points="40,8 67,23 67,55 40,70 13,55 13,23" fill="url(#rv_ironBevel)" stroke="#64748b" stroke-width="0.8"/>
+    <polygon points="40,12 63,25 63,53 40,66 17,53 17,25" fill="#161c24" stroke="#0f172a" stroke-width="1"/>
+    <polygon points="40,16 52,38 48,64 32,64 28,38" fill="rgba(0,0,0,0.5)"/>
+
+    <polygon points="40,14 40,42 27,37" fill="url(#rv_gemFacetTopLeft)"/>
+    <polygon points="40,14 53,37 40,42" fill="url(#rv_gemFacetTopRight)"/>
+    <polygon points="40,42 40,66 27,37" fill="url(#rv_gemFacetBottomLeft)"/>
+    <polygon points="40,42 53,37 40,66" fill="url(#rv_gemFacetBottomRight)"/>
+
+    <polygon points="27,37 23,40 33,65 40,66" fill="#450a0a" opacity="0.6"/>
+    <polygon points="53,37 57,40 47,65 40,66" fill="#1c0404" opacity="0.8"/>
+
+    <line x1="40" y1="14" x2="40" y2="66" stroke="#fca5a5" stroke-width="0.8" opacity="0.6"/>
+    <line x1="27" y1="37" x2="53" y2="37" stroke="#fca5a5" stroke-width="0.5" opacity="0.4"/>
+  </g>
+</svg>
+              </div>
+              <div class="badge-title">RARE VANGUARD</div>
+              <div class="badge-status">LOCKED</div>
+            </div>
+
+            <!-- 5. LIFE GIVER V (LOCKED BY DEFAULT) -->
+            <div class="milestone-badge-tile locked" data-badge="life-giver" title="Life Giver V">
+              <i class="fa-solid fa-lock mbt-card-lock"></i>
+              <div class="badge-svg-wrap">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="lg_shadowSteel" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <linearGradient id="lg_steelOuterRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="30%" stop-color="#64748b"/>
+      <stop offset="70%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="lg_steelInnerPlate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="25%" stop-color="#475569"/>
+      <stop offset="50%" stop-color="#334155"/>
+      <stop offset="75%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="lg_rivetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#lg_shadowSteel)">
+    <path d="M40 7 L68 15 C68 46 56 66 40 74 C24 66 12 46 12 15 Z" fill="url(#lg_steelOuterRim)" stroke="#94a3b8" stroke-width="0.8"/>
+    <path d="M40 12 L63 19 C63 43 53 59 40 66 C27 59 17 43 17 19 Z" fill="#1a202c"/>
+
+    <path d="M40 16 L58 22 C58 41 49 55 40 61 C31 55 22 41 22 22 Z" fill="url(#lg_steelInnerPlate)" stroke="#475569" stroke-width="0.8"/>
+    <path d="M40 16 L58 22 C58 41 49 55 40 61 Z" fill="rgba(255,255,255,0.06)"/>
+    <line x1="40" y1="16" x2="40" y2="61" stroke="#94a3b8" stroke-width="0.8" opacity="0.6"/>
+
+    <circle cx="23" cy="20" r="2.2" fill="url(#lg_rivetGrad)" stroke="#1e293b" stroke-width="0.5"/>
+    <circle cx="22.5" cy="19.5" r="0.6" fill="#ffffff" opacity="0.8"/>
+    <circle cx="57" cy="20" r="2.2" fill="url(#lg_rivetGrad)" stroke="#1e293b" stroke-width="0.5"/>
+    <circle cx="56.5" cy="19.5" r="0.6" fill="#ffffff" opacity="0.8"/>
+    <circle cx="40" cy="69" r="2.2" fill="url(#lg_rivetGrad)" stroke="#1e293b" stroke-width="0.5"/>
+    <circle cx="39.5" cy="68.5" r="0.6" fill="#ffffff" opacity="0.8"/>
+  </g>
+</svg>
+              </div>
+              <div class="badge-title">LIFE GIVER V</div>
+              <div class="badge-status">LOCKED • Req. 5 Donations</div>
+            </div>
+
+            <!-- 6. APEX GUARDIAN (LOCKED BY DEFAULT) -->
+            <div class="milestone-badge-tile locked" data-badge="apex-guardian" title="Apex Guardian">
+              <i class="fa-solid fa-lock mbt-card-lock"></i>
+              <div class="badge-svg-wrap">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="ag_shadowWreath" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <linearGradient id="ag_antiqueGoldLeaf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="25%" stop-color="#d4af37"/>
+      <stop offset="60%" stop-color="#854d0e"/>
+      <stop offset="100%" stop-color="#3b1d06"/>
+    </linearGradient>
+    <linearGradient id="ag_antiqueShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="40%" stop-color="#a16207"/>
+      <stop offset="80%" stop-color="#713f12"/>
+      <stop offset="100%" stop-color="#271302"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#ag_shadowWreath)">
+    <path d="M40 22 L54 28 C54 48 46 60 40 65 C34 60 26 48 26 28 Z" fill="url(#ag_antiqueShieldGrad)" stroke="#ca8a04" stroke-width="0.8"/>
+    <path d="M40 22 L54 28 C54 48 46 60 40 65 Z" fill="rgba(0,0,0,0.3)"/>
+    <line x1="40" y1="22" x2="40" y2="65" stroke="#fef08a" stroke-width="0.8" opacity="0.6"/>
+
+    <path d="M37 68 C39 70 41 70 43 68 C45 66 43 64 40 65 C37 64 35 66 37 68 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.5"/>
+
+    <path d="M36 67 C30 66 26 61 28 57 C31 57 34 62 36 67 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M31 61 C24 59 21 54 23 49 C26 50 30 55 31 61 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M26 53 C19 50 17 44 20 40 C23 41 26 47 26 53 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M24 44 C17 39 16 33 20 29 C22 31 24 37 24 44 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M24 34 C19 28 19 22 23 18 C25 21 26 27 24 34 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M27 24 C23 18 25 12 30 9 C31 13 30 19 27 24 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+
+    <path d="M33 55 C29 52 28 47 30 44 C33 45 34 50 33 55 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M29 44 C26 39 26 34 29 31 C31 33 31 39 29 44 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M30 33 C28 27 29 22 33 20 C34 23 33 28 30 33 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+
+    <path d="M44 67 C50 66 54 61 52 57 C49 57 46 62 44 67 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M49 61 C56 59 59 54 57 49 C54 50 50 55 49 61 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M54 53 C61 50 63 44 60 40 C57 41 54 47 54 53 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M56 44 C63 39 64 33 60 29 C58 31 56 37 56 44 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M56 34 C61 28 61 22 57 18 C55 21 54 27 56 34 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M53 24 C57 18 55 12 50 9 C49 13 50 19 53 24 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+
+    <path d="M47 55 C51 52 52 47 50 44 C47 45 46 50 47 55 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M51 44 C54 39 54 34 51 31 C49 33 49 39 51 44 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+    <path d="M50 33 C52 27 51 22 47 20 C46 23 47 28 50 33 Z" fill="url(#ag_antiqueGoldLeaf)" stroke="#713f12" stroke-width="0.4"/>
+  </g>
+</svg>
+              </div>
+              <div class="badge-title">APEX GUARDIAN</div>
+              <div class="badge-status">LOCKED • Req. 10 Donations</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CARD 4: DIGITAL BLOOD DONOR IDENTITY CARD -->
+        <section class="profile-card digital-id-intake-card" id="digitalIdIntakeCard">
+          <div class="card-header-row">
+            <h2 class="card-title">
+              <i class="fa-solid fa-id-card-clip" style="color: #ef4444; margin-right: 8px;"></i>
+              Digital Blood Donor Identity Card
+            </h2>
+            <span class="card-meta-tag secure-meta-tag">
+              <i class="fa-solid fa-shield-halved"></i>
+              CLINICAL EMERGENCY PASS • SECURE QR
+            </span>
+          </div>
+
+          <div class="digital-id-section-subtitle">
+            Verified Emergency Donor Pass &amp; Scannable Clinical Intake Code
+          </div>
+
+          <!-- Centered Compact Digital Blood Donor Identity Card -->
+          <div class="compact-card-outer-center">
+            <div class="compact-donor-card" id="printableDonorCard">
+              
+              <!-- Top Row: Title Left, Edit Detail Right -->
+              <div class="card-top-row">
+                <div class="card-top-left-title">
+                  <i class="fa-solid fa-id-card-clip"></i>
+                  <span>Digital Blood Donor Identity Card</span>
+                </div>
+                <button type="button" class="btn-edit-detail" id="btnEditDetail" title="Edit Donor Clinical Information">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                  <span>Edit Detail</span>
+                </button>
+              </div>
+
+              <!-- Identity Subrow -->
+              <div class="card-identity-row">
+                <div class="donor-identity-left">
+                  <div class="card-avatar-initials" id="cardAvatarBox">
+                    <span id="donor-avatar-initials">AK</span>
+                  </div>
+                  <div class="donor-text-details">
+                    <h3 class="card-donor-name" id="donor-profile-name">Ankit Kumar</h3>
+                    <div class="card-donor-submeta">
+                      <div>Father's Name: <strong id="donor-father-name">Rajesh Kumar</strong></div>
+                      <div>Donor ID: <span class="donor-id-pill" id="donor-unique-id">#RED-UP-7951</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-blood-badge" id="donor-profile-blood-group">A+</div>
+              </div>
+
+              <!-- Center Scannable Real QR Code Container -->
+              <div class="card-qr-center-block">
+                <a id="qrDirectLink" href="user-detail-form.html" target="_blank" class="qr-card-surface" title="Scan or click to view details form directly">
+                  <div id="donorRealQrCode"></div>
+                </a>
+
+                <!-- Text label exactly below QR code -->
+                <p class="scan-to-see-details-label">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Scan to see details</span>
+                </p>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </div>
+  </main>
+
+  <!-- ==================== EDIT DONOR PROFILE MODAL ==================== -->
+    <!-- ==================== EDIT DONOR PROFILE MODAL ==================== -->
+  <div class="modal-backdrop-telemetry" id="editDonorModal" style="display: none;" aria-hidden="true" role="dialog">
+    <div class="modal-card-telemetry edit-profile-modal-card">
+      <div class="modal-telemetry-header">
+        <div class="mth-title">
+          <i class="fa-solid fa-user-pen" style="color: #ef4444; margin-right: 8px;"></i>
+          <span>Edit Donor Clinical Profile</span>
         </div>
-        <button type="button" class="btn-edit-detail" id="btnEditDetail" title="Modify your donor profile and vitals">
-          <i class="fa-solid fa-pen-to-square"></i>
-          <span>Edit Detail</span>
-        </button>
+        <button type="button" class="modal-close-btn" id="btnCloseEditModal" aria-label="Close Modal">&times;</button>
       </div>
 
-      <!-- Identity Metadata Row -->
-      <div class="card-identity-row">
-        <div class="donor-identity-left">
-          <div class="card-avatar-initials" id="cardAvatarInitials">AK</div>
-          <div class="donor-text-details">
-            <h2 class="card-donor-name" id="cardDonorName">Ankit Kumar</h2>
-            <div class="card-donor-submeta">
-              <div>Father's Name: <strong id="cardFatherName">Rajesh Kumar</strong></div>
-              <div>Donor ID: <span class="donor-id-pill" id="cardDonorId">#RED-UP-7951</span></div>
+      <form id="editDonorProfileForm" class="edit-profile-form" novalidate>
+        <div class="modal-telemetry-body">
+          <p class="edit-modal-intro">
+            Update your official donor telemetry details below. Saving immediately synchronizes your records with the RED404 MySQL database and updates your digital QR emergency pass.
+          </p>
+
+          <!-- Section 1: Core Identity -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-id-card"></i>
+            <span>Identity &amp; Demographics</span>
+          </div>
+          <div class="form-grid-2col">
+            <div class="form-field-group">
+              <label for="editDonorFullName">Full Name *</label>
+              <input type="text" id="editDonorFullName" name="fullName" required placeholder="e.g. Ankit Kumar" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorFatherName">Father's Name *</label>
+              <input type="text" id="editDonorFatherName" name="fatherName" required placeholder="e.g. Rajesh Kumar" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorBloodType">Blood Group *</label>
+              <select id="editDonorBloodType" name="bloodType" required>
+                <option value="A+">A+ (A Positive)</option>
+                <option value="A-">A- (A Negative)</option>
+                <option value="B+">B+ (B Positive)</option>
+                <option value="B-">B- (B Negative)</option>
+                <option value="AB+">AB+ (AB Positive)</option>
+                <option value="AB-">AB- (AB Negative)</option>
+                <option value="O+">O+ (O Positive)</option>
+                <option value="O-">O- (O Negative)</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorGender">Gender</label>
+              <select id="editDonorGender" name="gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorDob">Date of Birth</label>
+              <input type="date" id="editDonorDob" name="dob" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorWeight">Weight (kg)</label>
+              <input type="number" id="editDonorWeight" name="weight" step="0.5" placeholder="e.g. 68" />
+            </div>
+          </div>
+
+          <!-- Section 2: Contact & Address -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>Contact &amp; Residence</span>
+          </div>
+          <div class="form-grid-2col">
+            <div class="form-field-group">
+              <label for="editDonorPhone">Mobile Phone *</label>
+              <input type="tel" id="editDonorPhone" name="phone" required placeholder="e.g. 9876543210" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorEmail">Email Address</label>
+              <input type="email" id="editDonorEmail" name="email" placeholder="e.g. donor@red404.in" />
+            </div>
+            <div class="form-field-group full-width">
+              <label for="editDonorAddress">Residential Address</label>
+              <input type="text" id="editDonorAddress" name="address" placeholder="e.g. Near Subharti, Delhi Road" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorCity">City</label>
+              <input type="text" id="editDonorCity" name="city" placeholder="e.g. Meerut" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorState">State</label>
+              <input type="text" id="editDonorState" name="state" placeholder="e.g. Uttar Pradesh" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorPincode">PIN Code</label>
+              <input type="text" id="editDonorPincode" name="pincode" placeholder="e.g. 250002" />
+            </div>
+          </div>
+
+          <!-- Section 3: Clinical Vitals & Screening -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-heart-pulse"></i>
+            <span>Clinical Vitals &amp; Health Screening</span>
+          </div>
+          <div class="form-grid-2col">
+            <div class="form-field-group">
+              <label for="editDonorPulse">Pulse / Heart Rate (bpm)</label>
+              <input type="number" id="editDonorPulse" name="pulse" placeholder="e.g. 72" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorHb">Hemoglobin (g/dL)</label>
+              <input type="number" id="editDonorHb" name="hemoglobin" step="0.1" placeholder="e.g. 14.8" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorBp">Blood Pressure (mmHg)</label>
+              <input type="text" id="editDonorBp" name="bloodPressure" placeholder="e.g. 120/80" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorTemp">Body Temperature (&deg;F)</label>
+              <input type="number" id="editDonorTemp" name="bodyTemp" step="0.1" placeholder="e.g. 98.6" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorLastDonation">Last Donation Date</label>
+              <input type="date" id="editDonorLastDonation" name="lastDonationDate" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorFacility">Verified Facility</label>
+              <input type="text" id="editDonorFacility" name="verifiedFacility" placeholder="e.g. City General Hospital" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorAllergies">Known Allergies</label>
+              <input type="text" id="editDonorAllergies" name="allergies" placeholder="e.g. No Known Drug Allergies (NKDA)" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorConditions">Existing Medical Conditions</label>
+              <input type="text" id="editDonorConditions" name="conditions" placeholder="e.g. None Reported &bull; Normal Screening" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorMedications">Current Medications</label>
+              <input type="text" id="editDonorMedications" name="medications" placeholder="e.g. None / Unrestricted" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorSurgeries">Previous Surgeries (&lt; 12 mos)</label>
+              <input type="text" id="editDonorSurgeries" name="surgeries" placeholder="e.g. None Reported" />
             </div>
           </div>
         </div>
 
-        <div class="card-blood-badge" id="cardBloodGroupBadge">A+</div>
-      </div>
-
-      <!-- Center Scannable Real QR Code -->
-      <div class="card-qr-center-block">
-        <a id="qrDirectLink" href="user-detail-form.html" target="_blank" class="qr-card-surface" title="Click to view details form directly">
-          <div id="donorRealQrCode"></div>
-        </a>
-
-        <!-- Text label exactly below QR code -->
-        <p class="scan-to-see-details-label">
-          <i class="fa-solid fa-camera"></i>
-          <span>Scan to see details</span>
-        </p>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- ==================== COMPREHENSIVE EDIT DETAIL MODAL ==================== -->
-  <div class="modal-backdrop-custom" id="editDetailModal" role="dialog" aria-hidden="true">
-    <div class="modal-card-custom">
-      <div class="modal-head-row">
-        <div class="modal-head-title">
-          <i class="fa-solid fa-pen-to-square"></i>
-          <span>Edit Blood Donor Telemetry Profile</span>
-        </div>
-        <button type="button" class="modal-close-icon" id="btnCloseModal" aria-label="Close modal">&times;</button>
-      </div>
-
-      <form id="editDonorProfileForm" class="modal-form-scroll-body" novalidate>
-        
-        <!-- Section 1: Demographics -->
-        <div class="form-group-section-title">
-          <i class="fa-solid fa-user"></i>
-          <span>1. Identity &amp; Demographics</span>
-        </div>
-        <div class="form-2col-grid">
-          <div class="form-field-wrap">
-            <label for="inputName">Full Legal Name *</label>
-            <input type="text" id="inputName" required placeholder="e.g. Ankit Kumar" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputFatherName">Father's / Guardian Name</label>
-            <input type="text" id="inputFatherName" placeholder="e.g. Rajesh Kumar" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputBloodType">Target Blood Group *</label>
-            <select id="inputBloodType" required>
-              <option value="A+">A+ (A Positive)</option>
-              <option value="A-">A- (A Negative)</option>
-              <option value="B+">B+ (B Positive)</option>
-              <option value="B-">B- (B Negative)</option>
-              <option value="AB+">AB+ (AB Positive)</option>
-              <option value="AB-">AB- (AB Negative)</option>
-              <option value="O+">O+ (O Positive)</option>
-              <option value="O-">O- (O Negative)</option>
-            </select>
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputGender">Gender</label>
-            <select id="inputGender">
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputDob">Date of Birth</label>
-            <input type="date" id="inputDob" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputPhone">Mobile Phone *</label>
-            <input type="tel" id="inputPhone" required placeholder="e.g. 9876543210" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputEmail">Email Address</label>
-            <input type="email" id="inputEmail" placeholder="e.g. ak30kr02@gmail.com" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputDonorType">Donor Classification</label>
-            <input type="text" id="inputDonorType" placeholder="e.g. Voluntary Lifesaver" />
-          </div>
-          <div class="form-field-wrap full-width">
-            <label for="inputAddress">Residential Address</label>
-            <input type="text" id="inputAddress" placeholder="e.g. Near Subharti, Delhi Road" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputCity">City</label>
-            <input type="text" id="inputCity" placeholder="e.g. Meerut" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputState">State</label>
-            <input type="text" id="inputState" placeholder="e.g. Uttar Pradesh" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputPincode">PIN Code</label>
-            <input type="text" id="inputPincode" placeholder="e.g. 250002" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputVerifiedFacility">Last Verified Facility</label>
-            <input type="text" id="inputVerifiedFacility" placeholder="e.g. City General Hospital" />
-          </div>
-        </div>
-
-        <!-- Section 2: Clinical Vitals & Screening -->
-        <div class="form-group-section-title">
-          <i class="fa-solid fa-heart-pulse"></i>
-          <span>2. Medical Screening &amp; Clinical Vitals</span>
-        </div>
-        <div class="form-2col-grid">
-          <div class="form-field-wrap">
-            <label for="inputWeight">Donor Weight (kg)</label>
-            <input type="number" id="inputWeight" step="0.5" placeholder="e.g. 68" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputHemoglobin">Hemoglobin Level (g/dL)</label>
-            <input type="number" id="inputHemoglobin" step="0.1" placeholder="e.g. 14.8" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputBloodPressure">Blood Pressure (mmHg)</label>
-            <input type="text" id="inputBloodPressure" placeholder="e.g. 120/80" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputPulse">Resting Pulse Rate (bpm)</label>
-            <input type="number" id="inputPulse" placeholder="e.g. 72" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputBodyTemp">Body Temperature (&deg;F)</label>
-            <input type="number" id="inputBodyTemp" step="0.1" placeholder="e.g. 98.6" />
-          </div>
-          <div class="form-field-wrap">
-            <label for="inputLastDonation">Last Donation Date</label>
-            <input type="date" id="inputLastDonation" />
-          </div>
-          <div class="form-field-wrap full-width">
-            <label for="inputAllergies">Known Drug Allergies</label>
-            <input type="text" id="inputAllergies" placeholder="e.g. No Known Drug Allergies (NKDA)" />
-          </div>
-          <div class="form-field-wrap full-width">
-            <label for="inputConditions">Existing Medical Conditions</label>
-            <input type="text" id="inputConditions" placeholder="e.g. None Reported" />
-          </div>
-          <div class="form-field-wrap full-width">
-            <label for="inputMedications">Current Medications</label>
-            <input type="text" id="inputMedications" placeholder="e.g. None / Unrestricted" />
-          </div>
-          <div class="form-field-wrap full-width">
-            <label for="inputSurgeries">Previous Surgeries (&lt; 12 months)</label>
-            <input type="text" id="inputSurgeries" placeholder="e.g. None Reported" />
-          </div>
-        </div>
-
-        <div class="modal-footer-row">
-          <button type="button" class="btn-modal-cancel" id="btnCancelModal">Cancel</button>
-          <button type="submit" class="btn-modal-save" id="btnSaveModal">
+        <div class="modal-telemetry-footer">
+          <button type="button" class="btn-cancel" id="btnCancelEditModal">Cancel</button>
+          <button type="submit" class="btn-save-telemetry" id="btnSaveDonorProfile">
             <i class="fa-solid fa-floppy-disk"></i>
-            <span>Save &amp; Update MySQL</span>
+            <span>Save &amp; Update Database</span>
           </button>
         </div>
       </form>
     </div>
   </div>
 
+  
   <!-- ==================== LOGOUT CONFIRMATION MODAL ==================== -->
-  <div class="modal-backdrop-custom" id="logoutConfirmModal" style="display: none;">
-    <div class="modal-card-custom logout-confirm-card">
-      <div class="logout-warn-icon">
-        <i class="fa-solid fa-power-off"></i>
+  <div class="modal-backdrop-telemetry" id="logoutConfirmModal" style="display: none;" aria-hidden="true" role="dialog">
+    <div class="modal-card-telemetry logout-confirm-card" style="max-width: 420px; text-align: center; padding: 28px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.7);">
+      <div class="logout-warn-icon" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
       </div>
-      <h3 class="logout-title">Confirm Session Termination</h3>
-      <p class="logout-msg">Are you sure you want to log out of your RED404 donor node?</p>
-      <div class="logout-btn-group">
-        <button type="button" class="btn-modal-cancel" id="btnCancelLogout">Cancel</button>
-        <button type="button" class="btn-modal-save" id="btnConfirmLogout" style="background:#ef4444;">
-          <i class="fa-solid fa-right-from-bracket"></i>
-          <span>Confirm Logout</span>
+      <h3 style="font-family: var(--font-brand, 'Orbitron', sans-serif); font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 8px;">
+        Confirm Session Termination
+      </h3>
+      <p style="font-size: 0.88rem; color: #94a3b8; line-height: 1.5; margin-bottom: 24px;">
+        Are you sure you want to log out of your RED404 donor node?
+      </p>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 14px;">
+        <button type="button" class="btn-cancel" id="btnCancelLogout" style="padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: #1e293b; color: #94a3b8; font-weight: 600; cursor: pointer;">
+          Cancel
+        </button>
+        <button type="button" class="btn-save-telemetry" id="btnConfirmLogout" style="padding: 10px 22px; border-radius: 8px; background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff; font-weight: 600; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
+          Confirm Logout
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Toast Notification -->
-  <div class="red-toast" id="redToast">
-    <i class="fa-solid fa-circle-check"></i>
-    <span id="toastMsg">Updated successfully</span>
-  </div>
-
-  <!-- ==================== SCRIPT: DYNAMIC DATA, QR CODE & EDIT LOGIC ==================== -->
-  <script>
-    (function () {
-      'use strict';
-
-      let currentDonor = null;
-      let qrCodeInstance = null;
-
-      // Helper for clean data formatting with strict 'NA' fallback
-      function formatVal(val, suffix) {
-        if (val === null || val === undefined) return 'NA';
-        const str = String(val).trim();
-        if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str === '') {
-          return 'NA';
-        }
-        return suffix ? (str + ' ' + suffix) : str;
-      }
-
-      function showToast(message, isError) {
-        const toast = document.getElementById('redToast');
-        const msgSpan = document.getElementById('toastMsg');
-        if (!toast || !msgSpan) return;
-        msgSpan.textContent = message;
-        if (isError) {
-          toast.classList.add('error');
-          toast.querySelector('i').className = 'fa-solid fa-triangle-exclamation';
-        } else {
-          toast.classList.remove('error');
-          toast.querySelector('i').className = 'fa-solid fa-circle-check';
-        }
-        toast.style.display = 'flex';
-        setTimeout(() => {
-          toast.style.display = 'none';
-        }, 3200);
-      }
-
-      // ==================== LOAD LIVE DONOR DATA ====================
-      async function loadLiveDonorProfile() {
-        try {
-          // Read local session first if available
-          let sessionDonorId = null;
-          try {
-            const rawSession = localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session');
-            if (rawSession) {
-              const parsed = JSON.parse(rawSession);
-              if (parsed.user && parsed.user.id) sessionDonorId = parsed.user.id;
-            }
-          } catch (_) {}
-
-          const apiUrl = sessionDonorId ? `/api/donors/profile?donorId=${sessionDonorId}` : '/api/donors/profile';
-          const res = await fetch(apiUrl, { cache: 'no-store' });
-          if (res.ok) {
-            const json = await res.json();
-            if (json && json.data) {
-              currentDonor = json.data;
-              renderCardAndQr(currentDonor);
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn('Profile fetch notice:', err);
-        }
-
-        // Secondary fallback: local cache
-        try {
-          const raw = localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session');
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && (parsed.user || parsed.donor)) {
-              currentDonor = parsed.user || parsed.donor;
-              renderCardAndQr(currentDonor);
-              return;
-            }
-          }
-        } catch (_) {}
-
-        // Fallback default structure
-        currentDonor = { id: 1, name: 'Ankit Kumar', bloodType: 'A+' };
-        renderCardAndQr(currentDonor);
-      }
-
-      // ==================== RENDER COMPACT CARD & REAL QR CODE ====================
-      function renderCardAndQr(d) {
-        if (!d) d = {};
-
-        const name = formatVal(d.name || d.fullName);
-        const fatherName = formatVal(d.fatherName || d.father_name);
-        const bloodType = formatVal(d.bloodType || d.blood_type);
-
-        // Calculate unique Donor ID
-        let stateCode = 'DL';
-        const stateVal = (d.state || '').trim().toUpperCase();
-        if (stateVal.includes('UTTAR PRADESH')) stateCode = 'UP';
-        else if (stateVal.includes('UTTARAKHAND')) stateCode = 'UK';
-        else if (stateVal.includes('DELHI')) stateCode = 'DL';
-        else if (stateVal.includes('MAHARASHTRA')) stateCode = 'MH';
-        else if (stateVal.includes('KARNATAKA')) stateCode = 'KA';
-        else if (stateVal.includes('TAMIL NADU')) stateCode = 'TN';
-        else if (stateVal.length >= 2) stateCode = stateVal.substring(0, 2);
-
-        const idNum = 7950 + parseInt(d.id || 1, 10);
-        const uniqueId = d.id ? `#RED-${stateCode}-${idNum}` : 'NA';
-
-        // Avatar Initials
-        let inits = 'AK';
-        if (name !== 'NA') {
-          const parts = name.trim().split(/\s+/);
-          inits = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]) : name.substring(0, 2);
-        }
-
-        // DOM elements update
-        const cardNameEl = document.getElementById('cardDonorName');
-        if (cardNameEl) cardNameEl.textContent = name;
-
-        const cardFatherEl = document.getElementById('cardFatherName');
-        if (cardFatherEl) cardFatherEl.textContent = fatherName;
-
-        const cardIdEl = document.getElementById('cardDonorId');
-        if (cardIdEl) cardIdEl.textContent = uniqueId;
-
-        const cardBloodEl = document.getElementById('cardBloodGroupBadge');
-        if (cardBloodEl) cardBloodEl.textContent = bloodType;
-
-        const cardAvatarEl = document.getElementById('cardAvatarInitials');
-        if (cardAvatarEl) cardAvatarEl.textContent = inits.toUpperCase();
-
-        const navAvatarEl = document.getElementById('navAvatarInitials');
-        if (navAvatarEl) navAvatarEl.textContent = inits.toUpperCase();
-
-        const dropNameEl = document.getElementById('dropdownUserName');
-        if (dropNameEl) dropNameEl.textContent = name;
-
-        const dropEmailEl = document.getElementById('dropdownUserEmail');
-        if (dropEmailEl) dropEmailEl.textContent = formatVal(d.email);
-
-        // Generate and ensure unique token
-        const storageKey = 'red404_qr_token_donor_' + (d.id || '1');
-        let secureToken = d.qrToken || d.qr_token || localStorage.getItem(storageKey);
-        if (!secureToken) {
-          secureToken = 'RED404-SEC-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-          localStorage.setItem(storageKey, secureToken);
-        }
-        currentDonor.qrToken = secureToken;
-
-        // URL to open on QR code scan (redirects straight to user-detail-form.html)
-        const scanUrl = `${window.location.origin}/user-detail-form.html?token=${encodeURIComponent(secureToken)}&donorId=${encodeURIComponent(d.id || 1)}&donor=${encodeURIComponent(uniqueId)}`;
-
-        const directLinkEl = document.getElementById('qrDirectLink');
-        if (directLinkEl) {
-          directLinkEl.href = scanUrl;
-        }
-
-        // Generate REAL functional QR code dynamically via qrcode.js
-        const qrContainer = document.getElementById('donorRealQrCode');
-        if (qrContainer) {
-          qrContainer.innerHTML = '';
-          try {
-            if (typeof QRCode !== 'undefined') {
-              qrCodeInstance = new QRCode(qrContainer, {
-                text: scanUrl,
-                width: 190,
-                height: 190,
-                colorDark: '#0f172a',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-              });
-            } else {
-              qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" />`;
-            }
-          } catch (qrErr) {
-            console.error('QR Render fallback:', qrErr);
-            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" />`;
-          }
-        }
-      }
-
-      // ==================== EDIT DETAIL MODAL LOGIC ====================
-      const modal = document.getElementById('editDetailModal');
-      const btnEdit = document.getElementById('btnEditDetail');
-      const btnClose = document.getElementById('btnCloseModal');
-      const btnCancel = document.getElementById('btnCancelModal');
-      const editForm = document.getElementById('editDonorProfileForm');
-
-      function openEditModal() {
-        if (!modal || !currentDonor) return;
-        const d = currentDonor;
-
-        // Pre-fill inputs with current values
-        setVal('inputName', d.name || d.fullName || '');
-        setVal('inputFatherName', d.fatherName || d.father_name || '');
-        setVal('inputBloodType', d.bloodType || d.blood_type || 'A+');
-        setVal('inputGender', d.gender || 'Male');
-        setVal('inputDob', d.dob || d.dateOfBirth || '');
-        setVal('inputPhone', d.phone || '');
-        setVal('inputEmail', d.email || '');
-        setVal('inputDonorType', d.donorType || d.donor_type || '');
-        setVal('inputAddress', d.address || '');
-        setVal('inputCity', d.city || '');
-        setVal('inputState', d.state || '');
-        setVal('inputPincode', d.pincode || '');
-        setVal('inputVerifiedFacility', d.verifiedFacility || d.verified_facility || '');
-
-        setVal('inputWeight', (d.weight !== null && d.weight !== undefined) ? d.weight : '');
-        setVal('inputHemoglobin', (d.hemoglobin !== null && d.hemoglobin !== undefined) ? d.hemoglobin : '');
-        setVal('inputBloodPressure', d.bloodPressure || d.blood_pressure || '');
-        setVal('inputPulse', (d.pulse !== null && d.pulse !== undefined) ? d.pulse : '');
-        setVal('inputBodyTemp', (d.bodyTemp !== null && d.bodyTemp !== undefined) ? d.bodyTemp : '');
-        setVal('inputLastDonation', d.lastDonation || d.lastDonationDate || d.last_donation || '');
-        setVal('inputAllergies', d.allergies || '');
-        setVal('inputConditions', d.conditions || '');
-        setVal('inputMedications', d.medications || '');
-        setVal('inputSurgeries', d.surgeries || '');
-
-        modal.style.display = 'flex';
-        modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeEditModal() {
-        if (!modal) return;
-        modal.style.display = 'none';
-        modal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-      }
-
-      function setVal(id, v) {
-        const el = document.getElementById(id);
-        if (el) el.value = v;
-      }
-
-      function getVal(id) {
-        const el = document.getElementById(id);
-        return el ? el.value.trim() : '';
-      }
-
-      if (btnEdit) btnEdit.addEventListener('click', openEditModal);
-      if (btnClose) btnClose.addEventListener('click', closeEditModal);
-      if (btnCancel) btnCancel.addEventListener('click', closeEditModal);
-
-      if (modal) {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) closeEditModal();
-        });
-      }
-
-      // Handle Form Submit -> Save to MySQL Database
-      if (editForm) {
-        editForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const saveBtn = document.getElementById('btnSaveModal');
-          if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving to MySQL...</span>';
-          }
-
-          try {
-            const payload = {
-              id: currentDonor.id || 1,
-              donorId: currentDonor.id || 1,
-              name: getVal('inputName'),
-              fatherName: getVal('inputFatherName'),
-              bloodType: getVal('inputBloodType'),
-              gender: getVal('inputGender'),
-              dob: getVal('inputDob') || null,
-              phone: getVal('inputPhone'),
-              email: getVal('inputEmail'),
-              donorType: getVal('inputDonorType'),
-              address: getVal('inputAddress'),
-              city: getVal('inputCity'),
-              state: getVal('inputState'),
-              pincode: getVal('inputPincode'),
-              verifiedFacility: getVal('inputVerifiedFacility'),
-              weight: getVal('inputWeight') ? parseFloat(getVal('inputWeight')) : null,
-              hemoglobin: getVal('inputHemoglobin') ? parseFloat(getVal('inputHemoglobin')) : null,
-              bloodPressure: getVal('inputBloodPressure') || null,
-              pulse: getVal('inputPulse') ? parseInt(getVal('inputPulse'), 10) : null,
-              bodyTemp: getVal('inputBodyTemp') ? parseFloat(getVal('inputBodyTemp')) : null,
-              lastDonationDate: getVal('inputLastDonation') || null,
-              allergies: getVal('inputAllergies'),
-              conditions: getVal('inputConditions'),
-              medications: getVal('inputMedications'),
-              surgeries: getVal('inputSurgeries'),
-              qrToken: currentDonor.qrToken || ('RED404-SEC-' + Math.random().toString(36).substring(2, 10).toUpperCase())
-            };
-
-            // Call Backend API to update MySQL record immediately
-            let res = await fetch('/api/donors/profile', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-              res = await fetch('/api/donor/profile', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-            }
-
-            if (res.ok) {
-              const resJson = await res.json();
-              if (resJson && resJson.data) {
-                currentDonor = resJson.data;
-              } else {
-                Object.assign(currentDonor, payload);
-              }
-            } else {
-              Object.assign(currentDonor, payload);
-            }
-
-            // Sync with local session
-            try {
-              const rawSess = localStorage.getItem('red404_donor_session');
-              if (rawSess) {
-                const parsed = JSON.parse(rawSess);
-                if (parsed.user) {
-                  Object.assign(parsed.user, currentDonor);
-                  localStorage.setItem('red404_donor_session', JSON.stringify(parsed));
-                }
-              }
-            } catch (_) {}
-
-            // Re-render compact card and update real QR code
-            closeEditModal();
-            renderCardAndQr(currentDonor);
-            showToast('Profile and vitals successfully updated in MySQL!', false);
-          } catch (err) {
-            console.error('Save error:', err);
-            showToast('Failed to save profile. Please check connection.', true);
-          } finally {
-            if (saveBtn) {
-              saveBtn.disabled = false;
-              saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Save &amp; Update MySQL</span>';
-            }
-          }
-        });
-      }
-
-      // ==================== USER MENU & LOGOUT POPUP ====================
-      const userBtn = document.getElementById('userMenuBtn');
-      const userMenu = document.getElementById('userDropdownMenu');
-      const logoutTrigger = document.getElementById('btnLogoutTrigger');
-      const logoutModal = document.getElementById('logoutConfirmModal');
-      const btnCancelLogout = document.getElementById('btnCancelLogout');
-      const btnConfirmLogout = document.getElementById('btnConfirmLogout');
-
-      if (userBtn && userMenu) {
-        userBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          userMenu.classList.toggle('show');
-        });
-
-        document.addEventListener('click', (e) => {
-          if (!userMenu.contains(e.target) && e.target !== userBtn) {
-            userMenu.classList.remove('show');
-          }
-        });
-      }
-
-      if (logoutTrigger && logoutModal) {
-        logoutTrigger.addEventListener('click', (e) => {
-          e.preventDefault();
-          if (userMenu) userMenu.classList.remove('show');
-          logoutModal.style.display = 'flex';
-        });
-      }
-
-      if (btnCancelLogout && logoutModal) {
-        btnCancelLogout.addEventListener('click', () => {
-          logoutModal.style.display = 'none';
-        });
-      }
-
-      if (logoutModal) {
-        logoutModal.addEventListener('click', (e) => {
-          if (e.target === logoutModal) logoutModal.style.display = 'none';
-        });
-      }
-
-      if (btnConfirmLogout) {
-        btnConfirmLogout.addEventListener('click', async () => {
-          try {
-            await fetch('/api/auth/logout', { method: 'POST' });
-          } catch (_) {}
-          localStorage.removeItem('red404_donor_session');
-          localStorage.removeItem('red404_auth_session');
-          window.location.href = 'donor-login.html';
-        });
-      }
-
-      // Initialize
-      document.addEventListener('DOMContentLoaded', loadLiveDonorProfile);
-    })();
-  </script>
+  <!-- Scripts -->
+  <script src="js/common.js?v=20261109_v13_single_qr_restore"></script>
+  <script src="js/command-nav.js?v=20261109_v13_single_qr_restore"></script>
+  <script src="js/qr-generator.js?v=20261109_v13_single_qr_restore"></script>
+  <script src="js/donor-profile.js?v=20261109_v13_single_qr_restore"></script>
 </body>
 </html>

@@ -55,6 +55,7 @@
     initMobileNav();
     initGPSListener();
     initEditModal();
+    initLogoutConfirmation();
     await loadDonorProfile();
     await loadDonationHistory();
     evaluateHealthAndEligibility();
@@ -737,17 +738,53 @@
   }
 
   function renderIntakeQRCode(scanUrl) {
-    const container = document.getElementById('donor-qr-code');
+    const container = document.getElementById('donorRealQrCode') || document.getElementById('donor-qr-code');
     if (!container) return;
-    if (typeof RED404_QR === 'undefined' || typeof RED404_QR.render !== 'function') {
-      console.warn('RED404_QR generator not loaded.');
-      return;
+    container.innerHTML = ''; // Always clear container to guarantee NO duplicate QR codes
+
+    const qrDirectLink = document.getElementById('qrDirectLink');
+    if (qrDirectLink) qrDirectLink.href = scanUrl;
+
+    try {
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(container, {
+          text: scanUrl,
+          width: 180,
+          height: 180,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        // Anti-Double QR Fix: Hide canvas so ONLY one single high-res img element renders
+        setTimeout(() => {
+          const canvases = container.querySelectorAll('canvas');
+          canvases.forEach(c => {
+            c.style.display = 'none';
+            c.style.visibility = 'hidden';
+            c.style.width = '0px';
+            c.style.height = '0px';
+          });
+          const imgs = container.querySelectorAll('img');
+          if (imgs.length > 0) {
+            imgs[0].style.display = 'block';
+            imgs[0].style.margin = '0 auto';
+            imgs[0].style.width = '180px';
+            imgs[0].style.height = '180px';
+            imgs[0].style.borderRadius = '6px';
+            for (let i = 1; i < imgs.length; i++) imgs[i].remove();
+          } else if (canvases.length > 0) {
+            canvases[0].style.display = 'block';
+            canvases[0].style.margin = '0 auto';
+          }
+        }, 30);
+      } else {
+        container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:180px;height:180px;margin:0 auto;border-radius:6px;" />`;
+      }
+    } catch (e) {
+      console.warn('QR Code generation notice:', e);
+      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:180px;height:180px;margin:0 auto;border-radius:6px;" />`;
     }
-    RED404_QR.render(container, scanUrl, {
-      size: 76,
-      color: '#38bdf8',
-      glow: true
-    });
   }
 
   function setupDigitalIdActions(storageKey, uniqueIdStr) {
@@ -808,6 +845,7 @@
     const editModal = document.getElementById('editDonorModal');
     if (!editModal) return;
 
+    const btnEditDetail = document.getElementById('btnEditDetail');
     const btnEditCard = document.getElementById('btnEditDonorCard');
     const btnOpenModal = document.getElementById('btnOpenEditModal');
     const btnCloseModal = document.getElementById('btnCloseEditModal');
@@ -832,6 +870,12 @@
       const condInput = document.getElementById('editDonorConditions');
       const medsInput = document.getElementById('editDonorMedications');
       const surgInput = document.getElementById('editDonorSurgeries');
+      const pulseInput = document.getElementById('editDonorPulse');
+      const hbInput = document.getElementById('editDonorHb');
+      const bpInput = document.getElementById('editDonorBp');
+      const tempInput = document.getElementById('editDonorTemp');
+      const lastDonInput = document.getElementById('editDonorLastDonation');
+      const facilityInput = document.getElementById('editDonorFacility');
 
       if (nameInput) nameInput.value = currentDonor.name || '';
       if (fatherInput) fatherInput.value = currentDonor.fatherName || currentDonor.father_name || 'Rajesh Kumar';
@@ -854,6 +898,12 @@
       
       if (medsInput) medsInput.value = currentDonor.medications || 'None / Unrestricted';
       if (surgInput) surgInput.value = currentDonor.surgeries || 'None Reported (< 12 months)';
+      if (pulseInput) pulseInput.value = currentDonor.pulse || 72;
+      if (hbInput) hbInput.value = currentDonor.hemoglobin || 14.8;
+      if (bpInput) bpInput.value = currentDonor.bloodPressure || '120/80';
+      if (tempInput) tempInput.value = currentDonor.bodyTemp || 98.6;
+      if (lastDonInput) lastDonInput.value = currentDonor.lastDonationDate || '';
+      if (facilityInput) facilityInput.value = currentDonor.verifiedFacility || 'City General Hospital';
 
       editModal.style.display = 'flex';
       editModal.setAttribute('aria-hidden', 'false');
@@ -866,6 +916,10 @@
       document.body.style.overflow = '';
     }
 
+    if (btnEditDetail && !btnEditDetail.dataset.bound) {
+      btnEditDetail.dataset.bound = 'true';
+      btnEditDetail.addEventListener('click', openModal);
+    }
     if (btnEditCard && !btnEditCard.dataset.bound) {
       btnEditCard.dataset.bound = 'true';
       btnEditCard.addEventListener('click', openModal);
@@ -1123,3 +1177,50 @@
 
 })();
 
+
+
+  // ======================== LOGOUT CONFIRMATION MODAL LOGIC ========================
+  function initLogoutConfirmation() {
+    const logoutBtn = document.getElementById('dropdownLogoutBtn');
+    const logoutModal = document.getElementById('logoutConfirmModal');
+    const btnCancel = document.getElementById('btnCancelLogout');
+    const btnConfirm = document.getElementById('btnConfirmLogout');
+
+    if (logoutBtn && logoutModal) {
+      logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const userMenu = document.getElementById('userDropdownMenu');
+        if (userMenu) userMenu.classList.remove('show');
+        logoutModal.style.display = 'flex';
+        logoutModal.setAttribute('aria-hidden', 'false');
+      });
+    }
+
+    if (btnCancel && logoutModal) {
+      btnCancel.addEventListener('click', () => {
+        logoutModal.style.display = 'none';
+        logoutModal.setAttribute('aria-hidden', 'true');
+      });
+    }
+
+    if (logoutModal) {
+      logoutModal.addEventListener('click', (e) => {
+        if (e.target === logoutModal) {
+          logoutModal.style.display = 'none';
+          logoutModal.setAttribute('aria-hidden', 'true');
+        }
+      });
+    }
+
+    if (btnConfirm) {
+      btnConfirm.addEventListener('click', async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (_) {}
+        localStorage.removeItem('red404_donor_session');
+        localStorage.removeItem('red404_auth_session');
+        window.location.href = 'donor-login.html';
+      });
+    }
+  }
