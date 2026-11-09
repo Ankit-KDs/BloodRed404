@@ -12,13 +12,26 @@
 
   function initMyDonations() {
     // 1. Session lookup
+    let user = null;
     try {
       const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
       if (raw) {
         const session = JSON.parse(raw);
-        const user = session.user || session;
+        user = session.user || session;
+      }
+      if (!user && typeof Auth !== 'undefined' && Auth.getSession) {
+        user = Auth.getSession();
+      }
+      if (!user) {
+        const rawSession = localStorage.getItem('red404_session');
+        if (rawSession) {
+          const session = JSON.parse(rawSession);
+          user = session.user || session;
+        }
+      }
+      if (user) {
         donorName = user.name || (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : donorName);
-        donorBloodGroup = user.bloodGroup || donorBloodGroup;
+        donorBloodGroup = user.bloodGroup || user.bloodType || donorBloodGroup;
 
         if (Array.isArray(user.donations)) {
           donationRecords = user.donations;
@@ -35,10 +48,53 @@
       donorBloodGroup = window.RED404_STATE.donorData.bloodGroup || donorBloodGroup;
     }
 
+    renderHeaderEligibility(user);
     renderImpactStats();
     renderDonationsTable();
     setupExportBtn();
     setupModalEvents();
+  }
+
+  function renderHeaderEligibility(user) {
+    const badge = document.getElementById('headerEligibilityBadge');
+    const textEl = document.getElementById('headerEligibilityText');
+    if (!badge || !textEl) return;
+
+    // Check user availability
+    const availability = (user && user.availability) || 'Available';
+    if (availability.toLowerCase() === 'unavailable') {
+      badge.className = 'status-eligibility-btn unavailable';
+      textEl.textContent = 'Status: TEMPORARILY UNAVAILABLE • Status Inactive';
+      return;
+    }
+
+    // 0 verified donations -> 100% Eligible immediately
+    if (!donationRecords || donationRecords.length === 0) {
+      badge.className = 'status-eligibility-btn eligible-ready';
+      textEl.textContent = 'Status: ELIGIBLE TO DONATE • Safe to Proceed';
+      return;
+    }
+
+    // If donations exist, evaluate recovery window (90 days for whole blood)
+    const latest = donationRecords[0];
+    const donationDateStr = latest.date || latest.donationDate || (user && (user.lastDonation || user.lastDonationDate));
+    if (donationDateStr) {
+      const dDate = new Date(donationDateStr);
+      if (!isNaN(dDate.getTime())) {
+        const diffMs = Date.now() - dDate.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const recoveryDays = 90;
+        if (diffDays >= 0 && diffDays < recoveryDays) {
+          const daysLeft = recoveryDays - diffDays;
+          badge.className = 'status-eligibility-btn recovering';
+          textEl.textContent = `Status: RECOVERY PERIOD • ${daysLeft} Days Left`;
+          return;
+        }
+      }
+    }
+
+    badge.className = 'status-eligibility-btn eligible-ready';
+    textEl.textContent = 'Status: ELIGIBLE TO DONATE • Safe to Proceed';
   }
 
   function renderImpactStats() {

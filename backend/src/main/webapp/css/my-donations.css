@@ -25,7 +25,170 @@ body.donations-body {
   padding: 10px 24px 60px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+}
+
+/* ==================== FULL-WIDTH BANNER HEADER ==================== */
+.donations-header-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 6px 4px 4px;
+  box-sizing: border-box;
+}
+
+.dhb-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dhb-title {
+  margin: 0;
+  font-family: 'Syne', 'Inter', -apple-system, sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dhb-title i {
+  color: #ef4444;
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.45));
+}
+
+.dhb-subtitle {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #94a3b8;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.dhb-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Clickable & Hoverable Medical Status Pill Button */
+.status-eligibility-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  box-sizing: border-box;
+  position: relative;
+  user-select: none;
+}
+
+/* 100% Ready Medical Green State */
+.status-eligibility-btn.eligible-ready {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.15), inset 0 0 12px rgba(16, 185, 129, 0.08);
+}
+
+.status-eligibility-btn.eligible-ready:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(52, 211, 153, 0.75);
+  color: #6ee7b7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.32), inset 0 0 16px rgba(16, 185, 129, 0.15);
+}
+
+/* Recovery Period State (Amber) */
+.status-eligibility-btn.recovering {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.15);
+}
+
+.status-eligibility-btn.recovering:hover {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: rgba(245, 158, 11, 0.75);
+  color: #fde68a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.3);
+}
+
+/* Deferral / Inactive State */
+.status-eligibility-btn.unavailable {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #cbd5e1;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+}
+
+.status-eligibility-btn.unavailable:hover {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(203, 213, 225, 0.6);
+  color: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+/* Pulsing Status Dot */
+.badge-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: badgeDotPulse 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.status-eligibility-btn.recovering .badge-pulse-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b;
+}
+
+.status-eligibility-btn.unavailable .badge-pulse-dot {
+  background: #94a3b8;
+  box-shadow: 0 0 8px #94a3b8;
+  animation: none;
+}
+
+@keyframes badgeDotPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.status-eligibility-btn .badge-icon {
+  font-size: 0.95rem;
+}
+
+.status-eligibility-btn .badge-arrow {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  margin-left: 2px;
+}
+
+.status-eligibility-btn:hover .badge-arrow {
+  opacity: 1;
+  transform: translateX(3px);
 }
 
 /* ==================== IMPACT HERO TILES ==================== */
