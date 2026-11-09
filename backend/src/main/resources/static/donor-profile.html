@@ -1830,16 +1830,16 @@
                 </button>
               </div>
 
-              <!-- Center Scannable Real QR Code Container -->
+              <!-- Center Scannable Real QR Code Container (Click to Zoom Lightbox) -->
               <div class="card-qr-center-block">
-                <a id="qrDirectLink" href="user-detail-form.html" target="_blank" class="qr-card-surface" title="Scan or click to view details form directly">
+                <div id="btnZoomQr" class="qr-card-surface" role="button" tabindex="0" title="Click to zoom QR Code">
                   <div id="donorRealQrCode"></div>
-                </a>
+                </div>
 
                 <!-- Text label exactly below QR code -->
                 <p class="scan-to-see-details-label">
-                  <i class="fa-solid fa-camera"></i>
-                  <span>Scan to see details</span>
+                  <i class="fa-solid fa-magnifying-glass-plus"></i>
+                  <span>Tap QR to zoom &bull; Scan for details</span>
                 </p>
               </div>
 
@@ -2002,6 +2002,24 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== QR CODE ZOOM LIGHTBOX POPUP ==================== -->
+  <div class="modal-backdrop-telemetry" id="qrZoomModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="qrZoomTitle">
+    <div class="modal-card-telemetry qr-zoom-card">
+      <button type="button" class="qr-zoom-close-btn" id="btnCloseQrZoom" aria-label="Close modal">&times;</button>
+      <div class="qr-zoom-header">
+        <i class="fa-solid fa-qrcode qr-zoom-icon"></i>
+        <h3 id="qrZoomTitle">Digital Blood Donor QR</h3>
+      </div>
+      <p class="qr-zoom-subtitle">Scan with camera to view official verified intake details</p>
+      <div class="qr-zoom-display-frame">
+        <div id="zoomQrCodeContainer"></div>
+      </div>
+      <div class="qr-zoom-footer-hint">
+        <i class="fa-solid fa-expand"></i> Tap outside or press Esc to dismiss
+      </div>
     </div>
   </div>
 

@@ -1269,26 +1269,34 @@ body.donor-profile-body {
 @media (max-width: 1280px) {
   .milestones-3x2-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 14px !important;
-  }
-}
-
-@media (max-width: 680px) {
-  .milestones-3x2-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
   }
 }
 
-@media (max-width: 440px) {
+@media (max-width: 768px) {
   .milestones-3x2-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
   }
 }
 
 .milestone-badge-tile {
   border-radius: 12px !important;
-  padding: 20px 12px !important;
+  padding: 16px 10px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -1297,8 +1305,38 @@ body.donor-profile-body {
   position: relative !important;
   transition: transform 0.25s ease, box-shadow 0.3s ease, background 0.4s ease, border-color 0.4s ease !important;
   box-sizing: border-box !important;
-  min-height: 180px !important;
+  min-height: 160px !important;
   overflow: visible !important;
+}
+
+@media (max-width: 1280px) {
+  .milestone-badge-tile {
+    min-height: 140px !important;
+    padding: 14px 8px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile {
+    min-height: 105px !important;
+    padding: 8px 6px !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .milestone-badge-tile {
+    min-height: 94px !important;
+    padding: 8px 6px !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .milestone-badge-tile {
+    min-height: 86px !important;
+    padding: 6px 4px !important;
+  }
 }
 
 .milestone-badge-tile:hover {
@@ -1306,21 +1344,54 @@ body.donor-profile-body {
 }
 
 .milestone-badge-tile .badge-svg-wrap {
-  width: 82px !important;
-  height: 82px !important;
+  width: 72px !important;
+  height: 72px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   margin-bottom: 2px !important;
+  flex-shrink: 0 !important;
 }
 
 .milestone-badge-tile .badge-svg-wrap svg {
-  width: 82px !important;
-  height: 82px !important;
+  width: 72px !important;
+  height: 72px !important;
   display: block !important;
   overflow: visible !important;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
   transition: transform 0.25s ease;
+}
+
+@media (max-width: 1280px) {
+  .milestone-badge-tile .badge-svg-wrap,
+  .milestone-badge-tile .badge-svg-wrap svg {
+    width: 60px !important;
+    height: 60px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile .badge-svg-wrap,
+  .milestone-badge-tile .badge-svg-wrap svg {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .milestone-badge-tile .badge-svg-wrap,
+  .milestone-badge-tile .badge-svg-wrap svg {
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .milestone-badge-tile .badge-svg-wrap,
+  .milestone-badge-tile .badge-svg-wrap svg {
+    width: 34px !important;
+    height: 34px !important;
+  }
 }
 
 .milestone-badge-tile.unlocked:hover .badge-svg-wrap svg {
@@ -1329,21 +1400,62 @@ body.donor-profile-body {
 
 .milestone-badge-tile .badge-title {
   font-family: var(--font-main, Inter, sans-serif) !important;
-  font-size: clamp(0.82rem, 1.05vw, 0.92rem) !important;
+  font-size: clamp(0.78rem, 1vw, 0.88rem) !important;
   font-weight: 800 !important;
-  letter-spacing: 0.4px !important;
+  letter-spacing: 0.3px !important;
   line-height: 1.2 !important;
-  margin-top: 10px !important;
-  margin-bottom: 4px !important;
+  margin-top: 8px !important;
+  margin-bottom: 3px !important;
   text-transform: uppercase !important;
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile .badge-title {
+    font-size: 0.68rem !important;
+    margin-top: 4px !important;
+    margin-bottom: 2px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .milestone-badge-tile .badge-title {
+    font-size: 0.66rem !important;
+    margin-top: 3px !important;
+    margin-bottom: 2px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .milestone-badge-tile .badge-title {
+    font-size: 0.62rem !important;
+  }
 }
 
 .milestone-badge-tile .badge-status {
   font-family: var(--font-main, Inter, sans-serif) !important;
-  font-size: clamp(0.68rem, 0.85vw, 0.74rem) !important;
-  letter-spacing: 0.8px !important;
+  font-size: clamp(0.64rem, 0.8vw, 0.72rem) !important;
+  letter-spacing: 0.6px !important;
   text-transform: uppercase !important;
   line-height: 1.2 !important;
+}
+
+@media (max-width: 768px) {
+  .milestone-badge-tile .badge-status {
+    font-size: 0.58rem !important;
+    letter-spacing: 0.4px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .milestone-badge-tile .badge-status {
+    font-size: 0.56rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .milestone-badge-tile .badge-status {
+    font-size: 0.52rem !important;
+  }
 }
 
 /* 1. UNLOCKED BADGES (Shiny & Glowing) */
@@ -3357,32 +3469,27 @@ body.donor-profile-body {
     0 0 0 2px #ef4444 !important;
 }
 
-/* ANTI DOUBLE-QR FIX: STRICTLY ONE QR CODE ELEMENT DISPLAYED */
+/* REAL QR CODE RENDERER: GUARANTEED VISIBLE & NO DUPLICATE QR */
 #donorRealQrCode,
 #donor-qr-code {
   width: 180px !important;
   height: 180px !important;
+  min-height: 180px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
-  overflow: hidden !important;
   margin: 0 auto !important;
 }
 
 #donorRealQrCode canvas,
-#donor-qr-code canvas {
-  display: none !important;
-  visibility: hidden !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
 #donorRealQrCode img,
+#donor-qr-code canvas,
 #donor-qr-code img {
-  display: block !important;
   width: 180px !important;
   height: 180px !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
   margin: 0 auto !important;
   border-radius: 6px !important;
 }
@@ -3390,7 +3497,7 @@ body.donor-profile-body {
 /* Label exactly below QR code */
 .scan-to-see-details-label {
   font-family: 'Inter', -apple-system, sans-serif !important;
-  font-size: 0.84rem !important;
+  font-size: 0.82rem !important;
   font-weight: 600 !important;
   color: #94a3b8 !important;
   margin-top: 14px !important;
@@ -3404,6 +3511,159 @@ body.donor-profile-body {
 .scan-to-see-details-label i {
   color: #38bdf8 !important;
   font-size: 0.95rem !important;
+}
+
+/* ==================== QR CODE ZOOM LIGHTBOX MODAL ==================== */
+#qrZoomModal.modal-backdrop-telemetry {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: rgba(10, 15, 26, 0.88) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10000 !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+#qrZoomModal.active,
+#qrZoomModal.show {
+  display: flex !important;
+}
+
+.qr-zoom-card {
+  background: linear-gradient(145deg, rgba(20, 26, 40, 0.98), rgba(13, 17, 28, 0.99)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85), 0 0 35px rgba(239, 68, 68, 0.2) !important;
+  padding: 28px 24px 22px !important;
+  max-width: 380px !important;
+  width: 100% !important;
+  text-align: center !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+.qr-zoom-close-btn {
+  position: absolute !important;
+  top: 14px !important;
+  right: 16px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94a3b8 !important;
+  font-size: 1.4rem !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  transition: all 0.2s ease !important;
+}
+
+.qr-zoom-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  transform: scale(1.05) !important;
+}
+
+.qr-zoom-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin-bottom: 6px !important;
+}
+
+.qr-zoom-icon {
+  color: #ef4444 !important;
+  font-size: 1.2rem !important;
+}
+
+.qr-zoom-header h3 {
+  font-family: 'Orbitron', -apple-system, sans-serif !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.5px !important;
+  margin: 0 !important;
+}
+
+.qr-zoom-subtitle {
+  font-size: 0.8rem !important;
+  color: #94a3b8 !important;
+  margin: 0 0 18px 0 !important;
+  line-height: 1.4 !important;
+}
+
+.qr-zoom-display-frame {
+  background: #ffffff !important;
+  padding: 16px !important;
+  border-radius: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5) !important;
+  margin: 0 auto !important;
+}
+
+#zoomQrCodeContainer {
+  width: 250px !important;
+  height: 250px !important;
+  min-height: 250px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto !important;
+}
+
+#zoomQrCodeContainer canvas,
+#zoomQrCodeContainer img {
+  display: block !important;
+  width: 250px !important;
+  height: 250px !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 auto !important;
+  border-radius: 8px !important;
+}
+
+.qr-zoom-footer-hint {
+  margin-top: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  color: #38bdf8 !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+}
+
+@media (max-width: 360px) {
+  .qr-zoom-card {
+    padding: 20px 14px 16px !important;
+  }
+  .qr-zoom-display-frame {
+    padding: 10px !important;
+  }
+  #zoomQrCodeContainer {
+    width: 200px !important;
+    height: 200px !important;
+    min-height: 200px !important;
+  }
+  #zoomQrCodeContainer canvas,
+  #zoomQrCodeContainer img {
+    width: 200px !important;
+    height: 200px !important;
+  }
 }
 
 

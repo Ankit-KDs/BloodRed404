@@ -10,7 +10,7 @@
   let currentDonor = {
     id: 1,
     name: 'Ankit Kumar',
-    fatherName: 'Rajesh Kumar',
+    fatherName: null,
     email: 'ak30kr02@gmail.com',
     bloodType: 'A+',
     age: null,
@@ -668,10 +668,10 @@
     const initialsEl = document.getElementById('donor-avatar-initials');
     const tokenEl = document.getElementById('donor-qr-token');
 
-    const fullName = currentDonor.name || 'Ankit Kumar';
+    const fullName = currentDonor.name || 'N/A';
     if (nameEl) nameEl.textContent = fullName;
 
-    const fatherName = currentDonor.fatherName || currentDonor.father_name || 'Rajesh Kumar';
+    const fatherName = currentDonor.fatherName || currentDonor.father_name || 'N/A';
     if (fatherEl) fatherEl.textContent = fatherName;
 
     // Initials
@@ -736,53 +736,141 @@
     return `RED404-SEC-${rand}`;
   }
 
-  function renderIntakeQRCode(scanUrl) {
-    const container = document.getElementById('donorRealQrCode') || document.getElementById('donor-qr-code');
-    if (!container) return;
-    container.innerHTML = ''; // Always clear container to guarantee NO duplicate QR codes
+  let activeIntakeScanUrl = '';
 
-    const qrDirectLink = document.getElementById('qrDirectLink');
-    if (qrDirectLink) qrDirectLink.href = scanUrl;
+  function renderSingleQR(container, scanUrl, size = 180) {
+    if (!container) return;
+    container.innerHTML = '';
 
     try {
       if (typeof QRCode !== 'undefined') {
         new QRCode(container, {
           text: scanUrl,
-          width: 180,
-          height: 180,
+          width: size,
+          height: size,
           colorDark: '#0f172a',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
         });
 
-        // Anti-Double QR Fix: Hide canvas so ONLY one single high-res img element renders
-        setTimeout(() => {
-          const canvases = container.querySelectorAll('canvas');
-          canvases.forEach(c => {
-            c.style.display = 'none';
-            c.style.visibility = 'hidden';
-            c.style.width = '0px';
-            c.style.height = '0px';
-          });
-          const imgs = container.querySelectorAll('img');
-          if (imgs.length > 0) {
-            imgs[0].style.display = 'block';
-            imgs[0].style.margin = '0 auto';
-            imgs[0].style.width = '180px';
-            imgs[0].style.height = '180px';
-            imgs[0].style.borderRadius = '6px';
-            for (let i = 1; i < imgs.length; i++) imgs[i].remove();
-          } else if (canvases.length > 0) {
-            canvases[0].style.display = 'block';
-            canvases[0].style.margin = '0 auto';
+        // Anti-Double QR Fix with rock-solid Mobile Support:
+        // Ensure that mobile browsers that draw to canvas first stay visible,
+        // and when img src data is populated, canvas is hidden so only ONE element displays.
+        let attempts = 0;
+        const ensureSingleDisplay = () => {
+          const canvas = container.querySelector('canvas');
+          const img = container.querySelector('img');
+
+          if (img && img.src && img.src.length > 50 && img.naturalWidth !== 0) {
+            // High-res Image is ready
+            if (canvas) {
+              canvas.style.display = 'none';
+              canvas.style.visibility = 'hidden';
+            }
+            img.style.display = 'block';
+            img.style.visibility = 'visible';
+            img.style.width = size + 'px';
+            img.style.height = size + 'px';
+            img.style.margin = '0 auto';
+            img.style.borderRadius = '6px';
+          } else if (canvas) {
+            // Keep canvas visible (especially on mobile!)
+            canvas.style.display = 'block';
+            canvas.style.visibility = 'visible';
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            canvas.style.margin = '0 auto';
+            canvas.style.borderRadius = '6px';
+            if (img) {
+              img.style.display = 'none';
+              img.style.visibility = 'hidden';
+            }
+            if (attempts++ < 12) {
+              setTimeout(ensureSingleDisplay, 50);
+            }
           }
-        }, 30);
+        };
+        setTimeout(ensureSingleDisplay, 20);
       } else {
-        container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:180px;height:180px;margin:0 auto;border-radius:6px;" />`;
+        container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:${size}px;height:${size}px;margin:0 auto;border-radius:6px;" />`;
       }
     } catch (e) {
       console.warn('QR Code generation notice:', e);
-      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:180px;height:180px;margin:0 auto;border-radius:6px;" />`;
+      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:${size}px;height:${size}px;margin:0 auto;border-radius:6px;" />`;
+    }
+  }
+
+  function renderIntakeQRCode(scanUrl) {
+    activeIntakeScanUrl = scanUrl;
+    const container = document.getElementById('donorRealQrCode') || document.getElementById('donor-qr-code');
+    if (container) {
+      renderSingleQR(container, scanUrl, 180);
+    }
+    setupQrZoomModal();
+  }
+
+  function setupQrZoomModal() {
+    const zoomModal = document.getElementById('qrZoomModal');
+    const btnZoomQr = document.getElementById('btnZoomQr');
+    const zoomContainer = document.getElementById('zoomQrCodeContainer');
+    const btnCloseZoom = document.getElementById('btnCloseQrZoom');
+    if (!zoomModal) return;
+
+    function openZoomModal() {
+      if (zoomContainer && activeIntakeScanUrl) {
+        renderSingleQR(zoomContainer, activeIntakeScanUrl, 250);
+      }
+      zoomModal.style.display = 'flex';
+      zoomModal.classList.add('active');
+      zoomModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeZoomModal() {
+      zoomModal.style.display = 'none';
+      zoomModal.classList.remove('active');
+      zoomModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    if (btnZoomQr && !btnZoomQr.dataset.bound) {
+      btnZoomQr.dataset.bound = 'true';
+      btnZoomQr.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openZoomModal();
+      });
+      btnZoomQr.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openZoomModal();
+        }
+      });
+    }
+
+    if (btnCloseZoom && !btnCloseZoom.dataset.bound) {
+      btnCloseZoom.dataset.bound = 'true';
+      btnCloseZoom.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeZoomModal();
+      });
+    }
+
+    if (!zoomModal.dataset.bound) {
+      zoomModal.dataset.bound = 'true';
+      zoomModal.addEventListener('click', (e) => {
+        // Close if click is on the backdrop itself (not inside the card)
+        if (e.target === zoomModal) {
+          closeZoomModal();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && zoomModal.classList.contains('active')) {
+          closeZoomModal();
+        }
+      });
     }
   }
 
@@ -877,7 +965,7 @@
       const facilityInput = document.getElementById('editDonorFacility');
 
       if (nameInput) nameInput.value = currentDonor.name || '';
-      if (fatherInput) fatherInput.value = currentDonor.fatherName || currentDonor.father_name || 'Rajesh Kumar';
+      if (fatherInput) fatherInput.value = currentDonor.fatherName || currentDonor.father_name || '';
       if (bgInput) bgInput.value = currentDonor.bloodType || 'A+';
       if (genderInput) genderInput.value = currentDonor.gender || 'Male';
       if (dobInput) dobInput.value = currentDonor.dob || '1998-05-15';
@@ -957,7 +1045,7 @@
             id: currentDonor.id || 1,
             donorId: currentDonor.id || 1,
             name: (document.getElementById('editDonorFullName')?.value || '').trim() || currentDonor.name,
-            fatherName: (document.getElementById('editDonorFatherName')?.value || '').trim() || 'Rajesh Kumar',
+            fatherName: (document.getElementById('editDonorFatherName')?.value || '').trim() || (currentDonor.fatherName || ''),
             bloodType: (document.getElementById('editDonorBloodType')?.value || '').trim() || currentDonor.bloodType,
             gender: (document.getElementById('editDonorGender')?.value || '').trim() || 'Male',
             dob: (document.getElementById('editDonorDob')?.value || '').trim() || currentDonor.dob,
