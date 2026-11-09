@@ -993,6 +993,32 @@ button {
   text-align: left;
 }
 
+/* Privacy Modal & Scrollable Content */
+.privacy-modal-scroll {
+  overflow-y: auto !important;
+  max-height: 60vh !important;
+  padding-right: 8px;
+  text-align: left;
+}
+
+.privacy-modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.privacy-modal-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+.privacy-modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.4);
+  border-radius: 4px;
+}
+
+.privacy-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.7);
+}
+
 .red-dialog-actions {
   display: flex;
   gap: 1rem;

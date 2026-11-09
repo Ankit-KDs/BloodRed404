@@ -545,13 +545,14 @@ function showAppAlert(opts = {}) {
     const type = opts.type || 'info';
     const btnText = opts.btnText || 'OK';
     const icon = opts.icon || (type === 'danger' ? 'fa-times-circle' : (type === 'warning' ? 'fa-exclamation-triangle' : (type === 'success' ? 'fa-check-circle' : 'fa-info-circle')));
+    const maxWidthStyle = opts.maxWidth ? ` style="max-width:${opts.maxWidth};"` : '';
 
     let bodyHtml = opts.html || `<div style="line-height:1.6;font-size:0.95rem;color:#b8b8d0;">${message.replace(/\n/g, '<br>')}</div>`;
 
     const overlay = document.createElement('div');
     overlay.className = 'red-dialog-overlay';
     overlay.innerHTML = `
-      <div class="red-dialog-box" onclick="event.stopPropagation()">
+      <div class="red-dialog-box"${maxWidthStyle} onclick="event.stopPropagation()">
         <div class="red-dialog-icon ${type}">
           <i class="fas ${icon}"></i>
         </div>
@@ -689,19 +690,26 @@ window.alert = function(msg) {
 function openMiniFooterModal(topic) {
   if (topic === 'help') {
     showAppAlert({
-      title: 'Help & Emergency Support',
+      title: 'Help & Support Center',
       icon: 'fa-life-ring',
       type: 'info',
+      maxWidth: '520px',
       html: `
-        <div style="line-height:1.6;font-size:0.9rem;color:#cbd5e1;">
-          <p style="margin-bottom:12px;">Need assistance with clinical donor dispatch, account setup, or telemetry?</p>
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:12px;">
-            <div style="color:#ef4444;font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-phone-volume"></i> 24/7 Emergency Dispatch Helpline</div>
-            <div style="font-family:monospace;font-size:1rem;color:#ffffff;">+91-800-RED-404 &nbsp;|&nbsp; 112</div>
+        <div style="line-height:1.6;font-size:0.92rem;color:#cbd5e1;text-align:left;">
+          <p style="margin-bottom:14px;color:#94a3b8;font-size:0.9rem;line-height:1.5;">
+            Need urgent assistance with SOS dispatch, finding nearby blood banks, or managing your donor profile? Our team is available round the clock.
+          </p>
+          <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+            <div style="color:#f87171;font-weight:700;margin-bottom:4px;font-size:0.92rem;">📞 24/7 Emergency Helpline</div>
+            <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.98rem;font-weight:700;color:#ffffff;letter-spacing:0.2px;">
+              +91-1800-RED-404 &nbsp; | &nbsp; National Emergency: 112
+            </div>
           </div>
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">
-            <div style="color:#38bdf8;font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-envelope"></i> Clinical Support Desk</div>
-            <div style="font-family:monospace;color:#ffffff;">support@red404.org</div>
+          <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:12px 14px;">
+            <div style="color:#38bdf8;font-weight:700;margin-bottom:4px;font-size:0.92rem;">✉️ Support Desk</div>
+            <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.95rem;color:#ffffff;">
+              <a href="mailto:support@red404.org" style="color:#ffffff;text-decoration:none;">support@red404.org</a>
+            </div>
           </div>
         </div>
       `,
@@ -709,37 +717,75 @@ function openMiniFooterModal(topic) {
     });
   } else if (topic === 'report') {
     showAppAlert({
-      title: 'Report Issue / Bug Discrepancy',
+      title: 'Report an Issue / Bug',
       icon: 'fa-triangle-exclamation',
       type: 'warning',
+      maxWidth: '520px',
       html: `
-        <div style="line-height:1.6;font-size:0.9rem;color:#cbd5e1;">
-          <p style="margin-bottom:12px;">Found a data sync discrepancy or clinical app issue?</p>
-          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px;margin-bottom:12px;">
-            <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-bug"></i> Technical Triage Team</div>
-            <div style="font-family:monospace;color:#ffffff;">dev-ops@red404.org</div>
+        <div style="line-height:1.6;font-size:0.92rem;color:#cbd5e1;text-align:left;">
+          <p style="margin-bottom:12px;color:#94a3b8;font-size:0.9rem;line-height:1.5;">
+            If you encounter a problem while using the RED404 platform, please report it immediately. Our engineering team monitors the system 24/7.
+          </p>
+          <p style="font-size: 0.9rem; margin-bottom: 10px; color: #a0a0a0; line-height: 1.5;">When emailing us, please include:<br>1. A clear description of the issue.<br>2. Screenshots of the error.<br>3. Your device and browser name.</p>
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:12px 14px;margin-top:12px;">
+            <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;font-size:0.92rem;">🛠️ Technical Triage Team</div>
+            <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.95rem;color:#ffffff;">
+              <a href="mailto:dev-ops@red404.org" style="color:#ffffff;text-decoration:none;">dev-ops@red404.org</a>
+            </div>
           </div>
-          <p style="font-size:0.8rem;color:#94a3b8;">Our medical engineering staff monitors all emergency feeds 24/7.</p>
         </div>
       `,
       btnText: 'Close'
     });
   } else if (topic === 'privacy') {
     showAppAlert({
-      title: 'Privacy & Clinical Data Governance',
+      title: 'Privacy & Platform Policies',
       icon: 'fa-shield-halved',
       type: 'info',
+      maxWidth: '560px',
       html: `
-        <div style="line-height:1.6;font-size:0.9rem;color:#cbd5e1;">
-          <p style="margin-bottom:10px;"><strong>RED404</strong> strictly enforces National Blood Transfusion Council (NBTC) data privacy standards:</p>
-          <ul style="padding-left:18px;margin-bottom:12px;font-size:0.84rem;color:#94a3b8;">
-            <li style="margin-bottom:6px;">All donor health records, blood units, and hospital logs are end-to-end encrypted (TLS 1.3 / AES-256).</li>
-            <li style="margin-bottom:6px;">Live GPS telemetry is strictly restricted to active emergency transit routing.</li>
-            <li>No clinical information is ever sold or shared with non-accredited organizations.</li>
-          </ul>
+        <div class="privacy-modal-scroll" style="overflow-y: auto; max-height: 60vh; padding-right: 8px; text-align: left; line-height: 1.6; font-size: 0.88rem; color: #cbd5e1;">
+          <div style="font-size: 0.82rem; color: #94a3b8; font-style: italic; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            Last Updated: November 10, 2026
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Introduction</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">RED404 is a real-time SOS blood network. We prioritize the security of your clinical and personal data.</p>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Data Collection</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">We collect personally identifiable information (Name, Contact), clinical vitals (Blood Group, Hemoglobin), and live GPS location.</p>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• QR Code &amp; Digital ID</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">Your profile generates a secure QR code. Scanning this code shares a read-only intake form with authorized hospital nodes.</p>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Data Usage &amp; Sharing</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">Your data is NEVER sold. It is exclusively shared with verified hospital networks for emergency dispatch and matching.</p>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Security Standards</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">All databases and communications are secured using end-to-end encryption (TLS 1.3 / AES-256).</p>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• User Rights &amp; Deletion</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">You have the absolute right to edit your medical details or permanently delete your account at any time from your dashboard.</p>
+          </div>
+
+          <div style="margin-bottom: 6px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Medical Disclaimer</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">RED404 is a routing utility. We do not provide medical advice. Final blood screening and phlebotomy are conducted by certified professionals at the destination hospital.</p>
+          </div>
         </div>
       `,
-      btnText: 'Acknowledge'
+      btnText: 'I Acknowledge'
     });
   }
 }

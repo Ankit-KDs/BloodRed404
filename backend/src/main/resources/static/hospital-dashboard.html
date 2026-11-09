@@ -690,17 +690,18 @@
   <!-- ============================================================
        SCRIPTS — single self-contained controller
   ============================================================ -->
+  <script src="js/common.js"></script>
   <script>
   'use strict';
 
   if (typeof window.openMiniFooterModal !== 'function') {
     window.openMiniFooterModal = function(topic) {
       if (topic === 'help') {
-        alert("RED404 Help & Emergency Support\n\nEmergency Helpline: +91-800-RED-404 / 112\nSupport Desk: support@red404.org\n\nParticipating hospital telemetry and dispatch algorithms are active 24/7.");
+        alert("Help & Support Center\n\nNeed urgent assistance with SOS dispatch, finding nearby blood banks, or managing your donor profile? Our team is available round the clock.\n\n📞 24/7 Emergency Helpline: +91-1800-RED-404 | National Emergency: 112\n✉️ Support Desk: support@red404.org");
       } else if (topic === 'report') {
-        alert("Report Clinical / System Discrepancy\n\nEngineering Rapid Response: dev-ops@red404.org\n\nPlease include Hospital ID, timestamp, and patient request code.");
+        alert("Report an Issue / Bug\n\nIf you encounter a problem while using the RED404 platform, please report it immediately. Our engineering team monitors the system 24/7.\n\nWhen emailing us, please include:\n1. A clear description of the issue.\n2. Screenshots of the error.\n3. Your device and browser name.\n\n🛠️ Technical Triage Team: dev-ops@red404.org");
       } else if (topic === 'privacy') {
-        alert("RED404 Privacy & Clinical Data Governance\n\nCompliant with NBTC digital security guidelines. All records are end-to-end encrypted.");
+        alert("Privacy & Platform Policies\nLast Updated: November 10, 2026\n\n• Introduction: RED404 is a real-time SOS blood network. We prioritize the security of your clinical and personal data.\n• Data Collection: We collect personally identifiable information (Name, Contact), clinical vitals (Blood Group, Hemoglobin), and live GPS location.\n• QR Code & Digital ID: Your profile generates a secure QR code. Scanning this code shares a read-only intake form with authorized hospital nodes.\n• Data Usage & Sharing: Your data is NEVER sold. It is exclusively shared with verified hospital networks for emergency dispatch and matching.\n• Security Standards: All databases and communications are secured using end-to-end encryption (TLS 1.3 / AES-256).\n• User Rights & Deletion: You have the absolute right to edit your medical details or permanently delete your account at any time from your dashboard.\n• Medical Disclaimer: RED404 is a routing utility. We do not provide medical advice. Final blood screening and phlebotomy are conducted by certified professionals at the destination hospital.");
       }
     };
   }
