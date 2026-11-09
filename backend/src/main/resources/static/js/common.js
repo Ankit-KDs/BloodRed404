@@ -744,45 +744,46 @@ function openMiniFooterModal(topic) {
       type: 'info',
       maxWidth: '560px',
       html: `
-        <div class="privacy-modal-scroll" style="overflow-y: auto; max-height: 60vh; padding-right: 8px; text-align: left; line-height: 1.6; font-size: 0.88rem; color: #cbd5e1;">
-          <div style="font-size: 0.82rem; color: #94a3b8; font-style: italic; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-            Last Updated: November 10, 2026
+        <div class="privacy-modal-scroll" style="overflow-y: auto; max-height: 52vh; padding-right: 6px; text-align: left; font-size: 0.85rem; color: #cbd5e1;">
+          <div style="margin-bottom: 8px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.86rem; margin-bottom: 1px;">• Introduction</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.35;">RED404 is a real-time SOS blood network. We prioritize the security of your clinical and personal data.</p>
           </div>
 
-          <div style="margin-bottom: 14px;">
-            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Introduction</div>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">RED404 is a real-time SOS blood network. We prioritize the security of your clinical and personal data.</p>
+          <div style="margin-bottom: 8px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.86rem; margin-bottom: 1px;">• Data Collection</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.35;">We collect personally identifiable information (Name, Contact), clinical vitals (Blood Group, Hemoglobin), and live GPS location.</p>
           </div>
 
-          <div style="margin-bottom: 14px;">
-            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Data Collection</div>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">We collect personally identifiable information (Name, Contact), clinical vitals (Blood Group, Hemoglobin), and live GPS location.</p>
+          <div style="margin-bottom: 8px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.86rem; margin-bottom: 1px;">• QR Code &amp; Digital ID</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.35;">Your profile generates a secure QR code. Scanning this code shares a read-only intake form with authorized hospital nodes.</p>
           </div>
 
-          <div style="margin-bottom: 14px;">
-            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• QR Code &amp; Digital ID</div>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">Your profile generates a secure QR code. Scanning this code shares a read-only intake form with authorized hospital nodes.</p>
+          <div style="margin-bottom: 8px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.86rem; margin-bottom: 1px;">• Data Usage &amp; Sharing</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.35;">Your data is NEVER sold. It is exclusively shared with verified hospital networks for emergency dispatch and matching.</p>
           </div>
 
-          <div style="margin-bottom: 14px;">
-            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Data Usage &amp; Sharing</div>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">Your data is NEVER sold. It is exclusively shared with verified hospital networks for emergency dispatch and matching.</p>
+          <div style="margin-bottom: 8px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.86rem; margin-bottom: 1px;">• Security Standards</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.35;">All databases and communications are secured using end-to-end encryption (TLS 1.3 / AES-256).</p>
           </div>
 
-          <div style="margin-bottom: 14px;">
-            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Security Standards</div>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">All databases and communications are secured using end-to-end encryption (TLS 1.3 / AES-256).</p>
+          <div style="margin-bottom: 8px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.86rem; margin-bottom: 1px;">• User Rights &amp; Deletion</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.35;">You have the absolute right to edit your medical details or permanently delete your account at any time from your dashboard.</p>
           </div>
 
-          <div style="margin-bottom: 14px;">
-            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• User Rights &amp; Deletion</div>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">You have the absolute right to edit your medical details or permanently delete your account at any time from your dashboard.</p>
+          <div style="margin-bottom: 2px;">
+            <div style="color: #ffffff; font-weight: 700; font-size: 0.86rem; margin-bottom: 1px;">• Medical Disclaimer</div>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.35;">RED404 is a routing utility. We do not provide medical advice. Final blood screening and phlebotomy are conducted by certified professionals at the destination hospital.</p>
           </div>
+        </div>
 
-          <div style="margin-bottom: 6px;">
-            <div style="color: #ffffff; font-weight: 700; font-size: 0.92rem; margin-bottom: 3px;">• Medical Disclaimer</div>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.88rem;">RED404 is a routing utility. We do not provide medical advice. Final blood screening and phlebotomy are conducted by certified professionals at the destination hospital.</p>
-          </div>
+        <!-- Last Updated displayed at modal footer -->
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; font-size: 0.78rem; color: #94a3b8; font-style: italic;">
+          Last Updated: November 10, 2026
         </div>
       `,
       btnText: 'I Acknowledge'

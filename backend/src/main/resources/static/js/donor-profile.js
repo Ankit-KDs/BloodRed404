@@ -798,11 +798,6 @@
   function renderSingleQR(container, scanUrl, size = 180) {
     if (!container) return;
     container.innerHTML = '';
-    container.style.position = 'relative';
-    container.style.display = 'block';
-    container.style.margin = '0 auto';
-    container.style.width = size + 'px';
-    container.style.height = size + 'px';
 
     try {
       if (typeof QRCode !== 'undefined') {
@@ -813,15 +808,6 @@
           colorDark: '#0f172a',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
-        });
-
-        // Instant stacked overlay: prevent side-by-side rendering from millisecond 0
-        container.querySelectorAll('canvas, img').forEach(el => {
-          el.style.position = 'absolute';
-          el.style.top = '0';
-          el.style.left = '0';
-          el.style.width = '100%';
-          el.style.height = '100%';
         });
 
         // Anti-Double QR Fix with rock-solid Mobile & Zoom Support:
