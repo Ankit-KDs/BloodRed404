@@ -1239,25 +1239,50 @@ body.donor-profile-body {
 }
 
 /* ==================== CARD 3: 3D GAMIFIED ACHIEVEMENT BADGES ==================== */
+#milestonesCard.profile-card,
+#milestonesCard {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin-top: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+#milestonesCard .card-header-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 1.25rem !important;
+}
+
 .milestones-3x2-grid {
   display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
+  grid-template-columns: repeat(6, 1fr) !important;
   gap: 16px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1280px) {
   .milestones-3x2-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(3, 1fr) !important;
     gap: 14px !important;
   }
 }
 
-@media (max-width: 580px) {
+@media (max-width: 680px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 440px) {
   .milestones-3x2-grid {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
   }
 }
 

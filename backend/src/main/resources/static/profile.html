@@ -17,9 +17,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <!-- Core Profile CSS -->
-  <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/command-nav.css?v=20261109_v10" />
-  <link rel="stylesheet" href="css/donor-profile.css?v=20261109_v10">
+  <link rel="stylesheet" href="css/common.css?v=20261109_v12_badges_restored" />
+  <link rel="stylesheet" href="css/command-nav.css?v=20261109_v12_badges_restored" />
+  <link rel="stylesheet" href="css/donor-profile.css?v=20261109_v12_badges_restored">
       <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
     /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
@@ -802,6 +802,63 @@
   .profile-workspace {
     padding: 10px 14px 40px !important;
   }
+}
+
+#milestonesCard.profile-card,
+#milestonesCard {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin-top: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+#milestonesCard .card-header-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.milestones-3x2-grid {
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 1280px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .milestones-3x2-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .milestones-3x2-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.digital-id-intake-card {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin-top: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.25rem !important;
+  overflow: hidden !important;
 }
   </style>
 </head>
@@ -1733,7 +1790,6 @@
           </div>
         </section>
 
-
         <!-- CARD 4: DIGITAL BLOOD DONOR IDENTITY CARD & QR INTAKE PROFILE -->
         <section class="profile-card digital-id-intake-card" id="digitalIdIntakeCard">
           <div class="card-header-row">
@@ -2000,9 +2056,9 @@
   </main>
 
   <!-- Scripts -->
-  <script src="js/common.js"></script>
-  <script src="js/command-nav.js?v=20261109_v10"></script>
-  <script src="js/qr-generator.js"></script>
-  <script src="js/donor-profile.js?v=20261109_v10"></script>
+  <script src="js/common.js?v=20261109_v12_badges_restored"></script>
+  <script src="js/command-nav.js?v=20261109_v12_badges_restored"></script>
+  <script src="js/qr-generator.js?v=20261109_v12_badges_restored"></script>
+  <script src="js/donor-profile.js?v=20261109_v12_badges_restored"></script>
 </body>
 </html>
