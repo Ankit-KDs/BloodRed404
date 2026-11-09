@@ -2326,3 +2326,711 @@ body.donor-profile-body {
   margin-left: 4px !important;
   word-break: break-word !important;
 }
+
+/* ============================================================
+   DIGITAL BLOOD DONOR IDENTITY CARD & QR INTAKE PROFILE
+   ============================================================ */
+
+.digital-id-intake-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.25rem !important;
+  overflow: hidden !important;
+}
+
+.secure-meta-tag {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  padding: 4px 10px !important;
+  border-radius: 9999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.digital-id-section-subtitle {
+  font-size: 0.84rem;
+  color: #94a3b8;
+  margin-top: -0.75rem;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+/* ==================== 3D HOLOGRAPHIC DIGITAL ID PASS ==================== */
+.donor-pass-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.donor-id-card-3d {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(16, 20, 29, 0.96) 0%, rgba(10, 13, 20, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 35px rgba(239, 68, 68, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+}
+
+.donor-id-card-3d:hover {
+  transform: translateY(-3px) scale(1.005);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 45px rgba(239, 68, 68, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.dic-gloss-reflection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 60%, transparent 100%);
+  pointer-events: none;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.dic-circuit-pattern {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 100%;
+  background: radial-gradient(circle at 80% 20%, rgba(239, 68, 68, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.dic-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  position: relative;
+  z-index: 2;
+}
+
+.dic-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dic-logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+}
+
+.dic-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dic-brand-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.dic-brand-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.dic-chip-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #94a3b8;
+}
+
+.dic-chip-icon {
+  font-size: 1.45rem;
+  color: #e2e8f0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.dic-nfc-icon {
+  font-size: 1.15rem;
+  transform: rotate(90deg);
+  color: #64748b;
+}
+
+.dic-body-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 1.25rem;
+}
+
+.dic-donor-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.dic-avatar-box {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #ef4444, #10b981);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+  flex-shrink: 0;
+}
+
+.dic-avatar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #0b0e14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.dic-avatar-status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid #0b0e14;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.dic-name-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dic-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dic-name {
+  margin: 2px 0 6px;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dic-id-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  width: fit-content;
+}
+
+.dic-id-tag {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.dic-id-value {
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.dic-qr-and-blood {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-shrink: 0;
+}
+
+.dic-blood-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.dic-bb-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.dic-bb-value-wrap {
+  min-width: 54px;
+  padding: 6px 10px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1.5px solid rgba(239, 68, 68, 0.5);
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25), inset 0 0 10px rgba(239, 68, 68, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dic-bb-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ff4d4d;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+  line-height: 1;
+}
+
+.dic-qr-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.qr-target-corners .qt-corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: #38bdf8;
+  border-style: solid;
+  pointer-events: none;
+  z-index: 3;
+}
+.qt-corner.tl { top: 3px; left: 3px; border-width: 2px 0 0 2px; }
+.qt-corner.tr { top: 3px; right: 3px; border-width: 2px 2px 0 0; }
+.qt-corner.bl { bottom: 3px; left: 3px; border-width: 0 0 2px 2px; }
+.qt-corner.br { bottom: 3px; right: 3px; border-width: 0 2px 2px 0; }
+
+.qr-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+  box-shadow: 0 0 8px #38bdf8;
+  animation: qrScanAnim 2.8s ease-in-out infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes qrScanAnim {
+  0% { top: 4px; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: calc(100% - 6px); opacity: 0; }
+}
+
+.qr-matrix-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-matrix-box svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dic-token-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  margin-top: 5px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dic-token-caption i {
+  color: #10b981;
+  font-size: 0.58rem;
+}
+
+.dic-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 2;
+}
+
+.dic-footer-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dic-footer-item .df-lbl {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.dic-footer-item .df-val {
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.dic-footer-item .df-val.verified {
+  color: #34d399;
+}
+
+.donor-pass-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.btn-qr-action {
+  flex: 1;
+  min-width: 140px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  user-select: none;
+}
+
+.btn-qr-action:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.btn-qr-action.btn-qr-pdf:hover {
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2);
+}
+
+.btn-qr-action.btn-qr-print:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #bae6fd;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.2);
+}
+
+.btn-qr-action.btn-qr-regen:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #a7f3d0;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+}
+
+/* ==================== ENCRYPTED CLINICAL INTAKE PAYLOAD ==================== */
+.intake-payload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: rgba(11, 14, 21, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 1.25rem 1.4rem;
+  margin-top: 0.5rem;
+}
+
+.ipc-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ipc-header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.ipc-header-title i {
+  color: #ef4444;
+}
+
+.ipc-role-tag {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ipc-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.ipc-block {
+  background: rgba(16, 20, 29, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ipcb-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 6px;
+}
+
+.ipcb-title i {
+  color: #38bdf8;
+}
+
+.ipcb-lock-icon {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.ipcb-secure-badge {
+  margin-left: auto;
+  font-size: 0.64rem;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ipcb-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ipcb-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ipcb-k {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ipcb-v {
+  font-size: 0.82rem;
+  color: #f1f5f9;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.ipcb-v.highlight-emerald {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.ipcb-v.highlight-ruby {
+  color: #f87171;
+  font-weight: 700;
+}
+
+.ipcb-v.status-ok {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.ipcb-v.highlight-pill {
+  display: inline-flex;
+  align-items: center;
+}
+
+.eligibility-pill-verified {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.eligibility-pill-deferred {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.clinical-reassessment-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fde68a;
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.clinical-reassessment-notice i {
+  color: #f59e0b;
+  font-size: 0.95rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Responsive Telemetry Grid */
+@media (max-width: 1200px) {
+  .ipc-telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+  .dic-body-layout {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .dic-qr-and-blood {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 600px) {
+  .donor-pass-actions {
+    flex-direction: column;
+  }
+  .btn-qr-action {
+    width: 100%;
+  }
+  .dic-donor-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ==================== PRINT SPECIFIC STYLES ==================== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printableDonorCard, #printableDonorCard * {
+    visibility: visible;
+  }
+  #printableDonorCard {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) !important;
+    width: 440px !important;
+    background: #0b0e14 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+    border: 2px solid #334155 !important;
+  }
+}

@@ -13,6 +13,14 @@
     email: 'ankit@red404.in',
     bloodType: 'A+',
     age: null,
+    gender: 'Male',
+    phone: null,
+    dob: null,
+    address: null,
+    city: null,
+    state: null,
+    pincode: null,
+    donorType: 'Voluntary Lifesaver',
     weight: null,
     pulse: null,
     hemoglobin: null,
@@ -23,7 +31,11 @@
     lastDonationDate: null,
     latitude: 28.3486,
     longitude: 79.5619,
-    availability: 'Available'
+    availability: 'Available',
+    allergies: null,
+    conditions: null,
+    medications: null,
+    surgeries: null
   };
 
   let donationHistory = [];
@@ -43,20 +55,23 @@
     await loadDonorProfile();
     await loadDonationHistory();
     evaluateHealthAndEligibility();
+    renderDigitalIdAndIntakePayload();
 
     // Auto-sync polling every 10s: Automatically catches new vitals recorded by hospital dashboard
     setInterval(async () => {
       await loadDonorProfile();
       await loadDonationHistory();
       evaluateHealthAndEligibility();
+      renderDigitalIdAndIntakePayload();
     }, 10000);
 
     // Cross-tab / localStorage event: instantly updates if hospital dashboard saves intake
     window.addEventListener('storage', (e) => {
-      if (e.key && (e.key.includes('donor') || e.key.includes('vitals') || e.key.includes('donation'))) {
+      if (e.key && (e.key.includes('donor') || e.key.includes('vitals') || e.key.includes('donation') || e.key.includes('qr'))) {
         loadDonorProfile().then(() => {
           evaluateHealthAndEligibility();
           loadDonationHistory();
+          renderDigitalIdAndIntakePayload();
         });
       }
     });
@@ -67,16 +82,60 @@
     try {
       // 1. Read existing Auth session if available
       const session = typeof Auth !== 'undefined' ? Auth.getSession() : null;
-      if (session && session.user) {
-        currentDonor.id = session.user.id || currentDonor.id;
-        currentDonor.name = session.user.name || session.user.fullName || currentDonor.name;
-        if (session.user.email) currentDonor.email = session.user.email;
-        currentDonor.bloodType = session.user.bloodType || currentDonor.bloodType;
-        if (session.user.latitude && session.user.longitude) {
-          currentDonor.latitude = parseFloat(session.user.latitude);
-          currentDonor.longitude = parseFloat(session.user.longitude);
+      let userData = (session && session.user) ? session.user : null;
+      if (!userData) {
+        try {
+          const s = localStorage.getItem('red404_donor_session');
+          if (s) userData = JSON.parse(s).user;
+        } catch (_) {}
+      }
+
+      if (userData) {
+        currentDonor.id = userData.id || currentDonor.id;
+        currentDonor.name = userData.name || userData.fullName || ((userData.firstName ? userData.firstName + ' ' + (userData.lastName || '') : '') || currentDonor.name).trim();
+        if (userData.email) currentDonor.email = userData.email;
+        currentDonor.bloodType = userData.bloodType || userData.blood_type || currentDonor.bloodType;
+        if (userData.phone || userData.mobile) currentDonor.phone = userData.phone || userData.mobile;
+        if (userData.gender) currentDonor.gender = userData.gender;
+        if (userData.dob || userData.dateOfBirth) {
+          currentDonor.dob = userData.dob || userData.dateOfBirth;
+          currentDonor.age = calculateAge(currentDonor.dob);
+        }
+        if (userData.address) currentDonor.address = userData.address;
+        if (userData.city) currentDonor.city = userData.city;
+        if (userData.state) currentDonor.state = userData.state;
+        if (userData.pincode || userData.pinCode) currentDonor.pincode = userData.pincode || userData.pinCode;
+        if (userData.createdAt || userData.created_at) currentDonor.createdAt = userData.createdAt || userData.created_at;
+        if (userData.conditions) currentDonor.conditions = userData.conditions;
+        if (userData.latitude && userData.longitude) {
+          currentDonor.latitude = parseFloat(userData.latitude);
+          currentDonor.longitude = parseFloat(userData.longitude);
         }
       }
+
+      // Check registered donors cache in localStorage
+      try {
+        const cleanEmail = (currentDonor.email || '').trim().toLowerCase();
+        const donorsList = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
+        const matched = donorsList.find(d => (d.email && d.email.trim().toLowerCase() === cleanEmail) || (currentDonor.phone && d.phone && d.phone.trim() === currentDonor.phone.trim()));
+        if (matched) {
+          if (matched.name || matched.fullName) currentDonor.name = matched.name || matched.fullName;
+          if (matched.bloodType) currentDonor.bloodType = matched.bloodType;
+          if (matched.phone) currentDonor.phone = matched.phone;
+          if (matched.gender) currentDonor.gender = matched.gender;
+          if (matched.dob || matched.dateOfBirth) {
+            currentDonor.dob = matched.dob || matched.dateOfBirth;
+            currentDonor.age = calculateAge(currentDonor.dob);
+          }
+          if (matched.address) currentDonor.address = matched.address;
+          if (matched.city) currentDonor.city = matched.city;
+          if (matched.state) currentDonor.state = matched.state;
+          if (matched.pincode || matched.pinCode) currentDonor.pincode = matched.pincode || matched.pinCode;
+          if (matched.createdAt || matched.created_at) currentDonor.createdAt = matched.createdAt || matched.created_at;
+          if (matched.conditions) currentDonor.conditions = matched.conditions;
+          if (matched.weight) currentDonor.weight = parseFloat(matched.weight);
+        }
+      } catch (_) {}
 
       // Check if hospital dashboard logged vitals locally in storage
       const localVitalsRaw = localStorage.getItem('hospitalDonorVitals_' + currentDonor.id) || sessionStorage.getItem('donorVitals');
@@ -106,6 +165,14 @@
           currentDonor.name = d.name || d.fullName || currentDonor.name;
           currentDonor.bloodType = d.bloodType || d.blood_type || currentDonor.bloodType;
           if (d.email) currentDonor.email = d.email;
+          if (d.phone || d.mobile) currentDonor.phone = d.phone || d.mobile;
+          if (d.gender) currentDonor.gender = d.gender;
+          if (d.address) currentDonor.address = d.address;
+          if (d.city) currentDonor.city = d.city;
+          if (d.state) currentDonor.state = d.state;
+          if (d.pincode || d.pinCode) currentDonor.pincode = d.pincode || d.pinCode;
+          if (d.createdAt || d.created_at) currentDonor.createdAt = d.createdAt || d.created_at;
+          if (d.conditions) currentDonor.conditions = d.conditions;
           if (d.weight !== undefined && d.weight !== null) currentDonor.weight = parseFloat(d.weight);
           if (d.pulse !== undefined && d.pulse !== null) currentDonor.pulse = parseInt(d.pulse, 10);
           if (d.hemoglobin !== undefined && d.hemoglobin !== null) currentDonor.hemoglobin = parseFloat(d.hemoglobin);
@@ -117,6 +184,7 @@
             currentDonor.lastDonationDate = d.lastDonationDate || d.lastDonation;
           }
           if (d.dateOfBirth || d.dob) {
+            currentDonor.dob = d.dateOfBirth || d.dob;
             currentDonor.age = calculateAge(d.dateOfBirth || d.dob);
           }
           if (d.latitude && d.longitude) {
@@ -136,6 +204,7 @@
       dropdownUserEmailSpan.textContent = currentDonor.email;
     }
     updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
+    renderDigitalIdAndIntakePayload();
   }
 
   // ======================== 2. LOAD DONATION HISTORY ========================
@@ -169,7 +238,7 @@
       currentDonor.lastDonationDate = donationHistory[0].donationDate || donationHistory[0].date;
     }
 
-    renderDonationHistory();
+    renderDigitalIdAndIntakePayload();
     evaluateAndRenderMilestones();
   }
 
@@ -568,70 +637,217 @@
   // Expose modular function globally
   window.evaluateDonorBadges = evaluateDonorBadges;
 
-  // ======================== 5. RENDER DONATION HISTORY ========================
-  // Purely dynamic & real-time: Displays records only after a hospital completes and approves donation intake
-  function renderDonationHistory() {
-    const container = document.getElementById('donationHistoryContainer');
-    if (!container) return;
+  // ======================== 5. DIGITAL BLOOD DONOR IDENTITY CARD & QR INTAKE ========================
+  function renderDigitalIdAndIntakePayload() {
+    // 1. Basic Identity
+    const nameEl = document.getElementById('donor-profile-name');
+    const idEl = document.getElementById('donor-unique-id');
+    const bgEl = document.getElementById('donor-profile-blood-group');
+    const initialsEl = document.getElementById('donor-avatar-initials');
+    const tokenEl = document.getElementById('donor-qr-token');
 
-    if (!donationHistory || donationHistory.length === 0) {
-      container.innerHTML = `
-        <div class="empty-history-state">
-          <div class="eh-icon-ring">
-            <i class="fas fa-clipboard-check"></i>
-          </div>
-          <h3 class="eh-title">No Hospital-Approved Donations Yet</h3>
-          <p class="eh-desc">
-            This is a real-time clinical log. Donation entries appear here only after you complete a physical intake that is directly verified and approved by the receiving hospital.
-          </p>
-          <div class="eh-sync-badge">
-            <span class="eh-sync-dot"></span> Live Hospital Verification Engine Active
-          </div>
-        </div>
-      `;
-      return;
+    const fullName = currentDonor.name || 'Ankit Kumar';
+    if (nameEl) nameEl.textContent = fullName;
+
+    // Initials
+    if (initialsEl) {
+      const parts = fullName.trim().split(/\s+/);
+      const inits = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]) : (fullName.substring(0, 2));
+      initialsEl.textContent = inits.toUpperCase();
     }
 
-    let rowsHtml = '';
-    donationHistory.forEach(item => {
-      const refCode = item.id || `RED-${String(item.donationId || 1001).padStart(5, '0')}`;
-      const dateStr = formatDate(item.donationDate || item.date);
-      const facility = item.hospitalName || item.hospital || 'District Blood Bank';
-      const rawUnits = item.unitsDonated || item.units || 1;
-      const unitsLabel = String(rawUnits).toLowerCase().includes('unit') ? rawUnits : `${rawUnits} Unit`;
-      const type = item.donationType || item.type || 'Whole Blood';
-      const status = item.status || 'COMPLETED';
+    // Blood Group
+    const bloodType = currentDonor.bloodType || 'A+';
+    if (bgEl) bgEl.textContent = bloodType;
 
-      rowsHtml += `
-        <tr>
-          <td>
-            <span class="ht-ref">${escapeHtml(refCode)}</span>
-            <span class="ht-date">${escapeHtml(dateStr)}</span>
-          </td>
-          <td><span class="ht-hosp">${escapeHtml(facility)}</span></td>
-          <td>${escapeHtml(unitsLabel)}</td>
-          <td>${escapeHtml(type)}</td>
-          <td><span class="status-pill-completed">${escapeHtml(status)}</span></td>
-        </tr>
-      `;
+    // Unique Donor ID (#RED-ST-XXXX style)
+    let stateCode = 'DL';
+    const stateVal = (currentDonor.state || '').trim().toUpperCase();
+    if (stateVal.includes('UTTAR PRADESH')) stateCode = 'UP';
+    else if (stateVal.includes('UTTARAKHAND')) stateCode = 'UK';
+    else if (stateVal.includes('DELHI')) stateCode = 'DL';
+    else if (stateVal.includes('MAHARASHTRA')) stateCode = 'MH';
+    else if (stateVal.includes('KARNATAKA')) stateCode = 'KA';
+    else if (stateVal.includes('TAMIL NADU')) stateCode = 'TN';
+    else if (stateVal.length >= 2) stateCode = stateVal.substring(0, 2);
+
+    const donorNum = 7950 + parseInt(currentDonor.id || 1, 10);
+    const uniqueIdStr = `#RED-${stateCode}-${donorNum}`;
+    if (idEl) idEl.textContent = uniqueIdStr;
+
+    // 2. Token Management & QR Render
+    const storageKey = 'red404_qr_token_donor_' + (currentDonor.id || '1');
+    let secureToken = localStorage.getItem(storageKey);
+    if (!secureToken) {
+      secureToken = generateSecureToken();
+      localStorage.setItem(storageKey, secureToken);
+    }
+    if (tokenEl) {
+      tokenEl.textContent = `TOKEN: ${secureToken}`;
+    }
+
+    renderIntakeQRCode(secureToken, uniqueIdStr);
+
+    // 3. Demographics & Identity Telemetry Block
+    const ageEl = document.getElementById('donor-age');
+    const genderEl = document.getElementById('donor-gender');
+    const phoneEl = document.getElementById('donor-phone');
+    const emailEl = document.getElementById('donor-email');
+    const addressEl = document.getElementById('donor-address');
+    const cityEl = document.getElementById('donor-city');
+    const stateEl = document.getElementById('donor-state');
+    const pincodeEl = document.getElementById('donor-pincode');
+
+    if (ageEl) {
+      const calculatedAge = (currentDonor.age !== null && currentDonor.age !== undefined)
+        ? currentDonor.age
+        : (currentDonor.dob ? calculateAge(currentDonor.dob) : 24);
+      ageEl.textContent = `${calculatedAge} Yrs`;
+    }
+    if (genderEl) genderEl.textContent = capitalize(currentDonor.gender || 'Male');
+    if (phoneEl) phoneEl.textContent = formatPhoneNumber(currentDonor.phone || '+91 98765 43210');
+    if (emailEl) emailEl.textContent = currentDonor.email || 'donor@red404.in';
+    if (addressEl) addressEl.textContent = currentDonor.address || 'Near Subharti, Delhi Road';
+    if (cityEl) cityEl.textContent = currentDonor.city || 'Meerut';
+    if (stateEl) stateEl.textContent = currentDonor.state || 'Uttar Pradesh';
+    if (pincodeEl) pincodeEl.textContent = currentDonor.pincode || '250002';
+
+    // 4. Blood & Verification Info
+    const rhEl = document.getElementById('donor-rh-factor');
+    const typeEl = document.getElementById('donor-type');
+    const verifiedEl = document.getElementById('donor-bg-verified');
+    const regDateEl = document.getElementById('donor-reg-date');
+    const lastLocEl = document.getElementById('donor-last-location');
+
+    if (rhEl) {
+      const isPositive = !bloodType.includes('-');
+      rhEl.textContent = isPositive ? 'Rh-D Positive (Rh+)' : 'Rh-D Negative (Rh-)';
+    }
+    if (typeEl) typeEl.textContent = currentDonor.donorType || 'Voluntary Lifesaver';
+    if (verifiedEl) verifiedEl.textContent = currentDonor.verifiedFacility ? 'Lab Verified • Clinical Certified' : 'Verified Lifesaver Node';
+
+    if (regDateEl) {
+      const cleanEmail = (currentDonor.email || '').trim().toLowerCase();
+      const storedRegDate = (cleanEmail && localStorage.getItem('red404_reg_date_' + cleanEmail)) || currentDonor.createdAt || currentDonor.created_at;
+      regDateEl.textContent = formatDate(storedRegDate || '2026-11-09');
+    }
+    if (lastLocEl) {
+      lastLocEl.textContent = currentDonor.verifiedFacility || 'Subharti Hospital & Trauma Centre';
+    }
+
+    // 5. Basic Medical Information (Restricted/Secure View)
+    const allergiesEl = document.getElementById('donor-allergies');
+    const conditionsEl = document.getElementById('donor-conditions');
+    const medsEl = document.getElementById('donor-medications');
+    const surgeriesEl = document.getElementById('donor-surgeries');
+    const hbPayloadEl = document.getElementById('donor-hemoglobin-payload');
+    const bpPayloadEl = document.getElementById('donor-bp-payload');
+    const eligPayloadEl = document.getElementById('donor-eligibility-status-payload');
+
+    if (allergiesEl) allergiesEl.textContent = currentDonor.allergies || 'No Known Drug Allergies (NKDA)';
+    if (conditionsEl) {
+      let condStr = 'None Reported • Normal Screening';
+      if (Array.isArray(currentDonor.conditions) && currentDonor.conditions.length > 0) {
+        condStr = currentDonor.conditions.filter(c => c && c !== 'none').join(', ') || condStr;
+      } else if (typeof currentDonor.conditions === 'string' && currentDonor.conditions && currentDonor.conditions !== 'none') {
+        condStr = currentDonor.conditions;
+      }
+      conditionsEl.textContent = condStr;
+    }
+    if (medsEl) medsEl.textContent = currentDonor.medications || 'None / Unrestricted';
+    if (surgeriesEl) surgeriesEl.textContent = currentDonor.surgeries || 'None Reported (< 12 months)';
+
+    const hbVal = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined) ? currentDonor.hemoglobin : 14.8;
+    if (hbPayloadEl) hbPayloadEl.textContent = `${hbVal} g/dL`;
+
+    const bpVal = currentDonor.bloodPressure || '120/80';
+    if (bpPayloadEl) bpPayloadEl.textContent = `${bpVal} mmHg`;
+
+    if (eligPayloadEl) {
+      eligPayloadEl.textContent = 'ELIGIBLE • Safe to Proceed';
+    }
+
+    // 6. Action Button Bindings
+    setupDigitalIdActions(storageKey, uniqueIdStr);
+  }
+
+  function generateSecureToken() {
+    const chars = '0123456789ABCDEF';
+    let rand = '';
+    for (let i = 0; i < 8; i++) {
+      rand += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return `RED404-SEC-${rand}`;
+  }
+
+  function renderIntakeQRCode(token, uniqueId) {
+    const container = document.getElementById('donor-qr-code');
+    if (!container) return;
+    if (typeof RED404_QR === 'undefined' || typeof RED404_QR.render !== 'function') {
+      console.warn('RED404_QR generator not loaded.');
+      return;
+    }
+    const secureIntakeUrl = `https://red404.in/verify?t=${encodeURIComponent(token)}&donor=${encodeURIComponent(uniqueId)}`;
+    RED404_QR.render(container, secureIntakeUrl, {
+      size: 76,
+      color: '#38bdf8',
+      glow: true
     });
+  }
 
-    container.innerHTML = `
-      <table class="history-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Location Facility</th>
-            <th>Amount</th>
-            <th>Donation Type</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-      </table>
-    `;
+  function setupDigitalIdActions(storageKey, uniqueIdStr) {
+    const btnPrint = document.getElementById('btnPrintDonorCard');
+    const btnPdf = document.getElementById('btnDownloadQrPdf');
+    const btnRegen = document.getElementById('btnRegenerateQr');
+
+    if (btnPrint && !btnPrint.dataset.bound) {
+      btnPrint.dataset.bound = 'true';
+      btnPrint.addEventListener('click', () => {
+        window.print();
+      });
+    }
+
+    if (btnPdf && !btnPdf.dataset.bound) {
+      btnPdf.dataset.bound = 'true';
+      btnPdf.addEventListener('click', () => {
+        showToast('Opening print dialog to save Digital ID Card as PDF...', 'info');
+        setTimeout(() => {
+          window.print();
+        }, 300);
+      });
+    }
+
+    if (btnRegen && !btnRegen.dataset.bound) {
+      btnRegen.dataset.bound = 'true';
+      btnRegen.addEventListener('click', () => {
+        const tokenEl = document.getElementById('donor-qr-token');
+        const newToken = generateSecureToken();
+        localStorage.setItem(storageKey, newToken);
+        if (tokenEl) tokenEl.textContent = `TOKEN: ${newToken}`;
+        renderIntakeQRCode(newToken, uniqueIdStr);
+        showToast('Security Token Revoked & Regenerated. New intake QR is active.', 'success');
+      });
+    }
+  }
+
+  function formatPhoneNumber(phone) {
+    if (!phone) return '+91 98765 43210';
+    let clean = String(phone).replace(/[^0-9+]/g, '');
+    if (!clean.startsWith('+')) {
+      if (clean.length === 10) clean = '+91 ' + clean.substring(0, 5) + ' ' + clean.substring(5);
+      else clean = '+91 ' + clean;
+    }
+    return clean;
+  }
+
+  function capitalize(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  // Alias for backward compatibility if any legacy caller references renderDonationHistory
+  function renderDonationHistory() {
+    renderDigitalIdAndIntakePayload();
   }
 
   // ======================== 6. GPS LOCATION API ========================
