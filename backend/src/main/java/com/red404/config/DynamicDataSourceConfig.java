@@ -146,19 +146,76 @@ public class DynamicDataSourceConfig {
         } catch (Exception e) {
             log.warn("Notice during schema.sql initialization: {}", e.getMessage());
         }
+        ensureDonorColumns(ds);
+    }
+
+    private void ensureDonorColumns(DataSource ds) {
+        try (Connection conn = ds.getConnection()) {
+            ensureColumn(conn, "donors", "father_name", "VARCHAR(150) NULL");
+            ensureColumn(conn, "donors", "pulse", "INT NULL");
+            ensureColumn(conn, "donors", "hemoglobin", "DOUBLE NULL");
+            ensureColumn(conn, "donors", "blood_pressure", "VARCHAR(30) NULL");
+            ensureColumn(conn, "donors", "body_temp", "DOUBLE NULL");
+            ensureColumn(conn, "donors", "verified_facility", "VARCHAR(150) NULL");
+            ensureColumn(conn, "donors", "verified_date", "DATE NULL");
+            ensureColumn(conn, "donors", "allergies", "VARCHAR(255) NULL");
+            ensureColumn(conn, "donors", "conditions", "VARCHAR(255) NULL");
+            ensureColumn(conn, "donors", "medications", "VARCHAR(255) NULL");
+            ensureColumn(conn, "donors", "surgeries", "VARCHAR(255) NULL");
+            ensureColumn(conn, "donors", "donor_type", "VARCHAR(80) NULL");
+            ensureColumn(conn, "donors", "qr_token", "VARCHAR(100) NULL");
+            ensureColumn(conn, "donors", "last_donation", "DATE NULL");
+        } catch (Exception e) {
+            log.warn("Notice during ensureDonorColumns: {}", e.getMessage());
+        }
+    }
+
+    private void ensureColumn(Connection conn, String tableName, String colName, String colDef) {
+        try {
+            boolean exists = false;
+            try (ResultSet rs = conn.getMetaData().getColumns(null, null, tableName, colName)) {
+                if (rs.next()) exists = true;
+            }
+            if (!exists) {
+                try (ResultSet rs = conn.getMetaData().getColumns(null, null, tableName.toUpperCase(), colName.toUpperCase())) {
+                    if (rs.next()) exists = true;
+                }
+            }
+            if (!exists) {
+                try (Statement st = conn.createStatement()) {
+                    st.executeUpdate("ALTER TABLE " + tableName + " ADD COLUMN " + colName + " " + colDef);
+                    log.info("Added missing column {} to table {}", colName, tableName);
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private void seedDefaultData(DataSource ds) {
         try (Connection conn = ds.getConnection();
              Statement stmt = conn.createStatement()) {
 
+            // Clean up any old demo/placeholder strings from existing records so database strictly reflects real user data
+            try {
+                stmt.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name = 'Rajesh Kumar'");
+                stmt.executeUpdate("UPDATE donors SET allergies = NULL WHERE allergies LIKE '%No Known Drug Allergies%' OR allergies = 'No Known Drug Allergies (NKDA)'");
+                stmt.executeUpdate("UPDATE donors SET conditions = NULL WHERE conditions LIKE '%None Reported%' OR conditions = 'None Reported • Normal Screening'");
+                stmt.executeUpdate("UPDATE donors SET medications = NULL WHERE medications = 'None / Unrestricted' OR medications LIKE 'None%'");
+                stmt.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries = 'None Reported (< 12 months)'");
+                stmt.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility = 'City General Hospital'");
+                stmt.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type = 'Voluntary Lifesaver'");
+                stmt.executeUpdate("UPDATE donors SET pulse = NULL WHERE pulse = 72");
+                stmt.executeUpdate("UPDATE donors SET hemoglobin = NULL WHERE hemoglobin = 14.8");
+                stmt.executeUpdate("UPDATE donors SET blood_pressure = NULL WHERE blood_pressure = '120/80'");
+                stmt.executeUpdate("UPDATE donors SET body_temp = NULL WHERE body_temp = 98.6");
+            } catch (Exception ignored) {}
+
             // Check if donor 'ak30kr02@gmail.com' exists
             try (ResultSet rs = stmt.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
                     String seedDonor = "INSERT INTO donors (name, email, phone, dob, gender, password, blood_type, weight, last_donation, availability, address, city, state, pincode, zone, created_at) " +
-                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, '2024-01-10', 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, NULL, 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
                     stmt.executeUpdate(seedDonor);
-                    log.info("Seeded primary registered donor account: ak30kr02@gmail.com");
+                    log.info("Seeded primary registered donor account: ak30kr02@gmail.com (with zero demo clinical data)");
                 }
             }
         } catch (Exception e) {

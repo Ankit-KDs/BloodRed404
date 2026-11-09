@@ -101,29 +101,30 @@ public class DonorDao {
     }
 
     public boolean updateProfile(int id, Map<String, Object> fields) throws SQLException {
+        ensureDonorColumnsExist();
         String sql = "UPDATE donors SET " +
                 "name = COALESCE(?, name), " +
-                "father_name = COALESCE(?, father_name), " +
+                "father_name = ?, " +
                 "phone = COALESCE(?, phone), " +
                 "blood_type = COALESCE(?, blood_type), " +
                 "gender = COALESCE(?, gender), " +
-                "dob = COALESCE(?, dob), " +
-                "address = COALESCE(?, address), " +
-                "city = COALESCE(?, city), " +
-                "state = COALESCE(?, state), " +
-                "pincode = COALESCE(?, pincode), " +
-                "weight = COALESCE(?, weight), " +
-                "pulse = COALESCE(?, pulse), " +
-                "hemoglobin = COALESCE(?, hemoglobin), " +
-                "blood_pressure = COALESCE(?, blood_pressure), " +
-                "body_temp = COALESCE(?, body_temp), " +
-                "allergies = COALESCE(?, allergies), " +
-                "conditions = COALESCE(?, conditions), " +
-                "medications = COALESCE(?, medications), " +
-                "surgeries = COALESCE(?, surgeries), " +
-                "donor_type = COALESCE(?, donor_type), " +
-                "verified_facility = COALESCE(?, verified_facility), " +
-                "last_donation = COALESCE(?, last_donation), " +
+                "dob = ?, " +
+                "address = ?, " +
+                "city = ?, " +
+                "state = ?, " +
+                "pincode = ?, " +
+                "weight = ?, " +
+                "pulse = ?, " +
+                "hemoglobin = ?, " +
+                "blood_pressure = ?, " +
+                "body_temp = ?, " +
+                "allergies = ?, " +
+                "conditions = ?, " +
+                "medications = ?, " +
+                "surgeries = ?, " +
+                "donor_type = ?, " +
+                "verified_facility = ?, " +
+                "last_donation = ?, " +
                 "qr_token = COALESCE(?, qr_token), " +
                 "availability = COALESCE(?, availability) " +
                 "WHERE id = ?";
@@ -150,19 +151,19 @@ public class DonorDao {
             ps.setString(idx++, emptyToNull(str(fields.get("state"))));
             ps.setString(idx++, emptyToNull(str(fields.get("pincode"))));
 
-            if (fields.get("weight") == null) {
+            if (fields.get("weight") == null || str(fields.get("weight")).isBlank()) {
                 ps.setNull(idx++, Types.DOUBLE);
             } else {
                 ps.setDouble(idx++, ((Number) fields.get("weight")).doubleValue());
             }
 
-            if (fields.get("pulse") == null) {
+            if (fields.get("pulse") == null || str(fields.get("pulse")).isBlank()) {
                 ps.setNull(idx++, Types.INTEGER);
             } else {
                 ps.setInt(idx++, ((Number) fields.get("pulse")).intValue());
             }
 
-            if (fields.get("hemoglobin") == null) {
+            if (fields.get("hemoglobin") == null || str(fields.get("hemoglobin")).isBlank()) {
                 ps.setNull(idx++, Types.DOUBLE);
             } else {
                 ps.setDouble(idx++, ((Number) fields.get("hemoglobin")).doubleValue());
@@ -170,7 +171,7 @@ public class DonorDao {
 
             ps.setString(idx++, emptyToNull(str(fields.get("blood_pressure") != null ? fields.get("blood_pressure") : fields.get("bloodPressure"))));
 
-            if (fields.get("body_temp") == null && fields.get("bodyTemp") == null) {
+            if ((fields.get("body_temp") == null && fields.get("bodyTemp") == null) || str(fields.get("body_temp") != null ? fields.get("body_temp") : fields.get("bodyTemp")).isBlank()) {
                 ps.setNull(idx++, Types.DOUBLE);
             } else {
                 Object bt = fields.get("body_temp") != null ? fields.get("body_temp") : fields.get("bodyTemp");
@@ -200,6 +201,44 @@ public class DonorDao {
 
             return ps.executeUpdate() > 0;
         }
+    }
+
+    private void ensureDonorColumnsExist() {
+        try (Connection conn = DBConnection.getConnection()) {
+            ensureCol(conn, "father_name", "VARCHAR(150) NULL");
+            ensureCol(conn, "pulse", "INT NULL");
+            ensureCol(conn, "hemoglobin", "DOUBLE NULL");
+            ensureCol(conn, "blood_pressure", "VARCHAR(30) NULL");
+            ensureCol(conn, "body_temp", "DOUBLE NULL");
+            ensureCol(conn, "verified_facility", "VARCHAR(150) NULL");
+            ensureCol(conn, "verified_date", "DATE NULL");
+            ensureCol(conn, "allergies", "VARCHAR(255) NULL");
+            ensureCol(conn, "conditions", "VARCHAR(255) NULL");
+            ensureCol(conn, "medications", "VARCHAR(255) NULL");
+            ensureCol(conn, "surgeries", "VARCHAR(255) NULL");
+            ensureCol(conn, "donor_type", "VARCHAR(80) NULL");
+            ensureCol(conn, "qr_token", "VARCHAR(100) NULL");
+            ensureCol(conn, "last_donation", "DATE NULL");
+        } catch (Exception ignored) {}
+    }
+
+    private void ensureCol(Connection conn, String colName, String colDef) {
+        try {
+            boolean exists = false;
+            try (ResultSet rs = conn.getMetaData().getColumns(null, null, "donors", colName)) {
+                if (rs.next()) exists = true;
+            }
+            if (!exists) {
+                try (ResultSet rs = conn.getMetaData().getColumns(null, null, "DONORS", colName.toUpperCase())) {
+                    if (rs.next()) exists = true;
+                }
+            }
+            if (!exists) {
+                try (Statement st = conn.createStatement()) {
+                    st.executeUpdate("ALTER TABLE donors ADD COLUMN " + colName + " " + colDef);
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     public Map<String, Object> findByToken(String token) throws SQLException {

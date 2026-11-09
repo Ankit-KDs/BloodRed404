@@ -2098,27 +2098,7 @@
       </div>
   </main>
 
-  <!-- ==================== SLEEK MINIMALIST MINI-FOOTER ==================== -->
-  <footer class="app-mini-footer">
-    <div class="mini-footer-container">
-      <div class="mf-left">
-        <span class="mf-status-dot"></span>
-        <span class="mf-status-text">System: Online</span>
-        <span class="mf-divider">&bull;</span>
-        <span class="mf-copy">&copy; 2026 RED404</span>
-      </div>
-      <nav class="mf-center" aria-label="Quick Links">
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('help')">Help &amp; Support</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('report')">Report Issue</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('privacy')">Privacy &amp; Policy</a>
-      </nav>
-      <div class="mf-right">
-        <span class="mf-version">v1.0.0 Beta</span>
-      </div>
-    </div>
-  </footer>
+
 
   <!-- ==================== EDIT DONOR PROFILE MODAL ==================== -->
     <!-- ==================== EDIT DONOR PROFILE MODAL ==================== -->
@@ -2146,11 +2126,11 @@
           <div class="form-grid-2col">
             <div class="form-field-group">
               <label for="editDonorFullName">Full Name *</label>
-              <input type="text" id="editDonorFullName" name="d_user_fullname" autocomplete="off" data-lpignore="true" required placeholder="e.g. Ankit Kumar" />
+              <input type="text" id="editDonorFullName" name="d_user_fullname" autocomplete="off" data-lpignore="true" required placeholder="Full legal name" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorFatherName">Father's Name *</label>
-              <input type="text" id="editDonorFatherName" name="d_user_fathername" autocomplete="off" data-lpignore="true" required placeholder="e.g. Rajesh Kumar" />
+              <label for="editDonorFatherName">Father's Name</label>
+              <input type="text" id="editDonorFatherName" name="d_user_fathername" autocomplete="off" data-lpignore="true" placeholder="Father's full name (optional)" />
             </div>
             <div class="form-field-group">
               <label for="editDonorBloodType">Blood Group *</label>
@@ -2179,7 +2159,7 @@
             </div>
             <div class="form-field-group">
               <label for="editDonorWeight">Weight (kg)</label>
-              <input type="number" id="editDonorWeight" name="weight" step="0.5" placeholder="e.g. 68" />
+              <input type="number" id="editDonorWeight" name="weight" step="0.5" placeholder="Weight in kg" />
             </div>
           </div>
 
@@ -2191,27 +2171,27 @@
           <div class="form-grid-2col">
             <div class="form-field-group">
               <label for="editDonorPhone">Mobile Phone *</label>
-              <input type="tel" id="editDonorPhone" name="d_user_mobile" autocomplete="off" data-lpignore="true" required placeholder="e.g. 9876543210" />
+              <input type="tel" id="editDonorPhone" name="d_user_mobile" autocomplete="off" data-lpignore="true" required placeholder="10-digit mobile number" />
             </div>
             <div class="form-field-group">
               <label for="editDonorEmail">Email Address</label>
-              <input type="email" id="editDonorEmail" name="d_user_mail" autocomplete="off" data-lpignore="true" placeholder="e.g. donor@red404.in" />
+              <input type="email" id="editDonorEmail" name="d_user_mail" autocomplete="off" data-lpignore="true" placeholder="Email address" />
             </div>
             <div class="form-field-group full-width">
               <label for="editDonorAddress">Residential Address</label>
-              <input type="text" id="editDonorAddress" name="d_user_street" autocomplete="off" data-lpignore="true" placeholder="e.g. Near Subharti, Delhi Road" />
+              <input type="text" id="editDonorAddress" name="d_user_street" autocomplete="off" data-lpignore="true" placeholder="Residential street address" />
             </div>
             <div class="form-field-group">
               <label for="editDonorCity">City</label>
-              <input type="text" id="editDonorCity" name="d_user_locality" autocomplete="off" data-lpignore="true" placeholder="e.g. Meerut" />
+              <input type="text" id="editDonorCity" name="d_user_locality" autocomplete="off" data-lpignore="true" placeholder="City" />
             </div>
             <div class="form-field-group">
               <label for="editDonorState">State</label>
-              <input type="text" id="editDonorState" name="d_user_province" autocomplete="off" data-lpignore="true" placeholder="e.g. Uttar Pradesh" />
+              <input type="text" id="editDonorState" name="d_user_province" autocomplete="off" data-lpignore="true" placeholder="State" />
             </div>
             <div class="form-field-group">
               <label for="editDonorPincode">PIN Code</label>
-              <input type="text" id="editDonorPincode" name="d_user_postalcode" autocomplete="off" data-lpignore="true" placeholder="e.g. 250002" />
+              <input type="text" id="editDonorPincode" name="d_user_postalcode" autocomplete="off" data-lpignore="true" placeholder="PIN code" />
             </div>
           </div>
 
@@ -2223,43 +2203,43 @@
           <div class="form-grid-2col">
             <div class="form-field-group">
               <label for="editDonorPulse">Pulse / Heart Rate (bpm)</label>
-              <input type="number" id="editDonorPulse" name="pulse" placeholder="e.g. 72" />
+              <input type="number" id="editDonorPulse" name="pulse" placeholder="Resting pulse rate (bpm)" />
             </div>
             <div class="form-field-group">
               <label for="editDonorHb">Hemoglobin (g/dL)</label>
-              <input type="number" id="editDonorHb" name="hemoglobin" step="0.1" placeholder="e.g. 14.8" />
+              <input type="number" id="editDonorHb" name="hemoglobin" step="0.1" placeholder="Hemoglobin level (g/dL)" />
             </div>
             <div class="form-field-group">
               <label for="editDonorBp">Blood Pressure (mmHg)</label>
-              <input type="text" id="editDonorBp" name="bloodPressure" placeholder="e.g. 120/80" />
+              <input type="text" id="editDonorBp" name="bloodPressure" placeholder="Blood pressure (e.g. 120/80)" />
             </div>
             <div class="form-field-group">
               <label for="editDonorTemp">Body Temperature (&deg;F)</label>
-              <input type="number" id="editDonorTemp" name="bodyTemp" step="0.1" placeholder="e.g. 98.6" />
+              <input type="number" id="editDonorTemp" name="bodyTemp" step="0.1" placeholder="Body temperature (°F)" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorLastDonation">Last Donation Date</label>
+              <label for="editDonorLastDonation">Last Donation Date <small style="color: #94a3b8; font-weight: normal; font-size: 0.74rem;">(Leave blank if never donated)</small></label>
               <input type="date" id="editDonorLastDonation" name="lastDonationDate" />
             </div>
             <div class="form-field-group">
               <label for="editDonorFacility">Verified Facility</label>
-              <input type="text" id="editDonorFacility" name="verifiedFacility" placeholder="e.g. City General Hospital" />
+              <input type="text" id="editDonorFacility" name="verifiedFacility" placeholder="Verified hospital or clinic name" />
             </div>
             <div class="form-field-group">
               <label for="editDonorAllergies">Known Allergies</label>
-              <input type="text" id="editDonorAllergies" name="allergies" placeholder="e.g. No Known Drug Allergies (NKDA)" />
+              <input type="text" id="editDonorAllergies" name="allergies" placeholder="Known drug allergies or leave blank" />
             </div>
             <div class="form-field-group">
               <label for="editDonorConditions">Existing Medical Conditions</label>
-              <input type="text" id="editDonorConditions" name="conditions" placeholder="e.g. None Reported &bull; Normal Screening" />
+              <input type="text" id="editDonorConditions" name="conditions" placeholder="Medical conditions or leave blank" />
             </div>
             <div class="form-field-group">
               <label for="editDonorMedications">Current Medications</label>
-              <input type="text" id="editDonorMedications" name="medications" placeholder="e.g. None / Unrestricted" />
+              <input type="text" id="editDonorMedications" name="medications" placeholder="Current medications or leave blank" />
             </div>
             <div class="form-field-group">
               <label for="editDonorSurgeries">Previous Surgeries (&lt; 12 mos)</label>
-              <input type="text" id="editDonorSurgeries" name="surgeries" placeholder="e.g. None Reported" />
+              <input type="text" id="editDonorSurgeries" name="surgeries" placeholder="Previous surgeries or leave blank" />
             </div>
           </div>
         </div>

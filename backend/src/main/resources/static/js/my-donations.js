@@ -121,20 +121,19 @@
 
   function renderDonationsTable() {
     const tableBody = document.getElementById('donationsTableBody');
+    const tableWrapper = document.querySelector('.table-responsive-wrapper');
+    const emptyCard = document.getElementById('donationsEmptyState');
     if (!tableBody) return;
 
     if (!donationRecords || donationRecords.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align: center; padding: 22px 14px; color: #94a3b8;">
-            <i class="fa-solid fa-heart-circle-plus" style="font-size: 1.5rem; color: #64748b; margin-bottom: 6px; display: block;"></i>
-            <strong style="color: #ffffff; display: block; margin-bottom: 2px; font-size: 0.95rem;">No Verified Donations Yet</strong>
-            <span style="font-size: 0.8rem;">Awaiting your first clinical rescue record.</span>
-          </td>
-        </tr>
-      `;
+      if (emptyCard) emptyCard.style.display = 'flex';
+      if (tableWrapper) tableWrapper.style.display = 'none';
+      tableBody.innerHTML = '';
       return;
     }
+
+    if (emptyCard) emptyCard.style.display = 'none';
+    if (tableWrapper) tableWrapper.style.display = 'block';
 
     tableBody.innerHTML = donationRecords.map((rec) => {
       const compClass = (rec.type || '').toLowerCase().includes('platelet') ? 'platelets' : 'whole-blood';

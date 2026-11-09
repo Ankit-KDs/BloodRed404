@@ -452,81 +452,121 @@ public class DonorController {
             String nameVal = JsonUtil.textOrNull(body, "name") != null ? JsonUtil.text(body, "name") : JsonUtil.textOrNull(body, "fullName");
             if (nameVal != null) fields.put("name", nameVal);
 
-            String fNameVal = JsonUtil.textOrNull(body, "fatherName") != null ? JsonUtil.text(body, "fatherName") : JsonUtil.textOrNull(body, "father_name");
-            if (fNameVal != null) fields.put("father_name", fNameVal);
+            if (body.has("fatherName") || body.has("father_name")) {
+                String fNameVal = JsonUtil.textOrNull(body, "fatherName") != null ? JsonUtil.text(body, "fatherName") : JsonUtil.textOrNull(body, "father_name");
+                fields.put("father_name", (fNameVal != null && !fNameVal.trim().isEmpty()) ? fNameVal.trim() : null);
+            }
 
-            String phoneVal = JsonUtil.textOrNull(body, "phone");
-            if (phoneVal != null) fields.put("phone", phoneVal);
+            if (body.has("phone")) {
+                String phoneVal = JsonUtil.textOrNull(body, "phone");
+                fields.put("phone", phoneVal);
+            }
 
-            String bgVal = JsonUtil.textOrNull(body, "bloodType") != null ? JsonUtil.text(body, "bloodType") : JsonUtil.textOrNull(body, "blood_type");
-            if (bgVal != null) fields.put("blood_type", bgVal);
+            if (body.has("bloodType") || body.has("blood_type")) {
+                String bgVal = JsonUtil.textOrNull(body, "bloodType") != null ? JsonUtil.text(body, "bloodType") : JsonUtil.textOrNull(body, "blood_type");
+                if (bgVal != null && !bgVal.isBlank()) fields.put("blood_type", bgVal);
+            }
 
-            String genderVal = JsonUtil.textOrNull(body, "gender");
-            if (genderVal != null) fields.put("gender", genderVal);
+            if (body.has("gender")) {
+                String genderVal = JsonUtil.textOrNull(body, "gender");
+                fields.put("gender", genderVal);
+            }
 
-            String dobVal = JsonUtil.textOrNull(body, "dob") != null ? JsonUtil.text(body, "dob") : JsonUtil.textOrNull(body, "dateOfBirth");
-            if (dobVal != null) fields.put("dob", dobVal);
+            if (body.has("dob") || body.has("dateOfBirth")) {
+                String dobVal = JsonUtil.textOrNull(body, "dob") != null ? JsonUtil.text(body, "dob") : JsonUtil.textOrNull(body, "dateOfBirth");
+                fields.put("dob", (dobVal != null && !dobVal.isBlank()) ? dobVal.trim() : null);
+            }
 
-            String addrVal = JsonUtil.textOrNull(body, "address");
-            if (addrVal != null) fields.put("address", addrVal);
+            if (body.has("address")) {
+                String addrVal = JsonUtil.textOrNull(body, "address");
+                fields.put("address", (addrVal != null && !addrVal.isBlank()) ? addrVal.trim() : null);
+            }
 
-            String cityVal = JsonUtil.textOrNull(body, "city");
-            if (cityVal != null) fields.put("city", cityVal);
+            if (body.has("city")) {
+                String cityVal = JsonUtil.textOrNull(body, "city");
+                fields.put("city", (cityVal != null && !cityVal.isBlank()) ? cityVal.trim() : null);
+            }
 
-            String stateVal = JsonUtil.textOrNull(body, "state");
-            if (stateVal != null) fields.put("state", stateVal);
+            if (body.has("state")) {
+                String stateVal = JsonUtil.textOrNull(body, "state");
+                fields.put("state", (stateVal != null && !stateVal.isBlank()) ? stateVal.trim() : null);
+            }
 
-            String pinVal = JsonUtil.textOrNull(body, "pincode");
-            if (pinVal != null) fields.put("pincode", pinVal);
+            if (body.has("pincode")) {
+                String pinVal = JsonUtil.textOrNull(body, "pincode");
+                fields.put("pincode", (pinVal != null && !pinVal.isBlank()) ? pinVal.trim() : null);
+            }
 
-            String availVal = JsonUtil.textOrNull(body, "availability");
-            if (availVal != null) fields.put("availability", availVal);
+            if (body.has("availability")) {
+                String availVal = JsonUtil.textOrNull(body, "availability");
+                fields.put("availability", availVal);
+            }
 
-            String allergiesVal = JsonUtil.textOrNull(body, "allergies");
-            if (allergiesVal != null) fields.put("allergies", allergiesVal);
+            if (body.has("allergies")) {
+                String allergiesVal = JsonUtil.textOrNull(body, "allergies");
+                fields.put("allergies", (allergiesVal != null && !allergiesVal.isBlank()) ? allergiesVal.trim() : null);
+            }
 
-            String conditionsVal = JsonUtil.textOrNull(body, "conditions");
-            if (conditionsVal != null) fields.put("conditions", conditionsVal);
+            if (body.has("conditions")) {
+                String conditionsVal = JsonUtil.textOrNull(body, "conditions");
+                fields.put("conditions", (conditionsVal != null && !conditionsVal.isBlank()) ? conditionsVal.trim() : null);
+            }
 
-            String medsVal = JsonUtil.textOrNull(body, "medications");
-            if (medsVal != null) fields.put("medications", medsVal);
+            if (body.has("medications")) {
+                String medsVal = JsonUtil.textOrNull(body, "medications");
+                fields.put("medications", (medsVal != null && !medsVal.isBlank()) ? medsVal.trim() : null);
+            }
 
-            String surgVal = JsonUtil.textOrNull(body, "surgeries");
-            if (surgVal != null) fields.put("surgeries", surgVal);
+            if (body.has("surgeries")) {
+                String surgVal = JsonUtil.textOrNull(body, "surgeries");
+                fields.put("surgeries", (surgVal != null && !surgVal.isBlank()) ? surgVal.trim() : null);
+            }
 
-            String tokenVal = JsonUtil.textOrNull(body, "qrToken") != null ? JsonUtil.text(body, "qrToken") : JsonUtil.textOrNull(body, "qr_token");
-            if (tokenVal != null) fields.put("qr_token", tokenVal);
+            if (body.has("qrToken") || body.has("qr_token")) {
+                String tokenVal = JsonUtil.textOrNull(body, "qrToken") != null ? JsonUtil.text(body, "qrToken") : JsonUtil.textOrNull(body, "qr_token");
+                fields.put("qr_token", tokenVal);
+            }
 
-            Double weight = JsonUtil.asDouble(body, "weight");
-            if (weight != null) {
+            if (body.has("weight")) {
+                Double weight = JsonUtil.asDouble(body, "weight");
                 fields.put("weight", weight);
             }
 
-            Integer pulseVal = JsonUtil.asInt(body, "pulse", 0);
-            if (pulseVal != null && pulseVal > 0) {
-                fields.put("pulse", pulseVal);
+            if (body.has("pulse")) {
+                Integer pulseVal = JsonUtil.asInt(body, "pulse", 0);
+                fields.put("pulse", (pulseVal != null && pulseVal > 0) ? pulseVal : null);
             }
 
-            Double hbVal = JsonUtil.asDouble(body, "hemoglobin");
-            if (hbVal != null) {
+            if (body.has("hemoglobin")) {
+                Double hbVal = JsonUtil.asDouble(body, "hemoglobin");
                 fields.put("hemoglobin", hbVal);
             }
 
-            String bpVal = JsonUtil.textOrNull(body, "bloodPressure") != null ? JsonUtil.text(body, "bloodPressure") : JsonUtil.textOrNull(body, "blood_pressure");
-            if (bpVal != null) fields.put("blood_pressure", bpVal);
+            if (body.has("bloodPressure") || body.has("blood_pressure")) {
+                String bpVal = JsonUtil.textOrNull(body, "bloodPressure") != null ? JsonUtil.text(body, "bloodPressure") : JsonUtil.textOrNull(body, "blood_pressure");
+                fields.put("blood_pressure", (bpVal != null && !bpVal.isBlank()) ? bpVal.trim() : null);
+            }
 
-            Double tempVal = JsonUtil.asDouble(body, "bodyTemp") != null ? JsonUtil.asDouble(body, "bodyTemp") : JsonUtil.asDouble(body, "body_temp");
-            if (tempVal != null) fields.put("body_temp", tempVal);
+            if (body.has("bodyTemp") || body.has("body_temp")) {
+                Double tempVal = JsonUtil.asDouble(body, "bodyTemp") != null ? JsonUtil.asDouble(body, "bodyTemp") : JsonUtil.asDouble(body, "body_temp");
+                fields.put("body_temp", tempVal);
+            }
 
-            String dType = JsonUtil.textOrNull(body, "donorType") != null ? JsonUtil.text(body, "donorType") : JsonUtil.textOrNull(body, "donor_type");
-            if (dType != null) fields.put("donor_type", dType);
+            if (body.has("donorType") || body.has("donor_type")) {
+                String dType = JsonUtil.textOrNull(body, "donorType") != null ? JsonUtil.text(body, "donorType") : JsonUtil.textOrNull(body, "donor_type");
+                fields.put("donor_type", (dType != null && !dType.isBlank()) ? dType.trim() : null);
+            }
 
-            String facility = JsonUtil.textOrNull(body, "verifiedFacility") != null ? JsonUtil.text(body, "verifiedFacility") : JsonUtil.textOrNull(body, "verified_facility");
-            if (facility != null) fields.put("verified_facility", facility);
+            if (body.has("verifiedFacility") || body.has("verified_facility")) {
+                String facility = JsonUtil.textOrNull(body, "verifiedFacility") != null ? JsonUtil.text(body, "verifiedFacility") : JsonUtil.textOrNull(body, "verified_facility");
+                fields.put("verified_facility", (facility != null && !facility.isBlank()) ? facility.trim() : null);
+            }
 
-            String lastDon = JsonUtil.textOrNull(body, "lastDonationDate") != null ? JsonUtil.text(body, "lastDonationDate") : JsonUtil.textOrNull(body, "lastDonation");
-            if (lastDon == null) lastDon = JsonUtil.textOrNull(body, "last_donation");
-            if (lastDon != null) fields.put("last_donation", lastDon);
+            if (body.has("lastDonationDate") || body.has("lastDonation") || body.has("last_donation")) {
+                String lastDon = JsonUtil.textOrNull(body, "lastDonationDate") != null ? JsonUtil.text(body, "lastDonationDate") : JsonUtil.textOrNull(body, "lastDonation");
+                if (lastDon == null) lastDon = JsonUtil.textOrNull(body, "last_donation");
+                fields.put("last_donation", (lastDon != null && !lastDon.isBlank()) ? lastDon.trim() : null);
+            }
 
             donorDao.updateProfile(targetId, fields);
             Map<String, Object> updated = donorDao.findById(targetId);

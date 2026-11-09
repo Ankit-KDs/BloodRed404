@@ -1164,7 +1164,18 @@
       function valOrNA(val, suffix) {
         if (val === null || val === undefined) return 'N/A';
         const str = String(val).trim();
-        if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str.toLowerCase() === 'none' || str === '') {
+        if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str.toLowerCase() === 'none' || str.toLowerCase() === 'na' || str.toLowerCase() === 'n/a' || str === '') {
+          return 'N/A';
+        }
+        // Strict guard against legacy hardcoded demo strings
+        const lower = str.toLowerCase();
+        if (lower === 'rajesh kumar' ||
+            lower.includes('no known drug allergies') ||
+            lower.includes('normal screening') ||
+            lower.includes('none reported') ||
+            lower.includes('city general hospital') ||
+            lower === 'voluntary lifesaver' ||
+            lower.includes('unrestricted')) {
           return 'N/A';
         }
         return suffix ? (str + ' ' + suffix) : str;
@@ -1231,25 +1242,27 @@
         // Section 2: Blood & Verification
         setTxt('viewTableBloodRh', (bloodType !== 'N/A') ? `${bloodType} (${rhStr})` : 'N/A');
         setTxt('viewTableDonorType', valOrNA(d.donorType || d.donor_type));
-        setTxt('viewTableVerification', d.verifiedFacility ? 'Lab Verified • Clinical Certified' : 'N/A');
+        const facVal = valOrNA(d.verifiedFacility || d.verified_facility);
+        setTxt('viewTableVerification', facVal !== 'N/A' ? 'Lab Verified • Clinical Certified' : 'N/A');
         setTxt('viewTableRegDate', (d.createdAt || d.created_at) ? formatDate(d.createdAt || d.created_at) : 'N/A');
-        setTxt('viewTableLastDate', (d.lastDonation || d.lastDonationDate || d.last_donation) ? formatDate(d.lastDonation || d.lastDonationDate || d.last_donation) : 'N/A');
-        setTxt('viewTableFacility', valOrNA(d.verifiedFacility || d.verified_facility));
+        const lastDonVal = d.lastDonation || d.lastDonationDate || d.last_donation;
+        setTxt('viewTableLastDate', (lastDonVal && String(lastDonVal).trim() && String(lastDonVal).toLowerCase() !== 'null') ? formatDate(lastDonVal) : 'N/A');
+        setTxt('viewTableFacility', facVal);
 
         // Section 3: Medical Screening & Vitals
-        const hb = (d.hemoglobin !== null && d.hemoglobin !== undefined && String(d.hemoglobin).trim() !== '') ? `${d.hemoglobin} g/dL` : 'N/A';
+        const hb = (d.hemoglobin !== null && d.hemoglobin !== undefined && String(d.hemoglobin).trim() !== '' && String(d.hemoglobin).toLowerCase() !== 'null') ? `${d.hemoglobin} g/dL` : 'N/A';
         setTxt('viewTableHemoglobin', hb);
         
-        const bp = (d.bloodPressure || d.blood_pressure) ? `${d.bloodPressure || d.blood_pressure} mmHg` : 'N/A';
-        setTxt('viewTableBp', bp);
+        const bpRaw = valOrNA(d.bloodPressure || d.blood_pressure);
+        setTxt('viewTableBp', bpRaw !== 'N/A' ? `${bpRaw} mmHg` : 'N/A');
         
-        const pulse = (d.pulse !== null && d.pulse !== undefined && String(d.pulse).trim() !== '') ? `${d.pulse} bpm` : 'N/A';
+        const pulse = (d.pulse !== null && d.pulse !== undefined && String(d.pulse).trim() !== '' && String(d.pulse).toLowerCase() !== 'null') ? `${d.pulse} bpm` : 'N/A';
         setTxt('viewTablePulse', pulse);
         
-        const temp = (d.bodyTemp !== null && d.bodyTemp !== undefined && String(d.bodyTemp).trim() !== '') ? `${d.bodyTemp}° F` : 'N/A';
+        const temp = (d.bodyTemp !== null && d.bodyTemp !== undefined && String(d.bodyTemp).trim() !== '' && String(d.bodyTemp).toLowerCase() !== 'null') ? `${d.bodyTemp}° F` : 'N/A';
         setTxt('viewTableTemp', temp);
         
-        const weightVal = (d.weight !== null && d.weight !== undefined && String(d.weight).trim() !== '') ? `${d.weight} kg` : 'N/A';
+        const weightVal = (d.weight !== null && d.weight !== undefined && String(d.weight).trim() !== '' && String(d.weight).toLowerCase() !== 'null') ? `${d.weight} kg` : 'N/A';
         setTxt('viewTableWeight', weightVal);
         
         setTxt('viewTableEligibility', d.availability ? d.availability : 'N/A');

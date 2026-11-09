@@ -24,8 +24,8 @@
 
   <!-- Stylesheets -->
   <link rel="stylesheet" href="css/common.css" />
-  <link rel="stylesheet" href="css/command-nav.css" />
-  <link rel="stylesheet" href="css/my-donations.css?v=20261109_v9" />
+  <link rel="stylesheet" href="css/command-nav.css?v=20261109_v10" />
+  <link rel="stylesheet" href="css/my-donations.css?v=20261109_v10" />
 </head>
 <body class="donations-body">
 
@@ -124,15 +124,6 @@
         </h1>
         <p class="dhb-subtitle">Verified clinical donation and health records</p>
       </div>
-
-      <div class="dhb-right">
-        <a href="donor-profile.html" class="status-eligibility-btn eligible-ready" id="headerEligibilityBadge" title="View Medical Eligibility & Health Profile">
-          <span class="badge-pulse-dot"></span>
-          <i class="fa-solid fa-shield-heart badge-icon"></i>
-          <span class="badge-status-text" id="headerEligibilityText">Status: ELIGIBLE TO DONATE • Safe to Proceed</span>
-          <i class="fa-solid fa-chevron-right badge-arrow"></i>
-        </a>
-      </div>
     </header>
 
     <!-- TOP IMPACT HERO TILES -->
@@ -204,6 +195,15 @@
         </div>
       </div>
 
+      <!-- Standalone Responsive Centered Empty State (Zero Horizontal Scrolling on Mobile) -->
+      <div id="donationsEmptyState" class="donations-empty-card" style="display: none;">
+        <div class="empty-icon-wrap">
+          <i class="fa-solid fa-heart-circle-plus"></i>
+        </div>
+        <h3 class="empty-title">No Verified Donations Yet</h3>
+        <p class="empty-sub">Awaiting your first clinical rescue record.</p>
+      </div>
+
       <!-- Responsive Table -->
       <div class="table-responsive-wrapper">
         <table class="donations-table">
@@ -220,10 +220,10 @@
           </thead>
           <tbody id="donationsTableBody">
             <tr>
-              <td colspan="7" style="text-align: center; padding: 22px 14px; color: #94a3b8;">
-                <i class="fa-solid fa-heart-circle-plus" style="font-size: 1.5rem; color: #64748b; margin-bottom: 6px; display: block;"></i>
-                <strong style="color: #ffffff; display: block; margin-bottom: 2px; font-size: 0.95rem;">No Verified Donations Yet</strong>
-                <span style="font-size: 0.8rem;">Awaiting your first clinical rescue record.</span>
+              <td colspan="7" style="text-align: center; padding: 40px 16px; color: #94a3b8;">
+                <i class="fa-solid fa-heart-circle-plus" style="font-size: 2rem; color: #64748b; margin-bottom: 10px; display: block;"></i>
+                <strong style="color: #ffffff; display: block; margin-bottom: 4px;">No Verified Donations Yet</strong>
+                <span>No verified donations yet. Awaiting your first rescue.</span>
               </td>
             </tr>
           </tbody>
@@ -233,27 +233,7 @@
 
   </main>
 
-  <!-- ==================== SLEEK MINIMALIST MINI-FOOTER ==================== -->
-  <footer class="app-mini-footer">
-    <div class="mini-footer-container">
-      <div class="mf-left">
-        <span class="mf-status-dot"></span>
-        <span class="mf-status-text">System: Online</span>
-        <span class="mf-divider">&bull;</span>
-        <span class="mf-copy">&copy; 2026 RED404</span>
-      </div>
-      <nav class="mf-center" aria-label="Quick Links">
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('help')">Help &amp; Support</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('report')">Report Issue</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('privacy')">Privacy &amp; Policy</a>
-      </nav>
-      <div class="mf-right">
-        <span class="mf-version">v1.0.0 Beta</span>
-      </div>
-    </div>
-  </footer>
+
 
   <!-- ==================== CERTIFICATE MODAL PREVIEW ==================== -->
   <div class="cert-modal-backdrop" id="certModalBackdrop">
@@ -320,9 +300,9 @@
 
   <!-- Scripts -->
   <script src="js/common.js"></script>
-  <script src="js/command-nav.js"></script>
-  <script src="js/dashboard-logic.js?v=20261109_v9"></script>
-  <script src="js/my-donations.js?v=20261109_v9"></script>
+  <script src="js/command-nav.js?v=20261109_v10"></script>
+  <script src="js/dashboard-logic.js?v=20261109_v10"></script>
+  <script src="js/my-donations.js?v=20261109_v10"></script>
 </body>
 </html>
 
