@@ -663,7 +663,27 @@
       </div>
     </section>
 
-
+    <!-- ==================== SLEEK MINIMALIST MINI-FOOTER ==================== -->
+    <footer class="app-mini-footer">
+      <div class="mini-footer-container">
+        <div class="mf-left">
+          <span class="mf-status-dot"></span>
+          <span class="mf-status-text">System: Online</span>
+          <span class="mf-divider">&bull;</span>
+          <span class="mf-copy">&copy; 2026 RED404</span>
+        </div>
+        <nav class="mf-center" aria-label="Quick Links">
+          <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('help')">Help &amp; Support</a>
+          <span class="mf-link-sep">&bull;</span>
+          <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('report')">Report Issue</a>
+          <span class="mf-link-sep">&bull;</span>
+          <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('privacy')">Privacy &amp; Policy</a>
+        </nav>
+        <div class="mf-right">
+          <span class="mf-version">v1.0.0 Beta</span>
+        </div>
+      </div>
+    </footer>
 
   </main>
 
@@ -672,6 +692,18 @@
   ============================================================ -->
   <script>
   'use strict';
+
+  if (typeof window.openMiniFooterModal !== 'function') {
+    window.openMiniFooterModal = function(topic) {
+      if (topic === 'help') {
+        alert("RED404 Help & Emergency Support\n\nEmergency Helpline: +91-800-RED-404 / 112\nSupport Desk: support@red404.org\n\nParticipating hospital telemetry and dispatch algorithms are active 24/7.");
+      } else if (topic === 'report') {
+        alert("Report Clinical / System Discrepancy\n\nEngineering Rapid Response: dev-ops@red404.org\n\nPlease include Hospital ID, timestamp, and patient request code.");
+      } else if (topic === 'privacy') {
+        alert("RED404 Privacy & Clinical Data Governance\n\nCompliant with NBTC digital security guidelines. All records are end-to-end encrypted.");
+      }
+    };
+  }
 
   /* ============================================================
      CONSTANTS — match Hospital.java + BloodRequest.java

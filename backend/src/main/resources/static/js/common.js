@@ -685,6 +685,66 @@ window.alert = function(msg) {
   });
 };
 
+/* ==================== MINI-FOOTER MODALS ==================== */
+function openMiniFooterModal(topic) {
+  if (topic === 'help') {
+    showAppAlert({
+      title: 'Help & Emergency Support',
+      icon: 'fa-life-ring',
+      type: 'info',
+      html: `
+        <div style="line-height:1.6;font-size:0.9rem;color:#cbd5e1;">
+          <p style="margin-bottom:12px;">Need assistance with clinical donor dispatch, account setup, or telemetry?</p>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="color:#ef4444;font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-phone-volume"></i> 24/7 Emergency Dispatch Helpline</div>
+            <div style="font-family:monospace;font-size:1rem;color:#ffffff;">+91-800-RED-404 &nbsp;|&nbsp; 112</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">
+            <div style="color:#38bdf8;font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-envelope"></i> Clinical Support Desk</div>
+            <div style="font-family:monospace;color:#ffffff;">support@red404.org</div>
+          </div>
+        </div>
+      `,
+      btnText: 'Understood'
+    });
+  } else if (topic === 'report') {
+    showAppAlert({
+      title: 'Report Issue / Bug Discrepancy',
+      icon: 'fa-triangle-exclamation',
+      type: 'warning',
+      html: `
+        <div style="line-height:1.6;font-size:0.9rem;color:#cbd5e1;">
+          <p style="margin-bottom:12px;">Found a data sync discrepancy or clinical app issue?</p>
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-bug"></i> Technical Triage Team</div>
+            <div style="font-family:monospace;color:#ffffff;">dev-ops@red404.org</div>
+          </div>
+          <p style="font-size:0.8rem;color:#94a3b8;">Our medical engineering staff monitors all emergency feeds 24/7.</p>
+        </div>
+      `,
+      btnText: 'Close'
+    });
+  } else if (topic === 'privacy') {
+    showAppAlert({
+      title: 'Privacy & Clinical Data Governance',
+      icon: 'fa-shield-halved',
+      type: 'info',
+      html: `
+        <div style="line-height:1.6;font-size:0.9rem;color:#cbd5e1;">
+          <p style="margin-bottom:10px;"><strong>RED404</strong> strictly enforces National Blood Transfusion Council (NBTC) data privacy standards:</p>
+          <ul style="padding-left:18px;margin-bottom:12px;font-size:0.84rem;color:#94a3b8;">
+            <li style="margin-bottom:6px;">All donor health records, blood units, and hospital logs are end-to-end encrypted (TLS 1.3 / AES-256).</li>
+            <li style="margin-bottom:6px;">Live GPS telemetry is strictly restricted to active emergency transit routing.</li>
+            <li>No clinical information is ever sold or shared with non-accredited organizations.</li>
+          </ul>
+        </div>
+      `,
+      btnText: 'Acknowledge'
+    });
+  }
+}
+window.openMiniFooterModal = openMiniFooterModal;
+
 
 
 /* ==================== PASSWORD TOGGLE ==================== */
@@ -1288,6 +1348,7 @@ function printElement(elementId) {
 
 /* ==================== GLOBAL EXPOSE ==================== */
 window.RED404 = {
+  openMiniFooterModal,
   showToast,
   openModal,
   closeModal,
