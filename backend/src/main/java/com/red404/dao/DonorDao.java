@@ -284,6 +284,14 @@ public class DonorDao {
             donor.put("verifiedFacility", "City General Hospital");
             donor.put("verifiedDate", "2026-08-05");
         }
+        try {
+            java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+            if (createdAt != null) {
+                donor.put("createdAt", createdAt.toInstant().toString());
+                donor.put("created_at", createdAt.toInstant().toString());
+                donor.put("memberSince", createdAt.toInstant().toString());
+            }
+        } catch (SQLException ignored) {}
         if (includePrivate) {
             donor.put("gender", rs.getString("gender"));
         }

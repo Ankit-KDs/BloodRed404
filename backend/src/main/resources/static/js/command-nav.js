@@ -22,6 +22,14 @@
     try {
       const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
       if (raw) session = JSON.parse(raw);
+      if (!session && typeof Auth !== 'undefined' && Auth.getSession) {
+        const u = Auth.getSession();
+        if (u) session = { user: u };
+      }
+      if (!session) {
+        const rawSession = localStorage.getItem('red404_session');
+        if (rawSession) session = JSON.parse(rawSession);
+      }
     } catch (e) {
       console.warn('Session parse notice:', e);
     }

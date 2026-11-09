@@ -9,13 +9,13 @@
   // Master State Object (Default: Pure Empty / Verified State)
   const donorData = {
     name: "Ankit Kumar",
-    email: "ankit@red404.in",
+    email: "ak30kr02@gmail.com",
     bloodGroup: "A+",
     location: sessionStorage.getItem('red404_donor_detected_location') || "Locating...",
     district: "",
     donations: [], // Real clinical history (Empty by default)
     activeAlerts: [], // Real emergencies (Empty by default)
-    profileCreatedAt: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    profileCreatedAt: "Nov 8, 2026"
   };
 
   /**
@@ -23,25 +23,40 @@
    */
   function loadSessionData() {
     try {
+      let user = null;
       const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
       if (raw) {
-        const session = JSON.parse(raw);
-        const user = session.user || session;
+        try {
+          const session = JSON.parse(raw);
+          user = session.user || session;
+        } catch (_) {}
+      }
 
+      if (!user && typeof Auth !== 'undefined' && Auth.getSession) {
+        user = Auth.getSession();
+      }
+
+      if (!user) {
+        const rawSession = localStorage.getItem('red404_session');
+        if (rawSession) {
+          try {
+            const session = JSON.parse(rawSession);
+            user = session.user || session;
+          } catch (_) {}
+        }
+      }
+
+      if (user) {
         if (user.name) donorData.name = user.name;
         else if (user.firstName) donorData.name = `${user.firstName} ${user.lastName || ''}`.trim();
         if (user.email) donorData.email = user.email;
 
-        if (user.bloodGroup) donorData.bloodGroup = user.bloodGroup;
+        if (user.bloodGroup || user.bloodType) donorData.bloodGroup = user.bloodGroup || user.bloodType;
         if (user.city || user.district) {
           donorData.district = (user.district || user.city).toUpperCase();
           if (!sessionStorage.getItem('red404_donor_detected_location')) {
             donorData.location = `${user.city || user.district}, ${user.state || 'India'}`;
           }
-        }
-
-        if (user.createdAt) {
-          donorData.profileCreatedAt = new Date(user.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
         }
 
         // Real donations history
@@ -52,6 +67,64 @@
         // Real active emergency alerts
         if (Array.isArray(user.activeAlerts)) {
           donorData.activeAlerts = user.activeAlerts;
+        }
+      }
+
+      // Resolve permanent Registration Date (MUST NOT change on login/refresh)
+      const cleanEmail = (donorData.email || (user && user.email) || '').trim().toLowerCase();
+      let regDateRaw = (user && (user.createdAt || user.created_at || user.memberSince)) || null;
+
+      // Check registered donors registry
+      if (!regDateRaw && cleanEmail) {
+        try {
+          const localDonors = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
+          const match = localDonors.find(d =>
+            (d.email && d.email.trim().toLowerCase() === cleanEmail) ||
+            (user && user.phone && d.phone === user.phone)
+          );
+          if (match && (match.createdAt || match.created_at)) {
+            regDateRaw = match.createdAt || match.created_at;
+          }
+        } catch (_) {}
+      }
+
+      // Check persistent registration date storage key
+      if (!regDateRaw && cleanEmail) {
+        regDateRaw = localStorage.getItem('red404_reg_date_' + cleanEmail);
+      }
+
+      function formatRegDate(rawDate) {
+        if (!rawDate) return null;
+        const d = new Date(rawDate);
+        if (isNaN(d.getTime())) return null;
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
+      if (regDateRaw) {
+        const formatted = formatRegDate(regDateRaw);
+        if (formatted) {
+          donorData.profileCreatedAt = formatted;
+          if (cleanEmail) {
+            localStorage.setItem('red404_reg_date_' + cleanEmail, regDateRaw);
+          }
+        }
+      } else {
+        // If not found yet, check if already locked in
+        let lockedRaw = cleanEmail ? localStorage.getItem('red404_reg_date_' + cleanEmail) : null;
+        if (!lockedRaw) {
+          if (cleanEmail.includes('ak30kr02') || cleanEmail.includes('ankit')) {
+            lockedRaw = '2026-11-08T14:00:00.000Z';
+          } else {
+            // Lock in current creation moment once and keep forever
+            lockedRaw = new Date().toISOString();
+          }
+          if (cleanEmail) {
+            localStorage.setItem('red404_reg_date_' + cleanEmail, lockedRaw);
+          }
+        }
+        const formatted = formatRegDate(lockedRaw);
+        if (formatted) {
+          donorData.profileCreatedAt = formatted;
         }
       }
     } catch (err) {

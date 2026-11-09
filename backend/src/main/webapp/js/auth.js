@@ -8,7 +8,9 @@
 // Ensure primary donor account exists in local registry backup
 try {
   const localList = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
-  if (!localList.some(d => d.email && d.email.trim().toLowerCase() === 'ak30kr02@gmail.com')) {
+  const defaultRegDate = '2026-11-08T14:00:00.000Z';
+  const existingIdx = localList.findIndex(d => d.email && d.email.trim().toLowerCase() === 'ak30kr02@gmail.com');
+  if (existingIdx === -1) {
     localList.push({
       id: 1,
       name: 'Ankit Kumar',
@@ -24,9 +26,18 @@ try {
       state: 'Uttar Pradesh',
       address: 'Near Subharti, Delhi Road',
       pincode: '250002',
-      zone: 'North Zone'
+      zone: 'North Zone',
+      createdAt: defaultRegDate,
+      created_at: defaultRegDate
     });
     localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
+  } else if (!localList[existingIdx].createdAt && !localList[existingIdx].created_at) {
+    localList[existingIdx].createdAt = defaultRegDate;
+    localList[existingIdx].created_at = defaultRegDate;
+    localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
+  }
+  if (!localStorage.getItem('red404_reg_date_ak30kr02@gmail.com')) {
+    localStorage.setItem('red404_reg_date_ak30kr02@gmail.com', defaultRegDate);
   }
 } catch (_) {}
 
@@ -371,19 +382,29 @@ function initDonorRegisterForm() {
 
     if (result.success) {
       const donorData = (result.data && result.data.donor) ? result.data.donor : payload;
+      const cleanEmail = (donorData.email || payload.email || '').trim().toLowerCase();
+      const cleanPhone = (donorData.phone || payload.phone || '').trim();
+
+      // Permanent registration timestamp at creation time
+      const regTimestamp = donorData.createdAt || donorData.created_at || new Date().toISOString();
+      donorData.createdAt = regTimestamp;
+      donorData.created_at = regTimestamp;
+      if (cleanEmail) {
+        localStorage.setItem('red404_reg_date_' + cleanEmail, regTimestamp);
+      }
+
       if (result.data && result.data.donor) {
-        Auth.saveSession(result.data.donor);
+        Auth.saveSession(donorData);
         Store.set('donorToken', result.data.token);
       } else {
         Auth.saveSession(donorData);
         Store.set('donorToken', 'SESSION-DONOR-1');
       }
+      localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
 
       // CRITICAL: Cache in local registered donors registry
       try {
         const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
-        const cleanEmail = (donorData.email || payload.email || '').trim().toLowerCase();
-        const cleanPhone = (donorData.phone || payload.phone || '').trim();
         const idx = list.findIndex(d =>
           (d.email && d.email.trim().toLowerCase() === cleanEmail) ||
           (d.phone && d.phone.trim() === cleanPhone)
@@ -392,7 +413,9 @@ function initDonorRegisterForm() {
           ...donorData,
           email: cleanEmail,
           phone: cleanPhone,
-          password: payload.password
+          password: payload.password,
+          createdAt: regTimestamp,
+          created_at: regTimestamp
         };
         if (idx >= 0) {
           list[idx] = record;
@@ -476,19 +499,47 @@ function initDonorLoginForm() {
     setButtonLoading(submitBtn, false);
 
     if (result.success) {
-      Auth.saveSession(result.data.donor);
+      const donorData = result.data.donor;
+      const cleanEmail = (donorData.email || '').trim().toLowerCase();
+      const cleanPhone = (donorData.phone || '').trim();
+
+      // Ensure createdAt is preserved from backend or local registry
+      let regTimestamp = donorData.createdAt || donorData.created_at;
+      if (!regTimestamp && cleanEmail) {
+        regTimestamp = localStorage.getItem('red404_reg_date_' + cleanEmail);
+      }
+      if (!regTimestamp) {
+        try {
+          const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
+          const match = list.find(d =>
+            (d.email && d.email.trim().toLowerCase() === cleanEmail) ||
+            (d.phone && d.phone.trim() === cleanPhone)
+          );
+          if (match && (match.createdAt || match.created_at)) {
+            regTimestamp = match.createdAt || match.created_at;
+          }
+        } catch (_) {}
+      }
+      if (regTimestamp) {
+        donorData.createdAt = regTimestamp;
+        donorData.created_at = regTimestamp;
+        if (cleanEmail) {
+          localStorage.setItem('red404_reg_date_' + cleanEmail, regTimestamp);
+        }
+      }
+
+      Auth.saveSession(donorData);
       Store.set('donorToken', result.data.token);
+      localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
 
       // Keep local registry updated with authenticated donor
       try {
         const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
-        const cleanEmail = (result.data.donor.email || '').trim().toLowerCase();
-        const cleanPhone = (result.data.donor.phone || '').trim();
         const idx = list.findIndex(d =>
           (d.email && d.email.trim().toLowerCase() === cleanEmail) ||
           (d.phone && d.phone.trim() === cleanPhone)
         );
-        const record = { ...result.data.donor, password };
+        const record = { ...donorData, password, createdAt: regTimestamp || donorData.createdAt, created_at: regTimestamp || donorData.created_at };
         if (idx >= 0) {
           list[idx] = record;
         } else {
@@ -510,8 +561,15 @@ function initDonorLoginForm() {
           (d.password && d.password.trim() === cleanPw)
         );
         if (match) {
+          const regTimestamp = match.createdAt || match.created_at || (cleanId ? localStorage.getItem('red404_reg_date_' + cleanId) : null) || (cleanId.includes('ak30kr02') ? '2026-11-08T14:00:00.000Z' : new Date().toISOString());
+          match.createdAt = regTimestamp;
+          match.created_at = regTimestamp;
           Auth.saveSession(match);
           Store.set('donorToken', 'SESSION-DONOR-' + (match.id || 1));
+          localStorage.setItem('red404_donor_session', JSON.stringify({ user: match }));
+          if (match.email) {
+            localStorage.setItem('red404_reg_date_' + match.email.trim().toLowerCase(), regTimestamp);
+          }
           showToast('Login successful! Restoring profile...', 'success', 1500);
           setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
           return;
