@@ -55,7 +55,6 @@
     initMobileNav();
     initGPSListener();
     initEditModal();
-    initLogoutConfirmation();
     await loadDonorProfile();
     await loadDonationHistory();
     evaluateHealthAndEligibility();
@@ -906,12 +905,14 @@
       if (facilityInput) facilityInput.value = currentDonor.verifiedFacility || 'City General Hospital';
 
       editModal.style.display = 'flex';
+      editModal.classList.add('active');
       editModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
     }
 
     function closeModal() {
       editModal.style.display = 'none';
+      editModal.classList.remove('active');
       editModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
     }
@@ -1175,48 +1176,4 @@
 
 
 
-  // ======================== LOGOUT CONFIRMATION MODAL LOGIC ========================
-  function initLogoutConfirmation() {
-    const logoutBtn = document.getElementById('dropdownLogoutBtn');
-    const logoutModal = document.getElementById('logoutConfirmModal');
-    const btnCancel = document.getElementById('btnCancelLogout');
-    const btnConfirm = document.getElementById('btnConfirmLogout');
-
-    if (logoutBtn && logoutModal) {
-      logoutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const userMenu = document.getElementById('userDropdownMenu');
-        if (userMenu) userMenu.classList.remove('show');
-        logoutModal.style.display = 'flex';
-        logoutModal.setAttribute('aria-hidden', 'false');
-      });
-    }
-
-    if (btnCancel && logoutModal) {
-      btnCancel.addEventListener('click', () => {
-        logoutModal.style.display = 'none';
-        logoutModal.setAttribute('aria-hidden', 'true');
-      });
-    }
-
-    if (logoutModal) {
-      logoutModal.addEventListener('click', (e) => {
-        if (e.target === logoutModal) {
-          logoutModal.style.display = 'none';
-          logoutModal.setAttribute('aria-hidden', 'true');
-        }
-      });
-    }
-
-    if (btnConfirm) {
-      btnConfirm.addEventListener('click', async () => {
-        try {
-          await fetch('/api/auth/logout', { method: 'POST' });
-        } catch (_) {}
-        localStorage.removeItem('red404_donor_session');
-        localStorage.removeItem('red404_auth_session');
-        window.location.href = 'donor-login.html';
-      });
-    }
-  }
+  // Global logout modal is handled centrally by command-nav.js

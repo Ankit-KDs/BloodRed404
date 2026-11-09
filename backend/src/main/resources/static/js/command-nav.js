@@ -58,6 +58,10 @@
     // 2. Avatar dropdown toggle
     if (avatarTrigger && dropdown) {
       avatarTrigger.addEventListener('click', (e) => {
+        // If user clicked inside the dropdown itself, don't re-toggle
+        if (dropdown.contains(e.target)) {
+          return;
+        }
         e.stopPropagation();
         const isOpen = dropdown.classList.contains('show');
         if (isOpen) {
@@ -66,6 +70,15 @@
         } else {
           dropdown.classList.add('show');
           avatarTrigger.setAttribute('aria-expanded', 'true');
+        }
+      });
+
+      // Close dropdown if clicking on a navigation link inside dropdown
+      dropdown.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (link) {
+          dropdown.classList.remove('show');
+          avatarTrigger.setAttribute('aria-expanded', 'false');
         }
       });
 

@@ -2916,15 +2916,20 @@ body.donor-profile-body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(8, 11, 17, 0.78);
+  background: rgba(8, 11, 17, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  display: flex;
+  display: none; /* STRICTLY HIDDEN BY DEFAULT */
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 16px;
+  padding: 20px;
   box-sizing: border-box;
+}
+
+.modal-backdrop-telemetry.active,
+.modal-backdrop-telemetry.show {
+  display: flex !important;
 }
 
 .edit-profile-modal-card {
@@ -3404,20 +3409,25 @@ body.donor-profile-body {
 
 /* ==================== EDIT MODAL SCROLL & LAYOUT FIX ==================== */
 .modal-backdrop-telemetry {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: rgba(8, 11, 17, 0.85) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 11, 17, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none; /* STRICTLY HIDDEN BY DEFAULT */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-backdrop-telemetry.active,
+.modal-backdrop-telemetry.show {
   display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 9999 !important;
-  padding: 20px !important;
-  box-sizing: border-box !important;
 }
 
 .edit-profile-modal-card {
@@ -3463,3 +3473,4 @@ body.donor-profile-body {
   background: rgba(15, 23, 42, 0.98) !important;
   flex-shrink: 0 !important;
 }
+
