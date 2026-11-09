@@ -502,6 +502,32 @@ public class DonorController {
                 fields.put("weight", weight);
             }
 
+            Integer pulseVal = JsonUtil.asInt(body, "pulse", 0);
+            if (pulseVal != null && pulseVal > 0) {
+                fields.put("pulse", pulseVal);
+            }
+
+            Double hbVal = JsonUtil.asDouble(body, "hemoglobin");
+            if (hbVal != null) {
+                fields.put("hemoglobin", hbVal);
+            }
+
+            String bpVal = JsonUtil.textOrNull(body, "bloodPressure") != null ? JsonUtil.text(body, "bloodPressure") : JsonUtil.textOrNull(body, "blood_pressure");
+            if (bpVal != null) fields.put("blood_pressure", bpVal);
+
+            Double tempVal = JsonUtil.asDouble(body, "bodyTemp") != null ? JsonUtil.asDouble(body, "bodyTemp") : JsonUtil.asDouble(body, "body_temp");
+            if (tempVal != null) fields.put("body_temp", tempVal);
+
+            String dType = JsonUtil.textOrNull(body, "donorType") != null ? JsonUtil.text(body, "donorType") : JsonUtil.textOrNull(body, "donor_type");
+            if (dType != null) fields.put("donor_type", dType);
+
+            String facility = JsonUtil.textOrNull(body, "verifiedFacility") != null ? JsonUtil.text(body, "verifiedFacility") : JsonUtil.textOrNull(body, "verified_facility");
+            if (facility != null) fields.put("verified_facility", facility);
+
+            String lastDon = JsonUtil.textOrNull(body, "lastDonationDate") != null ? JsonUtil.text(body, "lastDonationDate") : JsonUtil.textOrNull(body, "lastDonation");
+            if (lastDon == null) lastDon = JsonUtil.textOrNull(body, "last_donation");
+            if (lastDon != null) fields.put("last_donation", lastDon);
+
             donorDao.updateProfile(targetId, fields);
             Map<String, Object> updated = donorDao.findById(targetId);
 

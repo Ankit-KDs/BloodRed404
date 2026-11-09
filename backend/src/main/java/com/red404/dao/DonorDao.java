@@ -113,10 +113,17 @@ public class DonorDao {
                 "state = COALESCE(?, state), " +
                 "pincode = COALESCE(?, pincode), " +
                 "weight = COALESCE(?, weight), " +
+                "pulse = COALESCE(?, pulse), " +
+                "hemoglobin = COALESCE(?, hemoglobin), " +
+                "blood_pressure = COALESCE(?, blood_pressure), " +
+                "body_temp = COALESCE(?, body_temp), " +
                 "allergies = COALESCE(?, allergies), " +
                 "conditions = COALESCE(?, conditions), " +
                 "medications = COALESCE(?, medications), " +
                 "surgeries = COALESCE(?, surgeries), " +
+                "donor_type = COALESCE(?, donor_type), " +
+                "verified_facility = COALESCE(?, verified_facility), " +
+                "last_donation = COALESCE(?, last_donation), " +
                 "qr_token = COALESCE(?, qr_token), " +
                 "availability = COALESCE(?, availability) " +
                 "WHERE id = ?";
@@ -149,10 +156,44 @@ public class DonorDao {
                 ps.setDouble(idx++, ((Number) fields.get("weight")).doubleValue());
             }
 
+            if (fields.get("pulse") == null) {
+                ps.setNull(idx++, Types.INTEGER);
+            } else {
+                ps.setInt(idx++, ((Number) fields.get("pulse")).intValue());
+            }
+
+            if (fields.get("hemoglobin") == null) {
+                ps.setNull(idx++, Types.DOUBLE);
+            } else {
+                ps.setDouble(idx++, ((Number) fields.get("hemoglobin")).doubleValue());
+            }
+
+            ps.setString(idx++, emptyToNull(str(fields.get("blood_pressure") != null ? fields.get("blood_pressure") : fields.get("bloodPressure"))));
+
+            if (fields.get("body_temp") == null && fields.get("bodyTemp") == null) {
+                ps.setNull(idx++, Types.DOUBLE);
+            } else {
+                Object bt = fields.get("body_temp") != null ? fields.get("body_temp") : fields.get("bodyTemp");
+                ps.setDouble(idx++, ((Number) bt).doubleValue());
+            }
+
             ps.setString(idx++, emptyToNull(str(fields.get("allergies"))));
             ps.setString(idx++, emptyToNull(str(fields.get("conditions"))));
             ps.setString(idx++, emptyToNull(str(fields.get("medications"))));
             ps.setString(idx++, emptyToNull(str(fields.get("surgeries"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("donor_type") != null ? fields.get("donor_type") : fields.get("donorType"))));
+            ps.setString(idx++, emptyToNull(str(fields.get("verified_facility") != null ? fields.get("verified_facility") : fields.get("verifiedFacility"))));
+
+            Date lastDon = null;
+            Object ldObj = fields.get("last_donation") != null ? fields.get("last_donation") : fields.get("lastDonationDate");
+            if (ldObj == null) ldObj = fields.get("lastDonation");
+            if (ldObj instanceof Date) lastDon = (Date) ldObj;
+            else if (ldObj instanceof java.util.Date) lastDon = new Date(((java.util.Date) ldObj).getTime());
+            else if (ldObj != null && !str(ldObj).isBlank()) {
+                try { lastDon = Date.valueOf(str(ldObj).trim()); } catch (Exception ignored) {}
+            }
+            setDate(ps, idx++, lastDon);
+
             ps.setString(idx++, emptyToNull(str(fields.get("qr_token") != null ? fields.get("qr_token") : fields.get("qrToken"))));
             ps.setString(idx++, emptyToNull(str(fields.get("availability"))));
             ps.setInt(idx, id);
@@ -312,11 +353,11 @@ public class DonorDao {
         }
         try {
             String fName = rs.getString("father_name");
-            donor.put("fatherName", fName != null ? fName : "Rajesh Kumar");
-            donor.put("father_name", fName != null ? fName : "Rajesh Kumar");
+            donor.put("fatherName", fName);
+            donor.put("father_name", fName);
         } catch (SQLException ignored) {
-            donor.put("fatherName", "Rajesh Kumar");
-            donor.put("father_name", "Rajesh Kumar");
+            donor.put("fatherName", null);
+            donor.put("father_name", null);
         }
         donor.put("email", rs.getString("email"));
         donor.put("phone", rs.getString("phone"));
@@ -339,20 +380,20 @@ public class DonorDao {
             donor.put("dob", dob == null ? null : dob.toString());
         } catch (SQLException ignored) {}
         try {
-            donor.put("pulse", rs.getObject("pulse") != null ? rs.getInt("pulse") : 72);
-            donor.put("hemoglobin", rs.getObject("hemoglobin") != null ? rs.getDouble("hemoglobin") : 14.8);
-            donor.put("bloodPressure", rs.getString("blood_pressure") != null ? rs.getString("blood_pressure") : "120/80");
-            donor.put("bodyTemp", rs.getObject("body_temp") != null ? rs.getDouble("body_temp") : 98.6);
-            donor.put("verifiedFacility", rs.getString("verified_facility") != null ? rs.getString("verified_facility") : "City General Hospital");
+            donor.put("pulse", rs.getObject("pulse"));
+            donor.put("hemoglobin", rs.getObject("hemoglobin"));
+            donor.put("bloodPressure", rs.getString("blood_pressure"));
+            donor.put("bodyTemp", rs.getObject("body_temp"));
+            donor.put("verifiedFacility", rs.getString("verified_facility"));
             Date vDate = rs.getDate("verified_date");
-            donor.put("verifiedDate", vDate != null ? vDate.toString() : "2026-08-05");
+            donor.put("verifiedDate", vDate != null ? vDate.toString() : null);
         } catch (SQLException ignored) {
-            donor.put("pulse", 72);
-            donor.put("hemoglobin", 14.8);
-            donor.put("bloodPressure", "120/80");
-            donor.put("bodyTemp", 98.6);
-            donor.put("verifiedFacility", "City General Hospital");
-            donor.put("verifiedDate", "2026-08-05");
+            donor.put("pulse", null);
+            donor.put("hemoglobin", null);
+            donor.put("bloodPressure", null);
+            donor.put("bodyTemp", null);
+            donor.put("verifiedFacility", null);
+            donor.put("verifiedDate", null);
         }
         try {
             java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
@@ -366,12 +407,12 @@ public class DonorDao {
             donor.put("gender", rs.getString("gender"));
         }
         try {
-            donor.put("allergies", rs.getString("allergies") != null ? rs.getString("allergies") : "No Known Drug Allergies (NKDA)");
-            donor.put("conditions", rs.getString("conditions") != null ? rs.getString("conditions") : "None Reported • Normal Screening");
-            donor.put("medications", rs.getString("medications") != null ? rs.getString("medications") : "None / Unrestricted");
-            donor.put("surgeries", rs.getString("surgeries") != null ? rs.getString("surgeries") : "None Reported (< 12 months)");
-            donor.put("donorType", rs.getString("donor_type") != null ? rs.getString("donor_type") : "Voluntary Lifesaver");
-            donor.put("donor_type", rs.getString("donor_type") != null ? rs.getString("donor_type") : "Voluntary Lifesaver");
+            donor.put("allergies", rs.getString("allergies"));
+            donor.put("conditions", rs.getString("conditions"));
+            donor.put("medications", rs.getString("medications"));
+            donor.put("surgeries", rs.getString("surgeries"));
+            donor.put("donorType", rs.getString("donor_type"));
+            donor.put("donor_type", rs.getString("donor_type"));
             donor.put("qrToken", rs.getString("qr_token"));
             donor.put("qr_token", rs.getString("qr_token"));
         } catch (SQLException ignored) {}
