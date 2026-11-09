@@ -220,6 +220,15 @@ public class DonorDao {
             ensureCol(conn, "donor_type", "VARCHAR(80) NULL");
             ensureCol(conn, "qr_token", "VARCHAR(100) NULL");
             ensureCol(conn, "last_donation", "DATE NULL");
+
+            try (Statement st = conn.createStatement()) {
+                st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name LIKE '%Rajesh%'");
+                st.executeUpdate("UPDATE donors SET allergies = NULL WHERE allergies LIKE '%No Known Drug%' OR allergies LIKE '%NKDA%'");
+                st.executeUpdate("UPDATE donors SET conditions = NULL WHERE conditions LIKE '%Normal Screening%' OR conditions LIKE '%None Reported%'");
+                st.executeUpdate("UPDATE donors SET medications = NULL WHERE medications LIKE '%Unrestricted%' OR medications LIKE 'None%'");
+                st.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries LIKE '%< 12%'");
+                st.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility LIKE '%City General%'");
+            } catch (Exception ignored) {}
         } catch (Exception ignored) {}
     }
 

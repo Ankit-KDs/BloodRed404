@@ -52,6 +52,46 @@
 
   // ======================== INITIALIZATION ========================
   document.addEventListener('DOMContentLoaded', async () => {
+    // Proactive cleanup of any legacy demo defaults stored in client localStorage
+    try {
+      const purgeLegacyDemo = (obj) => {
+        if (!obj) return;
+        if (obj.fatherName && obj.fatherName.toLowerCase().includes('rajesh')) obj.fatherName = null;
+        if (obj.father_name && obj.father_name.toLowerCase().includes('rajesh')) obj.father_name = null;
+        if (obj.allergies && (obj.allergies.toLowerCase().includes('no known drug') || obj.allergies.toLowerCase().includes('nkda'))) obj.allergies = null;
+        if (obj.conditions && (obj.conditions.toLowerCase().includes('normal screening') || obj.conditions.toLowerCase().includes('none reported'))) obj.conditions = null;
+        if (obj.medications && (obj.medications.toLowerCase().includes('unrestricted') || obj.medications.toLowerCase().includes('none /'))) obj.medications = null;
+        if (obj.surgeries && (obj.surgeries.toLowerCase().includes('none reported') || obj.surgeries.toLowerCase().includes('< 12'))) obj.surgeries = null;
+        if (obj.verifiedFacility && obj.verifiedFacility.toLowerCase().includes('city general')) obj.verifiedFacility = null;
+        if (obj.verified_facility && obj.verified_facility.toLowerCase().includes('city general')) obj.verified_facility = null;
+      };
+
+      const rawSess = localStorage.getItem('red404_donor_session');
+      if (rawSess) {
+        const sObj = JSON.parse(rawSess);
+        if (sObj && sObj.user) {
+          purgeLegacyDemo(sObj.user);
+          localStorage.setItem('red404_donor_session', JSON.stringify(sObj));
+        }
+      }
+      const rawAuth = localStorage.getItem('red404_auth_session');
+      if (rawAuth) {
+        const aObj = JSON.parse(rawAuth);
+        if (aObj && aObj.user) {
+          purgeLegacyDemo(aObj.user);
+          localStorage.setItem('red404_auth_session', JSON.stringify(aObj));
+        }
+      }
+      const regDonors = localStorage.getItem('red404_registered_donors');
+      if (regDonors) {
+        const dList = JSON.parse(regDonors);
+        if (Array.isArray(dList)) {
+          dList.forEach(purgeLegacyDemo);
+          localStorage.setItem('red404_registered_donors', JSON.stringify(dList));
+        }
+      }
+    } catch (_) {}
+
     initMobileNav();
     initGPSListener();
     initEditModal();
@@ -758,6 +798,11 @@
   function renderSingleQR(container, scanUrl, size = 180) {
     if (!container) return;
     container.innerHTML = '';
+    container.style.position = 'relative';
+    container.style.display = 'block';
+    container.style.margin = '0 auto';
+    container.style.width = size + 'px';
+    container.style.height = size + 'px';
 
     try {
       if (typeof QRCode !== 'undefined') {
@@ -768,6 +813,15 @@
           colorDark: '#0f172a',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
+        });
+
+        // Instant stacked overlay: prevent side-by-side rendering from millisecond 0
+        container.querySelectorAll('canvas, img').forEach(el => {
+          el.style.position = 'absolute';
+          el.style.top = '0';
+          el.style.left = '0';
+          el.style.width = '100%';
+          el.style.height = '100%';
         });
 
         // Anti-Double QR Fix with rock-solid Mobile & Zoom Support:
@@ -985,7 +1039,10 @@
       const facilityInput = document.getElementById('editDonorFacility');
 
       if (nameInput) nameInput.value = currentDonor.name || '';
-      if (fatherInput) fatherInput.value = currentDonor.fatherName || '';
+      if (fatherInput) {
+        const fn = currentDonor.fatherName || '';
+        fatherInput.value = fn.toLowerCase().includes('rajesh') ? '' : fn;
+      }
       if (bgInput) bgInput.value = currentDonor.bloodType || 'A+';
       if (genderInput) genderInput.value = currentDonor.gender || 'Male';
       if (dobInput) dobInput.value = currentDonor.dob || '';

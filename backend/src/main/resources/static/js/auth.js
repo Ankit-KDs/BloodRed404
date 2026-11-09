@@ -5,42 +5,22 @@
 
 'use strict';
 
-// Ensure primary donor account exists in local registry backup
+// Ensure primary donor account exists in local registry backup without demo overrides
 try {
   const localList = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
   const defaultRegDate = '2026-11-08T14:00:00.000Z';
   const existingIdx = localList.findIndex(d => d.email && d.email.trim().toLowerCase() === 'ak30kr02@gmail.com');
-  if (existingIdx === -1) {
-    localList.push({
-      id: 1,
-      name: 'Ankit Kumar',
-      firstName: 'Ankit',
-      lastName: 'Kumar',
-      email: 'ak30kr02@gmail.com',
-      phone: '9876543210',
-      password: '12345678',
-      bloodType: 'A+',
-      weight: 68,
-      availability: 'Available',
-      city: 'Meerut',
-      state: 'Uttar Pradesh',
-      address: 'Near Subharti, Delhi Road',
-      pincode: '250002',
-      zone: 'North Zone',
-      createdAt: defaultRegDate,
-      created_at: defaultRegDate
-    });
-    localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
-  } else {
+  if (existingIdx !== -1) {
     localList[existingIdx].password = '12345678';
     if (!localList[existingIdx].createdAt && !localList[existingIdx].created_at) {
       localList[existingIdx].createdAt = defaultRegDate;
       localList[existingIdx].created_at = defaultRegDate;
     }
+    // Clean out demo strings if present
+    if (localList[existingIdx].address && localList[existingIdx].address.includes('Near Subharti')) {
+      localList[existingIdx].address = null;
+    }
     localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
-  }
-  if (!localStorage.getItem('red404_reg_date_ak30kr02@gmail.com')) {
-    localStorage.setItem('red404_reg_date_ak30kr02@gmail.com', defaultRegDate);
   }
 } catch (_) {}
 
@@ -573,11 +553,9 @@ function initDonorLoginForm() {
             phone: '9876543210',
             password: '12345678',
             bloodType: 'A+',
-            weight: 68,
             availability: 'Available',
             city: 'Meerut',
             state: 'Uttar Pradesh',
-            address: 'Near Subharti, Delhi Road',
             pincode: '250002',
             zone: 'North Zone',
             createdAt: '2026-11-08T14:00:00.000Z',
