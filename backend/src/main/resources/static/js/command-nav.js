@@ -87,21 +87,81 @@
       });
     }
 
-    // 3. Logout action
+    // 3. Logout Confirmation Modal
+    function showLogoutModal() {
+      let modal = document.getElementById('logoutConfirmModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'logoutConfirmModal';
+        modal.className = 'logout-modal-backdrop';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'logoutModalTitle');
+        modal.innerHTML = `
+          <div class="logout-modal-card">
+            <div class="lmc-glow-ring">
+              <i class="fa-solid fa-power-off"></i>
+            </div>
+            <h3 class="lmc-title" id="logoutModalTitle">Confirm Session Termination</h3>
+            <p class="lmc-message">Are you sure you want to log out of your RED404 donor node?</p>
+            <div class="lmc-actions">
+              <button type="button" class="lmc-btn lmc-btn-cancel" id="cancelLogoutBtn">Cancel</button>
+              <button type="button" class="lmc-btn lmc-btn-confirm" id="confirmLogoutBtn">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>Confirm Logout</span>
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        const cancelBtn = modal.querySelector('#cancelLogoutBtn');
+        const confirmBtn = modal.querySelector('#confirmLogoutBtn');
+
+        const closeModal = () => {
+          modal.classList.remove('active');
+        };
+
+        cancelBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+          }
+        });
+
+        confirmBtn.addEventListener('click', () => {
+          try {
+            if (typeof Auth !== 'undefined' && Auth.clearSession) {
+              Auth.clearSession();
+            }
+            localStorage.removeItem('red404_donor_session');
+            sessionStorage.removeItem('red404_donor_session');
+            localStorage.removeItem('red404_session');
+            localStorage.removeItem('donorUser');
+            localStorage.removeItem('red404_donorToken');
+          } catch (err) {}
+          window.location.href = 'donor-login.html';
+        });
+      }
+
+      // Close dropdown menu
+      if (dropdown) dropdown.classList.remove('show');
+      if (avatarTrigger) avatarTrigger.setAttribute('aria-expanded', 'false');
+
+      // Animate modal entry
+      requestAnimationFrame(() => {
+        modal.classList.add('active');
+      });
+    }
+
     if (logoutBtn) {
       logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        try {
-          if (typeof Auth !== 'undefined' && Auth.clearSession) {
-            Auth.clearSession();
-          }
-          localStorage.removeItem('red404_donor_session');
-          sessionStorage.removeItem('red404_donor_session');
-          localStorage.removeItem('red404_session');
-          localStorage.removeItem('donorUser');
-          localStorage.removeItem('red404_donorToken');
-        } catch (err) {}
-        window.location.href = 'donor-login.html';
+        showLogoutModal();
       });
     }
 
@@ -168,7 +228,68 @@
         }
       });
     }
+    // 7. Conditional Emergency Radar Blinking Dot
+    updateEmergencyIndicator();
+    // Async check from backend if not already determined in storage
+    if (checkActiveEmergenciesCount() === 0) {
+      fetch('/api/requests').then(res => res.ok ? res.json() : null).then(json => {
+        if (json && json.success && Array.isArray(json.data)) {
+          const active = json.data.filter(r => (r.status || 'Active').toLowerCase() === 'active');
+          sessionStorage.setItem('red404_active_emergencies_count', String(active.length));
+          updateEmergencyIndicator(active.length);
+        }
+      }).catch(() => {});
+    }
   }
+
+  function updateEmergencyIndicator(count) {
+    const pulseDots = document.querySelectorAll('.tab-radar-pulse');
+    const alertTabs = document.querySelectorAll('.alert-radar-tab');
+    let hasAlerts = false;
+
+    if (typeof count === 'number') {
+      hasAlerts = count > 0;
+    } else {
+      hasAlerts = checkActiveEmergenciesCount() > 0;
+    }
+
+    pulseDots.forEach(dot => {
+      if (hasAlerts) {
+        dot.classList.add('active');
+        dot.style.display = 'inline-block';
+      } else {
+        dot.classList.remove('active');
+        dot.style.display = 'none';
+      }
+    });
+
+    alertTabs.forEach(tab => {
+      if (hasAlerts) {
+        tab.classList.add('has-emergencies');
+      } else {
+        tab.classList.remove('has-emergencies');
+      }
+    });
+  }
+
+  function checkActiveEmergenciesCount() {
+    try {
+      if (window.RED404_STATE && window.RED404_STATE.donorData && Array.isArray(window.RED404_STATE.donorData.activeAlerts)) {
+        return window.RED404_STATE.donorData.activeAlerts.length;
+      }
+      const rawCount = sessionStorage.getItem('red404_active_emergencies_count');
+      if (rawCount !== null) return parseInt(rawCount, 10) || 0;
+
+      const raw = sessionStorage.getItem('red404_active_emergencies') || localStorage.getItem('red404_active_emergencies');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed.length;
+      }
+    } catch (_) {}
+    return 0; // Default: 0 active emergencies -> hidden
+  }
+
+  window.updateEmergencyIndicator = updateEmergencyIndicator;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initCommandNav);

@@ -258,6 +258,14 @@
     const summaryContainer = document.getElementById('sos-summary-container');
     const actionContainer = document.getElementById('sos-action-container');
 
+    try {
+      const alertCount = donorData.activeAlerts ? donorData.activeAlerts.length : 0;
+      sessionStorage.setItem('red404_active_emergencies_count', String(alertCount));
+      if (typeof window.updateEmergencyIndicator === 'function') {
+        window.updateEmergencyIndicator(alertCount);
+      }
+    } catch (_) {}
+
     if (!summaryContainer) return;
 
     if (!donorData.activeAlerts || donorData.activeAlerts.length === 0) {
@@ -488,7 +496,7 @@
       strip.className = 'mini-eligibility-strip eligible';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE • Safe to Proceed</span>
+        <span>Status: ELIGIBLE TO DONATE</span>
       `;
       return;
     }
@@ -500,7 +508,7 @@
       strip.className = 'mini-eligibility-strip eligible';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE • Safe to Proceed</span>
+        <span>Status: ELIGIBLE TO DONATE</span>
       `;
       return;
     }
@@ -513,7 +521,7 @@
       strip.className = 'mini-eligibility-strip eligible';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE • Cooldown Complete</span>
+        <span>Status: ELIGIBLE TO DONATE</span>
       `;
     } else {
       strip.className = 'mini-eligibility-strip cooldown';

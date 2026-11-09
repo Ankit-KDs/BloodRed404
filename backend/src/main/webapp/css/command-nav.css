@@ -127,8 +127,13 @@
   background: #ef4444;
   box-shadow: 0 0 8px #ef4444;
   animation: radarDotPulse 1.8s infinite;
-  display: inline-block;
-  margin-left: 2px;
+  display: none; /* Conditional: only shows when active emergency requests exist */
+  margin-left: 4px;
+}
+
+.tab-radar-pulse.active,
+.alert-radar-tab.has-emergencies .tab-radar-pulse {
+  display: inline-block !important;
 }
 
 @keyframes radarDotPulse {
@@ -378,5 +383,132 @@
   .nav-gps-pill {
     display: none;
   }
+}
+
+/* ==================== SLEEK LOGOUT CONFIRMATION MODAL ==================== */
+.logout-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease-out;
+}
+
+.logout-modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.logout-modal-card {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(16, 20, 29, 0.94);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 20px;
+  padding: 30px 28px 24px;
+  box-sizing: border-box;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transform: scale(0.94) translateY(12px);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logout-modal-backdrop.active .logout-modal-card {
+  transform: scale(1) translateY(0);
+}
+
+.lmc-glow-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0.05) 70%);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.lmc-glow-ring i {
+  color: #ef4444;
+  font-size: 1.5rem;
+}
+
+.lmc-title {
+  margin: 0 0 10px;
+  font-family: 'Syne', 'Inter', -apple-system, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.lmc-message {
+  margin: 0 0 26px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+
+.lmc-actions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lmc-btn {
+  flex: 1;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.lmc-btn-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.lmc-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.lmc-btn-confirm {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4);
+}
+
+.lmc-btn-confirm:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  box-shadow: 0 6px 22px rgba(239, 68, 68, 0.6);
+  transform: translateY(-1px);
 }
 

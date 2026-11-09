@@ -324,6 +324,14 @@
         });
       }
 
+      // Update global emergency radar dot indicator
+      try {
+        sessionStorage.setItem('red404_active_emergencies_count', String(activeRequests.length));
+        if (typeof window.updateEmergencyIndicator === 'function') {
+          window.updateEmergencyIndicator(activeRequests.length);
+        }
+      } catch (_) {}
+
       // Render dynamically into feed container and update map
       renderEmergencyFeed();
       updateRadarVisualization();
