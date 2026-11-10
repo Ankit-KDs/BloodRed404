@@ -988,12 +988,37 @@ button {
   white-space: pre-line;
 }
 
+.red-dialog-msg:has(.privacy-modal-scroll),
+.red-dialog-msg.has-custom-html {
+  white-space: normal !important;
+  margin-bottom: 0.75rem !important;
+}
+
 .privacy-modal-scroll,
 .privacy-modal-scroll div,
 .privacy-modal-scroll p,
 .privacy-modal-scroll span,
 .privacy-modal-scroll strong {
   white-space: normal !important;
+  line-height: 1.35 !important;
+}
+
+.privacy-modal-scroll div {
+  margin-bottom: 8px !important;
+}
+
+.privacy-modal-scroll strong {
+  display: block;
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 0.88rem;
+  margin-bottom: 2px !important;
+}
+
+.privacy-modal-scroll p {
+  margin: 0 !important;
+  color: #94a3b8 !important;
+  font-size: 0.82rem;
   line-height: 1.35 !important;
 }
 

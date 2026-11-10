@@ -35,8 +35,10 @@
     }
 
     .search-hero {
-      padding: 7.5rem 0 2rem;
+      padding: 8.5rem 0 2.5rem;
       text-align: center;
+      position: relative;
+      z-index: 1;
     }
 
     .search-hero-badge {
@@ -562,12 +564,13 @@
 </head>
 <body class="search-page-wrapper">
 
-  <!-- ========== TOP NAVIGATION ========== -->
-  <nav class="navbar" id="navbar">
+  <!-- ========== TOP NAVIGATION (PUBLIC) ========== -->
+  <nav class="navbar navbar-solid" id="navbar" style="background: rgba(10, 10, 15, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="nav-container">
-      <a href="index.html" class="logo" style="text-decoration: none;">
+      <a href="index.html" class="nav-logo">
         <div class="logo-icon">
           <i class="fas fa-tint"></i>
+          <div class="pulse-ring"></div>
         </div>
         <span class="logo-text">RED<span class="logo-404">404</span></span>
       </a>
@@ -722,6 +725,7 @@
   </footer>
 
   <!-- ========== SCRIPT ========== -->
+  <script src="js/common.js?v=20261110_v38"></script>
   <script>
     // Anonymous donor dataset
     const ALL_DONORS = [

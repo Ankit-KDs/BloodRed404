@@ -59,3 +59,4 @@
   <rect x="120" y="266" width="160" height="22" rx="11" fill="rgba(230,57,70,0.12)" stroke="rgba(230,57,70,0.3)"/>
   <text x="200" y="281" fill="#ff6b6b" font-family="'Orbitron', monospace" font-size="9" font-weight="700" letter-spacing="1" text-anchor="middle">HAVERSINE RADAR ACTIVE</text>
 </svg>
+

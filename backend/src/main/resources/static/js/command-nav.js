@@ -35,8 +35,8 @@
     }
 
     const currentUser = session ? (session.user || session) : null;
-    const userName = (currentUser && (currentUser.name || (currentUser.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : null))) || 'Ankit Kumar';
-    const userEmail = (currentUser && currentUser.email) || 'ankit@red404.in';
+    const userName = (currentUser && (currentUser.name || (currentUser.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : null))) || 'Verified Donor';
+    const userEmail = (currentUser && currentUser.email) || '';
 
     // Compute initials (e.g., Ankit Kumar -> AK)
     const initials = userName
@@ -45,7 +45,7 @@
       .map(part => part[0])
       .join('')
       .substring(0, 2)
-      .toUpperCase() || 'AK';
+      .toUpperCase() || 'VD';
 
     if (avatarInitials) avatarInitials.textContent = initials;
     if (dropdownName) dropdownName.textContent = userName;
@@ -182,9 +182,30 @@
     }
 
     // 4. Settings & Privacy Modal Controller
+    function getFreshUser() {
+      try {
+        const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && (parsed.user || parsed.id || parsed.email)) return parsed.user || parsed;
+        }
+        if (typeof Auth !== 'undefined' && Auth.getSession) {
+          const u = Auth.getSession();
+          if (u) return u;
+        }
+        const rawSession = localStorage.getItem('red404_session');
+        if (rawSession) {
+          const s = JSON.parse(rawSession);
+          if (s) return s.user || s;
+        }
+      } catch (_) {}
+      return currentUser;
+    }
+
     function getSettingsHeaders() {
-      const donorId = (currentUser && currentUser.id) || '';
-      const donorEmail = (currentUser && currentUser.email) || '';
+      const activeUser = getFreshUser();
+      const donorId = (activeUser && activeUser.id) || '';
+      const donorEmail = (activeUser && activeUser.email) || '';
       let token = '';
       try {
         if (typeof Store !== 'undefined' && Store.get) {
@@ -470,9 +491,10 @@
           btnUpdate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
 
           try {
+            const activeUser = getFreshUser();
             const payload = {
-              donorId: (currentUser && currentUser.id) || '',
-              email: (currentUser && currentUser.email) || '',
+              donorId: (activeUser && activeUser.id) || '',
+              email: (activeUser && activeUser.email) || '',
               currentPassword,
               newPassword,
               confirmPassword
@@ -566,10 +588,11 @@
           btnDelete.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting account permanently...';
 
           try {
+            const activeUser = getFreshUser();
             const payload = {
-              donorId: (currentUser && currentUser.id) || '',
-              email: (currentUser && currentUser.email) || '',
-              phone: (currentUser && currentUser.phone) || ''
+              donorId: (activeUser && activeUser.id) || '',
+              email: (activeUser && activeUser.email) || '',
+              phone: (activeUser && activeUser.phone) || ''
             };
             const res = await fetch('/api/settings/delete-account', {
               method: 'POST',
@@ -580,25 +603,11 @@
             const json = await res.json();
             if (json && json.success) {
               try {
-                const curEmail = ((currentUser && currentUser.email) || '').trim().toLowerCase();
-                const curPhone = ((currentUser && currentUser.phone) || '').trim();
-                const rawList = localStorage.getItem('red404_registered_donors');
-                if (rawList) {
-                  try {
-                    const list = JSON.parse(rawList);
-                    const filtered = list.filter(d => {
-                      const demail = (d.email || '').trim().toLowerCase();
-                      const dphone = (d.phone || '').trim();
-                      return demail !== curEmail && (!curPhone || dphone !== curPhone);
-                    });
-                    localStorage.setItem('red404_registered_donors', JSON.stringify(filtered));
-                  } catch (_) {}
-                }
                 localStorage.clear();
                 sessionStorage.clear();
               } catch (_) {}
               alert('Your RED404 account and all associated records have been permanently deleted.');
-              window.location.href = 'donor-login.html?deleted=1';
+              window.location.href = 'index.html';
             } else {
               alert((json && json.message) || 'Account deletion failed. Please try again.');
               btnDelete.disabled = false;

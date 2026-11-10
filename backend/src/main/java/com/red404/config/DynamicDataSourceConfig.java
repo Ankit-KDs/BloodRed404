@@ -209,8 +209,8 @@ public class DynamicDataSourceConfig {
                 stmt.executeUpdate("UPDATE donors SET hemoglobin = NULL WHERE hemoglobin = 14.8");
                 stmt.executeUpdate("UPDATE donors SET blood_pressure = NULL WHERE blood_pressure = '120/80'");
                 stmt.executeUpdate("UPDATE donors SET body_temp = NULL WHERE body_temp = 98.6");
-                stmt.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15' AND (address IS NULL OR address = '')");
-                stmt.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0 AND (address IS NULL OR address = '')");
+                stmt.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15'");
+                stmt.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0");
             } catch (Exception ignored) {}
 
             // Check if donor 'ak30kr02@gmail.com' exists

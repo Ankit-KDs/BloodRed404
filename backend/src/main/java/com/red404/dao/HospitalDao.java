@@ -1,6 +1,7 @@
 package com.red404.dao;
 
 import com.red404.util.DBConnection;
+import com.red404.util.PasswordUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,7 +47,9 @@ public class HospitalDao {
             ps.setString(11, str(hospital.get("adminDesignation")));
             ps.setString(12, str(hospital.get("adminPhone")));
             ps.setString(13, str(hospital.get("adminEmail")));
-            ps.setString(14, str(hospital.get("password")));
+            String rawPw = str(hospital.get("password")).trim();
+            String pwToStore = PasswordUtil.isBCrypt(rawPw) ? rawPw : PasswordUtil.hashPassword(rawPw);
+            ps.setString(14, pwToStore);
             ps.setString(15, str(hospital.get("emergencyContact")));
             ps.setString(16, str(hospital.get("address")));
             ps.setString(17, (String) hospital.get("landmark"));
@@ -79,7 +82,7 @@ public class HospitalDao {
                 "OR TRIM(admin_phone) = ? " +
                 "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(hospital_phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
                 "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(admin_phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
-                ") AND TRIM(password) = ?";
+                ")";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, cleanEmail);
@@ -90,9 +93,22 @@ public class HospitalDao {
             ps.setString(6, last10);
             ps.setString(7, last10);
             ps.setString(8, last10);
-            ps.setString(9, cleanPw);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? mapHospital(rs) : null;
+                while (rs.next()) {
+                    String storedPw = rs.getString("password");
+                    if (PasswordUtil.checkPassword(cleanPw, storedPw)) {
+                        int hospId = rs.getInt("id");
+                        if (!PasswordUtil.isBCrypt(storedPw)) {
+                            try (PreparedStatement up = conn.prepareStatement("UPDATE hospitals SET password = ? WHERE id = ?")) {
+                                up.setString(1, PasswordUtil.hashPassword(cleanPw));
+                                up.setInt(2, hospId);
+                                up.executeUpdate();
+                            } catch (Exception ignored) {}
+                        }
+                        return mapHospital(rs);
+                    }
+                }
+                return null;
             }
         }
     }

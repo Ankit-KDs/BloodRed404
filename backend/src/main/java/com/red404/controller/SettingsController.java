@@ -204,12 +204,18 @@ public class SettingsController {
                 session.invalidate();
             }
 
-            ResponseCookie clearCookie = ResponseCookie.from("JSESSIONID", "")
+            ResponseCookie clearCookie1 = ResponseCookie.from("RED404_SESSION", "")
                     .path("/")
                     .maxAge(0)
                     .httpOnly(true)
                     .build();
-            response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+            ResponseCookie clearCookie2 = ResponseCookie.from("JSESSIONID", "")
+                    .path("/")
+                    .maxAge(0)
+                    .httpOnly(true)
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, clearCookie1.toString());
+            response.addHeader(HttpHeaders.SET_COOKIE, clearCookie2.toString());
 
             return ResponseEntity.ok(new ApiResponse(true, "Account and all associated records permanently deleted.", null));
         } catch (Exception e) {
@@ -255,20 +261,20 @@ public class SettingsController {
 
         Map<String, Object> donor = null;
 
-        // Resolve by ID
-        if (donorIdHeader != null && !donorIdHeader.isBlank()) {
+        // Resolve by Email first if provided (prevents stale ID collision)
+        if (donorEmailHeader != null && !donorEmailHeader.isBlank()) {
+            try {
+                donor = donorDao.findByEmail(donorEmailHeader.trim().toLowerCase());
+            } catch (Exception ignored) {}
+        }
+
+        // Resolve by ID if email did not resolve
+        if (donor == null && donorIdHeader != null && !donorIdHeader.isBlank()) {
             try {
                 int id = Integer.parseInt(donorIdHeader.trim());
                 if (id > 0) {
                     donor = donorDao.findById(id);
                 }
-            } catch (Exception ignored) {}
-        }
-
-        // Resolve by Email
-        if (donor == null && donorEmailHeader != null && !donorEmailHeader.isBlank()) {
-            try {
-                donor = donorDao.findByEmail(donorEmailHeader.trim().toLowerCase());
             } catch (Exception ignored) {}
         }
 

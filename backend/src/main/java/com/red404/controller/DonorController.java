@@ -42,21 +42,23 @@ public class DonorController {
     @GetMapping({"/profile", "/profile-data"})
     public ResponseEntity<ApiResponse> getProfile(
             @RequestParam(required = false) Integer donorId,
+            @RequestParam(required = false) String email,
             HttpServletRequest request) {
         try {
-            int targetId = 0;
-            if (donorId != null && donorId > 0) {
-                targetId = donorId;
-            } else {
+            Map<String, Object> donorProfile = null;
+            if (email != null && !email.isBlank()) {
+                donorProfile = donorDao.findByEmail(email.trim().toLowerCase());
+            }
+            if (donorProfile == null && donorId != null && donorId > 0) {
+                donorProfile = donorDao.findById(donorId);
+            }
+            if (donorProfile == null) {
                 Map<String, Object> donor = requireDonor(request);
                 if (donor != null && donor.get("id") != null) {
-                    targetId = ((Number) donor.get("id")).intValue();
+                    int targetId = ((Number) donor.get("id")).intValue();
+                    donorProfile = donorDao.findById(targetId);
                 }
             }
-            if (targetId == 0) {
-                return unauthorized();
-            }
-            Map<String, Object> donorProfile = donorDao.findById(targetId);
             if (donorProfile == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse(false, "Donor profile not found."));
@@ -78,7 +80,10 @@ public class DonorController {
                 profile = donorDao.findByToken(token);
             }
             if (profile == null && donorId != null && donorId > 0) {
-                profile = donorDao.findById(donorId);
+                profile = donorDao.findSnapshotByDonorId(donorId);
+                if (profile == null) {
+                    profile = donorDao.findById(donorId);
+                }
             }
             if (profile == null && donor != null && !donor.isBlank()) {
                 profile = donorDao.findByToken(donor);
@@ -88,6 +93,25 @@ public class DonorController {
                         .body(new ApiResponse(false, "Donor intake record not found. Please re-scan QR code."));
             }
             return ok("Donor scan profile retrieved successfully", profile);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/snapshot")
+    public ResponseEntity<ApiResponse> saveSnapshot(@RequestBody JsonNode body) {
+        try {
+            String token = JsonUtil.text(body, "token").trim();
+            Integer donorId = JsonUtil.asInt(body, "donorId", 0);
+            if (donorId <= 0) donorId = null;
+            JsonNode dataNode = body.get("data");
+            if (dataNode != null && !token.isBlank()) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Object> dataMap = mapper.convertValue(dataNode, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                donorDao.saveSnapshot(token, donorId, dataMap);
+                return ok("Snapshot frozen successfully", token);
+            }
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid snapshot payload"));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -463,9 +487,20 @@ public class DonorController {
                 targetId = ((Number) donor.get("id")).intValue();
             } else {
                 targetId = JsonUtil.asInt(body, "id", 0);
-                if (targetId <= 0) targetId = JsonUtil.asInt(body, "donorId", 1);
+                if (targetId <= 0) targetId = JsonUtil.asInt(body, "donorId", 0);
             }
-            if (targetId <= 0) targetId = 1;
+            if (targetId <= 0) {
+                String email = JsonUtil.textOrNull(body, "email");
+                if (email != null && !email.isBlank()) {
+                    Map<String, Object> found = donorDao.findByEmail(email.trim().toLowerCase());
+                    if (found != null && found.get("id") != null) {
+                        targetId = ((Number) found.get("id")).intValue();
+                    }
+                }
+            }
+            if (targetId <= 0) {
+                return unauthorized();
+            }
 
             Map<String, Object> fields = new HashMap<>();
             String nameVal = JsonUtil.textOrNull(body, "name") != null ? JsonUtil.text(body, "name") : JsonUtil.textOrNull(body, "fullName");

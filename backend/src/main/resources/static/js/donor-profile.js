@@ -8,13 +8,13 @@
 
   // State: Initialized with null vitals (empty placeholders until hospital logs checkup)
   let currentDonor = {
-    id: 1,
-    name: 'Ankit Kumar',
+    id: null,
+    name: null,
     fatherName: null,
-    email: 'ak30kr02@gmail.com',
-    bloodType: 'A+',
+    email: null,
+    bloodType: null,
     age: null,
-    gender: 'Male',
+    gender: null,
     phone: null,
     dob: null,
     address: null,
@@ -246,9 +246,13 @@
       }
 
       // 2. Fetch fresh dynamic profile from API (/api/donor/profile-data or /api/donor/profile)
-      let res = await fetch(`/api/donor/profile-data?donorId=${currentDonor.id}`, { cache: 'no-store' });
+      const qParams = new URLSearchParams();
+      if (currentDonor.email) qParams.set('email', currentDonor.email);
+      if (currentDonor.id) qParams.set('donorId', currentDonor.id);
+      const qStr = qParams.toString() ? '?' + qParams.toString() : '';
+      let res = await fetch(`/api/donor/profile-data${qStr}`, { cache: 'no-store' });
       if (!res.ok) {
-        res = await fetch(`/api/donor/profile?donorId=${currentDonor.id}`, { cache: 'no-store' });
+        res = await fetch(`/api/donor/profile${qStr}`, { cache: 'no-store' });
       }
       if (res.ok) {
         const json = await res.json();

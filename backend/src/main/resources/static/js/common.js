@@ -512,7 +512,7 @@ function showAppConfirm(opts = {}) {
           <i class="fas ${icon}"></i>
         </div>
         <div class="red-dialog-title">${title}</div>
-        <div class="red-dialog-msg">${bodyHtml}</div>
+        <div class="red-dialog-msg ${opts.html ? 'has-custom-html' : ''}" style="${opts.html ? 'white-space: normal !important;' : ''}">${bodyHtml}</div>
         <div class="red-dialog-actions">
           <button class="red-dialog-btn cancel" id="dlgCancelBtn">${cancelText}</button>
           <button class="red-dialog-btn confirm ${type}" id="dlgConfirmBtn">${confirmText}</button>
@@ -557,7 +557,7 @@ function showAppAlert(opts = {}) {
           <i class="fas ${icon}"></i>
         </div>
         <div class="red-dialog-title">${title}</div>
-        <div class="red-dialog-msg">${bodyHtml}</div>
+        <div class="red-dialog-msg ${opts.html ? 'has-custom-html' : ''}" style="${opts.html ? 'white-space: normal !important;' : ''}">${bodyHtml}</div>
         <div class="red-dialog-actions single">
           <button class="red-dialog-btn confirm ${type}" id="dlgOkBtn">${btnText}</button>
         </div>

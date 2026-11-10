@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -718,7 +719,7 @@
         border-top: 1px solid var(--border-light) !important;
       }
 
-      .clinical-table tr > th:first-child {
+      .clinical-table tr>th:first-child {
         border-top: none !important;
       }
 
@@ -740,7 +741,7 @@
         gap: 16px !important;
       }
     }
-  
+
     /* Simple End-of-Form Buttons (No heavy design) */
     .form-end-actions {
       display: flex;
@@ -748,6 +749,7 @@
       gap: 14px;
       margin: 28px auto 40px;
     }
+
     .btn-simple-action {
       appearance: none;
       background: #ffffff;
@@ -762,15 +764,18 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       transition: background 0.15s ease, border-color 0.15s ease;
     }
+
     .btn-simple-action:hover {
       background: #f8fafc;
       border-color: #94a3b8;
     }
+
     @media (max-width: 480px) {
       .form-end-actions {
         gap: 8px;
         padding: 0 8px;
       }
+
       .btn-simple-action {
         flex: 1 1 0;
         padding: 10px 8px;
@@ -778,16 +783,18 @@
         text-align: center;
       }
     }
+
     /* ============================================================
        GUARANTEED 1-PAGE A4 PDF EXPORT STYLING (FOR DOWNLOAD PDF)
        Ensures desktop 2-column clinical table layout on ALL screen sizes
        No negative offset, no content clipping, exact 794px width
        ============================================================ */
     #pdf-render-container {
-      position: fixed !important;
+      position: absolute !important;
       top: 0 !important;
       left: 0 !important;
       width: 794px !important;
+      min-width: 794px !important;
       max-width: 794px !important;
       background: #ffffff !important;
       z-index: 999999 !important;
@@ -1024,17 +1031,19 @@
     @media print {
       @page {
         size: A4 portrait;
-        margin: 5mm 6mm;
+        margin: 0 !important;
       }
 
-      html, body {
+      html,
+      body {
         background: #ffffff !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        height: auto !important;
+        height: 100% !important;
         min-height: 0 !important;
         max-height: 100% !important;
+        overflow: hidden !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -1052,6 +1061,7 @@
         width: 100% !important;
         max-width: 100% !important;
         min-height: 0 !important;
+        max-height: 287mm !important;
         height: auto !important;
         margin: 0 !important;
         padding: 2px 4px !important;
@@ -1063,6 +1073,7 @@
         break-after: avoid !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
+        overflow: hidden !important;
       }
 
       .sheet-content {
@@ -1285,18 +1296,19 @@
         display: none !important;
       }
     }
-</style>
+  </style>
 </head>
+
 <body>
 
   <!-- ==================== A4 FORMAL CLINICAL RECORD SHEET ==================== -->
   <main class="a4-clinical-sheet" id="clinicalSheet">
-    
+
     <!-- Background Watermark -->
     <div class="sheet-watermark">RED404 VERIFIED INTAKE</div>
 
     <div class="sheet-content">
-      
+
       <!-- Upper Header -->
       <header class="sheet-header-top">
         <div class="inst-brand-col">
@@ -1305,7 +1317,6 @@
           </div>
           <div class="inst-text-block">
             <h1>RED<span>404</span> Emergency Blood Network</h1>
-            <p>National Emergency Transfusion &amp; Telemetry Command</p>
           </div>
         </div>
 
@@ -1334,7 +1345,7 @@
             Identity Verified
           </span>
           <h2 class="dib-donor-name" id="viewDonorName">N/A</h2>
-          
+
           <div class="dib-subdetails">
             <div>Father's Name: <strong id="viewDonorFatherName">N/A</strong></div>
             <div>Donor ID: <span class="dib-id-badge" id="viewDonorId">N/A</span></div>
@@ -1473,13 +1484,15 @@
         </div>
         <div>
           <h3 class="hmc-title">Confirm Blood Collection Intake</h3>
-          <span style="font-size:0.75rem; color:#64748b; text-transform:uppercase; font-weight:700;">RED404 Clinical Phlebotomy Registry</span>
+          <span style="font-size:0.75rem; color:#64748b; text-transform:uppercase; font-weight:700;">RED404 Clinical
+            Phlebotomy Registry</span>
         </div>
       </div>
 
       <div class="hmc-body">
-        <p>You are about to log an official hospital intake verification audit for donor <strong id="modalDonorName">-</strong> into the MySQL database.</p>
-        
+        <p>You are about to log an official hospital intake verification audit for donor <strong
+            id="modalDonorName">-</strong> into the MySQL database.</p>
+
         <table class="hmc-meta-table">
           <tr>
             <td><strong>Donor ID:</strong></td>
@@ -1496,12 +1509,14 @@
         </table>
 
         <p style="font-size:0.8rem; color:#64748b;">
-          Logging this event will register the intake audit with timestamp and update the hospital's clinical donation ledger.
+          Logging this event will register the intake audit with timestamp and update the hospital's clinical donation
+          ledger.
         </p>
       </div>
 
       <div class="hmc-actions">
-        <button type="button" class="tb-btn" id="btnCancelModal" style="color:#475569; background:#f1f5f9; border-color:#cbd5e1;">Cancel</button>
+        <button type="button" class="tb-btn" id="btnCancelModal"
+          style="color:#475569; background:#f1f5f9; border-color:#cbd5e1;">Cancel</button>
         <button type="button" class="tb-btn tb-btn-primary" id="btnConfirmCollection">
           <i class="fa-solid fa-check"></i>
           <span>Confirm &amp; Log Audit</span>
@@ -1541,7 +1556,7 @@
               bindToolbarActions(token);
               return; // STOP: Preserved frozen snapshot
             }
-          } catch (_) {}
+          } catch (_) { }
         }
 
         // 2. Format current scan timestamp fallback
@@ -1626,7 +1641,7 @@
             sessionStorage.setItem(key, payloadStr);
             localStorage.setItem(key, payloadStr);
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       function valOrNA(val, suffix) {
@@ -1638,16 +1653,16 @@
         // Strict guard against legacy hardcoded demo strings
         const lower = str.toLowerCase();
         if (lower === 'rajesh kumar' ||
-            lower.includes('rajesh') ||
-            lower.includes('near subharti') ||
-            lower.includes('delhi road') ||
-            lower.includes('no known drug allergies') ||
-            lower.includes('normal screening') ||
-            lower.includes('none reported') ||
-            lower.includes('city general hospital') ||
-            lower === 'voluntary lifesaver' ||
-            lower.includes('unrestricted') ||
-            lower === '2024-01-10') {
+          lower.includes('rajesh') ||
+          lower.includes('near subharti') ||
+          lower.includes('delhi road') ||
+          lower.includes('no known drug allergies') ||
+          lower.includes('normal screening') ||
+          lower.includes('none reported') ||
+          lower.includes('city general hospital') ||
+          lower === 'voluntary lifesaver' ||
+          lower.includes('unrestricted') ||
+          lower === '2024-01-10') {
           return 'N/A';
         }
         return suffix ? (str + ' ' + suffix) : str;
@@ -1712,7 +1727,7 @@
         setTxt('viewTableAgeGender', ageGenderText);
         setTxt('viewTablePhone', valOrNA(d.phone));
         setTxt('viewTableEmail', valOrNA(d.email));
-        
+
         const addrParts = [d.address, d.city, d.state, d.pincode]
           .filter(p => p && String(p).trim() && String(p).toLowerCase() !== 'null' && String(p).toLowerCase() !== 'undefined')
           .map(p => String(p).trim())
@@ -1733,19 +1748,19 @@
         // Section 3: Medical Screening & Vitals
         const hb = (d.hemoglobin !== null && d.hemoglobin !== undefined && String(d.hemoglobin).trim() !== '' && String(d.hemoglobin).toLowerCase() !== 'null') ? `${d.hemoglobin} g/dL` : 'N/A';
         setTxt('viewTableHemoglobin', hb);
-        
+
         const bpRaw = valOrNA(d.bloodPressure || d.blood_pressure);
         setTxt('viewTableBp', bpRaw !== 'N/A' ? `${bpRaw} mmHg` : 'N/A');
-        
+
         const pulse = (d.pulse !== null && d.pulse !== undefined && String(d.pulse).trim() !== '' && String(d.pulse).toLowerCase() !== 'null') ? `${d.pulse} bpm` : 'N/A';
         setTxt('viewTablePulse', pulse);
-        
+
         const temp = (d.bodyTemp !== null && d.bodyTemp !== undefined && String(d.bodyTemp).trim() !== '' && String(d.bodyTemp).toLowerCase() !== 'null') ? `${d.bodyTemp}° F` : 'N/A';
         setTxt('viewTableTemp', temp);
-        
+
         const weightVal = (d.weight !== null && d.weight !== undefined && String(d.weight).trim() !== '' && String(d.weight).toLowerCase() !== 'null') ? `${d.weight} kg` : 'N/A';
         setTxt('viewTableWeight', weightVal);
-        
+
         setTxt('viewTableEligibility', d.availability ? d.availability : 'N/A');
 
         setTxt('viewTableAllergies', valOrNA(d.allergies));
@@ -1798,19 +1813,21 @@
             const donorName = ((donorData && donorData.name) || 'Donor').replace(/\s+/g, '_');
 
             try {
+              window.scrollTo(0, 0);
               const html2canvasFn = window.html2canvas || (typeof html2canvas !== 'undefined' ? html2canvas : null);
 
               if (html2canvasFn) {
-                const canvas = await html2canvasFn(clone, {
+                const canvas = await html2canvasFn(container, {
                   scale: 2,
                   useCORS: true,
                   logging: false,
+                  backgroundColor: '#ffffff',
+                  width: 794,
+                  windowWidth: 800,
                   scrollX: 0,
                   scrollY: 0,
                   x: 0,
-                  y: 0,
-                  width: 794,
-                  windowWidth: 794
+                  y: 0
                 });
 
                 const imgData = canvas.toDataURL('image/jpeg', 0.98);
@@ -1825,10 +1842,10 @@
 
                   const pageWidth = 210;
                   const pageHeight = 297;
-                  const marginH = 6;
-                  const marginV = 6;
-                  const availW = pageWidth - (marginH * 2);   // 198 mm
-                  const availH = pageHeight - (marginV * 2); // 285 mm
+                  const marginH = 4;
+                  const marginV = 4;
+                  const availW = pageWidth - (marginH * 2);   // 202 mm
+                  const availH = pageHeight - (marginV * 2); // 289 mm
 
                   const imgW = canvas.width;
                   const imgH = canvas.height;
@@ -1849,27 +1866,27 @@
                   pdf.save(`RED404_Clinical_Record_${donorName}.pdf`);
                 } else if (typeof html2pdf !== 'undefined') {
                   const opt = {
-                    margin: [6, 6, 6, 6],
+                    margin: [4, 4, 4, 4],
                     filename: `RED404_Clinical_Record_${donorName}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, x: 0, y: 0, width: 794, windowWidth: 794 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', width: 794, windowWidth: 800, scrollX: 0, scrollY: 0, x: 0, y: 0 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak: { mode: 'avoid-all' }
                   };
-                  await html2pdf().set(opt).from(clone).save();
+                  await html2pdf().set(opt).from(container).save();
                 } else {
                   window.print();
                 }
               } else if (typeof html2pdf !== 'undefined') {
                 const opt = {
-                  margin: [6, 6, 6, 6],
+                  margin: [4, 4, 4, 4],
                   filename: `RED404_Clinical_Record_${donorName}.pdf`,
                   image: { type: 'jpeg', quality: 0.98 },
-                  html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, x: 0, y: 0, width: 794, windowWidth: 794 },
+                  html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', width: 794, windowWidth: 800, scrollX: 0, scrollY: 0, x: 0, y: 0 },
                   jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                   pagebreak: { mode: 'avoid-all' }
                 };
-                await html2pdf().set(opt).from(clone).save();
+                await html2pdf().set(opt).from(container).save();
               } else {
                 window.print();
               }
@@ -1890,10 +1907,24 @@
         const btnShare = document.getElementById('btnShareForm');
         if (btnShare) {
           btnShare.addEventListener('click', async () => {
-            let shareUrl = window.location.href;
-            if (activeToken && !shareUrl.includes('token=')) {
-              shareUrl = `${window.location.origin}/user-detail-form.html?token=${encodeURIComponent(activeToken)}`;
+            let tokenToShare = activeToken || (donorData && (donorData.token || donorData.qrToken || donorData.qr_token));
+            if (!tokenToShare && donorData) {
+              tokenToShare = 'RED404-SNAP-' + (donorData.id || 1) + '-' + Date.now();
             }
+            if (tokenToShare && donorData) {
+              try {
+                await fetch('/api/donors/snapshot', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    token: tokenToShare,
+                    donorId: donorData.id || null,
+                    data: donorData
+                  })
+                });
+              } catch (_) {}
+            }
+            const shareUrl = `${window.location.origin}/user-detail-form.html?token=${encodeURIComponent(tokenToShare)}`;
             if (navigator.share) {
               try {
                 await navigator.share({
@@ -1972,5 +2003,5 @@
     })();
   </script>
 </body>
-</html>
 
+</html>

@@ -8,14 +8,14 @@
 
   // Master State Object (Default: Pure Empty / Verified State)
   const donorData = {
-    name: "Ankit Kumar",
-    email: "ak30kr02@gmail.com",
-    bloodGroup: "A+",
+    name: "",
+    email: "",
+    bloodGroup: "",
     location: sessionStorage.getItem('red404_donor_detected_location') || "Locating...",
     district: "",
     donations: [], // Real clinical history (Empty by default)
     activeAlerts: [], // Real emergencies (Empty by default)
-    profileCreatedAt: "Nov 8, 2026"
+    profileCreatedAt: ""
   };
 
   /**

@@ -324,6 +324,26 @@ public class DonorDao {
         return null;
     }
 
+    public Map<String, Object> findSnapshotByDonorId(Integer donorId) {
+        if (donorId == null || donorId <= 0) return null;
+        String sql = "SELECT snapshot_json FROM intake_snapshots WHERE donor_id = ? ORDER BY created_at DESC LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String json = rs.getString("snapshot_json");
+                    if (json != null && !json.isBlank()) {
+                        try {
+                            return MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {});
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     public boolean saveSnapshot(String token, Integer donorId, Map<String, Object> data) {
         if (token == null || token.isBlank() || data == null) return false;
         String sql = "INSERT INTO intake_snapshots (token, donor_id, snapshot_json, created_at) " +
