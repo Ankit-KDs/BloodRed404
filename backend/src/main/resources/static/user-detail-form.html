@@ -16,7 +16,9 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-  <!-- html2pdf for Direct PDF Export -->
+  <!-- html2canvas and jsPDF for Guaranteed 1-Page PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
@@ -777,12 +779,252 @@
       }
     }
     /* ============================================================
+       GUARANTEED 1-PAGE A4 PDF EXPORT STYLING (FOR DOWNLOAD PDF)
+       Ensures desktop 2-column clinical table layout on ALL screen sizes
+       No negative offset, no content clipping, exact 794px width
+       ============================================================ */
+    #pdf-render-container {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 794px !important;
+      max-width: 794px !important;
+      background: #ffffff !important;
+      z-index: 999999 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+      overflow: visible !important;
+    }
+
+    #pdf-render-container .a4-clinical-sheet {
+      width: 794px !important;
+      max-width: 794px !important;
+      min-height: auto !important;
+      margin: 0 !important;
+      padding: 16px 20px !important;
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      background: #ffffff !important;
+      box-sizing: border-box !important;
+    }
+
+    #pdf-render-container .sheet-watermark {
+      display: none !important;
+    }
+
+    #pdf-render-container .sheet-header-top {
+      display: flex !important;
+      flex-direction: row !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      margin-bottom: 8px !important;
+      padding-bottom: 6px !important;
+      border-bottom: 2px solid #dc2626 !important;
+    }
+
+    #pdf-render-container .inst-brand-col {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 10px !important;
+    }
+
+    #pdf-render-container .inst-logo-shield {
+      width: 36px !important;
+      height: 36px !important;
+      font-size: 1.2rem !important;
+    }
+
+    #pdf-render-container .inst-text-block h1 {
+      font-size: 1.1rem !important;
+      line-height: 1.15 !important;
+    }
+
+    #pdf-render-container .inst-text-block p {
+      font-size: 0.66rem !important;
+    }
+
+    #pdf-render-container .doc-type-col {
+      text-align: right !important;
+    }
+
+    #pdf-render-container .doc-type-title {
+      font-size: 0.95rem !important;
+    }
+
+    #pdf-render-container .doc-meta-sub {
+      font-size: 0.65rem !important;
+      margin-top: 2px !important;
+    }
+
+    #pdf-render-container .donor-identity-banner {
+      display: grid !important;
+      grid-template-columns: 72px 1fr 150px !important;
+      gap: 12px !important;
+      padding: 8px 12px !important;
+      margin-bottom: 8px !important;
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 6px !important;
+      text-align: left !important;
+    }
+
+    #pdf-render-container .dib-photo-col {
+      width: 72px !important;
+      height: 72px !important;
+      margin: 0 !important;
+    }
+
+    #pdf-render-container .dib-avatar-initials {
+      font-size: 1.5rem !important;
+    }
+
+    #pdf-render-container .dib-info-col {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      justify-content: center !important;
+      text-align: left !important;
+      gap: 2px !important;
+    }
+
+    #pdf-render-container .dib-verified-tag {
+      font-size: 0.64rem !important;
+      padding: 1px 6px !important;
+      margin-bottom: 2px !important;
+    }
+
+    #pdf-render-container .dib-donor-name {
+      font-size: 1.25rem !important;
+      margin: 1px 0 !important;
+      line-height: 1.2 !important;
+    }
+
+    #pdf-render-container .dib-subdetails {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      gap: 12px !important;
+      font-size: 0.72rem !important;
+      justify-content: flex-start !important;
+    }
+
+    #pdf-render-container .dib-blood-box {
+      width: auto !important;
+      max-width: 150px !important;
+      margin: 0 !important;
+      padding: 6px 10px !important;
+    }
+
+    #pdf-render-container .dbb-top-label {
+      font-size: 0.60rem !important;
+    }
+
+    #pdf-render-container .dbb-blood-type {
+      font-size: 1.8rem !important;
+      line-height: 1 !important;
+      margin: 2px 0 !important;
+    }
+
+    #pdf-render-container .dbb-rh-label {
+      font-size: 0.62rem !important;
+    }
+
+    #pdf-render-container .form-section-block {
+      margin-bottom: 8px !important;
+    }
+
+    #pdf-render-container .section-head-bar {
+      display: flex !important;
+      flex-direction: row !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      padding: 4px 10px !important;
+      font-size: 0.74rem !important;
+      font-weight: 700 !important;
+      background: #0f172a !important;
+      color: #ffffff !important;
+      border-radius: 4px 4px 0 0 !important;
+      margin-bottom: 0 !important;
+    }
+
+    #pdf-render-container .section-head-bar span.sec-badge {
+      font-size: 0.64rem !important;
+      padding: 1px 6px !important;
+    }
+
+    #pdf-render-container .clinical-table {
+      display: table !important;
+      width: 100% !important;
+      border-collapse: collapse !important;
+      border: 1px solid #cbd5e1 !important;
+      margin-bottom: 0 !important;
+      font-size: 0.72rem !important;
+    }
+
+    #pdf-render-container .clinical-table tbody {
+      display: table-row-group !important;
+    }
+
+    #pdf-render-container .clinical-table tr {
+      display: table-row !important;
+      border: none !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+      background: transparent !important;
+    }
+
+    #pdf-render-container .clinical-table th {
+      display: table-cell !important;
+      width: 22% !important;
+      padding: 4px 8px !important;
+      font-size: 0.68rem !important;
+      font-weight: 700 !important;
+      color: #475569 !important;
+      background: #f8fafc !important;
+      border: none !important;
+      border-right: 1px solid #e2e8f0 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      vertical-align: middle !important;
+      box-sizing: border-box !important;
+      line-height: 1.3 !important;
+      text-transform: none !important;
+      letter-spacing: normal !important;
+    }
+
+    #pdf-render-container .clinical-table td {
+      display: table-cell !important;
+      width: 28% !important;
+      padding: 4px 8px !important;
+      font-size: 0.72rem !important;
+      color: #0f172a !important;
+      background: #ffffff !important;
+      border: none !important;
+      border-right: 1px solid #e2e8f0 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      vertical-align: middle !important;
+      box-sizing: border-box !important;
+      line-height: 1.3 !important;
+    }
+
+    #pdf-render-container .clinical-table td:last-child {
+      border-right: none !important;
+    }
+
+    #pdf-render-container .clinical-table td[colspan="3"] {
+      width: 78% !important;
+    }
+
+    /* ============================================================
        STRICT 1-PAGE A4 PRINT STYLES (OVERRIDES ALL SCREEN & MOBILE STYLES)
        ============================================================ */
     @media print {
       @page {
         size: A4 portrait;
-        margin: 4mm 6mm;
+        margin: 5mm 6mm;
       }
 
       html, body {
@@ -791,6 +1033,8 @@
         padding: 0 !important;
         width: 100% !important;
         height: auto !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -799,21 +1043,26 @@
       .hospital-modal-backdrop,
       .form-end-actions,
       .mini-footer,
-      footer {
+      footer,
+      #pdf-render-container {
         display: none !important;
       }
 
       .a4-clinical-sheet {
         width: 100% !important;
         max-width: 100% !important;
+        min-height: 0 !important;
+        height: auto !important;
         margin: 0 !important;
-        padding: 4px 6px !important;
+        padding: 2px 4px !important;
         border: none !important;
         box-shadow: none !important;
         border-radius: 0 !important;
         box-sizing: border-box !important;
         page-break-after: avoid !important;
         break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
 
       .sheet-content {
@@ -826,62 +1075,123 @@
         flex-direction: row !important;
         justify-content: space-between !important;
         align-items: center !important;
-        margin-bottom: 6px !important;
-        padding-bottom: 4px !important;
+        margin-bottom: 4px !important;
+        padding-bottom: 3px !important;
         border-bottom: 1.5px solid #dc2626 !important;
+      }
+
+      .inst-brand-col {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+      }
+
+      .inst-logo-shield {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 1rem !important;
+        border-radius: 6px !important;
+      }
+
+      .inst-text-block h1 {
+        font-size: 0.95rem !important;
+        line-height: 1.15 !important;
+      }
+
+      .inst-text-block p {
+        font-size: 0.58rem !important;
+        margin-top: 1px !important;
+      }
+
+      .doc-type-col {
+        text-align: right !important;
+      }
+
+      .doc-type-title {
+        font-size: 0.82rem !important;
+      }
+
+      .doc-meta-sub {
+        font-size: 0.58rem !important;
+        margin-top: 1px !important;
       }
 
       .donor-identity-banner {
         display: grid !important;
-        grid-template-columns: 60px 1fr 140px !important;
+        grid-template-columns: 52px 1fr 130px !important;
         gap: 8px !important;
-        padding: 6px 10px !important;
-        margin-bottom: 6px !important;
+        padding: 4px 8px !important;
+        margin-bottom: 4px !important;
         background: #f8fafc !important;
         border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important;
+        border-radius: 4px !important;
         text-align: left !important;
       }
 
+      .dib-photo-col {
+        width: 52px !important;
+        height: 52px !important;
+        margin: 0 !important;
+      }
+
       .dib-avatar-initials {
-        width: 48px !important;
-        height: 48px !important;
-        font-size: 1.2rem !important;
+        font-size: 1.15rem !important;
+      }
+
+      .dib-info-col {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        text-align: left !important;
+        gap: 1px !important;
+      }
+
+      .dib-verified-tag {
+        font-size: 0.58rem !important;
+        padding: 1px 4px !important;
+        margin-bottom: 1px !important;
       }
 
       .dib-donor-name {
-        font-size: 1.1rem !important;
-        margin: 1px 0 !important;
+        font-size: 1.05rem !important;
+        margin: 0 !important;
+        line-height: 1.1 !important;
       }
 
       .dib-subdetails {
         display: flex !important;
         flex-direction: row !important;
         gap: 8px !important;
-        font-size: 0.68rem !important;
+        font-size: 0.64rem !important;
         justify-content: flex-start !important;
+        margin-top: 1px !important;
       }
 
       .dib-blood-box {
-        padding: 4px 8px !important;
-        max-width: 130px !important;
+        padding: 2px 6px !important;
+        max-width: 120px !important;
+        margin: 0 !important;
+        border: 1px solid #f87171 !important;
       }
 
       .dbb-top-label {
-        font-size: 0.55rem !important;
+        font-size: 0.52rem !important;
       }
 
       .dbb-blood-type {
-        font-size: 1.3rem !important;
-        line-height: 1.1 !important;
+        font-size: 1.25rem !important;
+        line-height: 1 !important;
+        margin: 1px 0 !important;
       }
 
       .dbb-rh-label {
-        font-size: 0.6rem !important;
+        font-size: 0.55rem !important;
       }
 
       .form-section-block {
-        margin-bottom: 5px !important;
+        margin-bottom: 4px !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
@@ -891,12 +1201,18 @@
         flex-direction: row !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 3px 8px !important;
-        font-size: 0.72rem !important;
+        padding: 2.5px 6px !important;
+        font-size: 0.66rem !important;
         font-weight: 700 !important;
         background: #0f172a !important;
         color: #ffffff !important;
-        border-radius: 4px 4px 0 0 !important;
+        border-radius: 3px 3px 0 0 !important;
+        margin-bottom: 0 !important;
+      }
+
+      .section-head-bar span.sec-badge {
+        font-size: 0.56rem !important;
+        padding: 1px 4px !important;
       }
 
       .clinical-table {
@@ -927,26 +1243,34 @@
       .clinical-table th {
         display: table-cell !important;
         width: 22% !important;
-        padding: 3px 6px !important;
-        font-size: 0.66rem !important;
+        padding: 2.5px 5px !important;
+        font-size: 0.60rem !important;
         font-weight: 700 !important;
         color: #475569 !important;
         background: #f8fafc !important;
+        border: none !important;
         border-right: 1px solid #e2e8f0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
         vertical-align: middle !important;
         box-sizing: border-box !important;
+        line-height: 1.2 !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
       }
 
       .clinical-table td {
         display: table-cell !important;
         width: 28% !important;
-        padding: 3px 6px !important;
-        font-size: 0.68rem !important;
+        padding: 2.5px 5px !important;
+        font-size: 0.64rem !important;
         color: #0f172a !important;
         background: #ffffff !important;
+        border: none !important;
         border-right: 1px solid #e2e8f0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
         vertical-align: middle !important;
         box-sizing: border-box !important;
+        line-height: 1.2 !important;
       }
 
       .clinical-table td:last-child {
@@ -1451,97 +1775,113 @@
           });
         }
 
-        // 2. Download PDF (Guaranteed 1-Page A4 without data loss)
+        // 2. Download PDF (Guaranteed 1-Page A4 without data loss or clipping)
         const btnPdf = document.getElementById('btnDownloadPdf');
         if (btnPdf) {
           btnPdf.addEventListener('click', async () => {
             const sheet = document.getElementById('clinicalSheet');
-            if (typeof html2pdf !== 'undefined' && sheet) {
-              // Create off-screen fixed A4 container (794px width = 210mm @ 96dpi)
-              const container = document.createElement('div');
-              container.style.position = 'fixed';
-              container.style.left = '-9999px';
-              container.style.top = '0';
-              container.style.width = '794px';
-              container.style.background = '#ffffff';
-              container.style.zIndex = '-9999';
+            if (!sheet) return;
 
-              const clone = sheet.cloneNode(true);
-              clone.style.width = '794px';
-              clone.style.maxWidth = '794px';
-              clone.style.margin = '0 auto';
-              clone.style.padding = '8px 12px';
-              clone.style.boxShadow = 'none';
-              clone.style.border = 'none';
-              clone.style.background = '#ffffff';
-              clone.style.boxSizing = 'border-box';
+            const originalBtnHtml = btnPdf.innerHTML;
+            btnPdf.disabled = true;
+            btnPdf.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparing...';
 
-              // Enforce desktop table layout in cloned sheet
-              clone.querySelectorAll('.clinical-table').forEach(t => {
-                t.style.display = 'table';
-                t.style.width = '100%';
-                t.style.borderCollapse = 'collapse';
-                t.style.marginBottom = '4px';
-              });
-              clone.querySelectorAll('.clinical-table tbody').forEach(tb => tb.style.display = 'table-row-group');
-              clone.querySelectorAll('.clinical-table tr').forEach(r => {
-                r.style.display = 'table-row';
-                r.style.boxShadow = 'none';
-                r.style.margin = '0';
-                r.style.border = 'none';
-                r.style.borderBottom = '1px solid #e2e8f0';
-              });
-              clone.querySelectorAll('.clinical-table th').forEach(th => {
-                th.style.display = 'table-cell';
-                th.style.width = '22%';
-                th.style.padding = '3px 6px';
-                th.style.fontSize = '0.66rem';
-                th.style.background = '#f8fafc';
-                th.style.color = '#475569';
-                th.style.borderRight = '1px solid #e2e8f0';
-                th.style.verticalAlign = 'middle';
-              });
-              clone.querySelectorAll('.clinical-table td').forEach(td => {
-                td.style.display = 'table-cell';
-                td.style.width = td.getAttribute('colspan') === '3' ? '78%' : '28%';
-                td.style.padding = '3px 6px';
-                td.style.fontSize = '0.68rem';
-                td.style.color = '#0f172a';
-                td.style.background = '#ffffff';
-                td.style.borderRight = '1px solid #e2e8f0';
-                td.style.verticalAlign = 'middle';
-              });
-              clone.querySelectorAll('.donor-identity-banner').forEach(b => {
-                b.style.display = 'grid';
-                b.style.gridTemplateColumns = '60px 1fr 140px';
-                b.style.gap = '8px';
-                b.style.padding = '6px 10px';
-                b.style.margin = '0 0 6px 0';
-              });
+            // Create fixed top-left render container at (0, 0)
+            const container = document.createElement('div');
+            container.id = 'pdf-render-container';
 
-              container.appendChild(clone);
-              document.body.appendChild(container);
+            const clone = sheet.cloneNode(true);
+            clone.id = 'clinicalSheetPdfClone';
+            container.appendChild(clone);
+            document.body.appendChild(container);
 
-              const donorName = (donorData.name || 'Donor').replace(/\s+/g, '_');
-              const opt = {
-                margin: [4, 6, 4, 6],
-                filename: `RED404_Clinical_Record_${donorName}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 794 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-              };
+            const donorName = ((donorData && donorData.name) || 'Donor').replace(/\s+/g, '_');
 
-              try {
-                await html2pdf().set(opt).from(clone).save();
-              } catch (e) {
-                window.print();
-              } finally {
-                if (document.body.contains(container)) {
-                  document.body.removeChild(container);
+            try {
+              const html2canvasFn = window.html2canvas || (typeof html2canvas !== 'undefined' ? html2canvas : null);
+
+              if (html2canvasFn) {
+                const canvas = await html2canvasFn(clone, {
+                  scale: 2,
+                  useCORS: true,
+                  logging: false,
+                  scrollX: 0,
+                  scrollY: 0,
+                  x: 0,
+                  y: 0,
+                  width: 794,
+                  windowWidth: 794
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                const JsPdfConstructor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
+
+                if (JsPdfConstructor) {
+                  const pdf = new JsPdfConstructor({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                  });
+
+                  const pageWidth = 210;
+                  const pageHeight = 297;
+                  const marginH = 6;
+                  const marginV = 6;
+                  const availW = pageWidth - (marginH * 2);   // 198 mm
+                  const availH = pageHeight - (marginV * 2); // 285 mm
+
+                  const imgW = canvas.width;
+                  const imgH = canvas.height;
+                  const ratio = imgW / imgH;
+
+                  let finalW = availW;
+                  let finalH = finalW / ratio;
+
+                  if (finalH > availH) {
+                    finalH = availH;
+                    finalW = finalH * ratio;
+                  }
+
+                  const posX = marginH + (availW - finalW) / 2;
+                  const posY = marginV + (availH - finalH) / 2;
+
+                  pdf.addImage(imgData, 'JPEG', posX, posY, finalW, finalH);
+                  pdf.save(`RED404_Clinical_Record_${donorName}.pdf`);
+                } else if (typeof html2pdf !== 'undefined') {
+                  const opt = {
+                    margin: [6, 6, 6, 6],
+                    filename: `RED404_Clinical_Record_${donorName}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, x: 0, y: 0, width: 794, windowWidth: 794 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: 'avoid-all' }
+                  };
+                  await html2pdf().set(opt).from(clone).save();
+                } else {
+                  window.print();
                 }
+              } else if (typeof html2pdf !== 'undefined') {
+                const opt = {
+                  margin: [6, 6, 6, 6],
+                  filename: `RED404_Clinical_Record_${donorName}.pdf`,
+                  image: { type: 'jpeg', quality: 0.98 },
+                  html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, x: 0, y: 0, width: 794, windowWidth: 794 },
+                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                  pagebreak: { mode: 'avoid-all' }
+                };
+                await html2pdf().set(opt).from(clone).save();
+              } else {
+                window.print();
               }
-            } else {
+            } catch (err) {
+              console.error('PDF export error:', err);
               window.print();
+            } finally {
+              if (document.body.contains(container)) {
+                document.body.removeChild(container);
+              }
+              btnPdf.disabled = false;
+              btnPdf.innerHTML = originalBtnHtml;
             }
           });
         }
