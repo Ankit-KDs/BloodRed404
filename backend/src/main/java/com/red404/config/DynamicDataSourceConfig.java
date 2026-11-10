@@ -196,24 +196,28 @@ public class DynamicDataSourceConfig {
 
             // Clean up any old demo/placeholder strings from existing records so database strictly reflects real user data
             try {
-                stmt.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name = 'Rajesh Kumar'");
+                stmt.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name = 'Rajesh Kumar' OR father_name LIKE '%Rajesh%'");
+                stmt.executeUpdate("UPDATE donors SET address = NULL WHERE address LIKE '%Near Subharti%' OR address LIKE '%Delhi Road%'");
+                stmt.executeUpdate("UPDATE donors SET last_donation = NULL WHERE last_donation = '2024-01-10'");
                 stmt.executeUpdate("UPDATE donors SET allergies = NULL WHERE allergies LIKE '%No Known Drug Allergies%' OR allergies = 'No Known Drug Allergies (NKDA)'");
                 stmt.executeUpdate("UPDATE donors SET conditions = NULL WHERE conditions LIKE '%None Reported%' OR conditions = 'None Reported • Normal Screening'");
                 stmt.executeUpdate("UPDATE donors SET medications = NULL WHERE medications = 'None / Unrestricted' OR medications LIKE 'None%'");
                 stmt.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries = 'None Reported (< 12 months)'");
-                stmt.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility = 'City General Hospital'");
-                stmt.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type = 'Voluntary Lifesaver'");
+                stmt.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility = 'City General Hospital' OR verified_facility LIKE '%City General%'");
+                stmt.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type = 'Voluntary Lifesaver' OR donor_type LIKE '%Voluntary%'");
                 stmt.executeUpdate("UPDATE donors SET pulse = NULL WHERE pulse = 72");
                 stmt.executeUpdate("UPDATE donors SET hemoglobin = NULL WHERE hemoglobin = 14.8");
                 stmt.executeUpdate("UPDATE donors SET blood_pressure = NULL WHERE blood_pressure = '120/80'");
                 stmt.executeUpdate("UPDATE donors SET body_temp = NULL WHERE body_temp = 98.6");
+                stmt.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15' AND (address IS NULL OR address = '')");
+                stmt.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0 AND (address IS NULL OR address = '')");
             } catch (Exception ignored) {}
 
             // Check if donor 'ak30kr02@gmail.com' exists
             try (ResultSet rs = stmt.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
-                    String seedDonor = "INSERT INTO donors (name, email, phone, dob, gender, password, blood_type, weight, last_donation, availability, address, city, state, pincode, zone, created_at) " +
-                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, NULL, 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                    String seedDonor = "INSERT INTO donors (name, email, phone, password, blood_type, availability, city, state, pincode, zone, created_at) " +
+                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '12345678', 'A+', 'Available', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
                     stmt.executeUpdate(seedDonor);
                     log.info("Seeded primary registered donor account: ak30kr02@gmail.com (with zero demo clinical data)");
                 }

@@ -50,12 +50,14 @@ public class DonorController {
                 }
             }
             if (targetId == 0) {
-                Map<String, Object> first = donorDao.findById(1);
-                if (first != null) return ok("Profile loaded", first);
                 return unauthorized();
             }
             Map<String, Object> donorProfile = donorDao.findById(targetId);
-            return ok("Profile loaded", donorProfile != null ? donorProfile : donorDao.findById(1));
+            if (donorProfile == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse(false, "Donor profile not found."));
+            }
+            return ok("Profile loaded", donorProfile);
         } catch (Exception e) {
             return serverError(e);
         }
@@ -78,7 +80,8 @@ public class DonorController {
                 profile = donorDao.findByToken(donor);
             }
             if (profile == null) {
-                profile = donorDao.findById(1);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse(false, "Donor intake record not found. Please re-scan QR code."));
             }
             return ok("Donor scan profile retrieved successfully", profile);
         } catch (Exception e) {

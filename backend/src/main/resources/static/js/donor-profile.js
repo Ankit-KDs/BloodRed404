@@ -58,6 +58,14 @@
         if (!obj) return;
         if (obj.fatherName && obj.fatherName.toLowerCase().includes('rajesh')) obj.fatherName = null;
         if (obj.father_name && obj.father_name.toLowerCase().includes('rajesh')) obj.father_name = null;
+        if (obj.address && (obj.address.toLowerCase().includes('subharti') || obj.address.toLowerCase().includes('delhi road'))) obj.address = null;
+        if (obj.dob === '1998-05-15') { obj.dob = null; obj.age = null; }
+        if (obj.dateOfBirth === '1998-05-15') { obj.dateOfBirth = null; obj.age = null; }
+        if (obj.lastDonationDate === '2024-01-10' || obj.lastDonation === '2024-01-10' || obj.last_donation === '2024-01-10') {
+          obj.lastDonationDate = null;
+          obj.lastDonation = null;
+          obj.last_donation = null;
+        }
         if (obj.allergies && (obj.allergies.toLowerCase().includes('no known drug') || obj.allergies.toLowerCase().includes('nkda'))) obj.allergies = null;
         if (obj.conditions && (obj.conditions.toLowerCase().includes('normal screening') || obj.conditions.toLowerCase().includes('none reported'))) obj.conditions = null;
         if (obj.medications && (obj.medications.toLowerCase().includes('unrestricted') || obj.medications.toLowerCase().includes('none /'))) obj.medications = null;
@@ -146,16 +154,22 @@
       if (userData) {
         currentDonor.id = userData.id || currentDonor.id;
         currentDonor.name = userData.name || userData.fullName || ((userData.firstName ? userData.firstName + ' ' + (userData.lastName || '') : '') || currentDonor.name).trim();
-        currentDonor.fatherName = cleanLiveVal(userData.fatherName || userData.father_name, ['rajesh kumar']);
+        currentDonor.fatherName = cleanLiveVal(userData.fatherName || userData.father_name, ['rajesh']);
         if (userData.email) currentDonor.email = userData.email;
         currentDonor.bloodType = userData.bloodType || userData.blood_type || currentDonor.bloodType;
         if (userData.phone || userData.mobile) currentDonor.phone = userData.phone || userData.mobile;
         if (userData.gender) currentDonor.gender = userData.gender;
         if (userData.dob || userData.dateOfBirth) {
-          currentDonor.dob = userData.dob || userData.dateOfBirth;
-          currentDonor.age = calculateAge(currentDonor.dob);
+          const rawDob = userData.dob || userData.dateOfBirth;
+          if (rawDob !== '1998-05-15') {
+            currentDonor.dob = rawDob;
+            currentDonor.age = calculateAge(currentDonor.dob);
+          } else {
+            currentDonor.dob = null;
+            currentDonor.age = null;
+          }
         }
-        if (userData.address) currentDonor.address = userData.address;
+        currentDonor.address = cleanLiveVal(userData.address, ['subharti', 'delhi road']);
         if (userData.city) currentDonor.city = userData.city;
         if (userData.state) currentDonor.state = userData.state;
         if (userData.pincode || userData.pinCode) currentDonor.pincode = userData.pincode || userData.pinCode;
@@ -179,16 +193,23 @@
         const matched = donorsList.find(d => (d.email && d.email.trim().toLowerCase() === cleanEmail) || (currentDonor.phone && d.phone && d.phone.trim() === currentDonor.phone.trim()));
         if (matched) {
           if (matched.name || matched.fullName) currentDonor.name = matched.name || matched.fullName;
-          const matchFName = cleanLiveVal(matched.fatherName || matched.father_name, ['rajesh kumar']);
+          const matchFName = cleanLiveVal(matched.fatherName || matched.father_name, ['rajesh']);
           if (matchFName) currentDonor.fatherName = matchFName;
           if (matched.bloodType) currentDonor.bloodType = matched.bloodType;
           if (matched.phone) currentDonor.phone = matched.phone;
           if (matched.gender) currentDonor.gender = matched.gender;
           if (matched.dob || matched.dateOfBirth) {
-            currentDonor.dob = matched.dob || matched.dateOfBirth;
-            currentDonor.age = calculateAge(currentDonor.dob);
+            const mDob = matched.dob || matched.dateOfBirth;
+            if (mDob !== '1998-05-15') {
+              currentDonor.dob = mDob;
+              currentDonor.age = calculateAge(currentDonor.dob);
+            } else {
+              currentDonor.dob = null;
+              currentDonor.age = null;
+            }
           }
-          if (matched.address) currentDonor.address = matched.address;
+          const matchAddr = cleanLiveVal(matched.address, ['subharti', 'delhi road']);
+          if (matchAddr) currentDonor.address = matchAddr;
           if (matched.city) currentDonor.city = matched.city;
           if (matched.state) currentDonor.state = matched.state;
           if (matched.pincode || matched.pinCode) currentDonor.pincode = matched.pincode || matched.pinCode;
@@ -235,12 +256,12 @@
           const d = json.data;
           currentDonor.id = d.id || currentDonor.id;
           currentDonor.name = d.name || d.fullName || currentDonor.name;
-          currentDonor.fatherName = cleanLiveVal(d.fatherName || d.father_name, ['rajesh kumar']);
+          currentDonor.fatherName = cleanLiveVal(d.fatherName || d.father_name, ['rajesh']);
           currentDonor.bloodType = d.bloodType || d.blood_type || currentDonor.bloodType;
           if (d.email) currentDonor.email = d.email;
           if (d.phone || d.mobile) currentDonor.phone = d.phone || d.mobile;
           if (d.gender) currentDonor.gender = d.gender;
-          if (d.address) currentDonor.address = d.address;
+          currentDonor.address = cleanLiveVal(d.address, ['subharti', 'delhi road']);
           if (d.city) currentDonor.city = d.city;
           if (d.state) currentDonor.state = d.state;
           if (d.pincode || d.pinCode) currentDonor.pincode = d.pincode || d.pinCode;
@@ -252,18 +273,30 @@
           currentDonor.donorType = cleanLiveVal(d.donorType || d.donor_type, ['voluntary lifesaver']);
           if (d.qrToken || d.qr_token) currentDonor.qrToken = d.qrToken || d.qr_token;
           if (d.weight !== undefined && d.weight !== null && String(d.weight).trim() !== '') currentDonor.weight = parseFloat(d.weight);
+          else currentDonor.weight = null;
           if (d.pulse !== undefined && d.pulse !== null && String(d.pulse).trim() !== '') currentDonor.pulse = parseInt(d.pulse, 10);
+          else currentDonor.pulse = null;
           if (d.hemoglobin !== undefined && d.hemoglobin !== null && String(d.hemoglobin).trim() !== '') currentDonor.hemoglobin = parseFloat(d.hemoglobin);
+          else currentDonor.hemoglobin = null;
           if (d.bloodPressure) currentDonor.bloodPressure = d.bloodPressure;
+          else currentDonor.bloodPressure = null;
           if (d.bodyTemp !== undefined && d.bodyTemp !== null && String(d.bodyTemp).trim() !== '') currentDonor.bodyTemp = parseFloat(d.bodyTemp);
+          else currentDonor.bodyTemp = null;
           currentDonor.verifiedFacility = cleanLiveVal(d.verifiedFacility, ['city general hospital']);
-          if (d.verifiedDate) currentDonor.verifiedDate = d.verifiedDate;
-          if (d.lastDonationDate || d.lastDonation) {
-            currentDonor.lastDonationDate = d.lastDonationDate || d.lastDonation;
+          currentDonor.verifiedDate = d.verifiedDate || null;
+          const ldVal = d.lastDonationDate || d.lastDonation;
+          if (ldVal && ldVal !== '2024-01-10') {
+            currentDonor.lastDonationDate = ldVal;
+          } else {
+            currentDonor.lastDonationDate = null;
           }
-          if (d.dateOfBirth || d.dob) {
-            currentDonor.dob = d.dateOfBirth || d.dob;
-            currentDonor.age = calculateAge(d.dateOfBirth || d.dob);
+          const dobVal = d.dateOfBirth || d.dob;
+          if (dobVal && dobVal !== '1998-05-15') {
+            currentDonor.dob = dobVal;
+            currentDonor.age = calculateAge(dobVal);
+          } else {
+            currentDonor.dob = null;
+            currentDonor.age = null;
           }
           if (d.latitude && d.longitude) {
             currentDonor.latitude = parseFloat(d.latitude);
@@ -1031,11 +1064,20 @@
       }
       if (bgInput) bgInput.value = currentDonor.bloodType || 'A+';
       if (genderInput) genderInput.value = currentDonor.gender || 'Male';
-      if (dobInput) dobInput.value = currentDonor.dob || '';
-      if (weightInput) weightInput.value = (currentDonor.weight !== null && currentDonor.weight !== undefined && String(currentDonor.weight).trim() !== '') ? currentDonor.weight : '';
+      if (dobInput) {
+        const dob = currentDonor.dob || '';
+        dobInput.value = dob === '1998-05-15' ? '' : dob;
+      }
+      if (weightInput) {
+        const wt = currentDonor.weight;
+        weightInput.value = (wt !== null && wt !== undefined && String(wt).trim() !== '') ? wt : '';
+      }
       if (phoneInput) phoneInput.value = currentDonor.phone || '';
       if (emailInput) emailInput.value = currentDonor.email || '';
-      if (addrInput) addrInput.value = currentDonor.address || '';
+      if (addrInput) {
+        const addr = currentDonor.address || '';
+        addrInput.value = (addr.toLowerCase().includes('subharti') || addr.toLowerCase().includes('delhi road')) ? '' : addr;
+      }
       if (cityInput) cityInput.value = currentDonor.city || '';
       if (stateInput) stateInput.value = currentDonor.state || '';
       if (pincodeInput) pincodeInput.value = currentDonor.pincode || '';
@@ -1052,7 +1094,10 @@
       if (hbInput) hbInput.value = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined) ? currentDonor.hemoglobin : '';
       if (bpInput) bpInput.value = currentDonor.bloodPressure || '';
       if (tempInput) tempInput.value = (currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined) ? currentDonor.bodyTemp : '';
-      if (lastDonInput) lastDonInput.value = currentDonor.lastDonationDate || currentDonor.lastDonation || '';
+      if (lastDonInput) {
+        const ld = currentDonor.lastDonationDate || currentDonor.lastDonation || '';
+        lastDonInput.value = ld === '2024-01-10' ? '' : ld;
+      }
       if (facilityInput) facilityInput.value = currentDonor.verifiedFacility || '';
 
       editModal.style.display = 'flex';
@@ -1109,6 +1154,13 @@
           const hbStr = (document.getElementById('editDonorHb')?.value || '').trim();
           const tempStr = (document.getElementById('editDonorTemp')?.value || '').trim();
 
+          // Generate a NEW secure QR token upon every profile edit save.
+          // This ensures that the newly displayed QR code points to this fresh state,
+          // while any previously opened scan tabs remain frozen to their scan-time snapshot.
+          const newToken = generateSecureToken();
+          currentDonor.qrToken = newToken;
+          localStorage.setItem('red404_qr_token_donor_' + (currentDonor.id || 1), newToken);
+
           const payload = {
             id: currentDonor.id || 1,
             donorId: currentDonor.id || 1,
@@ -1134,7 +1186,7 @@
             bodyTemp: tempStr ? parseFloat(tempStr) : null,
             lastDonationDate: (document.getElementById('editDonorLastDonation')?.value || '').trim(),
             verifiedFacility: (document.getElementById('editDonorFacility')?.value || '').trim(),
-            qrToken: currentDonor.qrToken || ('red404_qr_token_donor_' + currentDonor.id)
+            qrToken: newToken
           };
 
           // 1. Call Backend API

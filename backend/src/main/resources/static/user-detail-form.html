@@ -1087,29 +1087,54 @@
       let donorData = {};
 
       document.addEventListener('DOMContentLoaded', async () => {
-        // 1. Format current timestamp
-        const now = new Date();
-        const stampEl = document.getElementById('scanTimestamp');
-        if (stampEl) {
-          stampEl.textContent = now.toLocaleDateString('en-GB', {
-            day: '2-digit', month: 'short', year: 'numeric'
-          }) + ' ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-
-        // 2. Read query parameters (?token=...&donorId=...&donor=...)
+        // 1. Read query parameters (?token=...&donorId=...&donor=...)
         const params = new URLSearchParams(window.location.search);
         const token = params.get('token') || params.get('t') || '';
         const donorId = params.get('donorId') || params.get('id') || '';
         const donorRef = params.get('donor') || '';
 
-        // 3. Load donor profile from database
-        await fetchDonorData(token, donorId, donorRef);
+        // Snapshot key tied strictly to this unique scan URL in this browser tab
+        const snapshotKey = 'red404_scan_snapshot_' + (token || donorId || donorRef || 'default');
+
+        // Snapshot Freezing Rule: A QR scan represents a one-time point-in-time clinical document.
+        // Once opened from a scan, refreshing (F5) the page tab MUST keep the exact frozen snapshot.
+        // It NEVER pulls subsequent live profile edits unless a NEW QR scan URL is opened!
+        const existingSnapshot = sessionStorage.getItem(snapshotKey);
+        if (existingSnapshot) {
+          try {
+            const parsed = JSON.parse(existingSnapshot);
+            if (parsed && parsed.donorData) {
+              donorData = parsed.donorData;
+              const stampEl = document.getElementById('scanTimestamp');
+              if (stampEl && parsed.timestamp) {
+                stampEl.textContent = parsed.timestamp;
+              }
+              populateFields(donorData);
+              bindToolbarActions();
+              return; // STOP: Preserved frozen snapshot on refresh
+            }
+          } catch (_) {}
+        }
+
+        // 2. Format current scan timestamp for this new QR scan
+        const now = new Date();
+        const stampEl = document.getElementById('scanTimestamp');
+        let currentTimestampStr = '';
+        if (stampEl) {
+          currentTimestampStr = now.toLocaleDateString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric'
+          }) + ' ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          stampEl.textContent = currentTimestampStr;
+        }
+
+        // 3. Load donor profile from database for this new scan
+        await fetchDonorData(token, donorId, donorRef, snapshotKey, currentTimestampStr);
 
         // 4. Bind Action Toolbar
         bindToolbarActions();
       });
 
-      async function fetchDonorData(token, donorId, donorRef) {
+      async function fetchDonorData(token, donorId, donorRef, snapshotKey, currentTimestampStr) {
         try {
           let apiUrl = '/api/donors/scan?';
           if (token) apiUrl += 'token=' + encodeURIComponent(token) + '&';
@@ -1121,44 +1146,47 @@
             const json = await res.json();
             if (json && json.data) {
               donorData = json.data;
+              saveAndFreezeSnapshot(snapshotKey, currentTimestampStr, donorData);
               populateFields(donorData);
               return;
             }
           }
         } catch (err) {
-          console.warn('Could not fetch from /api/donors/scan, checking /api/donors/profile...', err);
+          console.warn('Could not fetch from /api/donors/scan, checking fallback...', err);
         }
 
-        // Fallback: Try /api/donors/profile
-        try {
-          const profileRes = await fetch('/api/donors/profile' + (donorId ? '?donorId=' + donorId : ''), { cache: 'no-store' });
-          if (profileRes.ok) {
-            const json = await profileRes.json();
-            if (json && json.data) {
-              donorData = json.data;
-              populateFields(donorData);
-              return;
+        // Fallback: Try /api/donors/profile with donorId
+        if (donorId) {
+          try {
+            const profileRes = await fetch('/api/donors/profile?donorId=' + encodeURIComponent(donorId), { cache: 'no-store' });
+            if (profileRes.ok) {
+              const json = await profileRes.json();
+              if (json && json.data) {
+                donorData = json.data;
+                saveAndFreezeSnapshot(snapshotKey, currentTimestampStr, donorData);
+                populateFields(donorData);
+                return;
+              }
             }
+          } catch (e) {
+            console.warn('Fallback error:', e);
           }
-        } catch (e) {
-          console.warn('Fallback error:', e);
         }
 
-        // Fallback to localStorage session if present
-        try {
-          const raw = localStorage.getItem('red404_auth_session');
-          if (raw) {
-            const sess = JSON.parse(raw);
-            if (sess && sess.user) {
-              donorData = sess.user;
-              populateFields(donorData);
-              return;
-            }
-          }
-        } catch (ignored) {}
-
-        // If no data resolved, populate empty record with strict 'NA' fallbacks
+        // Strictly NO localStorage session fallback: an external hospital scan never reads local login credentials
         populateFields(donorData || {});
+      }
+
+      function saveAndFreezeSnapshot(key, timestamp, data) {
+        try {
+          if (key && data) {
+            sessionStorage.setItem(key, JSON.stringify({
+              timestamp: timestamp,
+              donorData: data,
+              savedAt: Date.now()
+            }));
+          }
+        } catch (_) {}
       }
 
       function valOrNA(val, suffix) {
@@ -1170,12 +1198,16 @@
         // Strict guard against legacy hardcoded demo strings
         const lower = str.toLowerCase();
         if (lower === 'rajesh kumar' ||
+            lower.includes('rajesh') ||
+            lower.includes('near subharti') ||
+            lower.includes('delhi road') ||
             lower.includes('no known drug allergies') ||
             lower.includes('normal screening') ||
             lower.includes('none reported') ||
             lower.includes('city general hospital') ||
             lower === 'voluntary lifesaver' ||
-            lower.includes('unrestricted')) {
+            lower.includes('unrestricted') ||
+            lower === '2024-01-10') {
           return 'N/A';
         }
         return suffix ? (str + ' ' + suffix) : str;
@@ -1194,8 +1226,9 @@
 
         // Calculate Age
         let ageStr = 'N/A';
-        if (d.dob || d.dateOfBirth) {
-          const birthDate = new Date(d.dob || d.dateOfBirth);
+        const rawDob = d.dob || d.dateOfBirth;
+        if (rawDob && rawDob !== '1998-05-15') {
+          const birthDate = new Date(rawDob);
           if (!isNaN(birthDate.getTime())) {
             const ageDiffMs = Date.now() - birthDate.getTime();
             const ageDate = new Date(ageDiffMs);
@@ -1230,13 +1263,20 @@
         // Section 1: Personal Information Table
         setTxt('viewTableFullName', name);
         setTxt('viewTableFatherName', fatherName);
-        setTxt('viewTableDob', valOrNA(d.dob || d.dateOfBirth));
+        setTxt('viewTableDob', (rawDob && rawDob !== '1998-05-15') ? valOrNA(rawDob) : 'N/A');
         const genderVal = valOrNA(d.gender);
-        setTxt('viewTableAgeGender', (ageStr !== 'N/A' || genderVal !== 'N/A') ? `${ageStr} / ${genderVal}` : 'N/A');
+        let ageGenderText = 'N/A';
+        if (ageStr !== 'N/A' && genderVal !== 'N/A') ageGenderText = `${ageStr} / ${genderVal}`;
+        else if (ageStr !== 'N/A') ageGenderText = ageStr;
+        else if (genderVal !== 'N/A') ageGenderText = genderVal;
+        setTxt('viewTableAgeGender', ageGenderText);
         setTxt('viewTablePhone', valOrNA(d.phone));
         setTxt('viewTableEmail', valOrNA(d.email));
         
-        const addrParts = [d.address, d.city, d.state, d.pincode].filter(p => p && String(p).trim() && String(p).trim().toLowerCase() !== 'null');
+        const addrParts = [d.address, d.city, d.state, d.pincode]
+          .filter(p => p && String(p).trim() && String(p).toLowerCase() !== 'null' && String(p).toLowerCase() !== 'undefined')
+          .map(p => String(p).trim())
+          .filter(p => !p.toLowerCase().includes('subharti') && !p.toLowerCase().includes('delhi road'));
         setTxt('viewTableAddress', addrParts.length > 0 ? addrParts.join(', ') : 'N/A');
 
         // Section 2: Blood & Verification
@@ -1246,7 +1286,8 @@
         setTxt('viewTableVerification', facVal !== 'N/A' ? 'Lab Verified • Clinical Certified' : 'N/A');
         setTxt('viewTableRegDate', (d.createdAt || d.created_at) ? formatDate(d.createdAt || d.created_at) : 'N/A');
         const lastDonVal = d.lastDonation || d.lastDonationDate || d.last_donation;
-        setTxt('viewTableLastDate', (lastDonVal && String(lastDonVal).trim() && String(lastDonVal).toLowerCase() !== 'null') ? formatDate(lastDonVal) : 'N/A');
+        const isDemoLastDon = lastDonVal && String(lastDonVal).includes('2024-01-10');
+        setTxt('viewTableLastDate', (lastDonVal && !isDemoLastDon && String(lastDonVal).trim() && String(lastDonVal).toLowerCase() !== 'null') ? formatDate(lastDonVal) : 'N/A');
         setTxt('viewTableFacility', facVal);
 
         // Section 3: Medical Screening & Vitals

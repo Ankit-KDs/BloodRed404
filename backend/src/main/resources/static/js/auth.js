@@ -17,8 +17,21 @@ try {
       localList[existingIdx].created_at = defaultRegDate;
     }
     // Clean out demo strings if present
-    if (localList[existingIdx].address && localList[existingIdx].address.includes('Near Subharti')) {
+    if (localList[existingIdx].address && (localList[existingIdx].address.includes('Near Subharti') || localList[existingIdx].address.includes('Delhi Road'))) {
       localList[existingIdx].address = null;
+    }
+    if (localList[existingIdx].fatherName && localList[existingIdx].fatherName.toLowerCase().includes('rajesh')) {
+      localList[existingIdx].fatherName = null;
+    }
+    if (localList[existingIdx].father_name && localList[existingIdx].father_name.toLowerCase().includes('rajesh')) {
+      localList[existingIdx].father_name = null;
+    }
+    if (localList[existingIdx].dob === '1998-05-15') {
+      localList[existingIdx].dob = null;
+    }
+    if (localList[existingIdx].lastDonation === '2024-01-10' || localList[existingIdx].last_donation === '2024-01-10') {
+      localList[existingIdx].lastDonation = null;
+      localList[existingIdx].last_donation = null;
     }
     localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
   }

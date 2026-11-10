@@ -44,7 +44,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
     private void migrateDonorsTable(Connection conn) {
         Map<String, String> requiredColumns = new LinkedHashMap<>();
-        requiredColumns.put("father_name", "VARCHAR(150) NULL DEFAULT 'Rajesh Kumar'");
+        requiredColumns.put("father_name", "VARCHAR(150) NULL");
         requiredColumns.put("dob", "DATE NULL");
         requiredColumns.put("gender", "VARCHAR(20) NULL");
         requiredColumns.put("weight", "DOUBLE NULL");
@@ -60,21 +60,51 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("sms_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("push_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("email_notif", "BOOLEAN DEFAULT FALSE");
-        requiredColumns.put("pulse", "INT NULL DEFAULT 72");
-        requiredColumns.put("hemoglobin", "DOUBLE NULL DEFAULT 14.8");
-        requiredColumns.put("blood_pressure", "VARCHAR(30) NULL DEFAULT '120/80'");
-        requiredColumns.put("body_temp", "DOUBLE NULL DEFAULT 98.6");
-        requiredColumns.put("verified_facility", "VARCHAR(180) NULL DEFAULT 'City General Hospital'");
+        requiredColumns.put("pulse", "INT NULL");
+        requiredColumns.put("hemoglobin", "DOUBLE NULL");
+        requiredColumns.put("blood_pressure", "VARCHAR(30) NULL");
+        requiredColumns.put("body_temp", "DOUBLE NULL");
+        requiredColumns.put("verified_facility", "VARCHAR(180) NULL");
         requiredColumns.put("verified_date", "DATE NULL");
-        requiredColumns.put("allergies", "VARCHAR(255) NULL DEFAULT 'No Known Drug Allergies (NKDA)'");
-        requiredColumns.put("conditions", "VARCHAR(255) NULL DEFAULT 'None Reported • Normal Screening'");
-        requiredColumns.put("medications", "VARCHAR(255) NULL DEFAULT 'None / Unrestricted'");
-        requiredColumns.put("surgeries", "VARCHAR(255) NULL DEFAULT 'None Reported (< 12 months)'");
-        requiredColumns.put("donor_type", "VARCHAR(80) NULL DEFAULT 'Voluntary Lifesaver'");
+        requiredColumns.put("allergies", "VARCHAR(255) NULL");
+        requiredColumns.put("conditions", "VARCHAR(255) NULL");
+        requiredColumns.put("medications", "VARCHAR(255) NULL");
+        requiredColumns.put("surgeries", "VARCHAR(255) NULL");
+        requiredColumns.put("donor_type", "VARCHAR(80) NULL");
         requiredColumns.put("qr_token", "VARCHAR(100) NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "donors", requiredColumns);
+
+        // Drop any legacy demo column defaults that were added previously
+        String[] colsToDropDefault = {
+            "father_name", "pulse", "hemoglobin", "blood_pressure", "body_temp",
+            "verified_facility", "allergies", "conditions", "medications", "surgeries", "donor_type"
+        };
+        for (String col : colsToDropDefault) {
+            try (Statement st = conn.createStatement()) {
+                st.executeUpdate("ALTER TABLE donors ALTER COLUMN " + col + " DROP DEFAULT");
+            } catch (Exception ignored) {}
+        }
+
+        // Clean out any legacy demo strings so database reflects only real user inputs
+        try (Statement st = conn.createStatement()) {
+            st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name = 'Rajesh Kumar' OR father_name LIKE '%Rajesh%'");
+            st.executeUpdate("UPDATE donors SET address = NULL WHERE address LIKE '%Near Subharti%' OR address LIKE '%Delhi Road%'");
+            st.executeUpdate("UPDATE donors SET last_donation = NULL WHERE last_donation = '2024-01-10'");
+            st.executeUpdate("UPDATE donors SET pulse = NULL WHERE pulse = 72");
+            st.executeUpdate("UPDATE donors SET hemoglobin = NULL WHERE hemoglobin = 14.8");
+            st.executeUpdate("UPDATE donors SET blood_pressure = NULL WHERE blood_pressure = '120/80'");
+            st.executeUpdate("UPDATE donors SET body_temp = NULL WHERE body_temp = 98.6");
+            st.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility LIKE '%City General%'");
+            st.executeUpdate("UPDATE donors SET allergies = NULL WHERE allergies LIKE '%No Known Drug%' OR allergies LIKE '%NKDA%'");
+            st.executeUpdate("UPDATE donors SET conditions = NULL WHERE conditions LIKE '%Normal Screening%' OR conditions LIKE '%None Reported%'");
+            st.executeUpdate("UPDATE donors SET medications = NULL WHERE medications LIKE '%Unrestricted%' OR medications LIKE 'None%'");
+            st.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries LIKE '%< 12%'");
+            st.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type LIKE '%Voluntary%'");
+            st.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15' AND (address IS NULL OR address = '')");
+            st.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0 AND (address IS NULL OR address = '')");
+        } catch (Exception ignored) {}
     }
 
     private void migrateHospitalsTable(Connection conn) {
@@ -196,12 +226,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         try (Statement st = conn.createStatement()) {
             try (ResultSet rs = st.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
-                    String insertSql = "INSERT INTO donors (name, father_name, email, phone, dob, gender, password, blood_type, weight, last_donation, availability, address, city, state, pincode, zone, created_at) " +
-                            "VALUES ('Ankit Kumar', 'Rajesh Kumar', 'ak30kr02@gmail.com', '9876543210', '1998-05-15', 'Male', '12345678', 'A+', 68.0, '2024-01-10', 'Available', 'Near Subharti, Delhi Road', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                    String insertSql = "INSERT INTO donors (name, email, phone, password, blood_type, availability, city, state, pincode, zone, created_at) " +
+                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '12345678', 'A+', 'Available', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
                     st.executeUpdate(insertSql);
-                    log.info("Primary donor 'ak30kr02@gmail.com' seeded into database.");
+                    log.info("Primary donor 'ak30kr02@gmail.com' verified in database (without demo clinical data).");
                 } else {
-                    st.executeUpdate("UPDATE donors SET password = '12345678', father_name = COALESCE(father_name, 'Rajesh Kumar') WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com'");
+                    st.executeUpdate("UPDATE donors SET password = '12345678' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com'");
                     log.info("Primary donor 'ak30kr02@gmail.com' password verified and synchronized.");
                 }
             }
