@@ -33,11 +33,7 @@
 
       <ul class="nav-links" id="navLinks">
         <li><a href="#home" class="nav-link active">Home</a></li>
-        <li><a href="#our-services" class="nav-link">Services</a></li>
-        <li><a href="#about" class="nav-link">About</a></li>
-        <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
-        <li><a href="#stats" class="nav-link">Stats</a></li>
-        <li><a href="#zones" class="nav-link">Zones</a></li>
+        <li><a href="blood-availability-search.html" class="nav-link">Donor Search</a></li>
         <li><a href="#contact" class="nav-link">Contact</a></li>
       </ul>
 
@@ -182,7 +178,7 @@
         </p>
       </div>
 
-      <!-- Tab Navigation Row (5 Glassmorphic Cards) -->
+      <!-- Desktop Tab Navigation Row (5 Glassmorphic Cards) -->
       <div class="services-tab-nav" role="tablist" aria-label="Our Services Navigation">
         <button type="button" class="service-tab-card active" data-tab="tab-search" role="tab" aria-selected="true" aria-controls="tab-search">
           <div class="stc-icon"><i class="fas fa-satellite-dish"></i></div>
@@ -225,7 +221,7 @@
         </button>
       </div>
 
-      <!-- Tab Content Dynamic Area -->
+      <!-- Desktop Tab Content Dynamic Area -->
       <div class="services-content-wrapper">
         <!-- PANE 1: Blood Availability Search -->
         <div class="service-pane active" id="tab-search" role="tabpanel">
@@ -237,8 +233,8 @@
                 Check real-time blood availability within a 5km to 20km Haversine radius. View active donor counts and basic regional stats instantly without exposing personal identities.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> High-precision 5km - 20km geo-radial search</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Zero PII exposure — 100% anonymous donor telemetry</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> 5km - 20km precision geo-radial radius</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Zero PII: 100% anonymous donor telemetry</div>
                 <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Instant live hospital SOS dispatch gate</div>
               </div>
               <div class="pane-actions">
@@ -249,29 +245,8 @@
               </div>
             </div>
             <div class="pane-right">
-              <!-- Visual: Glowing Radar / Proximity Map -->
-              <div class="cyber-graphic radar-graphic">
-                <div class="radar-scope">
-                  <div class="radar-sweep"></div>
-                  <div class="radar-ring ring-1"></div>
-                  <div class="radar-ring ring-2"></div>
-                  <div class="radar-ring ring-3"></div>
-                  <div class="radar-blip blip-1" title="A+ Donor (2.1 km)"></div>
-                  <div class="radar-blip blip-2" title="O- Donor (4.8 km)"></div>
-                  <div class="radar-blip blip-3" title="B+ Donor (1.3 km)"></div>
-                  <div class="radar-center"><i class="fas fa-crosshairs"></i></div>
-                </div>
-                <div class="graphic-stats-bar">
-                  <div class="gs-stat">
-                    <span class="gs-val">5 - 20 km</span>
-                    <span class="gs-lbl">Radial Radius</span>
-                  </div>
-                  <div class="gs-divider"></div>
-                  <div class="gs-stat">
-                    <span class="gs-val">Real-Time</span>
-                    <span class="gs-lbl">Telemetry Feed</span>
-                  </div>
-                </div>
+              <div class="service-image-holder">
+                <img src="images/services/service-search.svg" alt="Real-Time Blood Availability Search Map" class="service-static-img" />
               </div>
             </div>
           </div>
@@ -299,20 +274,8 @@
               </div>
             </div>
             <div class="pane-right">
-              <!-- Visual: Bank Stock Telemetry Grid -->
-              <div class="cyber-graphic vault-graphic">
-                <div class="vault-header">
-                  <span class="vh-title"><i class="fas fa-shield-virus"></i> Clinical Reserves Status</span>
-                  <span class="badge-mini-live"><span class="dot-live"></span> ONLINE</span>
-                </div>
-                <div class="vault-grid">
-                  <div class="vg-cell"><span class="vg-grp">A+</span><span class="vg-qty high">HIGH</span></div>
-                  <div class="vg-cell"><span class="vg-grp">O+</span><span class="vg-qty med">MODERATE</span></div>
-                  <div class="vg-cell alert"><span class="vg-grp">O-</span><span class="vg-qty crit">CRITICAL</span></div>
-                  <div class="vg-cell"><span class="vg-grp">B+</span><span class="vg-qty high">HIGH</span></div>
-                  <div class="vg-cell"><span class="vg-grp">AB+</span><span class="vg-qty med">MODERATE</span></div>
-                  <div class="vg-cell alert"><span class="vg-grp">B-</span><span class="vg-qty crit">CRITICAL</span></div>
-                </div>
+              <div class="service-image-holder">
+                <img src="images/services/service-directory.svg" alt="Blood Bank Directory Facility" class="service-static-img" />
               </div>
             </div>
           </div>
@@ -328,9 +291,9 @@
                 Not sure if you are eligible to donate today? Take our quick interactive health screening to instantly verify your status based on age, weight, and recent medical history.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Clinical algorithm adhering to WHO blood donation standards</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Under 60 seconds rapid question flow</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Safe recovery interval guidance & deferral advice</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Adheres to WHO & NBTC donor standards</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Interactive AI Clinical Assistant with rapid question flow</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Biological recovery interval & deferral guidance</div>
               </div>
               <div class="pane-actions">
                 <a href="eligibility-checker.html" class="btn btn-service-primary">
@@ -340,23 +303,8 @@
               </div>
             </div>
             <div class="pane-right">
-              <!-- Visual: Screening Clinical Card -->
-              <div class="cyber-graphic screening-graphic">
-                <div class="screening-box">
-                  <div class="sb-header">
-                    <i class="fas fa-heartbeat sb-icon"></i>
-                    <div>
-                      <div class="sb-title">AI Eligibility Pre-Check</div>
-                      <div class="sb-sub">Clinical parameters evaluator</div>
-                    </div>
-                  </div>
-                  <div class="sb-items">
-                    <div class="sb-row"><i class="fas fa-check text-green"></i> <span>Age Limit (18 – 65 Yrs)</span></div>
-                    <div class="sb-row"><i class="fas fa-check text-green"></i> <span>Minimum Weight (&ge; 50 kg)</span></div>
-                    <div class="sb-row"><i class="fas fa-check text-green"></i> <span>Safe Recovery Interval (&gt; 90 Days)</span></div>
-                    <div class="sb-row"><i class="fas fa-shield text-red"></i> <span>Sterile / Safe Clinical Standards</span></div>
-                  </div>
-                </div>
+              <div class="service-image-holder">
+                <img src="images/services/service-screening.svg" alt="Clinical Health Screening Report" class="service-static-img" />
               </div>
             </div>
           </div>
@@ -372,9 +320,9 @@
                 Secure gateways for registered voluntary donors and verified clinical hospitals to manage profiles, donation history, and real-time SOS dispatches.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Donor Portal: track donations, digital health card & active status</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Hospital Node: dispatch emergency SOS & manage blood inventory</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> End-to-end encrypted session credentials</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Donor Portal: track donations, digital card & live status</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Hospital Node: emergency SOS triage & inventory management</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> 256-bit encrypted authentication security</div>
               </div>
               <div class="pane-actions dual-actions">
                 <a href="donor-login.html" class="btn btn-service-primary">
@@ -388,20 +336,8 @@
               </div>
             </div>
             <div class="pane-right">
-              <!-- Visual: Dual Portals Graphic -->
-              <div class="cyber-graphic portals-graphic">
-                <div class="portal-card-preview pcp-donor">
-                  <div class="pcp-header"><i class="fas fa-user"></i><span>Donor Portal</span></div>
-                  <div class="pcp-body"><span>Voluntary Donor Node</span><span class="badge-mini-live">SECURE</span></div>
-                </div>
-                <div class="portal-lock-hub">
-                  <i class="fas fa-lock"></i>
-                  <span>256-Bit Encrypted</span>
-                </div>
-                <div class="portal-card-preview pcp-hospital">
-                  <div class="pcp-header"><i class="fas fa-hospital-alt"></i><span>Hospital Node</span></div>
-                  <div class="pcp-body"><span>Trauma Center</span><span class="badge-mini-live">EMERGENCY SOS</span></div>
-                </div>
+              <div class="service-image-holder">
+                <img src="images/services/service-portals.svg" alt="Dual Secure Portals Gateway" class="service-static-img" />
               </div>
             </div>
           </div>
@@ -422,24 +358,172 @@
                 <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Community certificates & verified impact badges</div>
               </div>
               <div class="pane-actions">
-                <a href="#" class="btn btn-service-primary" id="btnExploreCampaigns">
+                <a href="#" class="btn btn-service-primary btn-explore-campaigns-action">
                   <span>Explore Campaigns</span>
                   <i class="fas fa-calendar-plus"></i>
                 </a>
               </div>
             </div>
             <div class="pane-right">
-              <!-- Visual: Community Camp Card -->
-              <div class="cyber-graphic campaigns-graphic">
-                <div class="campaign-preview-box">
-                  <div class="cpb-badge"><i class="fas fa-calendar-star"></i> Annual Drive 2026</div>
-                  <h4>City Mega Blood Drive</h4>
-                  <p><i class="fas fa-location-dot"></i> District Sports Complex & City Hall</p>
-                  <div class="cpb-meta">
-                    <span><i class="fas fa-clock"></i> 09:00 AM - 05:00 PM</span>
-                    <span class="slot-badge">Registration Open</span>
-                  </div>
-                </div>
+              <div class="service-image-holder">
+                <img src="images/services/service-campaigns.svg" alt="Community Blood Donation Drive" class="service-static-img" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Accordion View (Active on mobile screens) -->
+      <div class="services-mobile-accordion" id="servicesMobileAccordion">
+        <!-- Item 1: Blood Availability Search -->
+        <div class="service-acc-card open" data-acc="tab-search">
+          <button type="button" class="service-acc-header" aria-expanded="true">
+            <span class="sah-title">
+              <i class="fas fa-satellite-dish"></i>
+              Blood Availability Search
+            </span>
+            <i class="fas fa-minus sah-icon"></i>
+          </button>
+          <div class="service-acc-collapse">
+            <div class="service-acc-body">
+              <p class="acc-text">Check real-time blood availability within 5km–20km Haversine radius without exposing personal identities.</p>
+              <div class="acc-features">
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> 5km - 20km precision geo-radial radius</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Zero PII: 100% anonymous donor telemetry</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Instant live hospital SOS dispatch gate</div>
+              </div>
+              <div class="acc-img-wrap">
+                <img src="images/services/service-search.svg" alt="Search Map" class="acc-static-img" />
+              </div>
+              <div class="acc-actions">
+                <a href="blood-availability-search.html" class="btn btn-service-primary">
+                  <span>Search Availability</span>
+                  <i class="fas fa-search-location"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 2: Blood Bank Directory -->
+        <div class="service-acc-card" data-acc="tab-directory">
+          <button type="button" class="service-acc-header" aria-expanded="false">
+            <span class="sah-title">
+              <i class="fas fa-hospital-user"></i>
+              Blood Bank Directory
+            </span>
+            <i class="fas fa-plus sah-icon"></i>
+          </button>
+          <div class="service-acc-collapse">
+            <div class="service-acc-body">
+              <p class="acc-text">Access our live telemetry network of verified district hospital blood banks and trauma depots.</p>
+              <div class="acc-features">
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Verified government & certified hospital depots</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> 24/7 emergency dispatch helpline numbers</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Real-time component stock telemetry</div>
+              </div>
+              <div class="acc-img-wrap">
+                <img src="images/services/service-directory.svg" alt="Blood Bank Directory" class="acc-static-img" />
+              </div>
+              <div class="acc-actions">
+                <a href="blood-availability.html" class="btn btn-service-primary">
+                  <span>View Directory</span>
+                  <i class="fas fa-hospital"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 3: Health Screening -->
+        <div class="service-acc-card" data-acc="tab-screening">
+          <button type="button" class="service-acc-header" aria-expanded="false">
+            <span class="sah-title">
+              <i class="fas fa-heart-pulse"></i>
+              Health Screening
+            </span>
+            <i class="fas fa-plus sah-icon"></i>
+          </button>
+          <div class="service-acc-collapse">
+            <div class="service-acc-body">
+              <p class="acc-text">Verify your medical eligibility today with our interactive AI Clinical health screener.</p>
+              <div class="acc-features">
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Adheres to WHO & NBTC donor standards</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Interactive AI Clinical Assistant chat flow</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Biological recovery interval & deferral advice</div>
+              </div>
+              <div class="acc-img-wrap">
+                <img src="images/services/service-screening.svg" alt="Health Screening" class="acc-static-img" />
+              </div>
+              <div class="acc-actions">
+                <a href="eligibility-checker.html" class="btn btn-service-primary">
+                  <span>Start Health Screening</span>
+                  <i class="fas fa-stethoscope"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 4: Portal Access -->
+        <div class="service-acc-card" data-acc="tab-portals">
+          <button type="button" class="service-acc-header" aria-expanded="false">
+            <span class="sah-title">
+              <i class="fas fa-shield-halved"></i>
+              Portal Access
+            </span>
+            <i class="fas fa-plus sah-icon"></i>
+          </button>
+          <div class="service-acc-collapse">
+            <div class="service-acc-body">
+              <p class="acc-text">Secure gateways for voluntary donors and clinical hospitals to manage profiles and SOS dispatches.</p>
+              <div class="acc-features">
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Donor Portal: track donations & health card</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Hospital Node: dispatch SOS & inventory</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> 256-bit encrypted authentication</div>
+              </div>
+              <div class="acc-img-wrap">
+                <img src="images/services/service-portals.svg" alt="Portals" class="acc-static-img" />
+              </div>
+              <div class="acc-actions dual-actions">
+                <a href="donor-login.html" class="btn btn-service-primary">
+                  <i class="fas fa-user-circle"></i>
+                  <span>Donor Login</span>
+                </a>
+                <a href="hospital-login.html" class="btn btn-service-outline">
+                  <i class="fas fa-hospital-alt"></i>
+                  <span>Hospital Login</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 5: Donation Campaigns -->
+        <div class="service-acc-card" data-acc="tab-campaigns">
+          <button type="button" class="service-acc-header" aria-expanded="false">
+            <span class="sah-title">
+              <i class="fas fa-calendar-check"></i>
+              Donation Campaigns
+            </span>
+            <i class="fas fa-plus sah-icon"></i>
+          </button>
+          <div class="service-acc-collapse">
+            <div class="service-acc-body">
+              <p class="acc-text">Discover and register for upcoming voluntary blood donation camps and community drives.</p>
+              <div class="acc-features">
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> City-wide voluntary blood camps directory</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Direct mobile reminders & scheduled timeslots</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Community certificates & verified impact badges</div>
+              </div>
+              <div class="acc-img-wrap">
+                <img src="images/services/service-campaigns.svg" alt="Campaigns" class="acc-static-img" />
+              </div>
+              <div class="acc-actions">
+                <a href="#" class="btn btn-service-primary btn-explore-campaigns-action">
+                  <span>Explore Campaigns</span>
+                  <i class="fas fa-calendar-plus"></i>
+                </a>
               </div>
             </div>
           </div>

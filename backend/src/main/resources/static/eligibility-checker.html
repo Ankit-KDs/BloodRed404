@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RED404 • AI Donor Health Screening & Eligibility</title>
+  <title>RED404 • AI Donor Health Screening & Eligibility Chatbot</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml"
@@ -30,12 +30,12 @@
       flex-direction: column;
       background: #0a0a0f;
       background-image: 
-        radial-gradient(ellipse at 80% 20%, rgba(230, 57, 70, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 20% 80%, rgba(193, 18, 31, 0.06) 0%, transparent 50%);
+        radial-gradient(ellipse at 85% 15%, rgba(230, 57, 70, 0.08) 0%, transparent 45%),
+        radial-gradient(ellipse at 15% 85%, rgba(193, 18, 31, 0.06) 0%, transparent 45%);
     }
 
     .screening-hero {
-      padding: 7.5rem 0 2rem;
+      padding: 6.5rem 0 1.5rem;
       text-align: center;
     }
 
@@ -46,22 +46,22 @@
       background: rgba(230, 57, 70, 0.12);
       border: 1px solid rgba(230, 57, 70, 0.35);
       color: var(--red-light, #ff6b6b);
-      padding: 0.4rem 1.1rem;
+      padding: 0.35rem 1rem;
       border-radius: 9999px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      margin-bottom: 1.25rem;
+      margin-bottom: 0.85rem;
     }
 
     .screening-title {
-      font-size: clamp(2rem, 4vw, 3rem);
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
       font-weight: 800;
       color: var(--text-primary, #f0f0f8);
       letter-spacing: -0.02em;
       line-height: 1.2;
-      margin-bottom: 0.85rem;
+      margin-bottom: 0.65rem;
     }
 
     .screening-title span {
@@ -71,309 +71,366 @@
     }
 
     .screening-subtitle {
-      max-width: 650px;
+      max-width: 620px;
       margin: 0 auto;
-      font-size: 1.05rem;
+      font-size: 0.96rem;
       color: var(--text-secondary, #9898b8);
-      line-height: 1.6;
+      line-height: 1.55;
     }
 
-    /* Q&A Assessment Box */
-    .qa-card-container {
-      max-width: 760px;
-      margin: 2rem auto 4rem;
-      background: rgba(17, 17, 24, 0.75);
+    /* Chatbot Interface Card */
+    .chatbot-card-container {
+      max-width: 720px;
+      margin: 1.5rem auto 3.5rem;
+      background: rgba(17, 17, 24, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: var(--radius-xl, 24px);
-      padding: 2.5rem 3rem;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(230, 57, 70, 0.06);
-      position: relative;
-    }
-
-    /* Progress bar */
-    .progress-bar-wrapper {
-      margin-bottom: 2rem;
-    }
-
-    .progress-labels {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-xl, 20px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 35px rgba(230, 57, 70, 0.08);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text-secondary, #9898b8);
-      margin-bottom: 0.5rem;
-      font-family: var(--font-brand, 'Orbitron'), monospace;
-    }
-
-    .progress-track {
-      height: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 9999px;
+      flex-direction: column;
       overflow: hidden;
+      height: 640px;
     }
 
-    .progress-fill {
-      height: 100%;
-      width: 20%;
-      background: linear-gradient(90deg, #e63946 0%, #ff6b6b 100%);
-      transition: width 0.35s ease;
-      box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
+    /* Chatbot Header */
+    .chat-header {
+      padding: 1rem 1.4rem;
+      background: rgba(22, 22, 32, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    /* Step Question Panes */
-    .qa-step {
-      display: none;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
+    .chat-header-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
     }
 
-    .qa-step.active {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
+    .chat-avatar-box {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e63946 0%, #9b111e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 1.15rem;
+      box-shadow: 0 0 12px rgba(230, 57, 70, 0.4);
     }
 
-    .qa-step-category {
-      font-family: var(--font-brand, 'Orbitron'), monospace;
-      font-size: 0.75rem;
-      color: var(--red-light, #ff6b6b);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 0.5rem;
+    .chat-online-dot {
+      position: absolute;
+      bottom: 1px;
+      right: 1px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #111118;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+    .chat-header-info h4 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .chat-header-info p {
+      margin: 0;
+      font-size: 0.74rem;
+      color: #10b981;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn-chat-restart {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary, #9898b8);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-md, 8px);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.4rem;
+      transition: all 0.2s ease;
     }
 
-    .qa-question {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #ffffff;
-      line-height: 1.4;
-      margin-bottom: 0.75rem;
+    .btn-chat-restart:hover {
+      background: rgba(230, 57, 70, 0.15);
+      color: #ff6b6b;
+      border-color: #e63946;
     }
 
-    .qa-description {
-      font-size: 0.95rem;
-      color: var(--text-secondary, #9898b8);
-      line-height: 1.5;
-      margin-bottom: 1.75rem;
-    }
-
-    /* Answer Option Cards */
-    .qa-options-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-      margin-bottom: 2rem;
-    }
-
-    .qa-option-btn {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius-lg, 14px);
-      padding: 1.5rem 1.25rem;
-      color: #ffffff;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.25s ease;
+    /* Messages Stream */
+    .chat-messages-stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.4rem;
       display: flex;
       flex-direction: column;
+      gap: 1rem;
+      scroll-behavior: smooth;
+    }
+
+    .chat-messages-stream::-webkit-scrollbar {
+      width: 5px;
+    }
+    .chat-messages-stream::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+    }
+
+    .msg-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      max-width: 88%;
+      animation: msgPop 0.25s ease-out;
+    }
+
+    @keyframes msgPop {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-row.bot {
+      align-self: flex-start;
+    }
+
+    .msg-row.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
       align-items: center;
-      gap: 0.6rem;
-      outline: none;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
     }
 
-    .qa-option-btn:hover {
-      background: rgba(230, 57, 70, 0.1);
-      border-color: rgba(230, 57, 70, 0.4);
-      transform: translateY(-2px);
+    .msg-row.bot .msg-avatar {
+      background: rgba(230, 57, 70, 0.2);
+      border: 1px solid rgba(230, 57, 70, 0.4);
+      color: #ff6b6b;
     }
 
-    .qa-option-btn.selected {
-      background: linear-gradient(135deg, rgba(230, 57, 70, 0.25) 0%, rgba(193, 18, 31, 0.15) 100%);
-      border-color: var(--red-primary, #e63946);
-      box-shadow: 0 0 20px rgba(230, 57, 70, 0.35);
-    }
-
-    .qa-option-btn i {
-      font-size: 1.8rem;
-      color: var(--red-light, #ff6b6b);
-      transition: transform 0.25s ease;
-    }
-
-    .qa-option-btn:hover i {
-      transform: scale(1.1);
-    }
-
-    .qa-option-title {
-      font-size: 1.05rem;
-      font-weight: 700;
+    .msg-row.user .msg-avatar {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #ffffff;
     }
 
-    .qa-option-sub {
-      font-size: 0.8rem;
-      color: var(--text-secondary, #9898b8);
+    .msg-bubble {
+      padding: 0.85rem 1.1rem;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      line-height: 1.5;
     }
 
-    /* Step Navigation Controls */
-    .qa-nav-buttons {
-      display: flex;
-      justify-content: space-between;
+    .msg-row.bot .msg-bubble {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f0f0f8;
+      border-top-left-radius: 4px;
+    }
+
+    .msg-row.user .msg-bubble {
+      background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+      color: #ffffff;
+      border-top-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+      font-weight: 600;
+    }
+
+    /* Typing Indicator */
+    .typing-row {
+      display: none;
       align-items: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      padding-top: 1.5rem;
+      gap: 0.75rem;
+      align-self: flex-start;
+      margin-top: -0.25rem;
     }
 
-    .btn-qa-back {
-      background: transparent;
+    .typing-row.active {
+      display: flex;
+    }
+
+    .typing-bubble {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.6rem 0.9rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red-light, #ff6b6b);
+      animation: typingPulse 1.2s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingPulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+
+    /* Quick Reply Action Buttons Bar */
+    .chat-quick-replies-area {
+      padding: 0.85rem 1.4rem 1.1rem;
+      background: rgba(19, 19, 28, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      min-height: 58px;
+    }
+
+    .btn-quick-reply {
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      color: var(--text-secondary, #9898b8);
-      padding: 0.7rem 1.4rem;
-      border-radius: var(--radius-md, 10px);
-      font-size: 0.88rem;
+      color: #ffffff;
+      padding: 0.55rem 1rem;
+      border-radius: 20px;
+      font-size: 0.84rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       transition: all 0.2s ease;
+      outline: none;
     }
 
-    .btn-qa-back:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.06);
+    .btn-quick-reply:hover {
+      background: linear-gradient(135deg, rgba(230, 57, 70, 0.3) 0%, rgba(193, 18, 31, 0.2) 100%);
+      border-color: #e63946;
       color: #ffffff;
+      transform: translateY(-1px);
     }
 
-    .btn-qa-back:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
+    .btn-quick-reply.positive {
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+    .btn-quick-reply.positive:hover {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
     }
 
-    .btn-qa-next {
-      background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
-      border: 1px solid rgba(230, 57, 70, 0.5);
-      color: #ffffff;
-      padding: 0.75rem 1.8rem;
-      border-radius: var(--radius-md, 10px);
-      font-size: 0.92rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.25s ease;
-      box-shadow: 0 0 15px rgba(230, 57, 70, 0.3);
+    .btn-quick-reply.negative {
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .btn-quick-reply.negative:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
     }
 
-    .btn-qa-next:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+    /* Final Clinical Result Card */
+    .chat-result-card {
+      background: rgba(14, 14, 20, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 1.25rem 1.4rem;
+      margin-top: 0.5rem;
     }
 
-    .btn-qa-next:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      box-shadow: none;
+    .chat-result-card.eligible {
+      border-color: #10b981;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
     }
 
-    /* Result State Screen */
-    .qa-result-box {
-      text-align: center;
-      padding: 1rem 0;
+    .chat-result-card.deferred {
+      border-color: #ef4444;
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
     }
 
-    .qa-result-icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      margin: 0 auto 1.5rem;
+    .result-badge-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 2.2rem;
-    }
-
-    .qa-result-icon.eligible {
-      background: rgba(16, 185, 129, 0.15);
-      border: 2px solid #10b981;
-      color: #10b981;
-      box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
-    }
-
-    .qa-result-icon.deferred {
-      background: rgba(239, 68, 68, 0.15);
-      border: 2px solid #ef4444;
-      color: #ef4444;
-      box-shadow: 0 0 30px rgba(239, 68, 68, 0.35);
-    }
-
-    .qa-result-title {
-      font-size: 1.8rem;
+      gap: 0.6rem;
+      font-family: var(--font-brand, 'Orbitron'), monospace;
+      font-size: 1.05rem;
       font-weight: 800;
-      color: #ffffff;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.6rem;
     }
 
-    .qa-result-desc {
-      font-size: 1rem;
-      color: var(--text-secondary, #9898b8);
-      max-width: 550px;
-      margin: 0 auto 2rem;
-      line-height: 1.6;
+    .result-badge-row.eligible { color: #10b981; }
+    .result-badge-row.deferred { color: #ff6b6b; }
+
+    .result-card-desc {
+      font-size: 0.86rem;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 0.85rem;
     }
 
-    .qa-result-checklist {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-md, 12px);
-      padding: 1.25rem 1.75rem;
-      text-align: left;
-      margin: 0 auto 2rem;
+    .result-card-list {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      font-size: 0.9rem;
+      gap: 0.4rem;
+      margin-bottom: 1.1rem;
+      font-size: 0.82rem;
     }
 
-    .qa-chk-item {
+    .result-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      color: var(--text-primary, #e2e8f0);
+      gap: 0.5rem;
+      color: #cbd5e1;
     }
+    .result-item i.ok { color: #10b981; }
+    .result-item i.warn { color: #ef4444; }
 
-    .qa-chk-item.success i { color: #10b981; }
-    .qa-chk-item.warning i { color: #f59e0b; }
-    .qa-chk-item.danger i { color: #ef4444; }
-
-    .qa-result-actions {
+    .result-card-actions {
       display: flex;
-      justify-content: center;
-      gap: 1rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
     }
 
     @media (max-width: 640px) {
-      .qa-card-container {
-        padding: 1.75rem 1.25rem;
+      .chatbot-card-container {
+        height: 560px;
+        margin: 1rem auto 2.5rem;
       }
-      .qa-options-grid {
-        grid-template-columns: 1fr;
+      .msg-row {
+        max-width: 95%;
       }
-      .qa-result-actions {
+      .result-card-actions {
         flex-direction: column;
+      }
+      .result-card-actions .btn {
+        width: 100%;
+        justify-content: center;
       }
     }
   </style>
 </head>
 <body class="eligibility-page-wrapper">
 
-  <!-- ========== TOP NAVIGATION ========== -->
+  <!-- ========== TOP NAVIGATION (PUBLIC) ========== -->
   <nav class="navbar" id="navbar">
     <div class="nav-container">
       <a href="index.html" class="logo" style="text-decoration: none;">
@@ -383,12 +440,11 @@
         <span class="logo-text">RED<span class="logo-404">404</span></span>
       </a>
 
+      <!-- Clean Minimal Navbar (Home, Donor Search, Contact only) -->
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html#home" class="nav-link">Home</a></li>
-        <li><a href="index.html#our-services" class="nav-link">Services</a></li>
         <li><a href="blood-availability-search.html" class="nav-link">Donor Search</a></li>
-        <li><a href="blood-availability.html" class="nav-link">Blood Banks</a></li>
-        <li><a href="eligibility-checker.html" class="nav-link active">Eligibility</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
       </ul>
 
       <div class="nav-actions">
@@ -403,318 +459,316 @@
   </nav>
 
   <!-- ========== MAIN CONTENT ========== -->
-  <main class="container" style="max-width: 1000px; margin: 0 auto; padding: 0 1.5rem;">
+  <main class="container" style="max-width: 960px; margin: 0 auto; padding: 0 1.25rem;">
     <!-- Hero Header -->
     <div class="screening-hero">
       <div class="screening-badge">
-        <i class="fas fa-brain"></i>
-        <span>AI Clinical Health Screening</span>
+        <i class="fas fa-robot"></i>
+        <span>AI Clinical Health Screening Chatbot</span>
       </div>
       <h1 class="screening-title">
-        Donor <span>Eligibility Check</span>
+        Interactive <span>Donor Eligibility</span>
       </h1>
       <p class="screening-subtitle">
-        Not sure if you are eligible to donate today? Take our quick interactive health screening to instantly verify your status based on age, weight, and recent medical history.
+        Chat with Dr. Aria, our virtual AI Clinical Screener. Verify your physiological donation readiness in under 60 seconds according to WHO and NBTC clinical standards.
       </p>
     </div>
 
-    <!-- Screening Interactive Q&A Card -->
-    <div class="qa-card-container">
-      <!-- Progress Bar -->
-      <div class="progress-bar-wrapper" id="progressArea">
-        <div class="progress-labels">
-          <span id="stepCounterText">Question 1 of 5</span>
-          <span id="percentProgressText">20% Completed</span>
+    <!-- Chatbot Container -->
+    <div class="chatbot-card-container">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="chat-header-profile">
+          <div class="chat-avatar-box">
+            <i class="fas fa-user-doctor"></i>
+            <span class="chat-online-dot"></span>
+          </div>
+          <div class="chat-header-info">
+            <h4>Dr. Aria • AI Clinical Screener</h4>
+            <p><i class="fas fa-shield-heart"></i> WHO / NBTC Standards Active</p>
+          </div>
         </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="progressFill" style="width: 20%;"></div>
-        </div>
-      </div>
 
-      <!-- STEP 1: Age Check -->
-      <div class="qa-step active" id="step1">
-        <div class="qa-step-category"><i class="fas fa-calendar"></i> Step 1: Age Criteria</div>
-        <h3 class="qa-question">Are you between 18 and 65 years old?</h3>
-        <p class="qa-description">National clinical blood banking regulations mandate voluntary blood donors to be at least 18 years of age.</p>
-        <div class="qa-options-grid">
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(1, true)">
-            <i class="fas fa-check-circle"></i>
-            <span class="qa-option-title">Yes, 18 - 65 Years</span>
-            <span class="qa-option-sub">I meet this requirement</span>
-          </button>
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(1, false)">
-            <i class="fas fa-times-circle"></i>
-            <span class="qa-option-title">No, Under 18 or 65+</span>
-            <span class="qa-option-sub">I do not fall in this range</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 2: Weight Check -->
-      <div class="qa-step" id="step2">
-        <div class="qa-step-category"><i class="fas fa-weight-scale"></i> Step 2: Body Weight</div>
-        <h3 class="qa-question">Do you weigh at least 50 kg (110 lbs)?</h3>
-        <p class="qa-description">Adequate body weight ensures safe physiological blood volume extraction (standard 350ml or 450ml draw) without vasovagal dizziness.</p>
-        <div class="qa-options-grid">
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(2, true)">
-            <i class="fas fa-check-circle"></i>
-            <span class="qa-option-title">Yes, &ge; 50 kg</span>
-            <span class="qa-option-sub">Weight is 50 kg or greater</span>
-          </button>
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(2, false)">
-            <i class="fas fa-times-circle"></i>
-            <span class="qa-option-title">No, Under 50 kg</span>
-            <span class="qa-option-sub">Currently less than 50 kg</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 3: Last Donation Interval -->
-      <div class="qa-step" id="step3">
-        <div class="qa-step-category"><i class="fas fa-clock-rotate-left"></i> Step 3: Donation Interval</div>
-        <h3 class="qa-question">Has it been more than 90 days since your last whole blood donation?</h3>
-        <p class="qa-description">First-time donors can select 'Yes'. Erythrocyte red cell replenishment requires an obligatory 3-month biological recovery cycle.</p>
-        <div class="qa-options-grid">
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(3, true)">
-            <i class="fas fa-check-circle"></i>
-            <span class="qa-option-title">Yes (or First Time)</span>
-            <span class="qa-option-sub">Over 90 days / never donated</span>
-          </button>
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(3, false)">
-            <i class="fas fa-times-circle"></i>
-            <span class="qa-option-title">No, within 90 days</span>
-            <span class="qa-option-sub">Donated within past 3 months</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 4: Acute Symptoms & Medication -->
-      <div class="qa-step" id="step4">
-        <div class="qa-step-category"><i class="fas fa-notes-medical"></i> Step 4: Health Status Today</div>
-        <h3 class="qa-question">Are you feeling fully well today, free of fever or active antibiotics?</h3>
-        <p class="qa-description">Donors should be asymptomatic and not currently taking antibiotics for active systemic infection.</p>
-        <div class="qa-options-grid">
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(4, true)">
-            <i class="fas fa-check-circle"></i>
-            <span class="qa-option-title">Yes, Feeling Great</span>
-            <span class="qa-option-sub">No acute illness or antibiotics</span>
-          </button>
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(4, false)">
-            <i class="fas fa-times-circle"></i>
-            <span class="qa-option-title">No, Currently Sick</span>
-            <span class="qa-option-sub">Fever, infection, or medication</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 5: Tattoos / Surgery -->
-      <div class="qa-step" id="step5">
-        <div class="qa-step-category"><i class="fas fa-shield-virus"></i> Step 5: Recent Procedures</div>
-        <h3 class="qa-question">Have you had any tattoos, piercings, or major surgeries in the past 6 months?</h3>
-        <p class="qa-description">A 6-month deferral window protects transfusion recipients from potential latent blood-borne transmission.</p>
-        <div class="qa-options-grid">
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(5, false)">
-            <i class="fas fa-check-circle"></i>
-            <span class="qa-option-title">No Recent Procedures</span>
-            <span class="qa-option-sub">No tattoos or surgeries in 6 mo</span>
-          </button>
-          <button type="button" class="qa-option-btn" onclick="selectAnswer(5, true)">
-            <i class="fas fa-times-circle"></i>
-            <span class="qa-option-title">Yes, in Past 6 Months</span>
-            <span class="qa-option-sub">Had tattoo, piercing, or surgery</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- RESULT SCREEN -->
-      <div class="qa-step" id="stepResult">
-        <div class="qa-result-box" id="resultContent">
-          <!-- Dynamically inserted by JS -->
-        </div>
-      </div>
-
-      <!-- Step Controls -->
-      <div class="qa-nav-buttons" id="navControls">
-        <button type="button" class="btn-qa-back" id="btnBack" onclick="goPreviousStep()" disabled>
-          <i class="fas fa-arrow-left"></i>
-          <span>Previous</span>
+        <button type="button" class="btn-chat-restart" onclick="restartChatbot()">
+          <i class="fas fa-rotate-left"></i>
+          <span>Restart Assessment</span>
         </button>
-        <button type="button" class="btn-qa-next" id="btnNext" onclick="goNextStep()" disabled>
-          <span>Next</span>
-          <i class="fas fa-arrow-right"></i>
-        </button>
+      </div>
+
+      <!-- Messages Area -->
+      <div class="chat-messages-stream" id="chatStream">
+        <!-- Messages appended dynamically -->
+      </div>
+
+      <!-- Typing Indicator -->
+      <div class="typing-row" id="typingIndicator">
+        <div class="msg-avatar" style="background: rgba(230, 57, 70, 0.2); border: 1px solid rgba(230, 57, 70, 0.4); color: #ff6b6b; width: 28px; height: 28px; margin-left: 1.4rem;">
+          <i class="fas fa-stethoscope" style="font-size: 0.75rem;"></i>
+        </div>
+        <div class="typing-bubble">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>
+      </div>
+
+      <!-- Quick Reply Action Pills -->
+      <div class="chat-quick-replies-area" id="quickRepliesArea">
+        <!-- Quick reply buttons populated dynamically -->
       </div>
     </div>
   </main>
 
   <!-- ========== SLEEK MINIMAL FOOTER ========== -->
-  <footer class="footer" style="margin-top: auto; padding: 2.5rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
+  <footer class="footer" style="margin-top: auto; padding: 2.2rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
     <div class="container" style="color: var(--text-muted, #5a5a7a); font-size: 0.85rem;">
-      <p>&copy; 2026 RED404 Emergency Blood Network • Clinical guidance adheres to NBTC & WHO voluntary donor requirements.</p>
+      <p>&copy; 2026 RED404 Emergency Blood Network • Clinical guidance complies with WHO & National Blood Transfusion Council regulations.</p>
     </div>
   </footer>
 
-  <!-- ========== SCRIPT ========== -->
+  <!-- ========== CHATBOT SCRIPT ========== -->
   <script>
-    let currentStep = 1;
-    const totalSteps = 5;
-    const answers = {};
+    // Comprehensive clinical screening questions
+    const SCREENING_STEPS = [
+      {
+        id: "intro",
+        botText: "Hello! I am Dr. Aria, your AI Clinical Screener for RED404. I will ask you 7 quick health & physiological questions to verify if you can safely donate blood today. Ready to begin?",
+        options: [
+          { label: "Yes, Let's Begin", value: "start", type: "positive", icon: "fa-play" }
+        ]
+      },
+      {
+        id: "age",
+        botText: "Question 1 of 7: What is your current age? Clinical blood transfusion standards require voluntary donors to be between 18 and 65 years old.",
+        options: [
+          { label: "Yes, 18 - 65 Years", value: true, type: "positive", icon: "fa-check" },
+          { label: "No, Under 18 or 65+", value: false, type: "negative", icon: "fa-times" }
+        ]
+      },
+      {
+        id: "weight",
+        botText: "Question 2 of 7: Do you weigh at least 50 kg (110 lbs)? Safe physiological blood volume extraction requires a minimum body weight of 50 kg.",
+        options: [
+          { label: "Yes, 50 kg or More", value: true, type: "positive", icon: "fa-weight-scale" },
+          { label: "No, Under 50 kg", value: false, type: "negative", icon: "fa-times" }
+        ]
+      },
+      {
+        id: "interval",
+        botText: "Question 3 of 7: Has it been at least 90 days (3 months) since your last whole blood donation? If this is your first time donating, select 'First Time'.",
+        options: [
+          { label: "Over 90 Days / First Time", value: true, type: "positive", icon: "fa-clock-rotate-left" },
+          { label: "Within the Past 90 Days", value: false, type: "negative", icon: "fa-times" }
+        ]
+      },
+      {
+        id: "health",
+        botText: "Question 4 of 7: How is your health today? Are you feeling completely well and free from fever, cough, flu, or sore throat?",
+        options: [
+          { label: "Feeling Great & Symptom-Free", value: true, type: "positive", icon: "fa-heart-pulse" },
+          { label: "Currently Experiencing Symptoms", value: false, type: "negative", icon: "fa-times" }
+        ]
+      },
+      {
+        id: "antibiotics",
+        botText: "Question 5 of 7: Have you taken any antibiotics or medications for an active infection in the last 7 days?",
+        options: [
+          { label: "No Antibiotics in Past 7 Days", value: true, type: "positive", icon: "fa-pills" },
+          { label: "Yes, Currently on Antibiotics", value: false, type: "negative", icon: "fa-times" }
+        ]
+      },
+      {
+        id: "procedures",
+        botText: "Question 6 of 7: Have you had any tattoos, body piercings, acupuncture, or major surgeries within the last 6 months?",
+        options: [
+          { label: "No Procedures in Last 6 Months", value: true, type: "positive", icon: "fa-shield-virus" },
+          { label: "Yes, within Last 6 Months", value: false, type: "negative", icon: "fa-times" }
+        ]
+      },
+      {
+        id: "chronic",
+        botText: "Question 7 of 7: Do you have any known history of heart conditions, hepatitis B/C, HIV, or uncontrolled chronic illnesses?",
+        options: [
+          { label: "No Chronic Conditions", value: true, type: "positive", icon: "fa-shield-halved" },
+          { label: "Yes, Medical History Present", value: false, type: "negative", icon: "fa-times" }
+        ]
+      }
+    ];
 
-    function updateProgressBar() {
-      if (currentStep > totalSteps) {
-        document.getElementById('progressArea').style.display = 'none';
-        document.getElementById('navControls').style.display = 'none';
+    let currentStepIndex = 0;
+    const userAnswers = {};
+
+    const chatStream = document.getElementById('chatStream');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const quickRepliesArea = document.getElementById('quickRepliesArea');
+
+    function appendMessage(sender, text, isHtml = false) {
+      const row = document.createElement('div');
+      row.className = `msg-row ${sender}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'msg-avatar';
+      avatar.innerHTML = (sender === 'bot') ? '<i class="fas fa-stethoscope"></i>' : '<i class="fas fa-user"></i>';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      if (isHtml) {
+        bubble.innerHTML = text;
+      } else {
+        bubble.textContent = text;
+      }
+
+      row.appendChild(avatar);
+      row.appendChild(bubble);
+      chatStream.appendChild(row);
+
+      chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
+    function showTyping(show = true) {
+      if (show) {
+        typingIndicator.classList.add('active');
+        chatStream.scrollTop = chatStream.scrollHeight;
+      } else {
+        typingIndicator.classList.remove('active');
+      }
+    }
+
+    function renderStep(index) {
+      if (index >= SCREENING_STEPS.length) {
+        evaluateAndShowResult();
         return;
       }
-      document.getElementById('progressArea').style.display = 'block';
-      document.getElementById('navControls').style.display = 'flex';
 
-      const pct = Math.round((currentStep / totalSteps) * 100);
-      document.getElementById('stepCounterText').textContent = `Question ${currentStep} of ${totalSteps}`;
-      document.getElementById('percentProgressText').textContent = `${pct}% Completed`;
-      document.getElementById('progressFill').style.width = `${pct}%`;
+      const step = SCREENING_STEPS[index];
+      quickRepliesArea.innerHTML = '';
+      showTyping(true);
 
-      document.getElementById('btnBack').disabled = (currentStep === 1);
-      document.getElementById('btnNext').disabled = (answers[currentStep] === undefined);
-    }
-
-    function showStep(stepNumber) {
-      document.querySelectorAll('.qa-step').forEach(step => {
-        step.classList.remove('active');
-      });
-
-      if (stepNumber <= totalSteps) {
-        const target = document.getElementById(`step${stepNumber}`);
-        if (target) target.classList.add('active');
-      } else {
-        const resultTarget = document.getElementById('stepResult');
-        if (resultTarget) resultTarget.classList.add('active');
-        renderFinalResult();
-      }
-
-      updateProgressBar();
-    }
-
-    function selectAnswer(stepNumber, val) {
-      answers[stepNumber] = val;
-
-      // Update button selection state
-      const currentStepEl = document.getElementById(`step${stepNumber}`);
-      if (currentStepEl) {
-        const buttons = currentStepEl.querySelectorAll('.qa-option-btn');
-        buttons.forEach((btn, idx) => {
-          btn.classList.remove('selected');
-        });
-        event.currentTarget.classList.add('selected');
-      }
-
-      document.getElementById('btnNext').disabled = false;
-
-      // Smooth auto-advance
       setTimeout(() => {
-        goNextStep();
-      }, 250);
+        showTyping(false);
+        appendMessage('bot', step.botText);
+
+        // Render Quick reply buttons
+        quickRepliesArea.innerHTML = step.options.map((opt, i) => `
+          <button type="button" class="btn-quick-reply ${opt.type || ''}" onclick="handleOptionSelect(${index}, ${i})">
+            <i class="fas ${opt.icon || 'fa-arrow-right'}"></i>
+            <span>${opt.label}</span>
+          </button>
+        `).join('');
+      }, 500);
     }
 
-    function goNextStep() {
-      if (currentStep <= totalSteps) {
-        currentStep++;
-        showStep(currentStep);
+    function handleOptionSelect(stepIndex, optionIndex) {
+      const step = SCREENING_STEPS[stepIndex];
+      const selected = step.options[optionIndex];
+
+      // Disable quick replies
+      quickRepliesArea.innerHTML = '';
+
+      // Append user response to chat
+      appendMessage('user', selected.label);
+
+      // Record answer (except for intro)
+      if (step.id !== 'intro') {
+        userAnswers[step.id] = selected.value;
       }
+
+      currentStepIndex++;
+      renderStep(currentStepIndex);
     }
 
-    function goPreviousStep() {
-      if (currentStep > 1) {
-        currentStep--;
-        showStep(currentStep);
-      }
+    function evaluateAndShowResult() {
+      quickRepliesArea.innerHTML = '';
+      showTyping(true);
+
+      setTimeout(() => {
+        showTyping(false);
+
+        const isAge = userAnswers['age'] === true;
+        const isWeight = userAnswers['weight'] === true;
+        const isInterval = userAnswers['interval'] === true;
+        const isHealth = userAnswers['health'] === true;
+        const isAntibiotics = userAnswers['antibiotics'] === true;
+        const isProcedures = userAnswers['procedures'] === true;
+        const isChronic = userAnswers['chronic'] === true;
+
+        const isFullyEligible = isAge && isWeight && isInterval && isHealth && isAntibiotics && isProcedures && isChronic;
+
+        if (isFullyEligible) {
+          appendMessage('bot', `
+            <div class="chat-result-card eligible">
+              <div class="result-badge-row eligible">
+                <i class="fas fa-shield-check"></i>
+                <span>VERIFIED ELIGIBLE TO DONATE</span>
+              </div>
+              <p class="result-card-desc">
+                Congratulations! You meet all physiological and safety requirements for voluntary whole blood donation. Your donation can save up to 3 lives today.
+              </p>
+              <div class="result-card-list">
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Age Criteria Satisfied (18 - 65 Yrs)</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Body Weight Requirement Cleared (&ge; 50 kg)</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> 90-Day Biological Recovery Completed</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Free from Acute Infections &amp; Antibiotics</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Zero In-Window Cosmetic/Surgical Procedures</div>
+              </div>
+              <div class="result-card-actions">
+                <a href="donor-register.html" class="btn btn-service-primary" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+                  <i class="fas fa-user-plus"></i>
+                  <span>Register as Voluntary Donor</span>
+                </a>
+                <a href="blood-availability-search.html" class="btn btn-service-outline" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+                  <i class="fas fa-search-location"></i>
+                  <span>Explore Donors Network</span>
+                </a>
+              </div>
+            </div>
+          `, true);
+        } else {
+          let deferrals = [];
+          if (!isAge) deferrals.push("Must be between 18 and 65 years old.");
+          if (!isWeight) deferrals.push("Must weigh at least 50 kg to ensure safe blood draw volume.");
+          if (!isInterval) deferrals.push("Mandatory 90-day waiting period between whole blood donations.");
+          if (!isHealth) deferrals.push("Please wait until acute cold, fever, or illness is 100% resolved.");
+          if (!isAntibiotics) deferrals.push("Wait 7 days after completing your full antibiotic course.");
+          if (!isProcedures) deferrals.push("A 6-month deferral is required after tattoos, piercings, or surgery.");
+          if (!isChronic) deferrals.push("Chronic conditions or blood-borne histories require clinical doctor clearance.");
+
+          appendMessage('bot', `
+            <div class="chat-result-card deferred">
+              <div class="result-badge-row deferred">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>TEMPORARY DEFERRAL RECOMMENDED</span>
+              </div>
+              <p class="result-card-desc">
+                Based on your answers, you should postpone blood donation at this time. Most deferrals are temporary and protect both your health and the recipient's safety.
+              </p>
+              <div class="result-card-list">
+                ${deferrals.map(d => `<div class="result-item"><i class="fas fa-circle-exclamation warn"></i> ${d}</div>`).join('')}
+              </div>
+              <div class="result-card-actions">
+                <button type="button" class="btn btn-service-primary" onclick="restartChatbot()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+                  <i class="fas fa-rotate-left"></i>
+                  <span>Retake Health Screening</span>
+                </button>
+                <a href="blood-availability.html" class="btn btn-service-outline" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+                  <i class="fas fa-hospital"></i>
+                  <span>Explore Blood Bank Directory</span>
+                </a>
+              </div>
+            </div>
+          `, true);
+        }
+      }, 700);
     }
 
-    function renderFinalResult() {
-      const isAgeOk = answers[1] === true;
-      const isWeightOk = answers[2] === true;
-      const isIntervalOk = answers[3] === true;
-      const isHealthOk = answers[4] === true;
-      const hasRecentProcedure = answers[5] === true;
-
-      const isEligible = isAgeOk && isWeightOk && isIntervalOk && isHealthOk && !hasRecentProcedure;
-
-      const container = document.getElementById('resultContent');
-
-      if (isEligible) {
-        container.innerHTML = `
-          <div class="qa-result-icon eligible">
-            <i class="fas fa-heart-pulse"></i>
-          </div>
-          <h2 class="qa-result-title" style="color: #10b981;">Verified Eligible to Donate!</h2>
-          <p class="qa-result-desc">
-            Outstanding! Based on standard clinical telemetry guidelines, you meet all primary physiological requirements for whole blood donation.
-          </p>
-
-          <div class="qa-result-checklist">
-            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Age requirement satisfied (18 - 65 Yrs)</div>
-            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Healthy body mass (&ge; 50 kg)</div>
-            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Biological replenishment interval cleared (&gt; 90 Days)</div>
-            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Optimal acute health & infection-free</div>
-            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Zero recent medical or cosmetic tattoo procedures</div>
-          </div>
-
-          <div class="qa-result-actions">
-            <a href="donor-register.html" class="btn btn-service-primary" style="padding: 0.85rem 2rem; font-size: 1rem;">
-              <i class="fas fa-user-plus"></i>
-              <span>Register as a Donor Now</span>
-            </a>
-            <button type="button" class="btn-modal-cancel" onclick="restartScreening()">
-              <i class="fas fa-rotate-left"></i>
-              <span>Retake Screening</span>
-            </button>
-          </div>
-        `;
-      } else {
-        let reasons = [];
-        if (!isAgeOk) reasons.push("Age must be between 18 and 65 years");
-        if (!isWeightOk) reasons.push("Body weight must be at least 50 kg for blood volume tolerance");
-        if (!isIntervalOk) reasons.push("A minimum of 90 days must elapse between whole blood donations");
-        if (!isHealthOk) reasons.push("Must be completely symptom-free and finished with antibiotic treatment");
-        if (hasRecentProcedure) reasons.push("6-month waiting period required after tattoos, piercings, or surgery");
-
-        container.innerHTML = `
-          <div class="qa-result-icon deferred">
-            <i class="fas fa-hand-dots"></i>
-          </div>
-          <h2 class="qa-result-title" style="color: #ff6b6b;">Temporarily Deferred</h2>
-          <p class="qa-result-desc">
-            You do not currently meet all criteria for blood donation today. Don't worry — most deferrals are temporary and protect both you and the recipient.
-          </p>
-
-          <div class="qa-result-checklist">
-            ${reasons.map(r => `
-              <div class="qa-chk-item warning"><i class="fas fa-triangle-exclamation"></i> ${r}</div>
-            `).join('')}
-          </div>
-
-          <div class="qa-result-actions">
-            <a href="blood-availability-search.html" class="btn btn-service-primary" style="padding: 0.85rem 1.8rem;">
-              <i class="fas fa-search-location"></i>
-              <span>Explore Live Blood Availability</span>
-            </a>
-            <button type="button" class="btn-modal-cancel" onclick="restartScreening()">
-              <i class="fas fa-rotate-left"></i>
-              <span>Retake Screening</span>
-            </button>
-          </div>
-        `;
-      }
+    function restartChatbot() {
+      chatStream.innerHTML = '';
+      currentStepIndex = 0;
+      for (let k in userAnswers) delete userAnswers[k];
+      renderStep(0);
     }
 
-    function restartScreening() {
-      currentStep = 1;
-      for (let k in answers) delete answers[k];
-      document.querySelectorAll('.qa-option-btn').forEach(btn => btn.classList.remove('selected'));
-      showStep(1);
-    }
-
-    // Mobile nav toggle
+    // Hamburger Mobile Toggle
     const hamburger = document.getElementById('hamburger');
     const navLinks = document.getElementById('navLinks');
     if (hamburger && navLinks) {
@@ -725,7 +779,7 @@
 
     // Init
     document.addEventListener('DOMContentLoaded', () => {
-      showStep(1);
+      renderStep(0);
     });
   </script>
 </body>

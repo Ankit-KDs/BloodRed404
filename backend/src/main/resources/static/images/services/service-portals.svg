@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14141e"/>
+      <stop offset="100%" stop-color="#0c0c12"/>
+    </linearGradient>
+    <linearGradient id="donorCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#241e24"/>
+      <stop offset="100%" stop-color="#18151c"/>
+    </linearGradient>
+    <linearGradient id="hospCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c222e"/>
+      <stop offset="100%" stop-color="#131722"/>
+    </linearGradient>
+    <filter id="cardShadow4" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect x="20" y="20" width="360" height="280" rx="16" fill="url(#bgGrad4)" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" filter="url(#cardShadow4)"/>
+
+  <!-- Left: Donor Portal Node -->
+  <g transform="translate(45, 65)">
+    <rect width="135" height="150" rx="10" fill="url(#donorCardGrad)" stroke="rgba(230,57,70,0.35)" stroke-width="1.5"/>
+    <!-- Icon circle -->
+    <circle cx="67" cy="40" r="22" fill="rgba(230,57,70,0.15)" stroke="#e63946" stroke-width="1.2"/>
+    <!-- User Silhouette -->
+    <circle cx="67" cy="34" r="8" fill="#ff6b6b"/>
+    <path d="M53 52 C53 45 61 45 67 45 C73 45 81 45 81 52 Z" fill="#ff6b6b"/>
+
+    <!-- Labels -->
+    <text x="67" y="80" fill="#ffffff" font-family="'Orbitron', monospace" font-size="11" font-weight="700" text-anchor="middle">DONOR PORTAL</text>
+    <text x="67" y="96" fill="#9898b8" font-family="'Inter', sans-serif" font-size="9" text-anchor="middle">Voluntary Citizen Node</text>
+
+    <!-- Badge -->
+    <rect x="22" y="112" width="90" height="20" rx="4" fill="rgba(230,57,70,0.2)" stroke="#e63946" stroke-width="1"/>
+    <text x="67" y="126" fill="#ff6b6b" font-family="'Inter', sans-serif" font-size="9" font-weight="700" text-anchor="middle">Personal ID Card</text>
+  </g>
+
+  <!-- Center Lock & Bridge -->
+  <g transform="translate(182, 115)">
+    <!-- Connection lines -->
+    <line x1="-15" y1="25" x2="50" y2="25" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="4 4"/>
+    <!-- Padlock Container -->
+    <rect x="6" y="10" width="24" height="28" rx="5" fill="#1b1b26" stroke="#e63946" stroke-width="1.5"/>
+    <path d="M12 10 L12 4 C12 0 24 0 24 4 L24 10" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="18" cy="22" r="2" fill="#e63946"/>
+  </g>
+
+  <!-- Right: Hospital Node -->
+  <g transform="translate(220, 65)">
+    <rect width="135" height="150" rx="10" fill="url(#hospCardGrad)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+    <!-- Icon circle -->
+    <circle cx="67" cy="40" r="22" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1.2"/>
+    <!-- Hospital Icon -->
+    <rect x="56" y="28" width="22" height="24" rx="2" fill="#ffffff" fill-opacity="0.85"/>
+    <rect x="64" y="32" width="6" height="16" fill="#0f172a"/>
+    <rect x="59" y="37" width="16" height="6" fill="#0f172a"/>
+
+    <!-- Labels -->
+    <text x="67" y="80" fill="#ffffff" font-family="'Orbitron', monospace" font-size="11" font-weight="700" text-anchor="middle">HOSPITAL NODE</text>
+    <text x="67" y="96" fill="#9898b8" font-family="'Inter', sans-serif" font-size="9" text-anchor="middle">Trauma Triage Dispatch</text>
+
+    <!-- Badge -->
+    <rect x="22" y="112" width="90" height="20" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <text x="67" y="126" fill="#cbd5e1" font-family="'Inter', sans-serif" font-size="9" font-weight="700" text-anchor="middle">Emergency SOS Gate</text>
+  </g>
+
+  <!-- Bottom Tag -->
+  <rect x="110" y="266" width="180" height="22" rx="11" fill="rgba(230,57,70,0.12)" stroke="rgba(230,57,70,0.3)"/>
+  <text x="200" y="281" fill="#ff6b6b" font-family="'Orbitron', monospace" font-size="9" font-weight="700" letter-spacing="1" text-anchor="middle">256-BIT ENCRYPTED NODES</text>
+</svg>

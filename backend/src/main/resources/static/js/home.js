@@ -239,48 +239,79 @@ function initZoneDiagramAnimation() {
   if (zoneSection) io.observe(zoneSection);
 }
 
-/* ==================== OUR SERVICES TABS ==================== */
+/* ==================== OUR SERVICES TABS & ACCORDION ==================== */
 function initServicesTabs() {
   const tabCards = document.querySelectorAll('.service-tab-card');
   const panes = document.querySelectorAll('.service-pane');
-  if (!tabCards.length || !panes.length) return;
 
-  tabCards.forEach(card => {
-    card.addEventListener('click', () => {
-      const targetId = card.getAttribute('data-tab');
-      if (!targetId) return;
+  // Desktop Tabs Handler
+  if (tabCards.length && panes.length) {
+    tabCards.forEach(card => {
+      card.addEventListener('click', () => {
+        const targetId = card.getAttribute('data-tab');
+        if (!targetId) return;
 
-      // Update Tab Cards active state
-      tabCards.forEach(c => {
-        c.classList.remove('active');
-        c.setAttribute('aria-selected', 'false');
-      });
-      card.classList.add('active');
-      card.setAttribute('aria-selected', 'true');
+        // Update Tab Cards active state
+        tabCards.forEach(c => {
+          c.classList.remove('active');
+          c.setAttribute('aria-selected', 'false');
+        });
+        card.classList.add('active');
+        card.setAttribute('aria-selected', 'true');
 
-      // Update Panes with smooth fade transition
-      panes.forEach(pane => {
-        if (pane.id === targetId) {
-          pane.style.display = 'block';
-          requestAnimationFrame(() => {
+        // INSTANT Pane Switch (Zero delay to avoid millisecond dual-stacked layout glitch)
+        panes.forEach(pane => {
+          if (pane.id === targetId) {
+            pane.style.display = 'block';
             pane.classList.add('active');
-          });
-        } else {
-          pane.classList.remove('active');
-          setTimeout(() => {
-            if (!pane.classList.contains('active')) {
-              pane.style.display = 'none';
-            }
-          }, 200);
+          } else {
+            pane.classList.remove('active');
+            pane.style.display = 'none';
+          }
+        });
+      });
+    });
+  }
+
+  // Mobile Accordion Handler
+  const accCards = document.querySelectorAll('.service-acc-card');
+  accCards.forEach(card => {
+    const header = card.querySelector('.service-acc-header');
+    if (!header) return;
+
+    header.addEventListener('click', () => {
+      const isOpen = card.classList.contains('open');
+
+      // Close all other accordion items
+      accCards.forEach(c => {
+        if (c !== card) {
+          c.classList.remove('open');
+          const otherIcon = c.querySelector('.sah-icon');
+          if (otherIcon) otherIcon.className = 'fas fa-plus sah-icon';
+          const otherBtn = c.querySelector('.service-acc-header');
+          if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
         }
       });
+
+      // Toggle current item
+      if (isOpen) {
+        card.classList.remove('open');
+        const icon = card.querySelector('.sah-icon');
+        if (icon) icon.className = 'fas fa-plus sah-icon';
+        header.setAttribute('aria-expanded', 'false');
+      } else {
+        card.classList.add('open');
+        const icon = card.querySelector('.sah-icon');
+        if (icon) icon.className = 'fas fa-minus sah-icon';
+        header.setAttribute('aria-expanded', 'true');
+      }
     });
   });
 
   // Campaign explore button toast handler
-  const btnCampaigns = document.getElementById('btnExploreCampaigns');
-  if (btnCampaigns) {
-    btnCampaigns.addEventListener('click', (e) => {
+  const btnCampaigns = document.querySelectorAll('.btn-explore-campaigns-action, #btnExploreCampaigns');
+  btnCampaigns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.preventDefault();
       if (typeof showToast === 'function') {
         showToast('Upcoming donation drive listings will open for your district shortly!', 'info', 3500);
@@ -288,5 +319,5 @@ function initServicesTabs() {
         alert('Upcoming voluntary blood donation drives will be announced for your city soon.');
       }
     });
-  }
+  });
 }
