@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeroMapAnimation();
   initBloodTicker();
   initZoneDiagramAnimation();
+  initServicesTabs();
 });
 
 /* ==================== PARTICLES ==================== */
@@ -236,4 +237,56 @@ function initZoneDiagramAnimation() {
 
   const zoneSection = document.querySelector('.zones-section');
   if (zoneSection) io.observe(zoneSection);
+}
+
+/* ==================== OUR SERVICES TABS ==================== */
+function initServicesTabs() {
+  const tabCards = document.querySelectorAll('.service-tab-card');
+  const panes = document.querySelectorAll('.service-pane');
+  if (!tabCards.length || !panes.length) return;
+
+  tabCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const targetId = card.getAttribute('data-tab');
+      if (!targetId) return;
+
+      // Update Tab Cards active state
+      tabCards.forEach(c => {
+        c.classList.remove('active');
+        c.setAttribute('aria-selected', 'false');
+      });
+      card.classList.add('active');
+      card.setAttribute('aria-selected', 'true');
+
+      // Update Panes with smooth fade transition
+      panes.forEach(pane => {
+        if (pane.id === targetId) {
+          pane.style.display = 'block';
+          requestAnimationFrame(() => {
+            pane.classList.add('active');
+          });
+        } else {
+          pane.classList.remove('active');
+          setTimeout(() => {
+            if (!pane.classList.contains('active')) {
+              pane.style.display = 'none';
+            }
+          }, 200);
+        }
+      });
+    });
+  });
+
+  // Campaign explore button toast handler
+  const btnCampaigns = document.getElementById('btnExploreCampaigns');
+  if (btnCampaigns) {
+    btnCampaigns.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof showToast === 'function') {
+        showToast('Upcoming donation drive listings will open for your district shortly!', 'info', 3500);
+      } else {
+        alert('Upcoming voluntary blood donation drives will be announced for your city soon.');
+      }
+    });
+  }
 }

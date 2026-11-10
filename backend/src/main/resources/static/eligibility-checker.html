@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RED404 • AI Donor Health Screening & Eligibility</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap"
+    rel="stylesheet" />
+
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/home.css" />
+
+  <style>
+    .eligibility-page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #0a0a0f;
+      background-image: 
+        radial-gradient(ellipse at 80% 20%, rgba(230, 57, 70, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(193, 18, 31, 0.06) 0%, transparent 50%);
+    }
+
+    .screening-hero {
+      padding: 7.5rem 0 2rem;
+      text-align: center;
+    }
+
+    .screening-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(230, 57, 70, 0.12);
+      border: 1px solid rgba(230, 57, 70, 0.35);
+      color: var(--red-light, #ff6b6b);
+      padding: 0.4rem 1.1rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    .screening-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--text-primary, #f0f0f8);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 0.85rem;
+    }
+
+    .screening-title span {
+      background: linear-gradient(135deg, #e63946 0%, #ff6b6b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .screening-subtitle {
+      max-width: 650px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+      color: var(--text-secondary, #9898b8);
+      line-height: 1.6;
+    }
+
+    /* Q&A Assessment Box */
+    .qa-card-container {
+      max-width: 760px;
+      margin: 2rem auto 4rem;
+      background: rgba(17, 17, 24, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: var(--radius-xl, 24px);
+      padding: 2.5rem 3rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(230, 57, 70, 0.06);
+      position: relative;
+    }
+
+    /* Progress bar */
+    .progress-bar-wrapper {
+      margin-bottom: 2rem;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-secondary, #9898b8);
+      margin-bottom: 0.5rem;
+      font-family: var(--font-brand, 'Orbitron'), monospace;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 20%;
+      background: linear-gradient(90deg, #e63946 0%, #ff6b6b 100%);
+      transition: width 0.35s ease;
+      box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
+    }
+
+    /* Step Question Panes */
+    .qa-step {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .qa-step.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .qa-step-category {
+      font-family: var(--font-brand, 'Orbitron'), monospace;
+      font-size: 0.75rem;
+      color: var(--red-light, #ff6b6b);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .qa-question {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.4;
+      margin-bottom: 0.75rem;
+    }
+
+    .qa-description {
+      font-size: 0.95rem;
+      color: var(--text-secondary, #9898b8);
+      line-height: 1.5;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Answer Option Cards */
+    .qa-options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .qa-option-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-lg, 14px);
+      padding: 1.5rem 1.25rem;
+      color: #ffffff;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      outline: none;
+    }
+
+    .qa-option-btn:hover {
+      background: rgba(230, 57, 70, 0.1);
+      border-color: rgba(230, 57, 70, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .qa-option-btn.selected {
+      background: linear-gradient(135deg, rgba(230, 57, 70, 0.25) 0%, rgba(193, 18, 31, 0.15) 100%);
+      border-color: var(--red-primary, #e63946);
+      box-shadow: 0 0 20px rgba(230, 57, 70, 0.35);
+    }
+
+    .qa-option-btn i {
+      font-size: 1.8rem;
+      color: var(--red-light, #ff6b6b);
+      transition: transform 0.25s ease;
+    }
+
+    .qa-option-btn:hover i {
+      transform: scale(1.1);
+    }
+
+    .qa-option-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .qa-option-sub {
+      font-size: 0.8rem;
+      color: var(--text-secondary, #9898b8);
+    }
+
+    /* Step Navigation Controls */
+    .qa-nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 1.5rem;
+    }
+
+    .btn-qa-back {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-secondary, #9898b8);
+      padding: 0.7rem 1.4rem;
+      border-radius: var(--radius-md, 10px);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-qa-back:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+    }
+
+    .btn-qa-back:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .btn-qa-next {
+      background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+      border: 1px solid rgba(230, 57, 70, 0.5);
+      color: #ffffff;
+      padding: 0.75rem 1.8rem;
+      border-radius: var(--radius-md, 10px);
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.25s ease;
+      box-shadow: 0 0 15px rgba(230, 57, 70, 0.3);
+    }
+
+    .btn-qa-next:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+    }
+
+    .btn-qa-next:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Result State Screen */
+    .qa-result-box {
+      text-align: center;
+      padding: 1rem 0;
+    }
+
+    .qa-result-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+    }
+
+    .qa-result-icon.eligible {
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid #10b981;
+      color: #10b981;
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
+    }
+
+    .qa-result-icon.deferred {
+      background: rgba(239, 68, 68, 0.15);
+      border: 2px solid #ef4444;
+      color: #ef4444;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.35);
+    }
+
+    .qa-result-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.75rem;
+    }
+
+    .qa-result-desc {
+      font-size: 1rem;
+      color: var(--text-secondary, #9898b8);
+      max-width: 550px;
+      margin: 0 auto 2rem;
+      line-height: 1.6;
+    }
+
+    .qa-result-checklist {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md, 12px);
+      padding: 1.25rem 1.75rem;
+      text-align: left;
+      margin: 0 auto 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .qa-chk-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--text-primary, #e2e8f0);
+    }
+
+    .qa-chk-item.success i { color: #10b981; }
+    .qa-chk-item.warning i { color: #f59e0b; }
+    .qa-chk-item.danger i { color: #ef4444; }
+
+    .qa-result-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .qa-card-container {
+        padding: 1.75rem 1.25rem;
+      }
+      .qa-options-grid {
+        grid-template-columns: 1fr;
+      }
+      .qa-result-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body class="eligibility-page-wrapper">
+
+  <!-- ========== TOP NAVIGATION ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo" style="text-decoration: none;">
+        <div class="logo-icon">
+          <i class="fas fa-tint"></i>
+        </div>
+        <span class="logo-text">RED<span class="logo-404">404</span></span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html#home" class="nav-link">Home</a></li>
+        <li><a href="index.html#our-services" class="nav-link">Services</a></li>
+        <li><a href="blood-availability-search.html" class="nav-link">Donor Search</a></li>
+        <li><a href="blood-availability.html" class="nav-link">Blood Banks</a></li>
+        <li><a href="eligibility-checker.html" class="nav-link active">Eligibility</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="donor-login.html" class="btn btn-outline">Donor Login</a>
+        <a href="hospital-login.html" class="btn btn-primary">Hospital Login</a>
+      </div>
+
+      <div class="hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="container" style="max-width: 1000px; margin: 0 auto; padding: 0 1.5rem;">
+    <!-- Hero Header -->
+    <div class="screening-hero">
+      <div class="screening-badge">
+        <i class="fas fa-brain"></i>
+        <span>AI Clinical Health Screening</span>
+      </div>
+      <h1 class="screening-title">
+        Donor <span>Eligibility Check</span>
+      </h1>
+      <p class="screening-subtitle">
+        Not sure if you are eligible to donate today? Take our quick interactive health screening to instantly verify your status based on age, weight, and recent medical history.
+      </p>
+    </div>
+
+    <!-- Screening Interactive Q&A Card -->
+    <div class="qa-card-container">
+      <!-- Progress Bar -->
+      <div class="progress-bar-wrapper" id="progressArea">
+        <div class="progress-labels">
+          <span id="stepCounterText">Question 1 of 5</span>
+          <span id="percentProgressText">20% Completed</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width: 20%;"></div>
+        </div>
+      </div>
+
+      <!-- STEP 1: Age Check -->
+      <div class="qa-step active" id="step1">
+        <div class="qa-step-category"><i class="fas fa-calendar"></i> Step 1: Age Criteria</div>
+        <h3 class="qa-question">Are you between 18 and 65 years old?</h3>
+        <p class="qa-description">National clinical blood banking regulations mandate voluntary blood donors to be at least 18 years of age.</p>
+        <div class="qa-options-grid">
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(1, true)">
+            <i class="fas fa-check-circle"></i>
+            <span class="qa-option-title">Yes, 18 - 65 Years</span>
+            <span class="qa-option-sub">I meet this requirement</span>
+          </button>
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(1, false)">
+            <i class="fas fa-times-circle"></i>
+            <span class="qa-option-title">No, Under 18 or 65+</span>
+            <span class="qa-option-sub">I do not fall in this range</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Weight Check -->
+      <div class="qa-step" id="step2">
+        <div class="qa-step-category"><i class="fas fa-weight-scale"></i> Step 2: Body Weight</div>
+        <h3 class="qa-question">Do you weigh at least 50 kg (110 lbs)?</h3>
+        <p class="qa-description">Adequate body weight ensures safe physiological blood volume extraction (standard 350ml or 450ml draw) without vasovagal dizziness.</p>
+        <div class="qa-options-grid">
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(2, true)">
+            <i class="fas fa-check-circle"></i>
+            <span class="qa-option-title">Yes, &ge; 50 kg</span>
+            <span class="qa-option-sub">Weight is 50 kg or greater</span>
+          </button>
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(2, false)">
+            <i class="fas fa-times-circle"></i>
+            <span class="qa-option-title">No, Under 50 kg</span>
+            <span class="qa-option-sub">Currently less than 50 kg</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Last Donation Interval -->
+      <div class="qa-step" id="step3">
+        <div class="qa-step-category"><i class="fas fa-clock-rotate-left"></i> Step 3: Donation Interval</div>
+        <h3 class="qa-question">Has it been more than 90 days since your last whole blood donation?</h3>
+        <p class="qa-description">First-time donors can select 'Yes'. Erythrocyte red cell replenishment requires an obligatory 3-month biological recovery cycle.</p>
+        <div class="qa-options-grid">
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(3, true)">
+            <i class="fas fa-check-circle"></i>
+            <span class="qa-option-title">Yes (or First Time)</span>
+            <span class="qa-option-sub">Over 90 days / never donated</span>
+          </button>
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(3, false)">
+            <i class="fas fa-times-circle"></i>
+            <span class="qa-option-title">No, within 90 days</span>
+            <span class="qa-option-sub">Donated within past 3 months</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4: Acute Symptoms & Medication -->
+      <div class="qa-step" id="step4">
+        <div class="qa-step-category"><i class="fas fa-notes-medical"></i> Step 4: Health Status Today</div>
+        <h3 class="qa-question">Are you feeling fully well today, free of fever or active antibiotics?</h3>
+        <p class="qa-description">Donors should be asymptomatic and not currently taking antibiotics for active systemic infection.</p>
+        <div class="qa-options-grid">
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(4, true)">
+            <i class="fas fa-check-circle"></i>
+            <span class="qa-option-title">Yes, Feeling Great</span>
+            <span class="qa-option-sub">No acute illness or antibiotics</span>
+          </button>
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(4, false)">
+            <i class="fas fa-times-circle"></i>
+            <span class="qa-option-title">No, Currently Sick</span>
+            <span class="qa-option-sub">Fever, infection, or medication</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 5: Tattoos / Surgery -->
+      <div class="qa-step" id="step5">
+        <div class="qa-step-category"><i class="fas fa-shield-virus"></i> Step 5: Recent Procedures</div>
+        <h3 class="qa-question">Have you had any tattoos, piercings, or major surgeries in the past 6 months?</h3>
+        <p class="qa-description">A 6-month deferral window protects transfusion recipients from potential latent blood-borne transmission.</p>
+        <div class="qa-options-grid">
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(5, false)">
+            <i class="fas fa-check-circle"></i>
+            <span class="qa-option-title">No Recent Procedures</span>
+            <span class="qa-option-sub">No tattoos or surgeries in 6 mo</span>
+          </button>
+          <button type="button" class="qa-option-btn" onclick="selectAnswer(5, true)">
+            <i class="fas fa-times-circle"></i>
+            <span class="qa-option-title">Yes, in Past 6 Months</span>
+            <span class="qa-option-sub">Had tattoo, piercing, or surgery</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RESULT SCREEN -->
+      <div class="qa-step" id="stepResult">
+        <div class="qa-result-box" id="resultContent">
+          <!-- Dynamically inserted by JS -->
+        </div>
+      </div>
+
+      <!-- Step Controls -->
+      <div class="qa-nav-buttons" id="navControls">
+        <button type="button" class="btn-qa-back" id="btnBack" onclick="goPreviousStep()" disabled>
+          <i class="fas fa-arrow-left"></i>
+          <span>Previous</span>
+        </button>
+        <button type="button" class="btn-qa-next" id="btnNext" onclick="goNextStep()" disabled>
+          <span>Next</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========== SLEEK MINIMAL FOOTER ========== -->
+  <footer class="footer" style="margin-top: auto; padding: 2.5rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
+    <div class="container" style="color: var(--text-muted, #5a5a7a); font-size: 0.85rem;">
+      <p>&copy; 2026 RED404 Emergency Blood Network • Clinical guidance adheres to NBTC & WHO voluntary donor requirements.</p>
+    </div>
+  </footer>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    let currentStep = 1;
+    const totalSteps = 5;
+    const answers = {};
+
+    function updateProgressBar() {
+      if (currentStep > totalSteps) {
+        document.getElementById('progressArea').style.display = 'none';
+        document.getElementById('navControls').style.display = 'none';
+        return;
+      }
+      document.getElementById('progressArea').style.display = 'block';
+      document.getElementById('navControls').style.display = 'flex';
+
+      const pct = Math.round((currentStep / totalSteps) * 100);
+      document.getElementById('stepCounterText').textContent = `Question ${currentStep} of ${totalSteps}`;
+      document.getElementById('percentProgressText').textContent = `${pct}% Completed`;
+      document.getElementById('progressFill').style.width = `${pct}%`;
+
+      document.getElementById('btnBack').disabled = (currentStep === 1);
+      document.getElementById('btnNext').disabled = (answers[currentStep] === undefined);
+    }
+
+    function showStep(stepNumber) {
+      document.querySelectorAll('.qa-step').forEach(step => {
+        step.classList.remove('active');
+      });
+
+      if (stepNumber <= totalSteps) {
+        const target = document.getElementById(`step${stepNumber}`);
+        if (target) target.classList.add('active');
+      } else {
+        const resultTarget = document.getElementById('stepResult');
+        if (resultTarget) resultTarget.classList.add('active');
+        renderFinalResult();
+      }
+
+      updateProgressBar();
+    }
+
+    function selectAnswer(stepNumber, val) {
+      answers[stepNumber] = val;
+
+      // Update button selection state
+      const currentStepEl = document.getElementById(`step${stepNumber}`);
+      if (currentStepEl) {
+        const buttons = currentStepEl.querySelectorAll('.qa-option-btn');
+        buttons.forEach((btn, idx) => {
+          btn.classList.remove('selected');
+        });
+        event.currentTarget.classList.add('selected');
+      }
+
+      document.getElementById('btnNext').disabled = false;
+
+      // Smooth auto-advance
+      setTimeout(() => {
+        goNextStep();
+      }, 250);
+    }
+
+    function goNextStep() {
+      if (currentStep <= totalSteps) {
+        currentStep++;
+        showStep(currentStep);
+      }
+    }
+
+    function goPreviousStep() {
+      if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    }
+
+    function renderFinalResult() {
+      const isAgeOk = answers[1] === true;
+      const isWeightOk = answers[2] === true;
+      const isIntervalOk = answers[3] === true;
+      const isHealthOk = answers[4] === true;
+      const hasRecentProcedure = answers[5] === true;
+
+      const isEligible = isAgeOk && isWeightOk && isIntervalOk && isHealthOk && !hasRecentProcedure;
+
+      const container = document.getElementById('resultContent');
+
+      if (isEligible) {
+        container.innerHTML = `
+          <div class="qa-result-icon eligible">
+            <i class="fas fa-heart-pulse"></i>
+          </div>
+          <h2 class="qa-result-title" style="color: #10b981;">Verified Eligible to Donate!</h2>
+          <p class="qa-result-desc">
+            Outstanding! Based on standard clinical telemetry guidelines, you meet all primary physiological requirements for whole blood donation.
+          </p>
+
+          <div class="qa-result-checklist">
+            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Age requirement satisfied (18 - 65 Yrs)</div>
+            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Healthy body mass (&ge; 50 kg)</div>
+            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Biological replenishment interval cleared (&gt; 90 Days)</div>
+            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Optimal acute health & infection-free</div>
+            <div class="qa-chk-item success"><i class="fas fa-check-circle"></i> Zero recent medical or cosmetic tattoo procedures</div>
+          </div>
+
+          <div class="qa-result-actions">
+            <a href="donor-register.html" class="btn btn-service-primary" style="padding: 0.85rem 2rem; font-size: 1rem;">
+              <i class="fas fa-user-plus"></i>
+              <span>Register as a Donor Now</span>
+            </a>
+            <button type="button" class="btn-modal-cancel" onclick="restartScreening()">
+              <i class="fas fa-rotate-left"></i>
+              <span>Retake Screening</span>
+            </button>
+          </div>
+        `;
+      } else {
+        let reasons = [];
+        if (!isAgeOk) reasons.push("Age must be between 18 and 65 years");
+        if (!isWeightOk) reasons.push("Body weight must be at least 50 kg for blood volume tolerance");
+        if (!isIntervalOk) reasons.push("A minimum of 90 days must elapse between whole blood donations");
+        if (!isHealthOk) reasons.push("Must be completely symptom-free and finished with antibiotic treatment");
+        if (hasRecentProcedure) reasons.push("6-month waiting period required after tattoos, piercings, or surgery");
+
+        container.innerHTML = `
+          <div class="qa-result-icon deferred">
+            <i class="fas fa-hand-dots"></i>
+          </div>
+          <h2 class="qa-result-title" style="color: #ff6b6b;">Temporarily Deferred</h2>
+          <p class="qa-result-desc">
+            You do not currently meet all criteria for blood donation today. Don't worry — most deferrals are temporary and protect both you and the recipient.
+          </p>
+
+          <div class="qa-result-checklist">
+            ${reasons.map(r => `
+              <div class="qa-chk-item warning"><i class="fas fa-triangle-exclamation"></i> ${r}</div>
+            `).join('')}
+          </div>
+
+          <div class="qa-result-actions">
+            <a href="blood-availability-search.html" class="btn btn-service-primary" style="padding: 0.85rem 1.8rem;">
+              <i class="fas fa-search-location"></i>
+              <span>Explore Live Blood Availability</span>
+            </a>
+            <button type="button" class="btn-modal-cancel" onclick="restartScreening()">
+              <i class="fas fa-rotate-left"></i>
+              <span>Retake Screening</span>
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function restartScreening() {
+      currentStep = 1;
+      for (let k in answers) delete answers[k];
+      document.querySelectorAll('.qa-option-btn').forEach(btn => btn.classList.remove('selected'));
+      showStep(1);
+    }
+
+    // Mobile nav toggle
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('navLinks');
+    if (hamburger && navLinks) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+      });
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      showStep(1);
+    });
+  </script>
+</body>
+</html>

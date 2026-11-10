@@ -33,6 +33,7 @@
 
       <ul class="nav-links" id="navLinks">
         <li><a href="#home" class="nav-link active">Home</a></li>
+        <li><a href="#our-services" class="nav-link">Services</a></li>
         <li><a href="#about" class="nav-link">About</a></li>
         <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
         <li><a href="#stats" class="nav-link">Stats</a></li>
@@ -166,6 +167,283 @@
       <span>Scroll to explore</span>
       <div class="scroll-arrow">
         <i class="fas fa-chevron-down"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== OUR SERVICES SECTION ========== -->
+  <section class="services-section" id="our-services">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag"><i class="fas fa-microchip"></i> Clinical Network Capabilities</span>
+        <h2 class="section-title">Our <span class="highlight">Services</span></h2>
+        <p class="section-subtitle">
+          Real-time emergency telemetry, intelligent donor matching, and clinical hospital dispatch designed to save lives in critical windows.
+        </p>
+      </div>
+
+      <!-- Tab Navigation Row (5 Glassmorphic Cards) -->
+      <div class="services-tab-nav" role="tablist" aria-label="Our Services Navigation">
+        <button type="button" class="service-tab-card active" data-tab="tab-search" role="tab" aria-selected="true" aria-controls="tab-search">
+          <div class="stc-icon"><i class="fas fa-satellite-dish"></i></div>
+          <div class="stc-content">
+            <span class="stc-step">Telemetry 01</span>
+            <span class="stc-title">Blood Availability Search</span>
+          </div>
+        </button>
+
+        <button type="button" class="service-tab-card" data-tab="tab-directory" role="tab" aria-selected="false" aria-controls="tab-directory">
+          <div class="stc-icon"><i class="fas fa-hospital-user"></i></div>
+          <div class="stc-content">
+            <span class="stc-step">Network 02</span>
+            <span class="stc-title">Blood Bank Directory</span>
+          </div>
+        </button>
+
+        <button type="button" class="service-tab-card" data-tab="tab-screening" role="tab" aria-selected="false" aria-controls="tab-screening">
+          <div class="stc-icon"><i class="fas fa-heart-pulse"></i></div>
+          <div class="stc-content">
+            <span class="stc-step">Clinical 03</span>
+            <span class="stc-title">Health Screening</span>
+          </div>
+        </button>
+
+        <button type="button" class="service-tab-card" data-tab="tab-portals" role="tab" aria-selected="false" aria-controls="tab-portals">
+          <div class="stc-icon"><i class="fas fa-shield-halved"></i></div>
+          <div class="stc-content">
+            <span class="stc-step">Gateways 04</span>
+            <span class="stc-title">Portal Access</span>
+          </div>
+        </button>
+
+        <button type="button" class="service-tab-card" data-tab="tab-campaigns" role="tab" aria-selected="false" aria-controls="tab-campaigns">
+          <div class="stc-icon"><i class="fas fa-calendar-check"></i></div>
+          <div class="stc-content">
+            <span class="stc-step">Community 05</span>
+            <span class="stc-title">Donation Campaigns</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Tab Content Dynamic Area -->
+      <div class="services-content-wrapper">
+        <!-- PANE 1: Blood Availability Search -->
+        <div class="service-pane active" id="tab-search" role="tabpanel">
+          <div class="pane-grid">
+            <div class="pane-left">
+              <span class="pane-badge"><i class="fas fa-radar"></i> Haversine Proximity Engine</span>
+              <h3 class="pane-heading">Real-Time Blood Availability Search</h3>
+              <p class="pane-text">
+                Check real-time blood availability within a 5km to 20km Haversine radius. View active donor counts and basic regional stats instantly without exposing personal identities.
+              </p>
+              <div class="pane-features">
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> High-precision 5km - 20km geo-radial search</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Zero PII exposure — 100% anonymous donor telemetry</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Instant live hospital SOS dispatch gate</div>
+              </div>
+              <div class="pane-actions">
+                <a href="blood-availability-search.html" class="btn btn-service-primary">
+                  <span>Search Availability</span>
+                  <i class="fas fa-search-location"></i>
+                </a>
+              </div>
+            </div>
+            <div class="pane-right">
+              <!-- Visual: Glowing Radar / Proximity Map -->
+              <div class="cyber-graphic radar-graphic">
+                <div class="radar-scope">
+                  <div class="radar-sweep"></div>
+                  <div class="radar-ring ring-1"></div>
+                  <div class="radar-ring ring-2"></div>
+                  <div class="radar-ring ring-3"></div>
+                  <div class="radar-blip blip-1" title="A+ Donor (2.1 km)"></div>
+                  <div class="radar-blip blip-2" title="O- Donor (4.8 km)"></div>
+                  <div class="radar-blip blip-3" title="B+ Donor (1.3 km)"></div>
+                  <div class="radar-center"><i class="fas fa-crosshairs"></i></div>
+                </div>
+                <div class="graphic-stats-bar">
+                  <div class="gs-stat">
+                    <span class="gs-val">5 - 20 km</span>
+                    <span class="gs-lbl">Radial Radius</span>
+                  </div>
+                  <div class="gs-divider"></div>
+                  <div class="gs-stat">
+                    <span class="gs-val">Real-Time</span>
+                    <span class="gs-lbl">Telemetry Feed</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE 2: Blood Bank Directory -->
+        <div class="service-pane" id="tab-directory" role="tabpanel">
+          <div class="pane-grid">
+            <div class="pane-left">
+              <span class="pane-badge"><i class="fas fa-database"></i> Verified Facilities</span>
+              <h3 class="pane-heading">Blood Bank Directory</h3>
+              <p class="pane-text">
+                Access our live telemetry network of verified district hospital blood banks and trauma depots. Find contact details and reserve status.
+              </p>
+              <div class="pane-features">
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Verified government & certified hospital depots</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> 24/7 emergency dispatch helpline numbers</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Real-time component stock telemetry</div>
+              </div>
+              <div class="pane-actions">
+                <a href="blood-availability.html" class="btn btn-service-primary">
+                  <span>View Directory</span>
+                  <i class="fas fa-hospital"></i>
+                </a>
+              </div>
+            </div>
+            <div class="pane-right">
+              <!-- Visual: Bank Stock Telemetry Grid -->
+              <div class="cyber-graphic vault-graphic">
+                <div class="vault-header">
+                  <span class="vh-title"><i class="fas fa-shield-virus"></i> Clinical Reserves Status</span>
+                  <span class="badge-mini-live"><span class="dot-live"></span> ONLINE</span>
+                </div>
+                <div class="vault-grid">
+                  <div class="vg-cell"><span class="vg-grp">A+</span><span class="vg-qty high">HIGH</span></div>
+                  <div class="vg-cell"><span class="vg-grp">O+</span><span class="vg-qty med">MODERATE</span></div>
+                  <div class="vg-cell alert"><span class="vg-grp">O-</span><span class="vg-qty crit">CRITICAL</span></div>
+                  <div class="vg-cell"><span class="vg-grp">B+</span><span class="vg-qty high">HIGH</span></div>
+                  <div class="vg-cell"><span class="vg-grp">AB+</span><span class="vg-qty med">MODERATE</span></div>
+                  <div class="vg-cell alert"><span class="vg-grp">B-</span><span class="vg-qty crit">CRITICAL</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE 3: Health Screening -->
+        <div class="service-pane" id="tab-screening" role="tabpanel">
+          <div class="pane-grid">
+            <div class="pane-left">
+              <span class="pane-badge"><i class="fas fa-user-doctor"></i> Instant Eligibility</span>
+              <h3 class="pane-heading">Interactive Health Screening</h3>
+              <p class="pane-text">
+                Not sure if you are eligible to donate today? Take our quick interactive health screening to instantly verify your status based on age, weight, and recent medical history.
+              </p>
+              <div class="pane-features">
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Clinical algorithm adhering to WHO blood donation standards</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Under 60 seconds rapid question flow</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Safe recovery interval guidance & deferral advice</div>
+              </div>
+              <div class="pane-actions">
+                <a href="eligibility-checker.html" class="btn btn-service-primary">
+                  <span>Start Health Screening</span>
+                  <i class="fas fa-stethoscope"></i>
+                </a>
+              </div>
+            </div>
+            <div class="pane-right">
+              <!-- Visual: Screening Clinical Card -->
+              <div class="cyber-graphic screening-graphic">
+                <div class="screening-box">
+                  <div class="sb-header">
+                    <i class="fas fa-heartbeat sb-icon"></i>
+                    <div>
+                      <div class="sb-title">AI Eligibility Pre-Check</div>
+                      <div class="sb-sub">Clinical parameters evaluator</div>
+                    </div>
+                  </div>
+                  <div class="sb-items">
+                    <div class="sb-row"><i class="fas fa-check text-green"></i> <span>Age Limit (18 – 65 Yrs)</span></div>
+                    <div class="sb-row"><i class="fas fa-check text-green"></i> <span>Minimum Weight (&ge; 50 kg)</span></div>
+                    <div class="sb-row"><i class="fas fa-check text-green"></i> <span>Safe Recovery Interval (&gt; 90 Days)</span></div>
+                    <div class="sb-row"><i class="fas fa-shield text-red"></i> <span>Sterile / Safe Clinical Standards</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE 4: Portal Access -->
+        <div class="service-pane" id="tab-portals" role="tabpanel">
+          <div class="pane-grid">
+            <div class="pane-left">
+              <span class="pane-badge"><i class="fas fa-key"></i> Dedicated Gateways</span>
+              <h3 class="pane-heading">Secure Portal Access</h3>
+              <p class="pane-text">
+                Secure gateways for registered voluntary donors and verified clinical hospitals to manage profiles, donation history, and real-time SOS dispatches.
+              </p>
+              <div class="pane-features">
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Donor Portal: track donations, digital health card & active status</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Hospital Node: dispatch emergency SOS & manage blood inventory</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> End-to-end encrypted session credentials</div>
+              </div>
+              <div class="pane-actions dual-actions">
+                <a href="donor-login.html" class="btn btn-service-primary">
+                  <i class="fas fa-user-circle"></i>
+                  <span>Donor Login</span>
+                </a>
+                <a href="hospital-login.html" class="btn btn-service-outline">
+                  <i class="fas fa-hospital-alt"></i>
+                  <span>Hospital Login</span>
+                </a>
+              </div>
+            </div>
+            <div class="pane-right">
+              <!-- Visual: Dual Portals Graphic -->
+              <div class="cyber-graphic portals-graphic">
+                <div class="portal-card-preview pcp-donor">
+                  <div class="pcp-header"><i class="fas fa-user"></i><span>Donor Portal</span></div>
+                  <div class="pcp-body"><span>Voluntary Donor Node</span><span class="badge-mini-live">SECURE</span></div>
+                </div>
+                <div class="portal-lock-hub">
+                  <i class="fas fa-lock"></i>
+                  <span>256-Bit Encrypted</span>
+                </div>
+                <div class="portal-card-preview pcp-hospital">
+                  <div class="pcp-header"><i class="fas fa-hospital-alt"></i><span>Hospital Node</span></div>
+                  <div class="pcp-body"><span>Trauma Center</span><span class="badge-mini-live">EMERGENCY SOS</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE 5: Donation Campaigns -->
+        <div class="service-pane" id="tab-campaigns" role="tabpanel">
+          <div class="pane-grid">
+            <div class="pane-left">
+              <span class="pane-badge"><i class="fas fa-users-rays"></i> Community Outreach</span>
+              <h3 class="pane-heading">Donation Campaigns</h3>
+              <p class="pane-text">
+                Discover and register for upcoming voluntary blood donation camps and community drives happening in your city.
+              </p>
+              <div class="pane-features">
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> City-wide voluntary blood camps directory</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Direct mobile reminders & scheduled timeslots</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Community certificates & verified impact badges</div>
+              </div>
+              <div class="pane-actions">
+                <a href="#" class="btn btn-service-primary" id="btnExploreCampaigns">
+                  <span>Explore Campaigns</span>
+                  <i class="fas fa-calendar-plus"></i>
+                </a>
+              </div>
+            </div>
+            <div class="pane-right">
+              <!-- Visual: Community Camp Card -->
+              <div class="cyber-graphic campaigns-graphic">
+                <div class="campaign-preview-box">
+                  <div class="cpb-badge"><i class="fas fa-calendar-star"></i> Annual Drive 2026</div>
+                  <h4>City Mega Blood Drive</h4>
+                  <p><i class="fas fa-location-dot"></i> District Sports Complex & City Hall</p>
+                  <div class="cpb-meta">
+                    <span><i class="fas fa-clock"></i> 09:00 AM - 05:00 PM</span>
+                    <span class="slot-badge">Registration Open</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
