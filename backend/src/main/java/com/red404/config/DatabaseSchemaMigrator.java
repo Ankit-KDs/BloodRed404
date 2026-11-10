@@ -107,7 +107,6 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             st.executeUpdate("UPDATE donors SET medications = NULL WHERE medications LIKE '%Unrestricted%' OR medications LIKE 'None%'");
             st.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries LIKE '%< 12%'");
             st.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type LIKE '%Voluntary%'");
-            st.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15'");
             st.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0");
         } catch (Exception ignored) {}
 
@@ -136,6 +135,55 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             }
         } catch (Exception e) {
             log.warn("Notice assigning Smart Donor IDs: {}", e.getMessage());
+        }
+
+        // Synchronize Smart Donor IDs with actual Date of Birth for all existing donors
+        // Updates strictly the [DDMM] portion to match DOB, preserving the [Initial][3 Random Numbers] suffix intact
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT id, donor_id, name, dob FROM donors WHERE dob IS NOT NULL")) {
+            java.util.List<Map<String, Object>> syncList = new java.util.ArrayList<>();
+            while (rs.next()) {
+                Map<String, Object> d = new java.util.HashMap<>();
+                d.put("id", rs.getInt("id"));
+                d.put("donor_id", rs.getString("donor_id"));
+                d.put("name", rs.getString("name"));
+                d.put("dob", rs.getDate("dob"));
+                syncList.add(d);
+            }
+            for (Map<String, Object> d : syncList) {
+                int id = (int) d.get("id");
+                String oldId = (String) d.get("donor_id");
+                String name = (String) d.get("name");
+                java.sql.Date dob = (java.sql.Date) d.get("dob");
+                if (dob != null && oldId != null && oldId.startsWith("DNR-")) {
+                    String updatedId = com.red404.util.DonorIdGenerator.updateDonorIdDob(oldId, dob, name);
+                    if (updatedId != null && !updatedId.equalsIgnoreCase(oldId)) {
+                        try (PreparedStatement ps = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
+                            ps.setString(1, updatedId);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                            log.info("Synchronized Smart Donor ID for donor id {}: {} -> {}", id, oldId, updatedId);
+                        }
+                        try (PreparedStatement cs = conn.prepareStatement("UPDATE donations SET donor_id = ? WHERE donor_id = ?")) {
+                            cs.setString(1, updatedId);
+                            cs.setString(2, oldId);
+                            cs.executeUpdate();
+                        } catch (Exception ignored) {}
+                        try (PreparedStatement cs = conn.prepareStatement("UPDATE intake_snapshots SET donor_id = ? WHERE donor_id = ?")) {
+                            cs.setString(1, updatedId);
+                            cs.setString(2, oldId);
+                            cs.executeUpdate();
+                        } catch (Exception ignored) {}
+                        try (PreparedStatement cs = conn.prepareStatement("UPDATE user_sessions SET user_id = ? WHERE user_id = ?")) {
+                            cs.setString(1, updatedId);
+                            cs.setString(2, oldId);
+                            cs.executeUpdate();
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice synchronizing Smart Donor IDs with DOB: {}", e.getMessage());
         }
 
         // Add unique index on donor_id if not present

@@ -17,8 +17,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.red404.util.DBConnection;
 import com.red404.util.DistanceCalculator;
 import com.red404.util.PasswordUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DonorDao {
+
+    private static final Logger log = LoggerFactory.getLogger(DonorDao.class);
 
     public boolean emailOrPhoneExists(String email, String phone) throws SQLException {
         String cleanEmail = email != null ? email.trim().toLowerCase() : "";
@@ -52,11 +56,21 @@ public class DonorDao {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             String name = str(donor.get("name")).trim();
-            Date dob = (Date) donor.get("dob");
+            Object dobObj = donor.get("dob") != null ? donor.get("dob") : donor.get("dateOfBirth");
+            Date dob = null;
+            if (dobObj instanceof Date) dob = (Date) dobObj;
+            else if (dobObj instanceof java.util.Date) dob = new Date(((java.util.Date) dobObj).getTime());
+            else if (dobObj != null && !str(dobObj).isBlank()) {
+                try { dob = Date.valueOf(str(dobObj).trim()); } catch (Exception ignored) {}
+            }
             String smartId = str(donor.get("donor_id"));
             if (smartId.isBlank()) smartId = str(donor.get("donorId"));
             if (smartId.isBlank()) {
                 smartId = com.red404.util.DonorIdGenerator.generateUniqueDonorId(conn, name, dob);
+            } else {
+                if (dob != null || (dobObj != null && !str(dobObj).isBlank())) {
+                    smartId = com.red404.util.DonorIdGenerator.updateDonorIdDob(smartId, dob != null ? dob : dobObj, name);
+                }
             }
             donor.put("donorId", smartId);
             donor.put("donor_id", smartId);
@@ -279,7 +293,54 @@ public class DonorDao {
             ps.setString(idx++, emptyToNull(str(fields.get("availability"))));
             ps.setInt(idx, id);
 
-            return ps.executeUpdate() > 0;
+            boolean updated = ps.executeUpdate() > 0;
+            if (updated && (dob != null || (dobObj != null && !str(dobObj).isBlank()))) {
+                try {
+                    String currentDonorId = null;
+                    String currentName = str(fields.get("name") != null ? fields.get("name") : fields.get("fullName"));
+                    try (PreparedStatement checkPs = conn.prepareStatement("SELECT donor_id, name FROM donors WHERE id = ?")) {
+                        checkPs.setInt(1, id);
+                        try (ResultSet rs = checkPs.executeQuery()) {
+                            if (rs.next()) {
+                                currentDonorId = rs.getString("donor_id");
+                                if (currentName.isBlank()) currentName = rs.getString("name");
+                            }
+                        }
+                    }
+                    if (currentDonorId != null && !currentDonorId.isBlank()) {
+                        String updatedDonorId = com.red404.util.DonorIdGenerator.updateDonorIdDob(currentDonorId, dob != null ? dob : dobObj, currentName);
+                        if (updatedDonorId != null && !updatedDonorId.equalsIgnoreCase(currentDonorId)) {
+                            try (PreparedStatement upPs = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
+                                upPs.setString(1, updatedDonorId);
+                                upPs.setInt(2, id);
+                                upPs.executeUpdate();
+                                log.info("Updated Smart Donor ID on DOB change for donor {}: {} -> {}", id, currentDonorId, updatedDonorId);
+                            }
+                            try (PreparedStatement cs = conn.prepareStatement("UPDATE donations SET donor_id = ? WHERE donor_id = ?")) {
+                                cs.setString(1, updatedDonorId);
+                                cs.setString(2, currentDonorId);
+                                cs.executeUpdate();
+                            } catch (Exception ignored) {}
+                            try (PreparedStatement cs = conn.prepareStatement("UPDATE intake_snapshots SET donor_id = ? WHERE donor_id = ?")) {
+                                cs.setString(1, updatedDonorId);
+                                cs.setString(2, currentDonorId);
+                                cs.executeUpdate();
+                            } catch (Exception ignored) {}
+                            try (PreparedStatement cs = conn.prepareStatement("UPDATE user_sessions SET user_id = ? WHERE user_id = ?")) {
+                                cs.setString(1, updatedDonorId);
+                                cs.setString(2, currentDonorId);
+                                cs.executeUpdate();
+                            } catch (Exception ignored) {}
+
+                            fields.put("donorId", updatedDonorId);
+                            fields.put("donor_id", updatedDonorId);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Notice updating donor_id on DOB change: {}", e.getMessage());
+                }
+            }
+            return updated;
         }
     }
 
@@ -715,12 +776,18 @@ public class DonorDao {
         try {
             donorIdVal = rs.getString("donor_id");
         } catch (SQLException ignored) {}
-        if (donorIdVal == null || donorIdVal.isBlank()) {
-            donorIdVal = "DNR-0101-D" + (idVal > 0 ? idVal : 100);
+        Date dob = null;
+        try {
+            dob = rs.getDate("dob");
+        } catch (Exception ignored) {}
+        String name = rs.getString("name");
+        if (donorIdVal == null || donorIdVal.isBlank() || !donorIdVal.startsWith("DNR-")) {
+            donorIdVal = com.red404.util.DonorIdGenerator.updateDonorIdDob(null, dob, name);
+        } else if (dob != null) {
+            donorIdVal = com.red404.util.DonorIdGenerator.updateDonorIdDob(donorIdVal, dob, name);
         }
         donor.put("donorId", donorIdVal);
         donor.put("donor_id", donorIdVal);
-        String name = rs.getString("name");
         donor.put("name", name);
         donor.put("fullName", name);
         if (name != null && name.contains(" ")) {
@@ -754,11 +821,8 @@ public class DonorDao {
         Date lastDonation = rs.getDate("last_donation");
         donor.put("lastDonation", lastDonation == null ? null : lastDonation.toString());
         donor.put("lastDonationDate", lastDonation == null ? null : lastDonation.toString());
-        try {
-            Date dob = rs.getDate("dob");
-            donor.put("dateOfBirth", dob == null ? null : dob.toString());
-            donor.put("dob", dob == null ? null : dob.toString());
-        } catch (SQLException ignored) {}
+        donor.put("dateOfBirth", dob == null ? null : dob.toString());
+        donor.put("dob", dob == null ? null : dob.toString());
         try {
             donor.put("pulse", rs.getObject("pulse"));
             donor.put("hemoglobin", rs.getObject("hemoglobin"));

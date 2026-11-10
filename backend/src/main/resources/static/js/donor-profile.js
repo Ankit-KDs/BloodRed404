@@ -752,6 +752,62 @@
   // Expose modular function globally
   window.evaluateDonorBadges = evaluateDonorBadges;
 
+  function extractDDMMFromDob(dobStr) {
+    if (!dobStr) return null;
+    let str = String(dobStr).trim();
+    if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined') return null;
+    if (str.includes(' ')) str = str.substring(0, str.indexOf(' '));
+    if (str.includes('T')) str = str.substring(0, str.indexOf('T'));
+    
+    // YYYY-MM-DD or YYYY/MM/DD
+    const ymdMatch = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+    if (ymdMatch) {
+      const mm = ymdMatch[2].padStart(2, '0');
+      const dd = ymdMatch[3].padStart(2, '0');
+      return `${dd}${mm}`;
+    }
+    // DD-MM-YYYY or DD/MM/YYYY
+    const dmyMatch = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+    if (dmyMatch) {
+      const dd = dmyMatch[1].padStart(2, '0');
+      const mm = dmyMatch[2].padStart(2, '0');
+      return `${dd}${mm}`;
+    }
+    try {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${dd}${mm}`;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function syncSmartDonorIdWithDob(existingId, dobStr, fullName, fallbackId) {
+    const newDdmm = extractDDMMFromDob(dobStr);
+    const cleanId = (existingId || '').trim();
+    if (cleanId.startsWith('DNR-')) {
+      const parts = cleanId.split('-');
+      if (parts.length >= 3) {
+        const suffix = parts.slice(2).join('-'); // e.g. "A719" (preserves Initial and 3 random numbers)
+        if (newDdmm) {
+          return `DNR-${newDdmm}-${suffix}`;
+        }
+        return cleanId;
+      }
+    }
+    // If no existing valid DNR- ID, generate fresh
+    const ddmm = newDdmm || '0811';
+    let initial = 'D';
+    if (fullName && fullName.trim().length > 0) {
+      const letter = fullName.trim().match(/[A-Za-z]/);
+      if (letter) initial = letter[0].toUpperCase();
+    }
+    const num = 100 + ((parseInt(fallbackId || 1, 10) * 37) % 900);
+    return `DNR-${ddmm}-${initial}${num}`;
+  }
+
   // ======================== 5. DIGITAL BLOOD DONOR IDENTITY CARD & QR INTAKE ========================
   function renderDigitalIdAndIntakePayload() {
     // 1. Basic Identity
@@ -780,18 +836,9 @@
     if (bgEl) bgEl.textContent = bloodType;
 
     // Smart Donor ID (DNR-[DDMM]-[Initial][3 Random Numbers])
+    // Strictly syncs DDMM with actual Date of Birth, while preserving Initial and Random Numbers suffix intact
     let smartDonorId = currentDonor.donorId || currentDonor.donor_id;
-    if (!smartDonorId || !smartDonorId.startsWith('DNR-')) {
-      const dobStr = currentDonor.dob || currentDonor.dateOfBirth || '';
-      let ddmm = '0811';
-      if (dobStr && dobStr.includes('-')) {
-        const parts = dobStr.split('-');
-        if (parts.length >= 3) ddmm = `${parts[2].padStart(2, '0')}${parts[1].padStart(2, '0')}`;
-      }
-      const initial = (fullName && fullName.trim().length > 0) ? fullName.trim()[0].toUpperCase() : 'D';
-      const num = 100 + ((parseInt(currentDonor.id || 1, 10) * 37) % 900);
-      smartDonorId = `DNR-${ddmm}-${initial}${num}`;
-    }
+    smartDonorId = syncSmartDonorIdWithDob(smartDonorId, currentDonor.dob || currentDonor.dateOfBirth, fullName, currentDonor.id);
     currentDonor.donorId = smartDonorId;
     currentDonor.donor_id = smartDonorId;
     const uniqueIdStr = smartDonorId;
@@ -1236,6 +1283,10 @@
           } else {
             currentDonor.age = null;
           }
+
+          // Ensure Smart Donor ID reflects updated Date of Birth while preserving suffix
+          currentDonor.donorId = syncSmartDonorIdWithDob(currentDonor.donorId, currentDonor.dob, currentDonor.name, currentDonor.id);
+          currentDonor.donor_id = currentDonor.donorId;
 
           // 3. Update localStorage session & cache
           try {

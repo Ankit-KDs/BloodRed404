@@ -1676,23 +1676,40 @@
         const isPositive = !bloodType.includes('-') && bloodType !== 'N/A';
         const rhStr = bloodType === 'N/A' ? 'N/A' : (isPositive ? 'Rh-D Positive (Rh+)' : 'Rh-D Negative (Rh-)');
 
+        function extractDDMM(dobStr) {
+          if (!dobStr) return null;
+          let s = String(dobStr).trim();
+          if (!s || s.toLowerCase() === 'null') return null;
+          if (s.includes(' ')) s = s.substring(0, s.indexOf(' '));
+          if (s.includes('T')) s = s.substring(0, s.indexOf('T'));
+          const ymd = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+          if (ymd) return `${ymd[3].padStart(2, '0')}${ymd[2].padStart(2, '0')}`;
+          const dmy = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+          if (dmy) return `${dmy[1].padStart(2, '0')}${dmy[2].padStart(2, '0')}`;
+          return null;
+        }
+
         // Smart Donor ID (DNR-[DDMM]-[Initial][3 Random Numbers])
+        const rawDob = d.dob || d.dateOfBirth;
+        const initial = (name && name !== 'N/A' && name.trim().length > 0) ? name.trim()[0].toUpperCase() : 'D';
+        const num = 100 + ((parseInt(d.id || 1, 10) * 37) % 900);
         let uniqueId = d.donorId || d.donor_id || '';
         if (!uniqueId || !uniqueId.startsWith('DNR-')) {
           const rawRef = (typeof donorRef !== 'undefined' && donorRef) || (typeof donorId !== 'undefined' && donorId) || '';
           if (rawRef.startsWith('DNR-')) {
             uniqueId = rawRef;
-          } else {
-            const rawDob = d.dob || d.dateOfBirth;
-            let ddmm = '0811';
-            if (rawDob && rawDob.includes('-')) {
-              const parts = rawDob.split('-');
-              if (parts.length >= 3) ddmm = `${parts[2].padStart(2, '0')}${parts[1].padStart(2, '0')}`;
-            }
-            const initial = (name && name !== 'N/A' && name.trim().length > 0) ? name.trim()[0].toUpperCase() : 'D';
-            const num = 100 + ((parseInt(d.id || 1, 10) * 37) % 900);
-            uniqueId = `DNR-${ddmm}-${initial}${num}`;
           }
+        }
+        if (uniqueId && uniqueId.startsWith('DNR-')) {
+          const p = uniqueId.split('-');
+          if (p.length >= 3) {
+            const ddmm = extractDDMM(rawDob);
+            const suffix = p.slice(2).join('-');
+            if (ddmm) uniqueId = `DNR-${ddmm}-${suffix}`;
+          }
+        } else {
+          const ddmm = extractDDMM(rawDob) || '0811';
+          uniqueId = `DNR-${ddmm}-${initial}${num}`;
         }
 
         // Calculate Age

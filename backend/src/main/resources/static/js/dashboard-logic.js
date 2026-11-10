@@ -47,11 +47,37 @@
         }
       }
 
+      function extractDDMM(dobStr) {
+        if (!dobStr) return null;
+        let s = String(dobStr).trim();
+        if (!s || s.toLowerCase() === 'null') return null;
+        if (s.includes(' ')) s = s.substring(0, s.indexOf(' '));
+        if (s.includes('T')) s = s.substring(0, s.indexOf('T'));
+        const ymd = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+        if (ymd) return `${ymd[3].padStart(2, '0')}${ymd[2].padStart(2, '0')}`;
+        const dmy = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+        if (dmy) return `${dmy[1].padStart(2, '0')}${dmy[2].padStart(2, '0')}`;
+        return null;
+      }
+
+      function syncIdDob(id, dobStr) {
+        const ddmm = extractDDMM(dobStr);
+        if (!id || !id.startsWith('DNR-') || !ddmm) return id;
+        const p = id.split('-');
+        if (p.length >= 3) {
+          return `DNR-${ddmm}-${p.slice(2).join('-')}`;
+        }
+        return id;
+      }
+
       if (user) {
         if (user.donorId || user.donor_id) {
           donorData.donorId = user.donorId || user.donor_id;
         } else if (typeof user.id === 'string' && user.id.startsWith('DNR-')) {
           donorData.donorId = user.id;
+        }
+        if (user.dob || user.dateOfBirth) {
+          donorData.donorId = syncIdDob(donorData.donorId, user.dob || user.dateOfBirth);
         }
         if (user.name) donorData.name = user.name;
         else if (user.firstName) donorData.name = `${user.firstName} ${user.lastName || ''}`.trim();

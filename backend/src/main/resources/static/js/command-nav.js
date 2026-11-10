@@ -55,7 +55,33 @@
       dropdownEmail.textContent = `Signed in as ${userEmail}`;
     }
 
-    const donorId = (currentUser && (currentUser.donorId || currentUser.donor_id || (typeof currentUser.id === 'string' && currentUser.id.startsWith('DNR-') ? currentUser.id : null))) || 'DNR-0811-A404';
+    function extractDDMM(dobStr) {
+      if (!dobStr) return null;
+      let s = String(dobStr).trim();
+      if (!s || s.toLowerCase() === 'null') return null;
+      if (s.includes(' ')) s = s.substring(0, s.indexOf(' '));
+      if (s.includes('T')) s = s.substring(0, s.indexOf('T'));
+      const ymd = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+      if (ymd) return `${ymd[3].padStart(2, '0')}${ymd[2].padStart(2, '0')}`;
+      const dmy = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+      if (dmy) return `${dmy[1].padStart(2, '0')}${dmy[2].padStart(2, '0')}`;
+      return null;
+    }
+
+    function syncIdDob(id, dobStr) {
+      const ddmm = extractDDMM(dobStr);
+      if (!id || !id.startsWith('DNR-') || !ddmm) return id;
+      const p = id.split('-');
+      if (p.length >= 3) {
+        return `DNR-${ddmm}-${p.slice(2).join('-')}`;
+      }
+      return id;
+    }
+
+    let donorId = (currentUser && (currentUser.donorId || currentUser.donor_id || (typeof currentUser.id === 'string' && currentUser.id.startsWith('DNR-') ? currentUser.id : null))) || 'DNR-0811-A404';
+    if (currentUser && (currentUser.dob || currentUser.dateOfBirth)) {
+      donorId = syncIdDob(donorId, currentUser.dob || currentUser.dateOfBirth);
+    }
     const dropdownDonorId = document.getElementById('dropdownDonorIdText');
     if (dropdownDonorId) {
       dropdownDonorId.textContent = donorId;
