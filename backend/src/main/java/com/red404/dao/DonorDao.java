@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.red404.util.DBConnection;
 import com.red404.util.DistanceCalculator;
 
@@ -272,6 +274,8 @@ public class DonorDao {
         } catch (Exception ignored) {}
     }
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     public Map<String, Object> findSnapshotByToken(String token) throws SQLException {
         if (token == null || token.isBlank()) return null;
         String sql = "SELECT snapshot_json FROM intake_snapshots WHERE token = ? LIMIT 1";
@@ -283,8 +287,7 @@ public class DonorDao {
                     String json = rs.getString("snapshot_json");
                     if (json != null && !json.isBlank()) {
                         try {
-                            return new com.fasterxml.jackson.databind.ObjectMapper()
-                                    .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                            return MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {});
                         } catch (Exception ignored) {}
                     }
                 }
@@ -300,7 +303,7 @@ public class DonorDao {
                 "ON DUPLICATE KEY UPDATE donor_id = VALUES(donor_id)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            String json = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(data);
+            String json = MAPPER.writeValueAsString(data);
             ps.setString(1, token.trim());
             if (donorId != null && donorId > 0) ps.setInt(2, donorId);
             else ps.setNull(2, Types.INTEGER);
