@@ -45,35 +45,47 @@ public class DonorDao {
     }
 
     public boolean insert(Map<String, Object> donor) throws SQLException {
-        String sql = "INSERT INTO donors (name, email, phone, dob, gender, password, blood_type, weight, " +
+        ensureDonorColumnsExist();
+        String sql = "INSERT INTO donors (donor_id, name, email, phone, dob, gender, password, blood_type, weight, " +
                 "last_donation, availability, address, city, state, pincode, latitude, longitude, zone, " +
-                "sms_notif, push_notif, email_notif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "sms_notif, push_notif, email_notif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, str(donor.get("name")).trim());
+            String name = str(donor.get("name")).trim();
+            Date dob = (Date) donor.get("dob");
+            String smartId = str(donor.get("donor_id"));
+            if (smartId.isBlank()) smartId = str(donor.get("donorId"));
+            if (smartId.isBlank()) {
+                smartId = com.red404.util.DonorIdGenerator.generateUniqueDonorId(conn, name, dob);
+            }
+            donor.put("donorId", smartId);
+            donor.put("donor_id", smartId);
+
+            ps.setString(1, smartId);
+            ps.setString(2, name);
             String email = str(donor.get("email")).trim().toLowerCase();
             String phone = str(donor.get("phone")).trim();
             String rawPassword = str(donor.get("password")).trim();
             String password = PasswordUtil.isBCrypt(rawPassword) ? rawPassword : PasswordUtil.hashPassword(rawPassword);
-            ps.setString(2, email);
-            ps.setString(3, phone);
-            setDate(ps, 4, (Date) donor.get("dob"));
-            ps.setString(5, str(donor.get("gender")));
-            ps.setString(6, password);
-            ps.setString(7, str(donor.get("bloodType")));
-            ps.setDouble(8, donor.get("weight") == null ? 0 : ((Number) donor.get("weight")).doubleValue());
-            setDate(ps, 9, (Date) donor.get("lastDonation"));
-            ps.setString(10, str(donor.getOrDefault("availability", "Available")));
-            ps.setString(11, str(donor.get("address")));
-            ps.setString(12, str(donor.get("city")));
-            ps.setString(13, str(donor.get("state")));
-            ps.setString(14, str(donor.get("pincode")));
-            setDouble(ps, 15, (Double) donor.get("latitude"));
-            setDouble(ps, 16, (Double) donor.get("longitude"));
-            ps.setString(17, (String) donor.get("zone"));
-            ps.setBoolean(18, bool(donor.get("smsNotif"), true));
-            ps.setBoolean(19, bool(donor.get("pushNotif"), true));
-            ps.setBoolean(20, bool(donor.get("emailNotif"), false));
+            ps.setString(3, email);
+            ps.setString(4, phone);
+            setDate(ps, 5, dob);
+            ps.setString(6, str(donor.get("gender")));
+            ps.setString(7, password);
+            ps.setString(8, str(donor.get("bloodType")));
+            ps.setDouble(9, donor.get("weight") == null ? 0 : ((Number) donor.get("weight")).doubleValue());
+            setDate(ps, 10, (Date) donor.get("lastDonation"));
+            ps.setString(11, str(donor.getOrDefault("availability", "Available")));
+            ps.setString(12, str(donor.get("address")));
+            ps.setString(13, str(donor.get("city")));
+            ps.setString(14, str(donor.get("state")));
+            ps.setString(15, str(donor.get("pincode")));
+            setDouble(ps, 16, (Double) donor.get("latitude"));
+            setDouble(ps, 17, (Double) donor.get("longitude"));
+            ps.setString(18, (String) donor.get("zone"));
+            ps.setBoolean(19, bool(donor.get("smsNotif"), true));
+            ps.setBoolean(20, bool(donor.get("pushNotif"), true));
+            ps.setBoolean(21, bool(donor.get("emailNotif"), false));
             return ps.executeUpdate() > 0;
         }
     }
@@ -88,6 +100,7 @@ public class DonorDao {
         String sql = "SELECT * FROM donors WHERE (" +
                 "LOWER(TRIM(email)) = LOWER(?) " +
                 "OR TRIM(phone) = ? " +
+                "OR UPPER(TRIM(donor_id)) = UPPER(?) " +
                 "OR REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', '') = ? " +
                 "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
                 ")";
@@ -95,9 +108,10 @@ public class DonorDao {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, cleanId);
             ps.setString(2, cleanId);
-            ps.setString(3, last10);
+            ps.setString(3, cleanId);
             ps.setString(4, last10);
             ps.setString(5, last10);
+            ps.setString(6, last10);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String storedPw = rs.getString("password");
@@ -124,6 +138,20 @@ public class DonorDao {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapDonor(rs, true) : null;
+            }
+        }
+    }
+
+    public Map<String, Object> findByIdOrDonorId(String identifier) throws SQLException {
+        if (identifier == null || identifier.isBlank()) return null;
+        String clean = identifier.trim();
+        String sql = "SELECT * FROM donors WHERE UPPER(TRIM(donor_id)) = UPPER(?) OR CAST(id AS CHAR) = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, clean);
+            ps.setString(2, clean);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapDonor(rs, true) : null;
             }
@@ -257,6 +285,7 @@ public class DonorDao {
 
     private void ensureDonorColumnsExist() {
         try (Connection conn = DBConnection.getConnection()) {
+            ensureCol(conn, "donor_id", "VARCHAR(30) NULL");
             ensureCol(conn, "father_name", "VARCHAR(150) NULL");
             ensureCol(conn, "pulse", "INT NULL");
             ensureCol(conn, "hemoglobin", "DOUBLE NULL");
@@ -345,6 +374,10 @@ public class DonorDao {
     }
 
     public boolean saveSnapshot(String token, Integer donorId, Map<String, Object> data) {
+        return saveSnapshot(token, donorId != null ? String.valueOf(donorId) : null, data);
+    }
+
+    public boolean saveSnapshot(String token, String donorId, Map<String, Object> data) {
         if (token == null || token.isBlank() || data == null) return false;
         String sql = "INSERT INTO intake_snapshots (token, donor_id, snapshot_json, created_at) " +
                 "VALUES (?, ?, ?, NOW()) " +
@@ -353,8 +386,8 @@ public class DonorDao {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             String json = MAPPER.writeValueAsString(data);
             ps.setString(1, token.trim());
-            if (donorId != null && donorId > 0) ps.setInt(2, donorId);
-            else ps.setNull(2, Types.INTEGER);
+            if (donorId != null && !donorId.isBlank()) ps.setString(2, donorId.trim());
+            else ps.setNull(2, Types.VARCHAR);
             ps.setString(3, json);
             return ps.executeUpdate() > 0;
         } catch (Exception ignored) {
@@ -372,18 +405,22 @@ public class DonorDao {
             return snapshot;
         }
 
-        // 2. Lookup donor from donors table
+        // 2. Lookup donor from donors table (by qr_token or Smart Donor ID)
         Map<String, Object> liveDonor = null;
-        String sql = "SELECT * FROM donors WHERE qr_token = ? LIMIT 1";
+        String sql = "SELECT * FROM donors WHERE qr_token = ? OR UPPER(TRIM(donor_id)) = UPPER(?) LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, trimmed);
+            ps.setString(2, trimmed);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) liveDonor = mapDonor(rs, true);
             }
         }
 
-        // 3. Fallback extraction of numeric ID e.g. #RED-UP-7951 or 7951 or 1
+        // 3. Fallback extraction of Smart Donor ID or numeric ID e.g. #RED-UP-7951 or 7951 or 1
+        if (liveDonor == null) {
+            liveDonor = findByIdOrDonorId(trimmed);
+        }
         if (liveDonor == null) {
             java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(trimmed);
             if (m.find()) {
@@ -395,13 +432,14 @@ public class DonorDao {
 
         // 4. Freeze this record permanently for this token so subsequent profile edits never alter it
         if (liveDonor != null) {
-            Integer donorId = (Integer) liveDonor.get("id");
+            String smartDonorId = str(liveDonor.get("donorId"));
+            if (smartDonorId.isBlank()) smartDonorId = str(liveDonor.get("id"));
             String stamp = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss")
                     .withZone(java.time.ZoneId.of("Asia/Kolkata"))
                     .format(java.time.Instant.now());
             liveDonor.put("snapshotTimestamp", stamp);
             liveDonor.put("isSnapshot", true);
-            saveSnapshot(trimmed, donorId, liveDonor);
+            saveSnapshot(trimmed, smartDonorId, liveDonor);
             return liveDonor;
         }
         return null;
@@ -445,36 +483,82 @@ public class DonorDao {
     }
 
     public boolean hardDeleteDonor(int id, String email, String phone) throws SQLException {
+        return hardDeleteDonor((Object) id, email, phone);
+    }
+
+    public boolean hardDeleteDonor(Object idOrDonorId, String email, String phone) throws SQLException {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
                 String cleanEmail = email != null ? email.trim().toLowerCase() : "";
                 String cleanPhone = phone != null ? phone.trim() : "";
+                String rawId = idOrDonorId != null ? str(idOrDonorId).trim() : "";
+                int numId = 0;
+                try { numId = Integer.parseInt(rawId); } catch (Exception ignored) {}
 
-                // 1. Delete associated intake snapshots
+                // 1. Locate the Smart Donor ID to burn before deleting
+                String donorIdToBurn = null;
+                String findSql = "SELECT id, donor_id FROM donors WHERE (donor_id IS NOT NULL AND donor_id = ?) OR (id > 0 AND id = ?)";
+                if (!cleanEmail.isEmpty()) findSql += " OR LOWER(email) = ?";
+                if (!cleanPhone.isEmpty()) findSql += " OR phone = ?";
+                findSql += " LIMIT 1";
+
+                try (PreparedStatement ps = conn.prepareStatement(findSql)) {
+                    ps.setString(1, rawId);
+                    ps.setInt(2, numId);
+                    int pIdx = 3;
+                    if (!cleanEmail.isEmpty()) ps.setString(pIdx++, cleanEmail);
+                    if (!cleanPhone.isEmpty()) ps.setString(pIdx++, cleanPhone);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            if (numId <= 0) numId = rs.getInt("id");
+                            donorIdToBurn = rs.getString("donor_id");
+                        }
+                    }
+                }
+
+                if ((donorIdToBurn == null || donorIdToBurn.isBlank()) && rawId.startsWith("DNR-")) {
+                    donorIdToBurn = rawId;
+                }
+
+                // 2. The 'Burned ID' Rule: burn this donor_id permanently into burned_donor_ids
+                if (donorIdToBurn != null && !donorIdToBurn.isBlank()) {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO burned_donor_ids (donor_id, burned_at, reason) VALUES (?, NOW(), 'ACCOUNT_DELETED') " +
+                            "ON DUPLICATE KEY UPDATE burned_at = NOW()")) {
+                        ps.setString(1, donorIdToBurn.trim());
+                        ps.executeUpdate();
+                    } catch (Exception ignored) {}
+                }
+
+                // 3. Delete associated intake snapshots
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "DELETE FROM intake_snapshots WHERE (donor_id > 0 AND donor_id = ?) OR (email IS NOT NULL AND LOWER(email) = ?)")) {
-                    ps.setInt(1, id);
-                    ps.setString(2, cleanEmail);
+                        "DELETE FROM intake_snapshots WHERE (donor_id = ? OR (donor_id > 0 AND donor_id = CAST(? AS CHAR))) OR (email IS NOT NULL AND LOWER(email) = ?)")) {
+                    ps.setString(1, donorIdToBurn != null ? donorIdToBurn : rawId);
+                    ps.setInt(2, numId);
+                    ps.setString(3, cleanEmail);
                     ps.executeUpdate();
                 } catch (Exception ignored) {}
 
-                // 2. Delete donation records
-                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donations WHERE donor_id = ?")) {
-                    ps.setInt(1, id);
-                    ps.executeUpdate();
-                } catch (Exception ignored) {}
-
-                // 3. Delete user sessions
+                // 4. Delete donation records
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "DELETE FROM user_sessions WHERE (user_id > 0 AND user_id = ? AND user_type = 'DONOR')")) {
-                    ps.setInt(1, id);
+                        "DELETE FROM donations WHERE (donor_id = ? OR donor_id = CAST(? AS CHAR))")) {
+                    ps.setString(1, donorIdToBurn != null ? donorIdToBurn : rawId);
+                    ps.setInt(2, numId);
                     ps.executeUpdate();
                 } catch (Exception ignored) {}
 
-                // 4. Delete the donor account row (matches id, email, or phone)
+                // 5. Delete user sessions
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "DELETE FROM user_sessions WHERE user_type = 'DONOR' AND (user_id = ? OR user_id = CAST(? AS CHAR))")) {
+                    ps.setString(1, donorIdToBurn != null ? donorIdToBurn : rawId);
+                    ps.setInt(2, numId);
+                    ps.executeUpdate();
+                } catch (Exception ignored) {}
+
+                // 6. Delete the donor account row (matching id, donor_id, email, or phone)
                 int rows = 0;
-                String deleteDonorSql = "DELETE FROM donors WHERE (id > 0 AND id = ?)";
+                String deleteDonorSql = "DELETE FROM donors WHERE (donor_id IS NOT NULL AND donor_id = ?) OR (id > 0 AND id = ?)";
                 if (!cleanEmail.isEmpty()) {
                     deleteDonorSql += " OR LOWER(email) = ?";
                 }
@@ -482,8 +566,9 @@ public class DonorDao {
                     deleteDonorSql += " OR phone = ?";
                 }
                 try (PreparedStatement ps = conn.prepareStatement(deleteDonorSql)) {
-                    ps.setInt(1, id);
-                    int paramIdx = 2;
+                    ps.setString(1, donorIdToBurn != null ? donorIdToBurn : rawId);
+                    ps.setInt(2, numId);
+                    int paramIdx = 3;
                     if (!cleanEmail.isEmpty()) {
                         ps.setString(paramIdx++, cleanEmail);
                     }
@@ -540,13 +625,24 @@ public class DonorDao {
     }
 
     public List<Map<String, Object>> donationHistory(int donorId) throws SQLException {
+        return donationHistory(String.valueOf(donorId));
+    }
+
+    public List<Map<String, Object>> donationHistory(String donorId) throws SQLException {
         List<Map<String, Object>> rows = new ArrayList<>();
+        if (donorId == null || donorId.isBlank()) return rows;
         String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, h.hospital_name AS hospitalName, " +
                 "d.blood_type AS bloodType, d.units, d.status FROM donations d " +
-                "LEFT JOIN hospitals h ON d.hospital_id = h.id WHERE d.donor_id = ? ORDER BY d.donation_date DESC";
+                "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
+                "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
+                "ORDER BY d.donation_date DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, donorId);
+            ps.setString(1, donorId.trim());
+            int numericId = 0;
+            try { numericId = Integer.parseInt(donorId.trim()); } catch (Exception ignored) {}
+            ps.setInt(2, numericId);
+            ps.setString(3, donorId.trim());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> row = new HashMap<>();
@@ -578,10 +674,14 @@ public class DonorDao {
     }
 
     public boolean recordDonation(int donorId, Integer hospitalId, String bloodType, int units, String status) throws SQLException {
+        return recordDonation(String.valueOf(donorId), hospitalId, bloodType, units, status);
+    }
+
+    public boolean recordDonation(String donorId, Integer hospitalId, String bloodType, int units, String status) throws SQLException {
         String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status) VALUES (?, ?, ?, ?, CURRENT_DATE, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, donorId);
+            ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
             if (hospitalId == null || hospitalId <= 0) {
                 ps.setNull(2, Types.INTEGER);
             } else {
@@ -592,8 +692,9 @@ public class DonorDao {
             ps.setString(5, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
             int inserted = ps.executeUpdate();
             if (inserted > 0) {
-                try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE id = ?")) {
-                    upd.setInt(1, donorId);
+                try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE donor_id = ? OR CAST(id AS CHAR) = ?")) {
+                    upd.setString(1, donorId);
+                    upd.setString(2, donorId);
                     upd.executeUpdate();
                 } catch (SQLException ignored) {}
             }
@@ -608,7 +709,17 @@ public class DonorDao {
 
     private Map<String, Object> mapDonor(ResultSet rs, boolean includePrivate) throws SQLException {
         Map<String, Object> donor = new HashMap<>();
-        donor.put("id", rs.getInt("id"));
+        int idVal = rs.getInt("id");
+        donor.put("id", idVal);
+        String donorIdVal = null;
+        try {
+            donorIdVal = rs.getString("donor_id");
+        } catch (SQLException ignored) {}
+        if (donorIdVal == null || donorIdVal.isBlank()) {
+            donorIdVal = "DNR-0101-D" + (idVal > 0 ? idVal : 100);
+        }
+        donor.put("donorId", donorIdVal);
+        donor.put("donor_id", donorIdVal);
         String name = rs.getString("name");
         donor.put("name", name);
         donor.put("fullName", name);

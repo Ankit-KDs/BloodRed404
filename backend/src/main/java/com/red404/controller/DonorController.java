@@ -41,7 +41,7 @@ public class DonorController {
 
     @GetMapping({"/profile", "/profile-data"})
     public ResponseEntity<ApiResponse> getProfile(
-            @RequestParam(required = false) Integer donorId,
+            @RequestParam(required = false) String donorId,
             @RequestParam(required = false) String email,
             HttpServletRequest request) {
         try {
@@ -49,14 +49,14 @@ public class DonorController {
             if (email != null && !email.isBlank()) {
                 donorProfile = donorDao.findByEmail(email.trim().toLowerCase());
             }
-            if (donorProfile == null && donorId != null && donorId > 0) {
-                donorProfile = donorDao.findById(donorId);
+            if (donorProfile == null && donorId != null && !donorId.isBlank()) {
+                donorProfile = donorDao.findByIdOrDonorId(donorId);
             }
             if (donorProfile == null) {
                 Map<String, Object> donor = requireDonor(request);
-                if (donor != null && donor.get("id") != null) {
-                    int targetId = ((Number) donor.get("id")).intValue();
-                    donorProfile = donorDao.findById(targetId);
+                if (donor != null) {
+                    String dId = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+                    donorProfile = donorDao.findByIdOrDonorId(dId);
                 }
             }
             if (donorProfile == null) {
@@ -72,17 +72,17 @@ public class DonorController {
     @GetMapping({"/scan", "/scan-profile"})
     public ResponseEntity<ApiResponse> getScanProfile(
             @RequestParam(required = false) String token,
-            @RequestParam(required = false) Integer donorId,
+            @RequestParam(required = false) String donorId,
             @RequestParam(required = false) String donor) {
         try {
             Map<String, Object> profile = null;
             if (token != null && !token.isBlank()) {
                 profile = donorDao.findByToken(token);
             }
-            if (profile == null && donorId != null && donorId > 0) {
-                profile = donorDao.findSnapshotByDonorId(donorId);
+            if (profile == null && donorId != null && !donorId.isBlank()) {
+                profile = donorDao.findByToken(donorId);
                 if (profile == null) {
-                    profile = donorDao.findById(donorId);
+                    profile = donorDao.findByIdOrDonorId(donorId);
                 }
             }
             if (profile == null && donor != null && !donor.isBlank()) {
@@ -102,8 +102,8 @@ public class DonorController {
     public ResponseEntity<ApiResponse> saveSnapshot(@RequestBody JsonNode body) {
         try {
             String token = JsonUtil.text(body, "token").trim();
-            Integer donorId = JsonUtil.asInt(body, "donorId", 0);
-            if (donorId <= 0) donorId = null;
+            String donorId = JsonUtil.text(body, "donorId").trim();
+            if (donorId.isEmpty()) donorId = JsonUtil.text(body, "id").trim();
             JsonNode dataNode = body.get("data");
             if (dataNode != null && !token.isBlank()) {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -134,20 +134,20 @@ public class DonorController {
 
     @GetMapping({"/donations", "/donation-history", "/history"})
     public ResponseEntity<ApiResponse> getDonations(
-            @RequestParam(required = false) Integer donorId,
+            @RequestParam(required = false) String donorId,
             HttpServletRequest request) {
         try {
-            int targetDonorId = 0;
-            if (donorId != null && donorId > 0) {
-                targetDonorId = donorId;
+            String targetDonorId = null;
+            if (donorId != null && !donorId.isBlank()) {
+                targetDonorId = donorId.trim();
             } else {
                 Map<String, Object> donor = requireDonor(request);
-                if (donor != null && donor.get("id") != null) {
-                    targetDonorId = ((Number) donor.get("id")).intValue();
+                if (donor != null) {
+                    targetDonorId = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
                 }
             }
-            if (targetDonorId == 0) {
-                targetDonorId = 1;
+            if (targetDonorId == null || targetDonorId.isBlank()) {
+                targetDonorId = "DNR-0811-A404";
             }
             return ok("History loaded", donorDao.donationHistory(targetDonorId));
         } catch (Exception e) {
@@ -358,9 +358,22 @@ public class DonorController {
                 HttpSession session = request.getSession(true);
                 session.setAttribute("user", registeredDonor);
                 session.setAttribute("role", "DONOR");
+                String donorIdStr = registeredDonor.get("donorId") != null ? registeredDonor.get("donorId").toString() : registeredDonor.get("id").toString();
+
+                // Audit & track real-time session
+                try {
+                    String ip = GeoLocationUtil.getClientIp(request);
+                    String ua = request.getHeader("User-Agent");
+                    String device = UserAgentUtil.parseDevice(ua);
+                    String browser = UserAgentUtil.parseBrowser(ua);
+                    String location = GeoLocationUtil.resolveLocation(ip);
+                    sessionDao.recordSession(session.getId(), donorIdStr, "DONOR", ip, ua, device, browser, location);
+                } catch (Exception ignored) {}
+
                 Map<String, Object> wrapper = new HashMap<>();
                 wrapper.put("donor", registeredDonor);
-                wrapper.put("token", "SESSION-DONOR-" + registeredDonor.get("id"));
+                wrapper.put("donorId", donorIdStr);
+                wrapper.put("token", "SESSION-DONOR-" + donorIdStr);
                 return ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse(true, "Donor Registered Successfully!", wrapper));
             } else {
@@ -385,21 +398,22 @@ public class DonorController {
             HttpSession session = request.getSession(true);
             session.setAttribute("user", donor);
             session.setAttribute("role", "DONOR");
+            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
 
             // Audit & track real-time session
             try {
-                int donorId = ((Number) donor.get("id")).intValue();
                 String ip = GeoLocationUtil.getClientIp(request);
                 String ua = request.getHeader("User-Agent");
                 String device = UserAgentUtil.parseDevice(ua);
                 String browser = UserAgentUtil.parseBrowser(ua);
                 String location = GeoLocationUtil.resolveLocation(ip);
-                sessionDao.recordSession(session.getId(), donorId, "DONOR", ip, ua, device, browser, location);
+                sessionDao.recordSession(session.getId(), donorIdStr, "DONOR", ip, ua, device, browser, location);
             } catch (Exception ignored) {}
 
             Map<String, Object> wrapper = new HashMap<>();
             wrapper.put("donor", donor);
-            wrapper.put("token", "SESSION-DONOR-" + donor.get("id"));
+            wrapper.put("donorId", donorIdStr);
+            wrapper.put("token", "SESSION-DONOR-" + donorIdStr);
             return ok("Login Successful", wrapper);
         } catch (Exception e) {
             return serverError(e);

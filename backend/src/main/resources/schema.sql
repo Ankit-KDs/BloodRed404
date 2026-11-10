@@ -3,6 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS donors (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    donor_id VARCHAR(30) NULL UNIQUE,
     name VARCHAR(150) NOT NULL,
     father_name VARCHAR(150) NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
@@ -89,18 +90,37 @@ CREATE TABLE IF NOT EXISTS blood_requests (
 
 CREATE TABLE IF NOT EXISTS donations (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    donor_id INT NOT NULL,
+    donor_id VARCHAR(30) NOT NULL,
     hospital_id INT NULL,
     blood_type VARCHAR(5),
     units INT DEFAULT 1,
     donation_date DATE,
-    status VARCHAR(20) DEFAULT 'COMPLETED',
-    CONSTRAINT fk_don_donor FOREIGN KEY (donor_id) REFERENCES donors(id)
+    status VARCHAR(20) DEFAULT 'COMPLETED'
 );
 
 CREATE TABLE IF NOT EXISTS intake_snapshots (
     token VARCHAR(120) PRIMARY KEY,
-    donor_id INT NULL,
+    donor_id VARCHAR(30) NULL,
     snapshot_json MEDIUMTEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+    session_id VARCHAR(120) PRIMARY KEY,
+    user_id VARCHAR(30) NOT NULL,
+    user_type VARCHAR(20) NOT NULL DEFAULT 'DONOR',
+    ip_address VARCHAR(60) NULL,
+    user_agent VARCHAR(350) NULL,
+    device VARCHAR(100) NULL,
+    browser VARCHAR(100) NULL,
+    location VARCHAR(150) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS burned_donor_ids (
+    donor_id VARCHAR(30) PRIMARY KEY,
+    burned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reason VARCHAR(255) DEFAULT 'ACCOUNT_DELETED'
 );

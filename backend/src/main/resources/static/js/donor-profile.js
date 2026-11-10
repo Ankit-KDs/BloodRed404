@@ -779,19 +779,22 @@
     const bloodType = currentDonor.bloodType || 'A+';
     if (bgEl) bgEl.textContent = bloodType;
 
-    // Unique Donor ID (#RED-ST-XXXX style)
-    let stateCode = 'DL';
-    const stateVal = (currentDonor.state || '').trim().toUpperCase();
-    if (stateVal.includes('UTTAR PRADESH')) stateCode = 'UP';
-    else if (stateVal.includes('UTTARAKHAND')) stateCode = 'UK';
-    else if (stateVal.includes('DELHI')) stateCode = 'DL';
-    else if (stateVal.includes('MAHARASHTRA')) stateCode = 'MH';
-    else if (stateVal.includes('KARNATAKA')) stateCode = 'KA';
-    else if (stateVal.includes('TAMIL NADU')) stateCode = 'TN';
-    else if (stateVal.length >= 2) stateCode = stateVal.substring(0, 2);
-
-    const donorNum = 7950 + parseInt(currentDonor.id || 1, 10);
-    const uniqueIdStr = `#RED-${stateCode}-${donorNum}`;
+    // Smart Donor ID (DNR-[DDMM]-[Initial][3 Random Numbers])
+    let smartDonorId = currentDonor.donorId || currentDonor.donor_id;
+    if (!smartDonorId || !smartDonorId.startsWith('DNR-')) {
+      const dobStr = currentDonor.dob || currentDonor.dateOfBirth || '';
+      let ddmm = '0811';
+      if (dobStr && dobStr.includes('-')) {
+        const parts = dobStr.split('-');
+        if (parts.length >= 3) ddmm = `${parts[2].padStart(2, '0')}${parts[1].padStart(2, '0')}`;
+      }
+      const initial = (fullName && fullName.trim().length > 0) ? fullName.trim()[0].toUpperCase() : 'D';
+      const num = 100 + ((parseInt(currentDonor.id || 1, 10) * 37) % 900);
+      smartDonorId = `DNR-${ddmm}-${initial}${num}`;
+    }
+    currentDonor.donorId = smartDonorId;
+    currentDonor.donor_id = smartDonorId;
+    const uniqueIdStr = smartDonorId;
     if (idEl) idEl.textContent = uniqueIdStr;
 
     // 2. Token Management & QR Render (Directs to Hospital Read-Only Scan View: user-detail-form.html)

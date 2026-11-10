@@ -83,8 +83,9 @@
           <!-- SLEEK GLASSMORPHISM USER DROPDOWN COMPONENT -->
           <div class="user-dropdown-menu" id="userProfileDropdown">
             <div class="dropdown-user-header">
-              <div class="duh-name" id="dropdownUserName">Donor Profile</div>
+              <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
               <div class="duh-email" id="dropdownUserEmail">Signed in as <span id="dropdown-user-email"></span></div>
+              <div class="duh-id" id="dropdownUserId" style="font-size: 0.72rem; color: #ff334b; font-family: 'Space Mono', monospace; margin-top: 4px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-id-card"></i> <span id="dropdownDonorIdText">DNR-0811-A404</span></div>
             </div>
             <div class="dropdown-divider"></div>
             <a href="donor-profile.html" class="dropdown-item">
@@ -123,6 +124,12 @@
       </div>
 
       <div class="welcome-stats-row">
+        <!-- Smart Donor ID Pill -->
+        <div class="welcome-stat-pill donor-id-pill" title="Immutable Clinical Donor Identifier" style="font-family: 'Space Mono', monospace; border-color: rgba(255, 51, 75, 0.35); background: rgba(255, 51, 75, 0.08);">
+          <i class="fa-solid fa-id-card" style="color: #ff334b;"></i>
+          <span>Donor ID: <b id="user-donor-id" style="color: #ff5266;">DNR-0811-A404</b></span>
+        </div>
+
         <!-- Blood Group Pill -->
         <div class="welcome-stat-pill blood-pill" title="Verified ABO / Rh Phenotype">
           <i class="fa-solid fa-droplet"></i>

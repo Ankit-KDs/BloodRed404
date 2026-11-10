@@ -55,6 +55,12 @@
       dropdownEmail.textContent = `Signed in as ${userEmail}`;
     }
 
+    const donorId = (currentUser && (currentUser.donorId || currentUser.donor_id || (typeof currentUser.id === 'string' && currentUser.id.startsWith('DNR-') ? currentUser.id : null))) || 'DNR-0811-A404';
+    const dropdownDonorId = document.getElementById('dropdownDonorIdText');
+    if (dropdownDonorId) {
+      dropdownDonorId.textContent = donorId;
+    }
+
     // 2. Avatar dropdown toggle
     if (avatarTrigger && dropdown) {
       avatarTrigger.addEventListener('click', (e) => {

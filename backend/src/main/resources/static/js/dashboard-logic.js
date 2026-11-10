@@ -8,6 +8,7 @@
 
   // Master State Object (Default: Pure Empty / Verified State)
   const donorData = {
+    donorId: "DNR-0811-A404",
     name: "",
     email: "",
     bloodGroup: "",
@@ -47,6 +48,11 @@
       }
 
       if (user) {
+        if (user.donorId || user.donor_id) {
+          donorData.donorId = user.donorId || user.donor_id;
+        } else if (typeof user.id === 'string' && user.id.startsWith('DNR-')) {
+          donorData.donorId = user.id;
+        }
         if (user.name) donorData.name = user.name;
         else if (user.firstName) donorData.name = `${user.firstName} ${user.lastName || ''}`.trim();
         if (user.email) donorData.email = user.email;
@@ -237,17 +243,21 @@
     const userBloodGroupEl = document.getElementById('user-blood-group');
     const userLocationEl = document.getElementById('user-location');
     const userNodeStatusEl = document.getElementById('user-node-status');
+    const userDonorIdEl = document.getElementById('user-donor-id');
 
     if (userNameEl) userNameEl.textContent = donorData.name;
     if (userBloodGroupEl) userBloodGroupEl.textContent = donorData.bloodGroup;
     if (userLocationEl) userLocationEl.textContent = donorData.location;
     if (userNodeStatusEl) userNodeStatusEl.textContent = 'Active';
+    if (userDonorIdEl) userDonorIdEl.textContent = donorData.donorId || 'DNR-0811-A404';
 
     // Top command nav avatar fallback
     const navName = document.getElementById('dropdownUserName');
     if (navName) navName.textContent = donorData.name;
     const navEmail = document.getElementById('dropdown-user-email');
     if (navEmail && donorData.email) navEmail.textContent = donorData.email;
+    const navDonorId = document.getElementById('dropdownDonorIdText');
+    if (navDonorId) navDonorId.textContent = donorData.donorId || 'DNR-0811-A404';
   }
 
   /**

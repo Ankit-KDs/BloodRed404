@@ -35,7 +35,7 @@
     }
 
     .search-hero {
-      padding: 8.5rem 0 2.5rem;
+      padding: 6.5rem 0 2rem;
       text-align: center;
       position: relative;
       z-index: 1;
@@ -565,7 +565,7 @@
 <body class="search-page-wrapper">
 
   <!-- ========== TOP NAVIGATION (PUBLIC) ========== -->
-  <nav class="navbar navbar-solid" id="navbar" style="background: rgba(10, 10, 15, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+  <nav class="navbar" id="navbar" style="background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
@@ -725,22 +725,21 @@
   </footer>
 
   <!-- ========== SCRIPT ========== -->
-  <script src="js/common.js?v=20261110_v38"></script>
   <script>
-    // Anonymous donor dataset
+    // Anonymous donor dataset - Strictly Smart Donor IDs: DNR-[DDMM]-[Initial][3 Random Numbers]
     const ALL_DONORS = [
-      { id: "DONOR-404-712", group: "A+", rh: "RH+", distKm: 2.3, status: "Ready to Donate", lastSeen: "3 mins ago" },
-      { id: "DONOR-404-839", group: "A+", rh: "RH+", distKm: 4.1, status: "Ready to Donate", lastSeen: "8 mins ago" },
-      { id: "DONOR-404-104", group: "O+", rh: "RH+", distKm: 3.5, status: "Ready to Donate", lastSeen: "Just now" },
-      { id: "DONOR-404-551", group: "A-", rh: "RH-", distKm: 6.8, status: "Ready to Donate", lastSeen: "12 mins ago" },
-      { id: "DONOR-404-928", group: "B+", rh: "RH+", distKm: 1.9, status: "Ready to Donate", lastSeen: "1 min ago" },
-      { id: "DONOR-404-337", group: "A+", rh: "RH+", distKm: 8.4, status: "Ready to Donate", lastSeen: "15 mins ago" },
-      { id: "DONOR-404-462", group: "O-", rh: "RH-", distKm: 9.1, status: "Ready to Donate", lastSeen: "5 mins ago" },
-      { id: "DONOR-404-619", group: "AB+", rh: "RH+", distKm: 12.2, status: "Ready to Donate", lastSeen: "22 mins ago" },
-      { id: "DONOR-404-205", group: "B-", rh: "RH-", distKm: 14.5, status: "Ready to Donate", lastSeen: "30 mins ago" },
-      { id: "DONOR-404-884", group: "A+", rh: "RH+", distKm: 17.6, status: "Ready to Donate", lastSeen: "18 mins ago" },
-      { id: "DONOR-404-190", group: "O+", rh: "RH+", distKm: 18.9, status: "Ready to Donate", lastSeen: "40 mins ago" },
-      { id: "DONOR-404-773", group: "AB-", rh: "RH-", distKm: 19.4, status: "Ready to Donate", lastSeen: "45 mins ago" }
+      { id: "DNR-1205-A712", group: "A+", rh: "RH+", distKm: 2.3, status: "Ready to Donate", lastSeen: "3 mins ago" },
+      { id: "DNR-2408-O839", group: "A+", rh: "RH+", distKm: 4.1, status: "Ready to Donate", lastSeen: "8 mins ago" },
+      { id: "DNR-0911-S104", group: "O+", rh: "RH+", distKm: 3.5, status: "Ready to Donate", lastSeen: "Just now" },
+      { id: "DNR-3001-A551", group: "A-", rh: "RH-", distKm: 6.8, status: "Ready to Donate", lastSeen: "12 mins ago" },
+      { id: "DNR-1507-B928", group: "B+", rh: "RH+", distKm: 1.9, status: "Ready to Donate", lastSeen: "1 min ago" },
+      { id: "DNR-0304-A337", group: "A+", rh: "RH+", distKm: 8.4, status: "Ready to Donate", lastSeen: "15 mins ago" },
+      { id: "DNR-1910-O462", group: "O-", rh: "RH-", distKm: 9.1, status: "Ready to Donate", lastSeen: "5 mins ago" },
+      { id: "DNR-2802-A619", group: "AB+", rh: "RH+", distKm: 12.2, status: "Ready to Donate", lastSeen: "22 mins ago" },
+      { id: "DNR-0709-B205", group: "B-", rh: "RH-", distKm: 14.5, status: "Ready to Donate", lastSeen: "30 mins ago" },
+      { id: "DNR-1406-A884", group: "A+", rh: "RH+", distKm: 17.6, status: "Ready to Donate", lastSeen: "18 mins ago" },
+      { id: "DNR-2212-O190", group: "O+", rh: "RH+", distKm: 18.9, status: "Ready to Donate", lastSeen: "40 mins ago" },
+      { id: "DNR-1103-A773", group: "AB-", rh: "RH-", distKm: 19.4, status: "Ready to Donate", lastSeen: "45 mins ago" }
     ];
 
     function executeDonorSearch() {

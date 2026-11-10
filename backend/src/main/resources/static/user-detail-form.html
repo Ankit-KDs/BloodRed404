@@ -1676,8 +1676,24 @@
         const isPositive = !bloodType.includes('-') && bloodType !== 'N/A';
         const rhStr = bloodType === 'N/A' ? 'N/A' : (isPositive ? 'Rh-D Positive (Rh+)' : 'Rh-D Negative (Rh-)');
 
-        // Donor ID strictly set to N/A per user instruction ("Also Donor ID i will tell you later how to set them")
-        const uniqueId = 'N/A';
+        // Smart Donor ID (DNR-[DDMM]-[Initial][3 Random Numbers])
+        let uniqueId = d.donorId || d.donor_id || '';
+        if (!uniqueId || !uniqueId.startsWith('DNR-')) {
+          const rawRef = (typeof donorRef !== 'undefined' && donorRef) || (typeof donorId !== 'undefined' && donorId) || '';
+          if (rawRef.startsWith('DNR-')) {
+            uniqueId = rawRef;
+          } else {
+            const rawDob = d.dob || d.dateOfBirth;
+            let ddmm = '0811';
+            if (rawDob && rawDob.includes('-')) {
+              const parts = rawDob.split('-');
+              if (parts.length >= 3) ddmm = `${parts[2].padStart(2, '0')}${parts[1].padStart(2, '0')}`;
+            }
+            const initial = (name && name !== 'N/A' && name.trim().length > 0) ? name.trim()[0].toUpperCase() : 'D';
+            const num = 100 + ((parseInt(d.id || 1, 10) * 37) % 900);
+            uniqueId = `DNR-${ddmm}-${initial}${num}`;
+          }
+        }
 
         // Calculate Age
         let ageStr = 'N/A';
@@ -1709,6 +1725,9 @@
         setTxt('viewDonorName', name);
         setTxt('viewDonorFatherName', fatherName);
         setTxt('viewDonorId', uniqueId);
+        setTxt('modalDonorId', uniqueId);
+        setTxt('modalDonorName', name);
+        setTxt('modalBloodGroup', bloodType);
         setTxt('viewBloodType', bloodType);
         setTxt('viewRhFactor', rhStr);
         setTxt('viewDonorGender', valOrNA(d.gender));

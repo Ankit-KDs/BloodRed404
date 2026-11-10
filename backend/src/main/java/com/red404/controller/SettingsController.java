@@ -85,20 +85,21 @@ public class SettingsController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Authentication required."));
             }
-            int donorId = ((Number) donor.get("id")).intValue();
+            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+            int numericId = ((Number) donor.get("id")).intValue();
             HttpSession session = request.getSession(true);
             String currentSid = session != null ? session.getId() : "";
 
-            List<Map<String, Object>> sessions = sessionDao.getActiveSessions(donorId, "DONOR", currentSid);
+            List<Map<String, Object>> sessions = sessionDao.getActiveSessions(donorIdStr, "DONOR", currentSid);
             if (sessions.isEmpty()) {
                 String clientIp = GeoLocationUtil.getClientIp(request);
                 String userAgent = request.getHeader("User-Agent");
                 String device = UserAgentUtil.parseDevice(userAgent);
                 String browser = UserAgentUtil.parseBrowser(userAgent);
                 String location = GeoLocationUtil.resolveLocation(clientIp);
-                String sid = (currentSid != null && !currentSid.isBlank()) ? currentSid : "SESS-" + donorId + "-" + System.currentTimeMillis();
-                sessionDao.recordSession(sid, donorId, "DONOR", clientIp, userAgent, device, browser, location);
-                sessions = sessionDao.getActiveSessions(donorId, "DONOR", sid);
+                String sid = (currentSid != null && !currentSid.isBlank()) ? currentSid : "SESS-" + donorIdStr + "-" + System.currentTimeMillis();
+                sessionDao.recordSession(sid, donorIdStr, "DONOR", clientIp, userAgent, device, browser, location);
+                sessions = sessionDao.getActiveSessions(donorIdStr, "DONOR", sid);
             }
             return ResponseEntity.ok(new ApiResponse(true, "Active sessions retrieved.", sessions));
         } catch (Exception e) {
@@ -117,14 +118,14 @@ public class SettingsController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Authentication required."));
             }
-            int donorId = ((Number) donor.get("id")).intValue();
+            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
             String targetSessionId = JsonUtil.text(body, "sessionId").trim();
 
             if (targetSessionId.isEmpty()) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Session ID is required."));
             }
 
-            boolean killed = sessionDao.killSession(donorId, "DONOR", targetSessionId);
+            boolean killed = sessionDao.killSession(donorIdStr, "DONOR", targetSessionId);
 
             // If user revoked their own current session, invalidate it
             HttpSession session = request.getSession(false);
@@ -151,11 +152,11 @@ public class SettingsController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Authentication required."));
             }
-            int donorId = ((Number) donor.get("id")).intValue();
+            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
             HttpSession session = request.getSession(false);
             String currentSid = session != null ? session.getId() : "";
 
-            boolean success = sessionDao.killAllExceptCurrent(donorId, "DONOR", currentSid);
+            boolean success = sessionDao.killAllExceptCurrent(donorIdStr, "DONOR", currentSid);
             if (success) {
                 return ResponseEntity.ok(new ApiResponse(true, "Logged out of all other devices successfully.", null));
             } else {
@@ -178,13 +179,16 @@ public class SettingsController {
             HttpServletResponse response) {
         try {
             Map<String, Object> donor = getAuthenticatedDonor(request, body);
-            int donorId = donor != null && donor.get("id") != null ? ((Number) donor.get("id")).intValue() : 0;
+            String donorIdStr = null;
+            if (donor != null) {
+                donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+            }
             String donorEmail = donor != null && donor.get("email") != null ? donor.get("email").toString() : null;
             String donorPhone = donor != null && donor.get("phone") != null ? donor.get("phone").toString() : null;
 
-            if (donorId <= 0 && body != null) {
-                donorId = JsonUtil.asInt(body, "donorId", 0);
-                if (donorId <= 0) donorId = JsonUtil.asInt(body, "id", 0);
+            if ((donorIdStr == null || donorIdStr.isBlank()) && body != null) {
+                donorIdStr = JsonUtil.text(body, "donorId");
+                if (donorIdStr.isBlank()) donorIdStr = JsonUtil.text(body, "id");
             }
             if ((donorEmail == null || donorEmail.isBlank()) && body != null) {
                 donorEmail = JsonUtil.text(body, "email");
@@ -193,12 +197,12 @@ public class SettingsController {
                 donorPhone = JsonUtil.text(body, "phone");
             }
 
-            if (donorId <= 0 && (donorEmail == null || donorEmail.isBlank())) {
+            if ((donorIdStr == null || donorIdStr.isBlank()) && (donorEmail == null || donorEmail.isBlank())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Authentication required to delete account."));
             }
 
-            boolean deleted = donorDao.hardDeleteDonor(donorId, donorEmail, donorPhone);
+            boolean deleted = donorDao.hardDeleteDonor(donorIdStr, donorEmail, donorPhone);
             HttpSession session = request.getSession(false);
             if (session != null) {
                 session.invalidate();
@@ -230,7 +234,7 @@ public class SettingsController {
         HttpSession session = request.getSession(false);
         if (session != null) {
             Object user = session.getAttribute("user");
-            if (user instanceof Map<?, ?> map && map.get("id") != null) {
+            if (user instanceof Map<?, ?> map && (map.get("id") != null || map.get("donorId") != null)) {
                 return (Map<String, Object>) map;
             }
         }
@@ -242,9 +246,9 @@ public class SettingsController {
 
         // 3. Check JSON body
         if ((donorIdHeader == null || donorIdHeader.isBlank()) && body != null) {
-            int bodyId = JsonUtil.asInt(body, "donorId", 0);
-            if (bodyId <= 0) bodyId = JsonUtil.asInt(body, "id", 0);
-            if (bodyId > 0) donorIdHeader = String.valueOf(bodyId);
+            String bDonorId = JsonUtil.text(body, "donorId");
+            if (bDonorId.isBlank()) bDonorId = JsonUtil.text(body, "id");
+            if (!bDonorId.isBlank()) donorIdHeader = bDonorId;
         }
         if ((donorEmailHeader == null || donorEmailHeader.isBlank()) && body != null) {
             String bEmail = JsonUtil.text(body, "email");
@@ -268,13 +272,10 @@ public class SettingsController {
             } catch (Exception ignored) {}
         }
 
-        // Resolve by ID if email did not resolve
+        // Resolve by Smart Donor ID or Integer ID
         if (donor == null && donorIdHeader != null && !donorIdHeader.isBlank()) {
             try {
-                int id = Integer.parseInt(donorIdHeader.trim());
-                if (id > 0) {
-                    donor = donorDao.findById(id);
-                }
+                donor = donorDao.findByIdOrDonorId(donorIdHeader.trim());
             } catch (Exception ignored) {}
         }
 

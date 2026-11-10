@@ -77,8 +77,9 @@
           <span class="avatar-online-dot"></span>
           <div class="user-dropdown-menu" id="userProfileDropdown">
             <div class="dropdown-user-header">
-              <div class="duh-name" id="dropdownUserName">Donor Profile</div>
+              <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
               <div class="duh-email" id="dropdownUserEmail">Signed in as <span id="dropdown-user-email"></span></div>
+              <div class="duh-id" id="dropdownUserId" style="font-size: 0.72rem; color: #ff334b; font-family: 'Space Mono', monospace; margin-top: 4px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-id-card"></i> <span id="dropdownDonorIdText">DNR-0811-A404</span></div>
             </div>
             <div class="dropdown-divider"></div>
             <a href="donor-profile.html" class="dropdown-item">
@@ -312,10 +313,8 @@
       // Determine if viewing inside donor portal session or as public visitor
       const urlParams = new URLSearchParams(window.location.search);
       const isParamDonor = urlParams.get('portal') === 'donor';
-      const isParamPublic = urlParams.get('portal') === 'public';
       const ref = document.referrer || '';
       const isRefDonor = ref.includes('dashboard') || ref.includes('donor-') || ref.includes('my-donations');
-      const isFromIndex = ref.includes('index.html');
 
       let isSessionDonor = false;
       try {
@@ -326,16 +325,9 @@
         }
       } catch (_) {}
 
-      let isDonor = false;
-      if (isParamPublic) {
-        isDonor = false;
-      } else if (isParamDonor || isRefDonor) {
-        isDonor = true;
-      } else if (isFromIndex) {
-        isDonor = false;
-      } else if (isSessionDonor) {
-        isDonor = true;
-      }
+      // If requested as donor or coming from dashboard/portal:
+      const isFromIndex = ref.includes('index.html');
+      const isDonor = isParamDonor || (isSessionDonor && !isFromIndex) || isRefDonor;
 
       const donorNav = document.getElementById('donorCommandNav');
       const publicNav = document.getElementById('publicNavbar');

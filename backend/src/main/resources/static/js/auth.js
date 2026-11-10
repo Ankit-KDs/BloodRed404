@@ -363,6 +363,10 @@ function initDonorRegisterForm() {
 
     if (result.success) {
       const donorData = (result.data && result.data.donor) ? result.data.donor : payload;
+      if (result.data && result.data.donorId) {
+        donorData.donorId = result.data.donorId;
+        donorData.donor_id = result.data.donorId;
+      }
       const cleanEmail = (donorData.email || payload.email || '').trim().toLowerCase();
       const cleanPhone = (donorData.phone || payload.phone || '').trim();
 
@@ -481,6 +485,10 @@ function initDonorLoginForm() {
 
     if (result.success) {
       const donorData = result.data.donor;
+      if (result.data && result.data.donorId) {
+        donorData.donorId = result.data.donorId;
+        donorData.donor_id = result.data.donorId;
+      }
       const cleanEmail = (donorData.email || '').trim().toLowerCase();
       const cleanPhone = (donorData.phone || '').trim();
 

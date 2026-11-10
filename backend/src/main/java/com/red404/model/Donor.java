@@ -15,6 +15,7 @@ public class Donor {
 
     // Basic Info
     private int     id;
+    private String  donorId;
     private String  name;
     private String  email;
     private String  phone;
@@ -408,6 +409,10 @@ public class Donor {
     // --- ID ---
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+
+    // --- DONOR ID (Smart ID: DNR-[DDMM]-[Initial][3 Random Numbers]) ---
+    public String getDonorId() { return donorId; }
+    public void setDonorId(String donorId) { this.donorId = donorId; }
 
     // --- NAME ---
     public String getName() { return name; }

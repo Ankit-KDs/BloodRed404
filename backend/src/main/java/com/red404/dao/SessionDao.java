@@ -20,7 +20,13 @@ public class SessionDao {
     public void recordSession(String sessionId, int userId, String userType,
                               String ipAddress, String userAgent,
                               String device, String browser, String location) {
-        if (sessionId == null || sessionId.isBlank() || userId <= 0) return;
+        recordSession(sessionId, String.valueOf(userId), userType, ipAddress, userAgent, device, browser, location);
+    }
+
+    public void recordSession(String sessionId, String userId, String userType,
+                              String ipAddress, String userAgent,
+                              String device, String browser, String location) {
+        if (sessionId == null || sessionId.isBlank() || userId == null || userId.isBlank()) return;
         try (Connection conn = DBConnection.getConnection()) {
             boolean exists = false;
             String checkSql = "SELECT session_id FROM user_sessions WHERE session_id = ?";
@@ -32,16 +38,17 @@ public class SessionDao {
             }
 
             if (exists) {
-                String updateSql = "UPDATE user_sessions SET ip_address = ?, user_agent = ?, " +
+                String updateSql = "UPDATE user_sessions SET user_id = ?, ip_address = ?, user_agent = ?, " +
                         "device = ?, browser = ?, location = ?, last_active = CURRENT_TIMESTAMP, is_active = TRUE " +
                         "WHERE session_id = ?";
                 try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                    ps.setString(1, ipAddress);
-                    ps.setString(2, userAgent);
-                    ps.setString(3, device);
-                    ps.setString(4, browser);
-                    ps.setString(5, location);
-                    ps.setString(6, sessionId.trim());
+                    ps.setString(1, userId.trim());
+                    ps.setString(2, ipAddress);
+                    ps.setString(3, userAgent);
+                    ps.setString(4, device);
+                    ps.setString(5, browser);
+                    ps.setString(6, location);
+                    ps.setString(7, sessionId.trim());
                     ps.executeUpdate();
                 }
             } else {
@@ -50,7 +57,7 @@ public class SessionDao {
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     ps.setString(1, sessionId.trim());
-                    ps.setInt(2, userId);
+                    ps.setString(2, userId.trim());
                     ps.setString(3, userType != null ? userType : "DONOR");
                     ps.setString(4, ipAddress);
                     ps.setString(5, userAgent);
@@ -66,13 +73,23 @@ public class SessionDao {
     }
 
     public List<Map<String, Object>> getActiveSessions(int userId, String userType, String currentSessionId) {
+        return getActiveSessions(String.valueOf(userId), userType, currentSessionId);
+    }
+
+    public List<Map<String, Object>> getActiveSessions(String userId, String userType, String currentSessionId) {
         List<Map<String, Object>> list = new ArrayList<>();
-        String sql = "SELECT * FROM user_sessions WHERE user_id = ? AND user_type = ? AND is_active = TRUE ORDER BY last_active DESC";
+        if (userId == null || userId.isBlank()) return list;
+        // Match user_id either directly or via alternate ID format (e.g. integer or Smart Donor ID)
+        String sql = "SELECT * FROM user_sessions WHERE (user_id = ? OR user_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR user_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) AND user_type = ? AND is_active = TRUE ORDER BY last_active DESC";
         SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy, hh:mm a");
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setString(2, userType != null ? userType : "DONOR");
+            ps.setString(1, userId.trim());
+            int numericId = 0;
+            try { numericId = Integer.parseInt(userId.trim()); } catch (Exception ignored) {}
+            ps.setInt(2, numericId);
+            ps.setString(3, userId.trim());
+            ps.setString(4, userType != null ? userType : "DONOR");
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> map = new LinkedHashMap<>();
@@ -96,13 +113,21 @@ public class SessionDao {
     }
 
     public boolean killSession(int userId, String userType, String sessionId) {
+        return killSession(String.valueOf(userId), userType, sessionId);
+    }
+
+    public boolean killSession(String userId, String userType, String sessionId) {
         if (sessionId == null || sessionId.isBlank()) return false;
-        String sql = "UPDATE user_sessions SET is_active = FALSE WHERE user_id = ? AND user_type = ? AND session_id = ?";
+        String sql = "UPDATE user_sessions SET is_active = FALSE WHERE (user_id = ? OR user_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR user_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) AND user_type = ? AND session_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setString(2, userType != null ? userType : "DONOR");
-            ps.setString(3, sessionId.trim());
+            ps.setString(1, userId.trim());
+            int numericId = 0;
+            try { numericId = Integer.parseInt(userId.trim()); } catch (Exception ignored) {}
+            ps.setInt(2, numericId);
+            ps.setString(3, userId.trim());
+            ps.setString(4, userType != null ? userType : "DONOR");
+            ps.setString(5, sessionId.trim());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             return false;
@@ -110,12 +135,20 @@ public class SessionDao {
     }
 
     public boolean killAllExceptCurrent(int userId, String userType, String currentSessionId) {
-        String sql = "UPDATE user_sessions SET is_active = FALSE WHERE user_id = ? AND user_type = ? AND session_id <> ?";
+        return killAllExceptCurrent(String.valueOf(userId), userType, currentSessionId);
+    }
+
+    public boolean killAllExceptCurrent(String userId, String userType, String currentSessionId) {
+        String sql = "UPDATE user_sessions SET is_active = FALSE WHERE (user_id = ? OR user_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR user_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) AND user_type = ? AND session_id <> ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setString(2, userType != null ? userType : "DONOR");
-            ps.setString(3, currentSessionId != null ? currentSessionId.trim() : "");
+            ps.setString(1, userId.trim());
+            int numericId = 0;
+            try { numericId = Integer.parseInt(userId.trim()); } catch (Exception ignored) {}
+            ps.setInt(2, numericId);
+            ps.setString(3, userId.trim());
+            ps.setString(4, userType != null ? userType : "DONOR");
+            ps.setString(5, currentSessionId != null ? currentSessionId.trim() : "");
             return ps.executeUpdate() >= 0;
         } catch (Exception e) {
             return false;

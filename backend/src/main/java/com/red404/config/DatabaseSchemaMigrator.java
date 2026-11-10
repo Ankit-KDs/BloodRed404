@@ -2,6 +2,7 @@ package com.red404.config;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         try (Connection conn = dataSource.getConnection()) {
             log.info("Running RED404 database schema migration check...");
+            migrateBurnedDonorIdsTable(conn);
             migrateDonorsTable(conn);
             migrateHospitalsTable(conn);
             migrateBloodRequestsTable(conn);
@@ -46,6 +48,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
     private void migrateDonorsTable(Connection conn) {
         Map<String, String> requiredColumns = new LinkedHashMap<>();
+        requiredColumns.put("donor_id", "VARCHAR(30) NULL");
         requiredColumns.put("father_name", "VARCHAR(150) NULL");
         requiredColumns.put("dob", "DATE NULL");
         requiredColumns.put("gender", "VARCHAR(20) NULL");
@@ -104,8 +107,40 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             st.executeUpdate("UPDATE donors SET medications = NULL WHERE medications LIKE '%Unrestricted%' OR medications LIKE 'None%'");
             st.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries LIKE '%< 12%'");
             st.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type LIKE '%Voluntary%'");
-            st.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15' AND (address IS NULL OR address = '')");
-            st.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0 AND (address IS NULL OR address = '')");
+            st.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15'");
+            st.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0");
+        } catch (Exception ignored) {}
+
+        // Ensure Smart Donor IDs are assigned to any legacy donors without a donor_id
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT id, name, dob FROM donors WHERE donor_id IS NULL OR donor_id = ''")) {
+            java.util.List<Map<String, Object>> missingList = new java.util.ArrayList<>();
+            while (rs.next()) {
+                Map<String, Object> d = new java.util.HashMap<>();
+                d.put("id", rs.getInt("id"));
+                d.put("name", rs.getString("name"));
+                d.put("dob", rs.getDate("dob"));
+                missingList.add(d);
+            }
+            for (Map<String, Object> d : missingList) {
+                int id = (int) d.get("id");
+                String name = (String) d.get("name");
+                java.sql.Date dob = (java.sql.Date) d.get("dob");
+                String smartId = com.red404.util.DonorIdGenerator.generateUniqueDonorId(conn, name, dob);
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
+                    ps.setString(1, smartId);
+                    ps.setInt(2, id);
+                    ps.executeUpdate();
+                    log.info("Assigned Smart Donor ID {} to donor id {}", smartId, id);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice assigning Smart Donor IDs: {}", e.getMessage());
+        }
+
+        // Add unique index on donor_id if not present
+        try (Statement st = conn.createStatement()) {
+            st.executeUpdate("ALTER TABLE donors ADD UNIQUE INDEX uq_donors_donor_id (donor_id)");
         } catch (Exception ignored) {}
     }
 
@@ -167,8 +202,13 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
     }
 
     private void migrateDonationsTable(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            try { st.executeUpdate("ALTER TABLE donations DROP FOREIGN KEY fk_don_donor"); } catch (Exception ignored) {}
+            try { st.executeUpdate("ALTER TABLE donations MODIFY COLUMN donor_id VARCHAR(30) NOT NULL"); } catch (Exception ignored) {}
+        } catch (Exception ignored) {}
+
         Map<String, String> requiredColumns = new LinkedHashMap<>();
-        requiredColumns.put("donor_id", "INT NOT NULL DEFAULT 1");
+        requiredColumns.put("donor_id", "VARCHAR(30) NOT NULL DEFAULT 'DNR-0101-D1'");
         requiredColumns.put("hospital_id", "INT NULL");
         requiredColumns.put("blood_type", "VARCHAR(5) NULL");
         requiredColumns.put("units", "INT DEFAULT 1");
@@ -182,11 +222,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         try (Statement st = conn.createStatement()) {
             String sql = "CREATE TABLE IF NOT EXISTS intake_snapshots (" +
                     "token VARCHAR(120) PRIMARY KEY, " +
-                    "donor_id INT NULL, " +
+                    "donor_id VARCHAR(30) NULL, " +
                     "snapshot_json MEDIUMTEXT NOT NULL, " +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")";
             st.executeUpdate(sql);
+            try { st.executeUpdate("ALTER TABLE intake_snapshots MODIFY COLUMN donor_id VARCHAR(30) NULL"); } catch (Exception ignored) {}
             log.info("intake_snapshots table verified/created in database.");
         } catch (Exception e) {
             log.warn("Notice checking intake_snapshots table: {}", e.getMessage());
@@ -197,7 +238,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         try (Statement st = conn.createStatement()) {
             String sql = "CREATE TABLE IF NOT EXISTS user_sessions (" +
                     "session_id VARCHAR(120) PRIMARY KEY, " +
-                    "user_id INT NOT NULL, " +
+                    "user_id VARCHAR(30) NOT NULL, " +
                     "user_type VARCHAR(20) NOT NULL DEFAULT 'DONOR', " +
                     "ip_address VARCHAR(60) NULL, " +
                     "user_agent VARCHAR(350) NULL, " +
@@ -209,9 +250,24 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                     "is_active BOOLEAN DEFAULT TRUE" +
                     ")";
             st.executeUpdate(sql);
+            try { st.executeUpdate("ALTER TABLE user_sessions MODIFY COLUMN user_id VARCHAR(30) NOT NULL"); } catch (Exception ignored) {}
             log.info("user_sessions table verified/created in database.");
         } catch (Exception e) {
             log.warn("Notice checking user_sessions table: {}", e.getMessage());
+        }
+    }
+
+    private void migrateBurnedDonorIdsTable(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS burned_donor_ids (" +
+                    "donor_id VARCHAR(30) PRIMARY KEY, " +
+                    "burned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "reason VARCHAR(255) DEFAULT 'ACCOUNT_DELETED'" +
+                    ")";
+            st.executeUpdate(sql);
+            log.info("burned_donor_ids table verified/created in database.");
+        } catch (Exception e) {
+            log.warn("Notice checking burned_donor_ids table: {}", e.getMessage());
         }
     }
 
@@ -263,15 +319,16 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
     private void seedOrUpdatePrimaryDonor(Connection conn) {
         try (Statement st = conn.createStatement()) {
-            try (ResultSet rs = st.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
+            try (ResultSet rs = st.executeQuery("SELECT id, donor_id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
-                    String insertSql = "INSERT INTO donors (name, email, phone, password, blood_type, availability, city, state, pincode, zone, created_at) " +
-                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '12345678', 'A+', 'Available', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                    String insertSql = "INSERT INTO donors (donor_id, name, email, phone, password, blood_type, availability, city, state, pincode, zone, created_at) " +
+                            "VALUES ('DNR-0811-A404', 'Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '12345678', 'A+', 'Available', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
                     st.executeUpdate(insertSql);
-                    log.info("Primary donor 'ak30kr02@gmail.com' verified in database (without demo clinical data).");
+                    log.info("Primary donor 'ak30kr02@gmail.com' verified in database with Smart Donor ID DNR-0811-A404.");
                 } else {
                     st.executeUpdate("UPDATE donors SET password = '12345678' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com'");
-                    log.info("Primary donor 'ak30kr02@gmail.com' password verified and synchronized.");
+                    st.executeUpdate("UPDATE donors SET donor_id = 'DNR-0811-A404' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' AND (donor_id IS NULL OR donor_id = '')");
+                    log.info("Primary donor 'ak30kr02@gmail.com' synchronized.");
                 }
             }
         } catch (Exception e) {
