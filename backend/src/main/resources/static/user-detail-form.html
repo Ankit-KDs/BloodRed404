@@ -1714,7 +1714,6 @@
 
         // Calculate Age
         let ageStr = 'N/A';
-        const rawDob = d.dob || d.dateOfBirth;
         if (rawDob && rawDob !== '1998-05-15') {
           const birthDate = new Date(rawDob);
           if (!isNaN(birthDate.getTime())) {
