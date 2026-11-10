@@ -7,8 +7,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>RED404 - Donor Login</title>
-  <link rel="stylesheet" href="css/common.css?v=20261110_v34"/>
-  <link rel="stylesheet" href="css/auth.css?v=20261110_v34"/>
+  <link rel="stylesheet" href="css/common.css?v=20261110_v35"/>
+  <link rel="stylesheet" href="css/auth.css?v=20261110_v35"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
 </head>
@@ -65,13 +65,13 @@
           <p>Sign in to your RED404 account</p>
         </div>
 
-        <form id="donorLoginForm" novalidate>
+        <form id="donorLoginForm" novalidate autocomplete="off">
 
           <div class="form-group">
             <label for="loginEmail">Email or Phone <span class="req">*</span></label>
             <div class="input-wrap">
               <i class="fas fa-user input-icon"></i>
-              <input type="text" id="loginEmail" name="loginEmail" placeholder="Email or phone number" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
+              <input type="text" id="loginEmail" name="loginEmail" placeholder="Email or phone number" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
               <span class="input-focus-line"></span>
             </div>
             <span class="field-error" id="loginEmailErr"></span>
@@ -81,7 +81,7 @@
             <label for="loginPassword">Password <span class="req">*</span></label>
             <div class="input-wrap">
               <i class="fas fa-lock input-icon"></i>
-              <input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
+              <input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
               <button type="button" class="toggle-pass" onclick="togglePassword('loginPassword','loginEye')">
                 <i class="fas fa-eye" id="loginEye"></i>
               </button>
@@ -147,7 +147,7 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=20261110_v34"></script>
-  <script src="js/auth.js?v=20261110_v34"></script>
+  <script src="js/common.js?v=20261110_v35"></script>
+  <script src="js/auth.js?v=20261110_v35"></script>
 </body>
 </html>

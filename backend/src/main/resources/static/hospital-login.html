@@ -7,8 +7,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>RED404 - Hospital Login</title>
-  <link rel="stylesheet" href="css/common.css?v=20261110_v34"/>
-  <link rel="stylesheet" href="css/auth.css?v=20261110_v34"/>
+  <link rel="stylesheet" href="css/common.css?v=20261110_v35"/>
+  <link rel="stylesheet" href="css/auth.css?v=20261110_v35"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
 </head>
@@ -60,7 +60,7 @@
           <p>Sign in to your RED404 hospital account</p>
         </div>
 
-        <form id="hospitalLoginForm" novalidate>
+        <form id="hospitalLoginForm" novalidate autocomplete="off">
 
           <div class="form-group">
             <label for="hospLoginEmail">Hospital Email <span class="req">*</span></label>
@@ -72,7 +72,7 @@
                 name="hospLoginEmail"
                 placeholder="Hospital/Admin Email or Phone"
                 required
-                autocomplete="email"
+                autocomplete="off"
                 autocapitalize="none"
                 autocorrect="off"
                 spellcheck="false"
@@ -92,7 +92,7 @@
                 name="hospLoginPassword"
                 placeholder="Your password"
                 required
-                autocomplete="current-password"
+                autocomplete="new-password"
                 autocapitalize="none"
                 autocorrect="off"
                 spellcheck="false"
@@ -172,8 +172,8 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=20261110_v34"></script>
-  <script src="js/auth.js?v=20261110_v34"></script>
+  <script src="js/common.js?v=20261110_v35"></script>
+  <script src="js/auth.js?v=20261110_v35"></script>
 
   <script>
     function showHospForgotModal() {

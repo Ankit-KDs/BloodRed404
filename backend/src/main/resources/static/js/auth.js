@@ -5,39 +5,24 @@
 
 'use strict';
 
-// Ensure primary donor account exists in local registry backup without demo overrides
-try {
-  const localList = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
-  const defaultRegDate = '2026-11-08T14:00:00.000Z';
-  const existingIdx = localList.findIndex(d => d.email && d.email.trim().toLowerCase() === 'ak30kr02@gmail.com');
-  if (existingIdx !== -1) {
-    localList[existingIdx].password = '12345678';
-    if (!localList[existingIdx].createdAt && !localList[existingIdx].created_at) {
-      localList[existingIdx].createdAt = defaultRegDate;
-      localList[existingIdx].created_at = defaultRegDate;
-    }
-    // Clean out demo strings if present
-    if (localList[existingIdx].address && (localList[existingIdx].address.includes('Near Subharti') || localList[existingIdx].address.includes('Delhi Road'))) {
-      localList[existingIdx].address = null;
-    }
-    if (localList[existingIdx].fatherName && localList[existingIdx].fatherName.toLowerCase().includes('rajesh')) {
-      localList[existingIdx].fatherName = null;
-    }
-    if (localList[existingIdx].father_name && localList[existingIdx].father_name.toLowerCase().includes('rajesh')) {
-      localList[existingIdx].father_name = null;
-    }
-    if (localList[existingIdx].dob === '1998-05-15') {
-      localList[existingIdx].dob = null;
-    }
-    if (localList[existingIdx].lastDonation === '2024-01-10' || localList[existingIdx].last_donation === '2024-01-10') {
-      localList[existingIdx].lastDonation = null;
-      localList[existingIdx].last_donation = null;
-    }
-    localStorage.setItem('red404_registered_donors', JSON.stringify(localList));
-  }
-} catch (_) {}
-
 document.addEventListener('DOMContentLoaded', () => {
+  // If redirected after account deletion, notify user and clean fields
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('deleted') === '1') {
+      localStorage.clear();
+      sessionStorage.clear();
+      if (typeof showToast === 'function') {
+        showToast('Account permanently deleted. All associated data erased.', 'info', 4000);
+      }
+    }
+  } catch (_) {}
+
+  // Always blank out credentials on login page to avoid suggestions for deleted accounts
+  const emailInput = document.getElementById('loginEmail');
+  const passInput = document.getElementById('loginPassword');
+  if (emailInput) emailInput.value = '';
+  if (passInput) passInput.value = '';
   initAuthParticles();
   initDonorRegisterForm();
   initDonorLoginForm();
@@ -547,7 +532,7 @@ function initDonorLoginForm() {
       showToast('Login successful! Redirecting...', 'success', 1500);
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
     } else {
-      // Check local registered fallback if server had a temporary disconnection or fresh restart
+      // Check local registered fallback ONLY if already registered locally and not deleted
       try {
         const localDonors = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
         const cleanId = identifier.trim().toLowerCase();
@@ -556,27 +541,8 @@ function initDonorLoginForm() {
           ((d.email && d.email.trim().toLowerCase() === cleanId) || (d.phone && d.phone.trim() === identifier.trim())) &&
           (d.password && d.password.trim() === cleanPw)
         );
-        if (!match && (cleanId === 'ak30kr02@gmail.com' || cleanId === '9876543210') && cleanPw === '12345678') {
-          match = {
-            id: 1,
-            name: 'Ankit Kumar',
-            firstName: 'Ankit',
-            lastName: 'Kumar',
-            email: 'ak30kr02@gmail.com',
-            phone: '9876543210',
-            password: '12345678',
-            bloodType: 'A+',
-            availability: 'Available',
-            city: 'Meerut',
-            state: 'Uttar Pradesh',
-            pincode: '250002',
-            zone: 'North Zone',
-            createdAt: '2026-11-08T14:00:00.000Z',
-            created_at: '2026-11-08T14:00:00.000Z'
-          };
-        }
         if (match) {
-          const regTimestamp = match.createdAt || match.created_at || (cleanId ? localStorage.getItem('red404_reg_date_' + cleanId) : null) || (cleanId.includes('ak30kr02') ? '2026-11-08T14:00:00.000Z' : new Date().toISOString());
+          const regTimestamp = match.createdAt || match.created_at || (cleanId ? localStorage.getItem('red404_reg_date_' + cleanId) : null) || new Date().toISOString();
           match.createdAt = regTimestamp;
           match.created_at = regTimestamp;
           Auth.saveSession(match);
@@ -591,7 +557,7 @@ function initDonorLoginForm() {
         }
       } catch (_) {}
 
-      showToast(result.error || 'Invalid credentials. Please try again.', 'error');
+      showToast(result.error || 'Invalid credentials or account does not exist.', 'error');
       shakeInput(document.getElementById('loginPassword'));
     }
   });

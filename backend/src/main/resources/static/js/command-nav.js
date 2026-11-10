@@ -182,6 +182,43 @@
     }
 
     // 4. Settings & Privacy Modal Controller
+    function getSettingsHeaders() {
+      const donorId = (currentUser && currentUser.id) || '';
+      const donorEmail = (currentUser && currentUser.email) || '';
+      let token = '';
+      try {
+        if (typeof Store !== 'undefined' && Store.get) {
+          token = Store.get('donorToken') || '';
+        }
+      } catch (_) {}
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      if (donorId) headers['X-Donor-Id'] = String(donorId);
+      if (donorEmail) headers['X-Donor-Email'] = donorEmail;
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    }
+
+    function clearPasswordInputs(modal) {
+      if (!modal) return;
+      const pwForm = modal.querySelector('#changePasswordForm');
+      if (pwForm) pwForm.reset();
+      const currentInput = modal.querySelector('#currentPasswordInput');
+      const newInput = modal.querySelector('#newPasswordInput');
+      const confirmInput = modal.querySelector('#confirmPasswordInput');
+      if (currentInput) currentInput.value = '';
+      if (newInput) newInput.value = '';
+      if (confirmInput) confirmInput.value = '';
+      const alertBox = modal.querySelector('#passwordAlertBox');
+      if (alertBox) {
+        alertBox.style.display = 'none';
+        alertBox.textContent = '';
+        alertBox.className = 'smc-alert-box';
+      }
+    }
+
     function showSettingsPrivacyModal(defaultTab = 'securityTab') {
       let modal = document.getElementById('settingsPrivacyModal');
       if (!modal) {
@@ -231,12 +268,12 @@
                   <p>Choose a secure password with at least 6 characters. Old password credentials will be instantly invalidated across all devices.</p>
                 </div>
 
-                <form id="changePasswordForm" class="smc-form">
+                <form id="changePasswordForm" class="smc-form" autocomplete="off">
                   <div class="smc-form-group">
                     <label for="currentPasswordInput">Current Password</label>
                     <div class="smc-input-wrap">
                       <i class="fa-solid fa-lock input-icon"></i>
-                      <input type="password" id="currentPasswordInput" required placeholder="Enter current password" autocomplete="current-password" />
+                      <input type="password" id="currentPasswordInput" required placeholder="Enter current password" autocomplete="new-password" />
                       <button type="button" class="toggle-pw-btn" data-target="currentPasswordInput" aria-label="Toggle password visibility">
                         <i class="fa-regular fa-eye"></i>
                       </button>
@@ -291,7 +328,7 @@
                 <div id="sessionsListContainer" class="smc-sessions-list" style="display: none;"></div>
 
                 <div class="smc-sessions-footer">
-                  <button type="button" id="btnKillAllOtherSessions" class="smc-btn smc-btn-secondary">
+                  <button type="button" id="btnKillAllOtherSessions" class="smc-btn smc-btn-secondary" disabled style="opacity: 0.45; cursor: not-allowed; pointer-events: none;" title="No other active device sessions found.">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     <span>Log out of all other devices</span>
                   </button>
@@ -326,6 +363,9 @@
         bindSettingsModalEvents(modal);
       }
 
+      // Always blank password inputs and clear alerts on open
+      clearPasswordInputs(modal);
+
       // Tab selection
       const targetBtn = modal.querySelector(`.smc-tab-btn[data-tab="${defaultTab}"]`) || modal.querySelector('.smc-tab-btn');
       if (targetBtn) targetBtn.click();
@@ -353,6 +393,7 @@
           btn.classList.add('active');
           const pane = modal.querySelector('#' + tabId);
           if (pane) pane.classList.add('active');
+          clearPasswordInputs(modal);
           if (tabId === 'sessionsTab') {
             loadActiveSessions(modal);
           }
@@ -371,8 +412,11 @@
         });
       });
 
-      // 3. Close handlers
-      const closeModal = () => modal.classList.remove('active');
+      // 3. Close handlers (always blank password fields on close)
+      const closeModal = () => {
+        clearPasswordInputs(modal);
+        modal.classList.remove('active');
+      };
       const closeBtn = modal.querySelector('#closeSettingsModalBtn');
       if (closeBtn) closeBtn.addEventListener('click', closeModal);
       modal.addEventListener('click', (e) => {
@@ -392,11 +436,21 @@
       if (pwForm) {
         pwForm.addEventListener('submit', async (e) => {
           e.preventDefault();
-          if (alertBox) alertBox.style.display = 'none';
+          if (alertBox) {
+            alertBox.style.display = 'none';
+            alertBox.textContent = '';
+          }
 
-          const currentPassword = modal.querySelector('#currentPasswordInput').value;
-          const newPassword = modal.querySelector('#newPasswordInput').value;
-          const confirmPassword = modal.querySelector('#confirmPasswordInput').value;
+          const currentPassword = (modal.querySelector('#currentPasswordInput').value || '').trim();
+          const newPassword = (modal.querySelector('#newPasswordInput').value || '').trim();
+          const confirmPassword = (modal.querySelector('#confirmPasswordInput').value || '').trim();
+
+          if (!currentPassword) {
+            alertBox.className = 'smc-alert-box error';
+            alertBox.textContent = 'Please enter your current password.';
+            alertBox.style.display = 'block';
+            return;
+          }
 
           if (newPassword.length < 6) {
             alertBox.className = 'smc-alert-box error';
@@ -416,23 +470,33 @@
           btnUpdate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
 
           try {
+            const payload = {
+              donorId: (currentUser && currentUser.id) || '',
+              email: (currentUser && currentUser.email) || '',
+              currentPassword,
+              newPassword,
+              confirmPassword
+            };
             const res = await fetch('/api/settings/change-password', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+              headers: getSettingsHeaders(),
+              credentials: 'include',
+              body: JSON.stringify(payload)
             });
             const json = await res.json();
             if (json && json.success) {
               alertBox.className = 'smc-alert-box success';
               alertBox.textContent = json.message || 'Password successfully updated with BCrypt hashing!';
               alertBox.style.display = 'block';
-              pwForm.reset();
+              clearPasswordInputs(modal);
+              alertBox.style.display = 'block'; // Keep success message visible
+              alertBox.textContent = json.message || 'Password successfully updated!';
               if (typeof showToast === 'function') {
                 showToast('Password updated successfully!', 'success');
               }
             } else {
               alertBox.className = 'smc-alert-box error';
-              alertBox.textContent = (json && json.message) || 'Current password is incorrect.';
+              alertBox.textContent = (json && json.message) || 'Current password does not match our records.';
               alertBox.style.display = 'block';
             }
           } catch (err) {
@@ -450,6 +514,7 @@
       const btnKillOthers = modal.querySelector('#btnKillAllOtherSessions');
       if (btnKillOthers) {
         btnKillOthers.addEventListener('click', async () => {
+          if (btnKillOthers.disabled) return;
           if (!confirm('Log out of all other devices? This will invalidate all active sessions except this current window.')) {
             return;
           }
@@ -458,7 +523,12 @@
           try {
             const res = await fetch('/api/settings/sessions/kill-others', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
+              headers: getSettingsHeaders(),
+              credentials: 'include',
+              body: JSON.stringify({
+                donorId: (currentUser && currentUser.id) || '',
+                email: (currentUser && currentUser.email) || ''
+              })
             });
             const json = await res.json();
             if (json && json.success) {
@@ -472,7 +542,6 @@
           } catch (err) {
             alert('Network error while revoking sessions.');
           } finally {
-            btnKillOthers.disabled = false;
             btnKillOthers.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Log out of all other devices</span>';
           }
         });
@@ -497,18 +566,39 @@
           btnDelete.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting account permanently...';
 
           try {
+            const payload = {
+              donorId: (currentUser && currentUser.id) || '',
+              email: (currentUser && currentUser.email) || '',
+              phone: (currentUser && currentUser.phone) || ''
+            };
             const res = await fetch('/api/settings/delete-account', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
+              headers: getSettingsHeaders(),
+              credentials: 'include',
+              body: JSON.stringify(payload)
             });
             const json = await res.json();
             if (json && json.success) {
               try {
+                const curEmail = ((currentUser && currentUser.email) || '').trim().toLowerCase();
+                const curPhone = ((currentUser && currentUser.phone) || '').trim();
+                const rawList = localStorage.getItem('red404_registered_donors');
+                if (rawList) {
+                  try {
+                    const list = JSON.parse(rawList);
+                    const filtered = list.filter(d => {
+                      const demail = (d.email || '').trim().toLowerCase();
+                      const dphone = (d.phone || '').trim();
+                      return demail !== curEmail && (!curPhone || dphone !== curPhone);
+                    });
+                    localStorage.setItem('red404_registered_donors', JSON.stringify(filtered));
+                  } catch (_) {}
+                }
                 localStorage.clear();
                 sessionStorage.clear();
               } catch (_) {}
               alert('Your RED404 account and all associated records have been permanently deleted.');
-              window.location.href = 'index.html';
+              window.location.href = 'donor-login.html?deleted=1';
             } else {
               alert((json && json.message) || 'Account deletion failed. Please try again.');
               btnDelete.disabled = false;
@@ -527,25 +617,50 @@
       const loader = modal.querySelector('#sessionsLoadingIndicator');
       const container = modal.querySelector('#sessionsListContainer');
       const countPill = modal.querySelector('#activeSessionsCount');
+      const btnKillOthers = modal.querySelector('#btnKillAllOtherSessions');
       if (!container) return;
+
+      if (btnKillOthers) {
+        btnKillOthers.disabled = true;
+        btnKillOthers.style.opacity = '0.45';
+        btnKillOthers.style.cursor = 'not-allowed';
+        btnKillOthers.style.pointerEvents = 'none';
+      }
 
       if (loader) loader.style.display = 'flex';
       container.style.display = 'none';
 
       try {
-        const res = await fetch('/api/settings/sessions');
+        const res = await fetch('/api/settings/sessions', {
+          method: 'GET',
+          headers: getSettingsHeaders(),
+          credentials: 'include'
+        });
         const json = await res.json();
-        if (json && json.success && Array.isArray(json.data)) {
+        if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
           renderSessionsList(modal, json.data);
           if (countPill) countPill.textContent = json.data.length;
         } else {
           container.innerHTML = '<div style="color: #94a3b8; padding: 24px; text-align: center;">No active session records found.</div>';
           container.style.display = 'block';
           if (countPill) countPill.textContent = '0';
+          if (btnKillOthers) {
+            btnKillOthers.disabled = true;
+            btnKillOthers.style.opacity = '0.45';
+            btnKillOthers.style.cursor = 'not-allowed';
+            btnKillOthers.style.pointerEvents = 'none';
+            btnKillOthers.title = 'No other active device sessions found.';
+          }
         }
       } catch (err) {
         container.innerHTML = '<div style="color: #f87171; padding: 24px; text-align: center;">Failed to load active sessions.</div>';
         container.style.display = 'block';
+        if (btnKillOthers) {
+          btnKillOthers.disabled = true;
+          btnKillOthers.style.opacity = '0.45';
+          btnKillOthers.style.cursor = 'not-allowed';
+          btnKillOthers.style.pointerEvents = 'none';
+        }
       } finally {
         if (loader) loader.style.display = 'none';
       }
@@ -553,13 +668,39 @@
 
     function renderSessionsList(modal, sessions) {
       const container = modal.querySelector('#sessionsListContainer');
+      const btnKillOthers = modal.querySelector('#btnKillAllOtherSessions');
       if (!container) return;
       container.innerHTML = '';
 
       if (!sessions || sessions.length === 0) {
         container.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">No active sessions detected.</div>';
         container.style.display = 'block';
+        if (btnKillOthers) {
+          btnKillOthers.disabled = true;
+          btnKillOthers.style.opacity = '0.45';
+          btnKillOthers.style.cursor = 'not-allowed';
+          btnKillOthers.style.pointerEvents = 'none';
+          btnKillOthers.title = 'No other active device sessions found.';
+        }
         return;
+      }
+
+      // Check if any other sessions exist (excluding current)
+      const otherSessions = sessions.filter(s => !s.isCurrent);
+      if (btnKillOthers) {
+        if (otherSessions.length > 0) {
+          btnKillOthers.disabled = false;
+          btnKillOthers.style.opacity = '1';
+          btnKillOthers.style.cursor = 'pointer';
+          btnKillOthers.style.pointerEvents = 'auto';
+          btnKillOthers.removeAttribute('title');
+        } else {
+          btnKillOthers.disabled = true;
+          btnKillOthers.style.opacity = '0.45';
+          btnKillOthers.style.cursor = 'not-allowed';
+          btnKillOthers.style.pointerEvents = 'none';
+          btnKillOthers.title = 'No other active device sessions found.';
+        }
       }
 
       sessions.forEach(s => {
@@ -614,8 +755,13 @@
           try {
             const res = await fetch('/api/settings/sessions/kill', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ sessionId: sid })
+              headers: getSettingsHeaders(),
+              credentials: 'include',
+              body: JSON.stringify({
+                sessionId: sid,
+                donorId: (currentUser && currentUser.id) || '',
+                email: (currentUser && currentUser.email) || ''
+              })
             });
             const json = await res.json();
             if (json && json.success) {

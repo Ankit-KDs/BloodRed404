@@ -130,6 +130,18 @@ public class DonorDao {
         }
     }
 
+    public Map<String, Object> findByEmail(String email) throws SQLException {
+        if (email == null || email.isBlank()) return null;
+        String sql = "SELECT * FROM donors WHERE LOWER(email) = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email.trim().toLowerCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapDonor(rs, true) : null;
+            }
+        }
+    }
+
     public boolean updateAvailability(int id, boolean available) throws SQLException {
         String sql = "UPDATE donors SET availability = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -409,12 +421,21 @@ public class DonorDao {
     }
 
     public boolean hardDeleteDonor(int id) throws SQLException {
+        return hardDeleteDonor(id, null, null);
+    }
+
+    public boolean hardDeleteDonor(int id, String email, String phone) throws SQLException {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                String cleanEmail = email != null ? email.trim().toLowerCase() : "";
+                String cleanPhone = phone != null ? phone.trim() : "";
+
                 // 1. Delete associated intake snapshots
-                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM intake_snapshots WHERE donor_id = ?")) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "DELETE FROM intake_snapshots WHERE (donor_id > 0 AND donor_id = ?) OR (email IS NOT NULL AND LOWER(email) = ?)")) {
                     ps.setInt(1, id);
+                    ps.setString(2, cleanEmail);
                     ps.executeUpdate();
                 } catch (Exception ignored) {}
 
@@ -425,15 +446,30 @@ public class DonorDao {
                 } catch (Exception ignored) {}
 
                 // 3. Delete user sessions
-                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM user_sessions WHERE user_id = ? AND user_type = 'DONOR'")) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "DELETE FROM user_sessions WHERE (user_id > 0 AND user_id = ? AND user_type = 'DONOR')")) {
                     ps.setInt(1, id);
                     ps.executeUpdate();
                 } catch (Exception ignored) {}
 
-                // 4. Delete the donor account row
+                // 4. Delete the donor account row (matches id, email, or phone)
                 int rows = 0;
-                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donors WHERE id = ?")) {
+                String deleteDonorSql = "DELETE FROM donors WHERE (id > 0 AND id = ?)";
+                if (!cleanEmail.isEmpty()) {
+                    deleteDonorSql += " OR LOWER(email) = ?";
+                }
+                if (!cleanPhone.isEmpty()) {
+                    deleteDonorSql += " OR phone = ?";
+                }
+                try (PreparedStatement ps = conn.prepareStatement(deleteDonorSql)) {
                     ps.setInt(1, id);
+                    int paramIdx = 2;
+                    if (!cleanEmail.isEmpty()) {
+                        ps.setString(paramIdx++, cleanEmail);
+                    }
+                    if (!cleanPhone.isEmpty()) {
+                        ps.setString(paramIdx++, cleanPhone);
+                    }
                     rows = ps.executeUpdate();
                 }
 
