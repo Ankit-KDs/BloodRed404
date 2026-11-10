@@ -198,8 +198,8 @@
                   <i class="fa-solid fa-shield-halved"></i>
                 </div>
                 <div>
-                  <h3 class="smc-title">Settings &amp; Privacy</h3>
-                  <p class="smc-subtitle">Manage credentials, active device nodes, and data rights</p>
+                  <h3 class="smc-title">Privacy &amp; Security</h3>
+                  <p class="smc-subtitle">Account security, active sessions, and data privacy controls</p>
                 </div>
               </div>
               <button type="button" class="smc-close-btn" id="closeSettingsModalBtn" aria-label="Close settings">
@@ -644,38 +644,27 @@
       });
     }
 
-    // 4. Account Settings & Privacy & Security Modal
-    const openSettings = (defaultTab = 'securityTab') => {
+    // 4. Privacy & Security Modal (Account Security, Active Sessions, Danger Zone)
+    const openPrivacySecurity = (defaultTab = 'securityTab') => {
       showSettingsPrivacyModal(defaultTab);
     };
-
-    const accountSettingsBtn = document.getElementById('accountSettingsBtn');
-    if (accountSettingsBtn) {
-      accountSettingsBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        openSettings('securityTab');
-      });
-    }
 
     if (privacyBtn) {
       privacyBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        openSettings('securityTab');
+        openPrivacySecurity('securityTab');
       });
     }
 
-    // Intercept any click on Account Settings or Privacy items inside dropdown
+    // Intercept any click on Privacy & Security inside dropdown
     if (dropdown) {
       dropdown.addEventListener('click', (e) => {
         const item = e.target.closest('.dropdown-item');
         if (!item) return;
         const text = (item.textContent || '').trim().toLowerCase();
-        if (text.includes('account settings')) {
+        if (text.includes('privacy & security')) {
           e.preventDefault();
-          openSettings('securityTab');
-        } else if (text.includes('privacy & security')) {
-          e.preventDefault();
-          openSettings('securityTab');
+          openPrivacySecurity('securityTab');
         }
       });
     }
