@@ -7,8 +7,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>RED404 - Donor Registration</title>
-  <link rel="stylesheet" href="css/common.css?v=20261110_v32"/>
-  <link rel="stylesheet" href="css/auth.css?v=20261110_v32"/>
+  <link rel="stylesheet" href="css/common.css?v=20261110_v33"/>
+  <link rel="stylesheet" href="css/auth.css?v=20261110_v33"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
 </head>
@@ -100,7 +100,7 @@
               <label for="email">Email Address <span class="req">*</span></label>
               <div class="input-wrap">
                 <i class="fas fa-envelope input-icon"></i>
-                <input type="email" id="email" name="email" placeholder="john@example.com" required/>
+                <input type="email" id="email" name="email" placeholder="john@example.com" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="emailErr"></span>
@@ -111,7 +111,7 @@
               <div class="input-wrap">
                 <i class="fas fa-phone input-icon"></i>
                 <span class="phone-prefix">+91</span>
-                <input type="tel" id="phone" name="phone" placeholder="98765 43210" required class="with-prefix"/>
+                <input type="tel" id="phone" name="phone" placeholder="98765 43210" autocapitalize="none" autocorrect="off" spellcheck="false" required class="with-prefix"/>
                 <span class="input-focus-line"></span>
               </div>
               <span class="field-error" id="phoneErr"></span>
@@ -151,7 +151,7 @@
               <label for="password">Password <span class="req">*</span></label>
               <div class="input-wrap">
                 <i class="fas fa-lock input-icon"></i>
-                <input type="password" id="password" name="password" placeholder="Create strong password" required/>
+                <input type="password" id="password" name="password" placeholder="Create strong password" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
                 <button type="button" class="toggle-pass" onclick="togglePassword('password','eyeIcon1')">
                   <i class="fas fa-eye" id="eyeIcon1"></i>
                 </button>
@@ -453,7 +453,7 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=20261110_v32"></script>
-  <script src="js/auth.js?v=20261110_v32"></script>
+  <script src="js/common.js?v=20261110_v33"></script>
+  <script src="js/auth.js?v=20261110_v33"></script>
 </body>
 </html>

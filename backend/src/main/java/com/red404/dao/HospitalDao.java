@@ -69,11 +69,28 @@ public class HospitalDao {
         if (email == null || password == null) return null;
         String cleanEmail = email.trim();
         String cleanPw = password.trim();
-        String sql = "SELECT * FROM hospitals WHERE LOWER(TRIM(hospital_email)) = LOWER(?) AND TRIM(password) = ?";
+        String digits = cleanEmail.replaceAll("[^0-9]", "");
+        String last10 = digits.length() >= 10 ? digits.substring(digits.length() - 10) : digits;
+
+        String sql = "SELECT * FROM hospitals WHERE (" +
+                "LOWER(TRIM(hospital_email)) = LOWER(?) " +
+                "OR LOWER(TRIM(admin_email)) = LOWER(?) " +
+                "OR TRIM(hospital_phone) = ? " +
+                "OR TRIM(admin_phone) = ? " +
+                "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(hospital_phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
+                "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(admin_phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
+                ") AND TRIM(password) = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, cleanEmail);
-            ps.setString(2, cleanPw);
+            ps.setString(2, cleanEmail);
+            ps.setString(3, cleanEmail);
+            ps.setString(4, cleanEmail);
+            ps.setString(5, last10);
+            ps.setString(6, last10);
+            ps.setString(7, last10);
+            ps.setString(8, last10);
+            ps.setString(9, cleanPw);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapHospital(rs) : null;
             }

@@ -178,7 +178,10 @@ public class HospitalController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
-            String email = JsonUtil.text(body, "hospitalEmail");
+            String email = JsonUtil.text(body, "hospitalEmail").trim().toLowerCase();
+            String adminEmail = JsonUtil.text(body, "adminEmail").trim().toLowerCase();
+            String hospitalPhone = JsonUtil.text(body, "hospitalPhone").trim().replaceAll("\\s+", "");
+            String adminPhone = JsonUtil.text(body, "adminPhone").trim().replaceAll("\\s+", "");
             if (hospitalDao.emailExists(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(new ApiResponse(false, "Hospital email already registered."));
@@ -190,19 +193,19 @@ public class HospitalController {
                 }
             }
             Map<String, Object> hospital = new HashMap<>();
-            hospital.put("hospitalName", JsonUtil.text(body, "hospitalName"));
-            hospital.put("registrationNo", JsonUtil.text(body, "registrationNo"));
+            hospital.put("hospitalName", JsonUtil.text(body, "hospitalName").trim());
+            hospital.put("registrationNo", JsonUtil.text(body, "registrationNo").trim());
             hospital.put("hospitalType", JsonUtil.text(body, "hospitalType"));
             hospital.put("beds", JsonUtil.asInt(body, "beds", 0));
             hospital.put("bloodBankLicense", JsonUtil.textOrNull(body, "bloodBankLicense"));
             hospital.put("hospitalEmail", email);
-            hospital.put("hospitalPhone", JsonUtil.text(body, "hospitalPhone"));
+            hospital.put("hospitalPhone", hospitalPhone);
             hospital.put("website", JsonUtil.textOrNull(body, "website"));
             hospital.put("services", String.join(",", services));
             hospital.put("adminName", (JsonUtil.text(body, "adminFirstName") + " " + JsonUtil.text(body, "adminLastName")).trim());
             hospital.put("adminDesignation", JsonUtil.text(body, "adminDesignation"));
-            hospital.put("adminPhone", JsonUtil.text(body, "adminPhone"));
-            hospital.put("adminEmail", JsonUtil.text(body, "adminEmail"));
+            hospital.put("adminPhone", adminPhone);
+            hospital.put("adminEmail", adminEmail);
             hospital.put("password", JsonUtil.text(body, "password"));
             hospital.put("emergencyContact", JsonUtil.text(body, "emergencyContact"));
             hospital.put("address", JsonUtil.text(body, "address"));

@@ -35,6 +35,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateHospitalsTable(conn);
             migrateBloodRequestsTable(conn);
             migrateDonationsTable(conn);
+            migrateIntakeSnapshotsTable(conn);
             seedOrUpdatePrimaryDonor(conn);
             log.info("RED404 database schema migration check completed successfully.");
         } catch (Exception e) {
@@ -174,6 +175,21 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("status", "VARCHAR(20) DEFAULT 'COMPLETED'");
 
         ensureColumns(conn, "donations", requiredColumns);
+    }
+
+    private void migrateIntakeSnapshotsTable(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS intake_snapshots (" +
+                    "token VARCHAR(120) PRIMARY KEY, " +
+                    "donor_id INT NULL, " +
+                    "snapshot_json MEDIUMTEXT NOT NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")";
+            st.executeUpdate(sql);
+            log.info("intake_snapshots table verified/created in database.");
+        } catch (Exception e) {
+            log.warn("Notice checking intake_snapshots table: {}", e.getMessage());
+        }
     }
 
     private void ensureColumns(Connection conn, String tableName, Map<String, String> columns) {

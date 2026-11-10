@@ -20,11 +20,21 @@ public class DonorDao {
     public boolean emailOrPhoneExists(String email, String phone) throws SQLException {
         String cleanEmail = email != null ? email.trim().toLowerCase() : "";
         String cleanPhone = phone != null ? phone.trim() : "";
-        String sql = "SELECT id FROM donors WHERE LOWER(TRIM(email)) = ? OR TRIM(phone) = ? LIMIT 1";
+        String digits = cleanPhone.replaceAll("[^0-9]", "");
+        String last10 = digits.length() >= 10 ? digits.substring(digits.length() - 10) : digits;
+
+        String sql = "SELECT id FROM donors WHERE " +
+                "(? != '' AND LOWER(TRIM(email)) = ?) " +
+                "OR (? != '' AND (TRIM(phone) = ? OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', ''), 10) = ?))) " +
+                "LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, cleanEmail);
-            ps.setString(2, cleanPhone);
+            ps.setString(2, cleanEmail);
+            ps.setString(3, cleanPhone);
+            ps.setString(4, cleanPhone);
+            ps.setString(5, last10);
+            ps.setString(6, last10);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -68,12 +78,23 @@ public class DonorDao {
         if (identifier == null || password == null) return null;
         String cleanId = identifier.trim();
         String cleanPw = password.trim();
-        String sql = "SELECT * FROM donors WHERE (LOWER(TRIM(email)) = LOWER(?) OR TRIM(phone) = ?) AND TRIM(password) = ?";
+        String digits = cleanId.replaceAll("[^0-9]", "");
+        String last10 = digits.length() >= 10 ? digits.substring(digits.length() - 10) : digits;
+
+        String sql = "SELECT * FROM donors WHERE (" +
+                "LOWER(TRIM(email)) = LOWER(?) " +
+                "OR TRIM(phone) = ? " +
+                "OR REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', '') = ? " +
+                "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
+                ") AND TRIM(password) = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, cleanId);
             ps.setString(2, cleanId);
-            ps.setString(3, cleanPw);
+            ps.setString(3, last10);
+            ps.setString(4, last10);
+            ps.setString(5, last10);
+            ps.setString(6, cleanPw);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapDonor(rs, true) : null;
             }
@@ -251,24 +272,86 @@ public class DonorDao {
         } catch (Exception ignored) {}
     }
 
+    public Map<String, Object> findSnapshotByToken(String token) throws SQLException {
+        if (token == null || token.isBlank()) return null;
+        String sql = "SELECT snapshot_json FROM intake_snapshots WHERE token = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, token.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String json = rs.getString("snapshot_json");
+                    if (json != null && !json.isBlank()) {
+                        try {
+                            return new com.fasterxml.jackson.databind.ObjectMapper()
+                                    .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    public boolean saveSnapshot(String token, Integer donorId, Map<String, Object> data) {
+        if (token == null || token.isBlank() || data == null) return false;
+        String sql = "INSERT INTO intake_snapshots (token, donor_id, snapshot_json, created_at) " +
+                "VALUES (?, ?, ?, NOW()) " +
+                "ON DUPLICATE KEY UPDATE donor_id = VALUES(donor_id)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            String json = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(data);
+            ps.setString(1, token.trim());
+            if (donorId != null && donorId > 0) ps.setInt(2, donorId);
+            else ps.setNull(2, Types.INTEGER);
+            ps.setString(3, json);
+            return ps.executeUpdate() > 0;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     public Map<String, Object> findByToken(String token) throws SQLException {
         if (token == null || token.isBlank()) return null;
         String trimmed = token.trim();
+
+        // 1. Return immutable frozen snapshot if this token was already accessed/generated
+        Map<String, Object> snapshot = findSnapshotByToken(trimmed);
+        if (snapshot != null) {
+            return snapshot;
+        }
+
+        // 2. Lookup donor from donors table
+        Map<String, Object> liveDonor = null;
         String sql = "SELECT * FROM donors WHERE qr_token = ? LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, trimmed);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapDonor(rs, true);
+                if (rs.next()) liveDonor = mapDonor(rs, true);
             }
         }
-        // Extract numeric ID from token e.g. #RED-UP-7951 or 7951 or 1
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(trimmed);
-        if (m.find()) {
-            int num = Integer.parseInt(m.group(1));
-            int id = num > 7950 ? num - 7950 : num;
-            Map<String, Object> found = findById(id);
-            if (found != null) return found;
+
+        // 3. Fallback extraction of numeric ID e.g. #RED-UP-7951 or 7951 or 1
+        if (liveDonor == null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(trimmed);
+            if (m.find()) {
+                int num = Integer.parseInt(m.group(1));
+                int id = num > 7950 ? num - 7950 : num;
+                liveDonor = findById(id);
+            }
+        }
+
+        // 4. Freeze this record permanently for this token so subsequent profile edits never alter it
+        if (liveDonor != null) {
+            Integer donorId = (Integer) liveDonor.get("id");
+            String stamp = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss")
+                    .withZone(java.time.ZoneId.of("Asia/Kolkata"))
+                    .format(java.time.Instant.now());
+            liveDonor.put("snapshotTimestamp", stamp);
+            liveDonor.put("isSnapshot", true);
+            saveSnapshot(trimmed, donorId, liveDonor);
+            return liveDonor;
         }
         return null;
     }

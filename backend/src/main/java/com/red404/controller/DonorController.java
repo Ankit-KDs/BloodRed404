@@ -294,7 +294,7 @@ public class DonorController {
     public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             String email = JsonUtil.text(body, "email").trim().toLowerCase();
-            String phone = JsonUtil.text(body, "phone").trim();
+            String phone = JsonUtil.text(body, "phone").trim().replaceAll("\\s+", "");
             String password = JsonUtil.text(body, "password").trim();
             if (donorDao.emailOrPhoneExists(email, phone)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)

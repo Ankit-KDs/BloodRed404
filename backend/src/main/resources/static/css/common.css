@@ -988,6 +988,15 @@ button {
   white-space: pre-line;
 }
 
+.privacy-modal-scroll,
+.privacy-modal-scroll div,
+.privacy-modal-scroll p,
+.privacy-modal-scroll span,
+.privacy-modal-scroll strong {
+  white-space: normal !important;
+  line-height: 1.35 !important;
+}
+
 .red-dialog-custom {
   margin-bottom: 1.5rem;
   text-align: left;

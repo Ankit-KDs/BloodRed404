@@ -97,3 +97,10 @@ CREATE TABLE IF NOT EXISTS donations (
     status VARCHAR(20) DEFAULT 'COMPLETED',
     CONSTRAINT fk_don_donor FOREIGN KEY (donor_id) REFERENCES donors(id)
 );
+
+CREATE TABLE IF NOT EXISTS intake_snapshots (
+    token VARCHAR(120) PRIMARY KEY,
+    donor_id INT NULL,
+    snapshot_json MEDIUMTEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

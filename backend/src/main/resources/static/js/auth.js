@@ -438,8 +438,8 @@ function buildDonorPayload() {
   return {
     firstName:       document.getElementById('firstName')?.value.trim(),
     lastName:        document.getElementById('lastName')?.value.trim(),
-    email:           document.getElementById('email')?.value.trim(),
-    phone:           document.getElementById('phone')?.value.trim(),
+    email:           document.getElementById('email')?.value.trim().toLowerCase(),
+    phone:           (document.getElementById('phone')?.value || '').trim().replace(/\s+/g, ''),
     dateOfBirth:     document.getElementById('dob')?.value,
     gender:          document.querySelector('input[name="gender"]:checked')?.value,
     password:        document.getElementById('password')?.value,
@@ -690,8 +690,8 @@ function initHospitalLoginForm() {
     const password = document.getElementById('hospLoginPassword')?.value         || '';
     let   valid    = true;
 
-    if (!Validate.email(email)) {
-      showFieldError('hospLoginEmailErr', 'Enter a valid email address.');
+    if (!email) {
+      showFieldError('hospLoginEmailErr', 'Hospital email or contact phone is required.');
       valid = false;
     }
     if (!password) {
