@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.red404.util.DBConnection;
 import com.red404.util.DistanceCalculator;
+import com.red404.util.PasswordUtil;
 
 public class DonorDao {
 
@@ -52,7 +53,8 @@ public class DonorDao {
             ps.setString(1, str(donor.get("name")).trim());
             String email = str(donor.get("email")).trim().toLowerCase();
             String phone = str(donor.get("phone")).trim();
-            String password = str(donor.get("password")).trim();
+            String rawPassword = str(donor.get("password")).trim();
+            String password = PasswordUtil.isBCrypt(rawPassword) ? rawPassword : PasswordUtil.hashPassword(rawPassword);
             ps.setString(2, email);
             ps.setString(3, phone);
             setDate(ps, 4, (Date) donor.get("dob"));
@@ -88,7 +90,7 @@ public class DonorDao {
                 "OR TRIM(phone) = ? " +
                 "OR REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', '') = ? " +
                 "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
-                ") AND TRIM(password) = ?";
+                ")";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, cleanId);
@@ -96,9 +98,23 @@ public class DonorDao {
             ps.setString(3, last10);
             ps.setString(4, last10);
             ps.setString(5, last10);
-            ps.setString(6, cleanPw);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? mapDonor(rs, true) : null;
+                while (rs.next()) {
+                    String storedPw = rs.getString("password");
+                    if (PasswordUtil.checkPassword(cleanPw, storedPw)) {
+                        int donorId = rs.getInt("id");
+                        // Transparently upgrade legacy plain text to BCrypt hash
+                        if (!PasswordUtil.isBCrypt(storedPw)) {
+                            try (PreparedStatement up = conn.prepareStatement("UPDATE donors SET password = ? WHERE id = ?")) {
+                                up.setString(1, PasswordUtil.hashPassword(cleanPw));
+                                up.setInt(2, donorId);
+                                up.executeUpdate();
+                            } catch (Exception ignored) {}
+                        }
+                        return mapDonor(rs, true);
+                    }
+                }
+                return null;
             }
         }
     }
@@ -360,13 +376,75 @@ public class DonorDao {
     }
 
     public boolean updatePassword(int id, String currentPassword, String newPassword) throws SQLException {
-        String sql = "UPDATE donors SET password = ? WHERE id = ? AND password = ?";
+        if (currentPassword == null || newPassword == null || newPassword.isBlank()) return false;
+        String sqlSelect = "SELECT password FROM donors WHERE id = ?";
+        String storedPassword = null;
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newPassword);
+             PreparedStatement ps = conn.prepareStatement(sqlSelect)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    storedPassword = rs.getString("password");
+                }
+            }
+        }
+
+        if (storedPassword == null) return false;
+
+        // Verify current password against BCrypt or fallback plain text
+        if (!PasswordUtil.checkPassword(currentPassword, storedPassword)) {
+            return false;
+        }
+
+        // Hash new password using BCrypt
+        String hashedNew = PasswordUtil.hashPassword(newPassword);
+
+        String sqlUpdate = "UPDATE donors SET password = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlUpdate)) {
+            ps.setString(1, hashedNew);
             ps.setInt(2, id);
-            ps.setString(3, currentPassword);
             return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean hardDeleteDonor(int id) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // 1. Delete associated intake snapshots
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM intake_snapshots WHERE donor_id = ?")) {
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                } catch (Exception ignored) {}
+
+                // 2. Delete donation records
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donations WHERE donor_id = ?")) {
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                } catch (Exception ignored) {}
+
+                // 3. Delete user sessions
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM user_sessions WHERE user_id = ? AND user_type = 'DONOR'")) {
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                } catch (Exception ignored) {}
+
+                // 4. Delete the donor account row
+                int rows = 0;
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donors WHERE id = ?")) {
+                    ps.setInt(1, id);
+                    rows = ps.executeUpdate();
+                }
+
+                conn.commit();
+                return rows > 0;
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
     }
 

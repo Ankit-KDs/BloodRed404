@@ -19,9 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.red404.dao.BloodRequestDao;
 import com.red404.dao.DonorDao;
+import com.red404.dao.SessionDao;
 import com.red404.model.ApiResponse;
 import com.red404.util.DistanceCalculator;
+import com.red404.util.GeoLocationUtil;
 import com.red404.util.JsonUtil;
+import com.red404.util.UserAgentUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -32,6 +35,7 @@ public class DonorController {
 
     private final DonorDao donorDao = new DonorDao();
     private final BloodRequestDao requestDao = new BloodRequestDao();
+    private final SessionDao sessionDao = new SessionDao();
 
     // ======================== GET ========================
 
@@ -357,6 +361,18 @@ public class DonorController {
             HttpSession session = request.getSession(true);
             session.setAttribute("user", donor);
             session.setAttribute("role", "DONOR");
+
+            // Audit & track real-time session
+            try {
+                int donorId = ((Number) donor.get("id")).intValue();
+                String ip = GeoLocationUtil.getClientIp(request);
+                String ua = request.getHeader("User-Agent");
+                String device = UserAgentUtil.parseDevice(ua);
+                String browser = UserAgentUtil.parseBrowser(ua);
+                String location = GeoLocationUtil.resolveLocation(ip);
+                sessionDao.recordSession(session.getId(), donorId, "DONOR", ip, ua, device, browser, location);
+            } catch (Exception ignored) {}
+
             Map<String, Object> wrapper = new HashMap<>();
             wrapper.put("donor", donor);
             wrapper.put("token", "SESSION-DONOR-" + donor.get("id"));

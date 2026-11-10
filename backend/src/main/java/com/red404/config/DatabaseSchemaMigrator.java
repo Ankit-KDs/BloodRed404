@@ -36,6 +36,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateBloodRequestsTable(conn);
             migrateDonationsTable(conn);
             migrateIntakeSnapshotsTable(conn);
+            migrateUserSessionsTable(conn);
             seedOrUpdatePrimaryDonor(conn);
             log.info("RED404 database schema migration check completed successfully.");
         } catch (Exception e) {
@@ -189,6 +190,28 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             log.info("intake_snapshots table verified/created in database.");
         } catch (Exception e) {
             log.warn("Notice checking intake_snapshots table: {}", e.getMessage());
+        }
+    }
+
+    private void migrateUserSessionsTable(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS user_sessions (" +
+                    "session_id VARCHAR(120) PRIMARY KEY, " +
+                    "user_id INT NOT NULL, " +
+                    "user_type VARCHAR(20) NOT NULL DEFAULT 'DONOR', " +
+                    "ip_address VARCHAR(60) NULL, " +
+                    "user_agent VARCHAR(350) NULL, " +
+                    "device VARCHAR(100) NULL, " +
+                    "browser VARCHAR(100) NULL, " +
+                    "location VARCHAR(150) NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "is_active BOOLEAN DEFAULT TRUE" +
+                    ")";
+            st.executeUpdate(sql);
+            log.info("user_sessions table verified/created in database.");
+        } catch (Exception e) {
+            log.warn("Notice checking user_sessions table: {}", e.getMessage());
         }
     }
 
