@@ -1164,12 +1164,13 @@
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 1.4rem 1.15rem;
+  padding: 1.25rem 0.6rem;
   display: flex;
   flex-direction: column;
   transition: none !important;
   transform: none !important;
   box-shadow: none !important;
+  overflow: hidden;
 }
 
 .ssc-top {
@@ -1219,18 +1220,22 @@
 .zone-coverage-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  justify-content: center;
+  align-self: center;
+  gap: 0.15rem;
   margin-top: 0.75rem;
-  padding: 0.3rem 0.7rem;
+  padding: 0.2rem 0.4rem;
   background: rgba(230, 57, 70, 0.08);
   border: 1px solid rgba(230, 57, 70, 0.28);
   border-radius: 9999px;
-  font-size: 0.68rem;
+  font-size: 0.54rem;
   font-weight: 600;
   color: #cbd5e1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   white-space: nowrap;
-  box-shadow: 0 0 12px rgba(230, 57, 70, 0.12);
+  max-width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 0 10px rgba(230, 57, 70, 0.1);
   transition: all 0.2s ease;
 }
 
@@ -1238,26 +1243,20 @@
   color: #ff5e6c;
   font-weight: 700;
   font-family: var(--font-brand, 'Orbitron'), monospace;
-  font-size: 0.65rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.zone-coverage-badge .zone-tag-label i {
-  font-size: 0.6rem;
-  opacity: 0.85;
+  font-size: 0.54rem;
+  letter-spacing: 0.02em;
 }
 
 .zone-coverage-badge .zone-tag-steps {
   color: #94a3b8;
-  font-size: 0.68rem;
+  font-size: 0.54rem;
 }
 
 .zone-coverage-badge .zone-tag-arr {
   color: #e63946;
   font-weight: 700;
-  padding: 0 2px;
+  padding: 0 1px;
+  font-size: 0.55rem;
 }
 
 .stepper-arrow-divider {

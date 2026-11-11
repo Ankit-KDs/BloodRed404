@@ -28,6 +28,45 @@
   <link rel="stylesheet" href="css/home.css?v=20261111_v39_stable" />
   <link rel="stylesheet" href="css/command-nav.css?v=20261111_v39_stable" />
   <link rel="stylesheet" href="css/blood-availability.css?v=20261111_v39_stable" />
+  <style>
+    html.is-donor-mode #donorCommandNav,
+    html.is-donor-mode #donorMiniFooter {
+      display: block !important;
+    }
+    html.is-donor-mode #publicNavbar,
+    html.is-donor-mode #publicFooter {
+      display: none !important;
+    }
+    html.is-donor-mode body.availability-body {
+      padding-top: 0 !important;
+    }
+
+    html.is-public-mode #publicNavbar,
+    html.is-public-mode #publicFooter {
+      display: block !important;
+    }
+    html.is-public-mode #donorCommandNav,
+    html.is-public-mode #donorMiniFooter {
+      display: none !important;
+    }
+    html.is-public-mode body.availability-body {
+      padding-top: 5.5rem !important;
+    }
+  </style>
+  <script>
+    (function () {
+      try {
+        var p = new URLSearchParams(window.location.search).get('portal');
+        var ref = (document.referrer || '').toLowerCase();
+        var isDonor = (p === 'donor') || (!p && (ref.indexOf('dashboard') !== -1 || ref.indexOf('donor-profile') !== -1 || ref.indexOf('my-donations') !== -1 || ref.indexOf('donor-alerts') !== -1));
+        if (isDonor) {
+          document.documentElement.classList.add('is-donor-mode');
+        } else {
+          document.documentElement.classList.add('is-public-mode');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body class="availability-body" id="pageBody">
@@ -36,8 +75,77 @@
   <div class="particles-container" id="particles"></div>
   <div class="floating-drops" id="floatingDrops"></div>
 
-  <!-- ========== TOP NAVIGATION (IDENTICAL TO HOME PAGE) ========== -->
-  <nav class="navbar" id="navbar">
+  <!-- ==================== 1. DONOR PORTAL COMMAND PILL NAV (WHEN IN DONOR PORTAL) ==================== -->
+  <header class="command-nav-wrapper" id="donorCommandNav" style="display: none;">
+    <div class="command-nav-pill">
+      <!-- LEFT: LOGO -->
+      <div class="command-nav-left">
+        <a href="dashboard.html" class="command-brand" title="RED404 Blood Rescue Command Network">
+          <div class="brand-icon-drop">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+          <span class="brand-text">RED<span>404</span></span>
+        </a>
+      </div>
+
+      <!-- CENTER: TABS -->
+      <nav class="command-nav-center">
+        <a href="dashboard.html" class="command-tab-link" title="Command Center Dashboard">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Active Emergencies &amp; Radar">
+          <i class="fa-solid fa-truck-medical"></i>
+          <span>Emergencies</span>
+          <span class="tab-radar-pulse"></span>
+        </a>
+        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Donation History</span>
+        </a>
+      </nav>
+
+      <!-- RIGHT: WIDGETS -->
+      <div class="command-nav-right">
+        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location">
+          <span class="gps-dot-pulse"></span>
+          <span>Live GPS: Connected</span>
+        </div>
+        <button class="nav-icon-btn" id="navNotifBtn" title="Emergency Broadcasts" aria-label="Notifications">
+          <i class="fa-solid fa-bell"></i>
+          <span class="nav-badge-dot"></span>
+        </button>
+        <div class="user-avatar-wrap" id="userProfileTrigger" title="Donor Profile Settings" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+          <span id="userAvatarInitials">AK</span>
+          <span class="avatar-online-dot"></span>
+          <div class="user-dropdown-menu" id="userProfileDropdown">
+            <div class="dropdown-user-header">
+              <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
+              <div class="duh-email" id="dropdownUserEmail">Signed in as <span id="dropdown-user-email"></span></div>
+              <div class="duh-id" id="dropdownUserId" style="font-size: 0.72rem; color: #ff334b; font-family: 'Space Mono', monospace; margin-top: 4px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-id-card"></i> <span id="dropdownDonorIdText">DNR-0811-A404</span></div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="donor-profile.html" class="dropdown-item">
+              <i class="fa-solid fa-heart-pulse"></i>
+              <span>Health Profile</span>
+            </a>
+            <button type="button" class="dropdown-item" id="privacySettingsBtn">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Privacy &amp; Security</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout-btn" id="dropdownLogoutBtn">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 2. PUBLIC TOP NAVIGATION (WHEN VISITING FROM HOME PAGE) ==================== -->
+  <nav class="navbar" id="publicNavbar" style="display: none;">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
@@ -211,8 +319,31 @@
 
   </main>
 
-  <!-- ========== FOOTER (IDENTICAL TO HOME PAGE) ========== -->
-  <footer class="footer" id="contact">
+  <!-- ==================== FOOTERS ==================== -->
+  <!-- 1. DONOR MINI FOOTER (WHEN IN DONOR PORTAL) -->
+  <footer class="app-mini-footer" id="donorMiniFooter" style="display: none;">
+    <div class="mini-footer-container">
+      <div class="mf-left">
+        <span class="mf-status-dot"></span>
+        <span class="mf-status-text">System: Online</span>
+        <span class="mf-divider">&bull;</span>
+        <span class="mf-copy">&copy; 2026 RED404</span>
+      </div>
+      <nav class="mf-center" aria-label="Quick Links">
+        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('help')">Help &amp; Support</a>
+        <span class="mf-link-sep">&bull;</span>
+        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('report')">Report Issue</a>
+        <span class="mf-link-sep">&bull;</span>
+        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('privacy')">Privacy &amp; Policy</a>
+      </nav>
+      <div class="mf-right">
+        <span class="mf-version">v1.0.0 Beta</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 2. PUBLIC FOOTER (WHEN IN PUBLIC VIEW) -->
+  <footer class="footer" id="publicFooter" style="display: none;">
     <div class="footer-container">
       <div class="footer-brand">
         <div class="footer-logo">
@@ -265,7 +396,71 @@
 
   <!-- Scripts -->
   <script src="js/common.js?v=20261111_v39_stable"></script>
+  <script src="js/command-nav.js?v=20261111_v39_stable"></script>
   <script src="js/inventory-logic.js?v=20261111_v39_stable"></script>
+  <script>
+    // Context-Aware Portal Controller for blood-availability.html
+    (function () {
+      function detectMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const portal = urlParams.get('portal');
+        const ref = (document.referrer || '').toLowerCase();
+
+        let isDonor = false;
+        if (portal === 'donor') {
+          isDonor = true;
+        } else if (portal === 'public') {
+          isDonor = false;
+        } else if (ref.includes('dashboard') || ref.includes('donor-profile') || ref.includes('my-donations') || ref.includes('donor-alerts')) {
+          isDonor = true;
+        } else if (ref.includes('index.html') || ref.includes('about.html')) {
+          isDonor = false;
+        } else {
+          try {
+            const hasSession = !!(localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser'));
+            isDonor = hasSession;
+          } catch (_) {
+            isDonor = false;
+          }
+        }
+
+        const donorNav = document.getElementById('donorCommandNav');
+        const publicNav = document.getElementById('publicNavbar');
+        const donorFoot = document.getElementById('donorMiniFooter');
+        const publicFoot = document.getElementById('publicFooter');
+        const body = document.getElementById('pageBody') || document.body;
+
+        if (isDonor) {
+          document.documentElement.classList.add('is-donor-mode');
+          document.documentElement.classList.remove('is-public-mode');
+          if (donorNav) donorNav.style.display = 'block';
+          if (donorFoot) donorFoot.style.display = 'block';
+          if (publicNav) publicNav.style.display = 'none';
+          if (publicFoot) publicFoot.style.display = 'none';
+          if (body) {
+            body.classList.add('in-donor-portal');
+            body.style.paddingTop = '0';
+          }
+        } else {
+          document.documentElement.classList.add('is-public-mode');
+          document.documentElement.classList.remove('is-donor-mode');
+          if (publicNav) publicNav.style.display = 'block';
+          if (publicFoot) publicFoot.style.display = 'block';
+          if (donorNav) donorNav.style.display = 'none';
+          if (donorFoot) donorFoot.style.display = 'none';
+          if (body) {
+            body.classList.remove('in-donor-portal');
+            body.style.paddingTop = '5.5rem';
+          }
+        }
+      }
+
+      detectMode();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', detectMode);
+      }
+    })();
+  </script>
 </body>
 
 </html>

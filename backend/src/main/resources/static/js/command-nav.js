@@ -86,7 +86,7 @@
         if (m && (m.donorId || m.donor_id)) {
           donorId = m.donorId || m.donor_id;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
     if (!donorId) {
       const num = currentUser ? (100 + ((parseInt(currentUser.id || 1, 10) * 137 + 241) % 900)) : 719;
@@ -202,7 +202,7 @@
             localStorage.removeItem('red404_session');
             localStorage.removeItem('donorUser');
             localStorage.removeItem('red404_donorToken');
-          } catch (err) {}
+          } catch (err) { }
           window.location.href = 'donor-login.html';
         });
       }
@@ -255,7 +255,7 @@
           const text = emailEl.textContent.trim().replace(/^Signed in as\s*/i, '');
           return { email: text };
         }
-      } catch (_) {}
+      } catch (_) { }
       return currentUser;
     }
 
@@ -271,7 +271,7 @@
         if (!token) {
           token = localStorage.getItem('red404_donorToken') || sessionStorage.getItem('red404_donorToken') || '';
         }
-      } catch (_) {}
+      } catch (_) { }
       const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -665,7 +665,7 @@
               try {
                 localStorage.clear();
                 sessionStorage.clear();
-              } catch (_) {}
+              } catch (_) { }
               alert('Your RED404 account and all associated records have been permanently deleted.');
               window.location.href = 'index.html';
             } else {
@@ -800,12 +800,12 @@
           </div>
           <div class="smc-session-right">
             ${s.isCurrent
-              ? '<span class="badge-current-session"><i class="fa-solid fa-circle-check"></i> Current Session</span>'
-              : `<button type="button" class="btn-revoke-session" data-session-id="${escapeHtml(s.sessionId)}">
+            ? '<span class="badge-current-session"><i class="fa-solid fa-circle-check"></i> Current Session</span>'
+            : `<button type="button" class="btn-revoke-session" data-session-id="${escapeHtml(s.sessionId)}">
                   <i class="fa-solid fa-ban"></i>
                   <span>Logout</span>
                  </button>`
-            }
+          }
           </div>
         `;
         container.appendChild(card);
@@ -921,7 +921,7 @@
                   }
                   return;
                 }
-              } catch (_) {}
+              } catch (_) { }
               if (typeof showToast === 'function') {
                 showToast(`GPS Refreshed: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`, 'success');
               }
@@ -945,7 +945,7 @@
           sessionStorage.setItem('red404_active_emergencies_count', String(active.length));
           updateEmergencyIndicator(active.length);
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 
@@ -992,7 +992,7 @@
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) return parsed.length;
       }
-    } catch (_) {}
+    } catch (_) { }
     return 0; // Default: 0 active emergencies -> hidden
   }
 

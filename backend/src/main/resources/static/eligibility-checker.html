@@ -814,25 +814,22 @@
     }
 
     function restartChatbot() {
-      chatStream.innerHTML = '';
+      if (chatStream) chatStream.innerHTML = '';
       currentStepIndex = 0;
       for (let k in userAnswers) delete userAnswers[k];
       renderStep(0);
     }
+    window.restartChatbot = restartChatbot;
+    window.handleOptionSelect = handleOptionSelect;
 
-    // Hamburger Mobile Toggle
-    const hamburger = document.getElementById('hamburger');
-    const navLinks = document.getElementById('navLinks');
-    if (hamburger && navLinks) {
-      hamburger.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
+    // Start Chatbot reliably on load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        renderStep(0);
       });
-    }
-
-    // Init
-    document.addEventListener('DOMContentLoaded', () => {
+    } else {
       renderStep(0);
-    });
+    }
   </script>
 </body>
 </html>
