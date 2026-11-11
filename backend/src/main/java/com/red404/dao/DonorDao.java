@@ -200,7 +200,7 @@ public class DonorDao {
         String sql = "UPDATE donors SET " +
                 "name = COALESCE(?, name), " +
                 "father_name = ?, " +
-                "phone = COALESCE(?, phone), " +
+                "phone = ?, " +
                 "blood_type = COALESCE(?, blood_type), " +
                 "gender = COALESCE(?, gender), " +
                 "dob = ?, " +

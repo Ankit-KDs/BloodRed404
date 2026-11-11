@@ -1,6 +1,7 @@
 package com.red404.config;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -385,15 +386,41 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
     private void seedOrUpdatePrimaryDonor(Connection conn) {
         try (Statement st = conn.createStatement()) {
-            try (ResultSet rs = st.executeQuery("SELECT id, donor_id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
+            // Clean up any legacy dummy defaults across donors
+            try {
+                st.executeUpdate("UPDATE donors SET phone = NULL WHERE phone = '9876543210'");
+                st.executeUpdate("UPDATE donors SET city = NULL, state = NULL, pincode = NULL WHERE city = 'Meerut' AND pincode = '250002'");
+            } catch (Exception ignored) {}
+
+            try (ResultSet rs = st.executeQuery("SELECT id, donor_id, dob, name FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
-                    String insertSql = "INSERT INTO donors (donor_id, name, email, phone, password, blood_type, availability, city, state, pincode, zone, created_at) " +
-                            "VALUES ('DNR-0811-A404', 'Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '12345678', 'A+', 'Available', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                    String insertSql = "INSERT INTO donors (donor_id, name, email, password, blood_type, availability, created_at) " +
+                            "VALUES ('DNR-0811-A404', 'Ankit Kumar', 'ak30kr02@gmail.com', '12345678', 'A+', 'Available', '2026-11-08 14:00:00')";
                     st.executeUpdate(insertSql);
-                    log.info("Primary donor 'ak30kr02@gmail.com' verified in database with Smart Donor ID DNR-0811-A404.");
+                    log.info("Primary donor 'ak30kr02@gmail.com' verified in database with Smart Donor ID DNR-0811-A404 (zero dummy data).");
                 } else {
-                    st.executeUpdate("UPDATE donors SET password = '12345678' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com'");
-                    st.executeUpdate("UPDATE donors SET donor_id = 'DNR-0811-A404' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' AND (donor_id IS NULL OR donor_id = '')");
+                    int id = rs.getInt("id");
+                    String currId = rs.getString("donor_id");
+                    Date dob = rs.getDate("dob");
+                    String name = rs.getString("name");
+                    st.executeUpdate("UPDATE donors SET password = '12345678' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' AND (password IS NULL OR password = '')");
+                    if (currId == null || currId.isBlank()) {
+                        String assignedId = com.red404.util.DonorIdGenerator.generateUniqueDonorId(conn, name != null ? name : "Ankit Kumar", dob);
+                        try (PreparedStatement upPs = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
+                            upPs.setString(1, assignedId);
+                            upPs.setInt(2, id);
+                            upPs.executeUpdate();
+                        }
+                    } else if (dob != null && currId.startsWith("DNR-")) {
+                        String syncd = com.red404.util.DonorIdGenerator.updateDonorIdDob(currId, dob, name);
+                        if (syncd != null && !syncd.equalsIgnoreCase(currId)) {
+                            try (PreparedStatement upPs = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
+                                upPs.setString(1, syncd);
+                                upPs.setInt(2, id);
+                                upPs.executeUpdate();
+                            }
+                        }
+                    }
                     log.info("Primary donor 'ak30kr02@gmail.com' synchronized.");
                 }
             }

@@ -1696,8 +1696,8 @@
 
         // Smart Donor ID (DNR-[DDMM]-[Initial][3 Random Numbers])
         const rawDob = d.dob || d.dateOfBirth;
-        const initial = (name && name !== 'N/A' && name.trim().length > 0) ? name.trim()[0].toUpperCase() : 'D';
-        const num = 100 + ((parseInt(d.id || 1, 10) * 37) % 900);
+        const initial = (name && name !== 'N/A' && name.trim().length > 0) ? name.trim()[0].toUpperCase() : 'A';
+        const num = 100 + ((parseInt(d.id || 1, 10) * 137 + 241) % 900);
         let uniqueId = d.donorId || d.donor_id || '';
         if (!uniqueId || !uniqueId.startsWith('DNR-')) {
           const rawRef = (typeof donorRef !== 'undefined' && donorRef) || (typeof donorId !== 'undefined' && donorId) || '';
@@ -1713,7 +1713,7 @@
             if (ddmm) uniqueId = `DNR-${ddmm}-${suffix}`;
           }
         } else {
-          const ddmm = extractDDMM(rawDob) || '0811';
+          const ddmm = extractDDMM(rawDob) || '1011';
           uniqueId = `DNR-${ddmm}-${initial}${num}`;
         }
         d.donorId = uniqueId;

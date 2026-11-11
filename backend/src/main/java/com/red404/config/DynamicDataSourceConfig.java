@@ -211,15 +211,17 @@ public class DynamicDataSourceConfig {
                 stmt.executeUpdate("UPDATE donors SET body_temp = NULL WHERE body_temp = 98.6");
                 stmt.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15'");
                 stmt.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0");
+                stmt.executeUpdate("UPDATE donors SET phone = NULL WHERE phone = '9876543210'");
+                stmt.executeUpdate("UPDATE donors SET city = NULL, state = NULL, pincode = NULL WHERE city = 'Meerut' AND pincode = '250002'");
             } catch (Exception ignored) {}
 
             // Check if donor 'ak30kr02@gmail.com' exists
             try (ResultSet rs = stmt.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
-                    String seedDonor = "INSERT INTO donors (name, email, phone, password, blood_type, availability, city, state, pincode, zone, created_at) " +
-                            "VALUES ('Ankit Kumar', 'ak30kr02@gmail.com', '9876543210', '12345678', 'A+', 'Available', 'Meerut', 'Uttar Pradesh', '250002', 'North Zone', '2026-11-08 14:00:00')";
+                    String seedDonor = "INSERT INTO donors (donor_id, name, email, password, blood_type, availability, created_at) " +
+                            "VALUES ('DNR-0811-A404', 'Ankit Kumar', 'ak30kr02@gmail.com', '12345678', 'A+', 'Available', '2026-11-08 14:00:00')";
                     stmt.executeUpdate(seedDonor);
-                    log.info("Seeded primary registered donor account: ak30kr02@gmail.com (with zero demo clinical data)");
+                    log.info("Seeded primary registered donor account: ak30kr02@gmail.com (with zero demo data)");
                 }
             }
         } catch (Exception e) {

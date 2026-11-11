@@ -5,6 +5,72 @@
 (function () {
   'use strict';
 
+  function extractDDMM(dobStr) {
+    if (!dobStr) return null;
+    let s = String(dobStr).trim();
+    if (!s || s.toLowerCase() === 'null') return null;
+    if (s.includes(' ')) s = s.substring(0, s.indexOf(' '));
+    if (s.includes('T')) s = s.substring(0, s.indexOf('T'));
+    const ymd = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+    if (ymd) return `${ymd[3].padStart(2, '0')}${ymd[2].padStart(2, '0')}`;
+    const dmy = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+    if (dmy) return `${dmy[1].padStart(2, '0')}${dmy[2].padStart(2, '0')}`;
+    return null;
+  }
+
+  function syncIdDob(id, dobStr) {
+    const ddmm = extractDDMM(dobStr);
+    if (!id || !id.startsWith('DNR-') || !ddmm) return id;
+    const p = id.split('-');
+    if (p.length >= 3) {
+      return `DNR-${ddmm}-${p.slice(2).join('-')}`;
+    }
+    return id;
+  }
+
+  function updateCommandNav(user) {
+    if (!user) return;
+    const avatarInitials = document.getElementById('userAvatarInitials');
+    const dropdownName = document.getElementById('dropdownUserName');
+    const dropdownEmail = document.getElementById('dropdownUserEmail');
+    const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
+    const dropdownDonorId = document.getElementById('dropdownDonorIdText');
+
+    let rawName = user.name || user.fullName || '';
+    if (!rawName && (user.firstName || user.lastName)) {
+      rawName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    }
+    const userName = rawName || 'Ankit Kumar';
+    const userEmail = user.email || '';
+
+    // Compute initials (e.g., Ankit Kumar -> AK)
+    let inits = 'AK';
+    if (rawName && rawName.trim().length > 0) {
+      const parts = rawName.trim().split(/\s+/).filter(Boolean);
+      inits = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : rawName.substring(0, 2).toUpperCase();
+    }
+    if (avatarInitials) avatarInitials.textContent = inits;
+    if (dropdownName) dropdownName.textContent = userName;
+    if (dropdownUserEmailSpan) {
+      dropdownUserEmailSpan.textContent = userEmail;
+    } else if (dropdownEmail) {
+      dropdownEmail.textContent = userEmail ? `Signed in as ${userEmail}` : '';
+    }
+
+    let donorId = user.donorId || user.donor_id || (typeof user.id === 'string' && user.id.startsWith('DNR-') ? user.id : null);
+    if (donorId && donorId.startsWith('DNR-')) {
+      const rawDob = user.dob || user.dateOfBirth;
+      if (rawDob) {
+        donorId = syncIdDob(donorId, rawDob);
+      }
+    }
+    if (dropdownDonorId && donorId) {
+      dropdownDonorId.textContent = donorId;
+    }
+  }
+
+  window.updateCommandNav = updateCommandNav;
+
   function initCommandNav() {
     const avatarTrigger = document.getElementById('userProfileTrigger');
     const dropdown = document.getElementById('userProfileDropdown');
@@ -20,7 +86,7 @@
     // 1. Load active user session if available
     let session = null;
     try {
-      const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
+      const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session') || localStorage.getItem('donorUser');
       if (raw) session = JSON.parse(raw);
       if (!session && typeof Auth !== 'undefined' && Auth.getSession) {
         const u = Auth.getSession();
@@ -35,71 +101,26 @@
     }
 
     const currentUser = session ? (session.user || session) : null;
-    const userName = (currentUser && (currentUser.name || (currentUser.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : null))) || 'Verified Donor';
-    const userEmail = (currentUser && currentUser.email) || '';
-
-    // Compute initials (e.g., Ankit Kumar -> AK)
-    const initials = userName
-      .split(' ')
-      .filter(Boolean)
-      .map(part => part[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase() || 'VD';
-
-    if (avatarInitials) avatarInitials.textContent = initials;
-    if (dropdownName) dropdownName.textContent = userName;
-    if (dropdownUserEmailSpan) {
-      dropdownUserEmailSpan.textContent = userEmail;
-    } else if (dropdownEmail) {
-      dropdownEmail.textContent = `Signed in as ${userEmail}`;
+    if (currentUser) {
+      updateCommandNav(currentUser);
     }
 
-    function extractDDMM(dobStr) {
-      if (!dobStr) return null;
-      let s = String(dobStr).trim();
-      if (!s || s.toLowerCase() === 'null') return null;
-      if (s.includes(' ')) s = s.substring(0, s.indexOf(' '));
-      if (s.includes('T')) s = s.substring(0, s.indexOf('T'));
-      const ymd = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
-      if (ymd) return `${ymd[3].padStart(2, '0')}${ymd[2].padStart(2, '0')}`;
-      const dmy = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
-      if (dmy) return `${dmy[1].padStart(2, '0')}${dmy[2].padStart(2, '0')}`;
-      return null;
-    }
-
-    function syncIdDob(id, dobStr) {
-      const ddmm = extractDDMM(dobStr);
-      if (!id || !id.startsWith('DNR-') || !ddmm) return id;
-      const p = id.split('-');
-      if (p.length >= 3) {
-        return `DNR-${ddmm}-${p.slice(2).join('-')}`;
-      }
-      return id;
-    }
-
-    let donorId = (currentUser && (currentUser.donorId || currentUser.donor_id || (typeof currentUser.id === 'string' && currentUser.id.startsWith('DNR-') ? currentUser.id : null)));
-    if (!donorId && currentUser) {
-      try {
-        const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
-        const m = list.find(d => (d.email && d.email === currentUser.email) || (d.id && d.id == currentUser.id));
-        if (m && (m.donorId || m.donor_id)) {
-          donorId = m.donorId || m.donor_id;
+    // Always background-sync with backend to ensure freshest DB profile is applied
+    fetch('/api/donor/profile', { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json && json.success && json.data) {
+          updateCommandNav(json.data);
+          try {
+            localStorage.setItem('red404_donor_session', JSON.stringify({ user: json.data }));
+            localStorage.setItem('red404_auth_session', JSON.stringify({ user: json.data }));
+            if (typeof Auth !== 'undefined' && Auth.saveSession) {
+              Auth.saveSession(json.data);
+            }
+          } catch (_) {}
         }
-      } catch (_) { }
-    }
-    if (!donorId) {
-      const num = currentUser ? (100 + ((parseInt(currentUser.id || 1, 10) * 137 + 241) % 900)) : 719;
-      const initial = (userName && userName.trim().length > 0) ? userName.trim()[0].toUpperCase() : 'A';
-      donorId = `DNR-1011-${initial}${num}`;
-    }
-    if (currentUser && (currentUser.dob || currentUser.dateOfBirth)) {
-      donorId = syncIdDob(donorId, currentUser.dob || currentUser.dateOfBirth);
-    }
-    const dropdownDonorId = document.getElementById('dropdownDonorIdText');
-    if (dropdownDonorId) {
-      dropdownDonorId.textContent = donorId;
-    }
+      })
+      .catch(() => {});
 
     // 2. Avatar dropdown toggle
     if (avatarTrigger && dropdown) {

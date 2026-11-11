@@ -143,11 +143,14 @@
     try {
       // 1. Read existing Auth session if available
       const session = typeof Auth !== 'undefined' ? Auth.getSession() : null;
-      let userData = (session && session.user) ? session.user : null;
+      let userData = session ? (session.user || session) : null;
       if (!userData) {
         try {
-          const s = localStorage.getItem('red404_donor_session');
-          if (s) userData = JSON.parse(s).user;
+          const s = localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session');
+          if (s) {
+            const parsed = JSON.parse(s);
+            userData = parsed.user || parsed;
+          }
         } catch (_) {}
       }
 
@@ -157,7 +160,10 @@
         currentDonor.fatherName = cleanLiveVal(userData.fatherName || userData.father_name, ['rajesh']);
         if (userData.email) currentDonor.email = userData.email;
         currentDonor.bloodType = userData.bloodType || userData.blood_type || currentDonor.bloodType;
-        if (userData.phone || userData.mobile) currentDonor.phone = userData.phone || userData.mobile;
+        if (userData.phone || userData.mobile) {
+          const ph = String(userData.phone || userData.mobile).trim();
+          if (ph !== '9876543210') currentDonor.phone = ph;
+        }
         if (userData.gender) currentDonor.gender = userData.gender;
         if (userData.dob || userData.dateOfBirth) {
           const rawDob = userData.dob || userData.dateOfBirth;
@@ -170,9 +176,13 @@
           }
         }
         currentDonor.address = cleanLiveVal(userData.address, ['subharti', 'delhi road']);
-        if (userData.city) currentDonor.city = userData.city;
-        if (userData.state) currentDonor.state = userData.state;
-        if (userData.pincode || userData.pinCode) currentDonor.pincode = userData.pincode || userData.pinCode;
+        if (userData.city && userData.city !== 'Meerut') currentDonor.city = userData.city;
+        if (userData.state && (userData.state !== 'Uttar Pradesh' || userData.city !== 'Meerut')) currentDonor.state = userData.state;
+        if (userData.pincode && userData.pincode !== '250002') currentDonor.pincode = userData.pincode;
+        if (userData.donorId || userData.donor_id) {
+          currentDonor.donorId = userData.donorId || userData.donor_id;
+          currentDonor.donor_id = currentDonor.donorId;
+        }
         if (userData.createdAt || userData.created_at) currentDonor.createdAt = userData.createdAt || userData.created_at;
         currentDonor.allergies = cleanLiveVal(userData.allergies, ['no known drug', 'nkda']);
         currentDonor.conditions = cleanLiveVal(userData.conditions, ['normal screening', 'none reported']);
@@ -263,12 +273,19 @@
           currentDonor.fatherName = cleanLiveVal(d.fatherName || d.father_name, ['rajesh']);
           currentDonor.bloodType = d.bloodType || d.blood_type || currentDonor.bloodType;
           if (d.email) currentDonor.email = d.email;
-          if (d.phone || d.mobile) currentDonor.phone = d.phone || d.mobile;
+          if (d.phone || d.mobile) {
+            const ph = String(d.phone || d.mobile).trim();
+            if (ph !== '9876543210') currentDonor.phone = ph;
+          }
           if (d.gender) currentDonor.gender = d.gender;
           currentDonor.address = cleanLiveVal(d.address, ['subharti', 'delhi road']);
-          if (d.city) currentDonor.city = d.city;
-          if (d.state) currentDonor.state = d.state;
-          if (d.pincode || d.pinCode) currentDonor.pincode = d.pincode || d.pinCode;
+          if (d.city && d.city !== 'Meerut') currentDonor.city = d.city;
+          if (d.state && (d.state !== 'Uttar Pradesh' || d.city !== 'Meerut')) currentDonor.state = d.state;
+          if ((d.pincode || d.pinCode) && (d.pincode !== '250002' && d.pinCode !== '250002')) currentDonor.pincode = d.pincode || d.pinCode;
+          if (d.donorId || d.donor_id) {
+            currentDonor.donorId = d.donorId || d.donor_id;
+            currentDonor.donor_id = currentDonor.donorId;
+          }
           if (d.createdAt || d.created_at) currentDonor.createdAt = d.createdAt || d.created_at;
           currentDonor.allergies = cleanLiveVal(d.allergies, ['no known drug', 'nkda']);
           currentDonor.conditions = cleanLiveVal(d.conditions, ['normal screening', 'none reported']);
@@ -317,6 +334,9 @@
     const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
     if (dropdownUserEmailSpan && currentDonor.email) {
       dropdownUserEmailSpan.textContent = currentDonor.email;
+    }
+    if (window.updateCommandNav) {
+      window.updateCommandNav(currentDonor);
     }
     updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
     renderDigitalIdAndIntakePayload();
@@ -797,14 +817,14 @@
         return cleanId;
       }
     }
-    // If no existing valid DNR- ID, generate fresh
-    const ddmm = newDdmm || '0811';
-    let initial = 'D';
+    // If no existing valid DNR- ID, generate deterministic fallback
+    const ddmm = newDdmm || '1011';
+    let initial = 'A';
     if (fullName && fullName.trim().length > 0) {
       const letter = fullName.trim().match(/[A-Za-z]/);
       if (letter) initial = letter[0].toUpperCase();
     }
-    const num = 100 + ((parseInt(fallbackId || 1, 10) * 37) % 900);
+    const num = 100 + ((parseInt(fallbackId || 1, 10) * 137 + 241) % 900);
     return `DNR-${ddmm}-${initial}${num}`;
   }
 
@@ -1126,15 +1146,23 @@
         const wt = currentDonor.weight;
         weightInput.value = (wt !== null && wt !== undefined && String(wt).trim() !== '') ? wt : '';
       }
-      if (phoneInput) phoneInput.value = currentDonor.phone || '';
+      if (phoneInput) {
+        phoneInput.value = (currentDonor.phone && currentDonor.phone !== '9876543210') ? currentDonor.phone : '';
+      }
       if (emailInput) emailInput.value = currentDonor.email || '';
       if (addrInput) {
         const addr = currentDonor.address || '';
         addrInput.value = (addr.toLowerCase().includes('subharti') || addr.toLowerCase().includes('delhi road')) ? '' : addr;
       }
-      if (cityInput) cityInput.value = currentDonor.city || '';
-      if (stateInput) stateInput.value = currentDonor.state || '';
-      if (pincodeInput) pincodeInput.value = currentDonor.pincode || '';
+      if (cityInput) {
+        cityInput.value = (currentDonor.city && currentDonor.city !== 'Meerut') ? currentDonor.city : '';
+      }
+      if (stateInput) {
+        stateInput.value = (currentDonor.state && (currentDonor.state !== 'Uttar Pradesh' || currentDonor.city !== 'Meerut')) ? currentDonor.state : '';
+      }
+      if (pincodeInput) {
+        pincodeInput.value = (currentDonor.pincode && currentDonor.pincode !== '250002') ? currentDonor.pincode : '';
+      }
       if (allergiesInput) allergiesInput.value = currentDonor.allergies || '';
       
       let condVal = currentDonor.conditions;
@@ -1224,7 +1252,7 @@
             gender: (document.getElementById('editDonorGender')?.value || '').trim() || 'Male',
             dob: (document.getElementById('editDonorDob')?.value || '').trim(),
             weight: weightStr ? parseFloat(weightStr) : null,
-            phone: (document.getElementById('editDonorPhone')?.value || '').trim() || currentDonor.phone,
+            phone: (document.getElementById('editDonorPhone')?.value || '').trim(),
             email: (document.getElementById('editDonorEmail')?.value || '').trim() || currentDonor.email,
             address: (document.getElementById('editDonorAddress')?.value || '').trim(),
             city: (document.getElementById('editDonorCity')?.value || '').trim(),
@@ -1268,6 +1296,10 @@
               const resJson = await res.json();
               if (resJson && resJson.data) {
                 Object.assign(currentDonor, resJson.data);
+                if (resJson.data.donorId || resJson.data.donor_id) {
+                  currentDonor.donorId = resJson.data.donorId || resJson.data.donor_id;
+                  currentDonor.donor_id = currentDonor.donorId;
+                }
               } else {
                 Object.assign(currentDonor, payload);
               }
@@ -1319,6 +1351,10 @@
           if (dropdownUserEmailSpan && currentDonor.email) {
             dropdownUserEmailSpan.textContent = currentDonor.email;
           }
+          if (window.updateCommandNav) {
+            window.updateCommandNav(currentDonor);
+          }
+          showNotification('Donor clinical profile updated and saved to MySQL database successfully!', 'success');
 
           showToast('Donor profile successfully updated in MySQL database!', 'success');
         } catch (err) {

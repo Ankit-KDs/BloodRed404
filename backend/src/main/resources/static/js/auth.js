@@ -386,6 +386,8 @@ function initDonorRegisterForm() {
         Store.set('donorToken', 'SESSION-DONOR-1');
       }
       localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
+      localStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
+      localStorage.setItem('donorUser', JSON.stringify(donorData));
 
       // CRITICAL: Cache in local registered donors registry
       try {
@@ -485,6 +487,12 @@ function initDonorLoginForm() {
 
     if (result.success) {
       const donorData = result.data.donor || {};
+      if (donorData.phone === '9876543210') donorData.phone = '';
+      if (donorData.city === 'Meerut' && donorData.pincode === '250002') {
+        donorData.city = '';
+        donorData.state = '';
+        donorData.pincode = '';
+      }
       const cleanEmail = (donorData.email || identifier || '').trim().toLowerCase();
       const cleanPhone = (donorData.phone || identifier || '').trim();
 
@@ -550,6 +558,8 @@ function initDonorLoginForm() {
       Auth.saveSession(donorData);
       Store.set('donorToken', result.data.token || ('SESSION-DONOR-' + (currentSmartId || '1')));
       localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
+      localStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
+      localStorage.setItem('donorUser', JSON.stringify(donorData));
 
       // Keep local registry updated with authenticated donor
       try {

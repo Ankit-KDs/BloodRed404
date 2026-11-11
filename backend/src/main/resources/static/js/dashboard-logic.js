@@ -192,6 +192,10 @@
     // 1. Render Welcome Banner & Telemetry Pills
     renderWelcomeBanner();
 
+    if (window.updateCommandNav) {
+      window.updateCommandNav(donorData);
+    }
+
     // Dynamically detect user's current GPS location & state/district
     detectUserLocation();
 
