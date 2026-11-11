@@ -688,6 +688,11 @@ public class DonorDao {
 
     public List<Map<String, Object>> searchPublicAvailability(String bloodGroup, double radiusKm, String pincode, Double userLat, Double userLng) throws SQLException {
         List<Map<String, Object>> results = new ArrayList<>();
+        if (userLat == null || userLng == null || userLat == 0.0 || userLng == 0.0) {
+            // Live radial search requires active user coordinates
+            return results;
+        }
+
         String sql = "SELECT donor_id, blood_type, latitude, longitude, pincode, city, state, zone, availability, created_at, last_donation FROM donors WHERE (availability IS NULL OR LOWER(availability) <> 'unavailable')";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -712,19 +717,14 @@ public class DonorDao {
                 if (latObj instanceof Number) donorLat = ((Number) latObj).doubleValue();
                 if (lngObj instanceof Number) donorLng = ((Number) lngObj).doubleValue();
 
-                double distance = -1.0;
-                if (userLat != null && userLng != null && donorLat != null && donorLng != null && donorLat != 0.0 && donorLng != 0.0) {
-                    distance = DistanceCalculator.calculateDistance(userLat, userLng, donorLat, donorLng);
-                } else if (pincode != null && !pincode.isBlank()) {
-                    String donorPin = rs.getString("pincode");
-                    if (donorPin != null && donorPin.trim().equalsIgnoreCase(pincode.trim())) {
-                        distance = 2.4; // Estimated localized distance for matching pincode
-                    }
+                // Strict radial calculation: donor must have real coordinates in database
+                if (donorLat == null || donorLng == null || donorLat == 0.0 || donorLng == 0.0) {
+                    continue;
                 }
 
-                // If user specified a radius band and distance could be calculated, filter by radius
-                if (distance >= 0.0 && distance > radiusKm) {
-                    continue;
+                double distance = DistanceCalculator.calculateDistance(userLat, userLng, donorLat, donorLng);
+                if (distance > radiusKm) {
+                    continue; // Strictly outside the requested radial band
                 }
 
                 String donorId = rs.getString("donor_id");
@@ -736,7 +736,7 @@ public class DonorDao {
                 item.put("id", donorId);
                 item.put("group", bType);
                 item.put("rh", bType.contains("-") ? "RH-" : "RH+");
-                item.put("distKm", distance >= 0.0 ? Math.round(distance * 10.0) / 10.0 : 3.8);
+                item.put("distKm", Math.round(distance * 10.0) / 10.0);
                 item.put("status", "Ready to Donate");
                 item.put("lastSeen", "Telemetry Active");
                 results.add(item);
@@ -781,8 +781,8 @@ public class DonorDao {
                 }
             } catch (Exception ignored) {}
 
-            // 4. Avg Response Time (minutes)
-            int avgResponseMin = 8;
+            // 4. Avg Response Time (minutes) - strictly dynamic: 0 if no rescues/responses exist yet
+            int avgResponseMin = 0;
             try (Statement st = conn.createStatement();
                  ResultSet rs = st.executeQuery("SELECT AVG(response_time) FROM donations WHERE response_time IS NOT NULL AND response_time > 0")) {
                 if (rs.next() && rs.getObject(1) != null) {
@@ -802,8 +802,8 @@ public class DonorDao {
                 activeZones = 1;
             }
 
-            // 6. Success Rate
-            int successRate = 98;
+            // 6. Success Rate - strictly dynamic: 0 if no requests recorded yet
+            int successRate = 0;
             try (Statement st = conn.createStatement();
                  ResultSet rs = st.executeQuery("SELECT COUNT(*), SUM(CASE WHEN status IN ('Fulfilled', 'Completed') THEN 1 ELSE 0 END) FROM blood_requests")) {
                 if (rs.next()) {

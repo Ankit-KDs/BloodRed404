@@ -117,10 +117,10 @@
             if (typeof Auth !== 'undefined' && Auth.saveSession) {
               Auth.saveSession(json.data);
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // 2. Avatar dropdown toggle
     if (avatarTrigger && dropdown) {

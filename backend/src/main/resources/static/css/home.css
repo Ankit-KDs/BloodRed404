@@ -1218,45 +1218,40 @@
 }
 
 .zone-coverage-badge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  align-self: center;
-  gap: 0.15rem;
-  margin-top: 0.75rem;
-  padding: 0.2rem 0.4rem;
-  background: rgba(230, 57, 70, 0.08);
-  border: 1px solid rgba(230, 57, 70, 0.28);
-  border-radius: 9999px;
-  font-size: 0.54rem;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 0.68rem;
   font-weight: 600;
   color: #cbd5e1;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  max-width: 100%;
-  box-sizing: border-box;
-  box-shadow: 0 0 10px rgba(230, 57, 70, 0.1);
-  transition: all 0.2s ease;
 }
 
 .zone-coverage-badge .zone-tag-label {
   color: #ff5e6c;
   font-weight: 700;
   font-family: var(--font-brand, 'Orbitron'), monospace;
-  font-size: 0.54rem;
-  letter-spacing: 0.02em;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
 }
 
 .zone-coverage-badge .zone-tag-steps {
   color: #94a3b8;
-  font-size: 0.54rem;
+  font-size: 0.68rem;
 }
 
 .zone-coverage-badge .zone-tag-arr {
   color: #e63946;
   font-weight: 700;
-  padding: 0 1px;
-  font-size: 0.55rem;
+  padding: 0 2px;
+  font-size: 0.7rem;
 }
 
 .stepper-arrow-divider {

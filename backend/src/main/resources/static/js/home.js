@@ -342,8 +342,8 @@ async function loadDynamicPlatformStats() {
     const hospitals = data.partnerHospitals ?? data.hospitals ?? 0;
     const lives = data.livesSaved ?? 0;
     const zones = data.activeZones ?? (regDonors > 0 || hospitals > 0 ? 1 : 0);
-    const avgResp = data.avgResponseMin ?? 8;
-    const successRate = data.successRate ?? 98;
+    const avgResp = data.avgResponseMin ?? 0;
+    const successRate = data.successRate ?? 0;
 
     // Update Hero elements data-target
     const heroD = document.getElementById('heroActiveDonors');
@@ -371,17 +371,17 @@ async function loadDynamicPlatformStats() {
 
     // Update Progress Bars based on real metrics
     const bReg = document.getElementById('barRegDonors');
-    if (bReg) bReg.style.width = Math.min(100, Math.max(10, regDonors * 10)) + '%';
+    if (bReg) bReg.style.width = Math.min(100, Math.max(0, regDonors * 10)) + '%';
     const bHosp = document.getElementById('barHospitals');
-    if (bHosp) bHosp.style.width = Math.min(100, Math.max(10, hospitals * 20)) + '%';
+    if (bHosp) bHosp.style.width = Math.min(100, Math.max(0, hospitals * 20)) + '%';
     const bLives = document.getElementById('barLivesSaved');
-    if (bLives) bLives.style.width = Math.min(100, Math.max(10, lives * 10)) + '%';
+    if (bLives) bLives.style.width = Math.min(100, Math.max(0, lives * 10)) + '%';
     const bResp = document.getElementById('barAvgResponse');
-    if (bResp) bResp.style.width = Math.min(100, Math.max(25, 100 - avgResp * 5)) + '%';
+    if (bResp) bResp.style.width = avgResp > 0 ? Math.min(100, Math.max(10, 100 - avgResp * 5)) + '%' : '0%';
     const bZones = document.getElementById('barActiveZones');
-    if (bZones) bZones.style.width = Math.min(100, Math.max(10, zones * 25)) + '%';
+    if (bZones) bZones.style.width = Math.min(100, Math.max(0, zones * 25)) + '%';
     const bRate = document.getElementById('barSuccessRate');
-    if (bRate) bRate.style.width = Math.min(100, successRate) + '%';
+    if (bRate) bRate.style.width = successRate > 0 ? Math.min(100, successRate) + '%' : '0%';
 
     // Animate counters with real database figures
     document.querySelectorAll('.hero-stats-bar .stat-num, .stats-section .stat-count').forEach(el => {

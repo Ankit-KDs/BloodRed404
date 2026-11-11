@@ -1341,20 +1341,33 @@
             }
           } catch (_) {}
 
-          // 5. Close modal & re-render profile card, QR and vitals
-          closeModal();
-          evaluateHealthAndEligibility();
-          renderDigitalIdAndIntakePayload();
+          // 5. Close modal & safely re-render profile card, QR and vitals
+          try {
+            closeModal();
+          } catch (_) {}
 
-          if (donorGreetingName) donorGreetingName.textContent = currentDonor.name;
-          const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
-          if (dropdownUserEmailSpan && currentDonor.email) {
-            dropdownUserEmailSpan.textContent = currentDonor.email;
+          try {
+            evaluateHealthAndEligibility();
+          } catch (evalErr) {
+            console.warn('Health evaluation error ignored:', evalErr);
           }
-          if (window.updateCommandNav) {
-            window.updateCommandNav(currentDonor);
+
+          try {
+            renderDigitalIdAndIntakePayload();
+          } catch (renderErr) {
+            console.warn('Digital ID render error ignored:', renderErr);
           }
-          showNotification('Donor clinical profile updated and saved to MySQL database successfully!', 'success');
+
+          try {
+            if (donorGreetingName) donorGreetingName.textContent = currentDonor.name;
+            const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
+            if (dropdownUserEmailSpan && currentDonor.email) {
+              dropdownUserEmailSpan.textContent = currentDonor.email;
+            }
+            if (window.updateCommandNav) {
+              window.updateCommandNav(currentDonor);
+            }
+          } catch (_) {}
 
           showToast('Donor profile successfully updated in MySQL database!', 'success');
         } catch (err) {
