@@ -264,11 +264,45 @@ public class HospitalController {
         }
     }
 
-    // ======================== PUT ========================
+    // ======================== INVENTORY & SETTINGS ========================
 
-    @PutMapping("/inventory")
-    public ResponseEntity<ApiResponse> updateInventory() {
-        return ok("Updated successfully", null);
+    @GetMapping("/inventory")
+    public ResponseEntity<ApiResponse> getInventory(HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) hospitalId = 1;
+            Map<String, Integer> inv = hospitalDao.getHospitalInventory(hospitalId);
+            return ok("Hospital inventory loaded", inv);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @RequestMapping(value = "/inventory", method = {RequestMethod.PUT, RequestMethod.POST})
+    public ResponseEntity<ApiResponse> updateInventory(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null && body != null && body.has("hospitalId")) {
+                hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
+            }
+            if (hospitalId == null) hospitalId = 1;
+
+            String bloodType = JsonUtil.textOrNull(body, "bloodType");
+            if (bloodType == null || bloodType.isBlank()) bloodType = "A+";
+            int change = JsonUtil.asInt(body, "change", 0);
+            Integer exactUnits = (body != null && body.has("units")) ? JsonUtil.asInt(body, "units", -1) : null;
+            if (exactUnits != null && exactUnits < 0) exactUnits = null;
+
+            hospitalDao.updateHospitalInventory(hospitalId, bloodType, change, exactUnits);
+
+            // Fetch live aggregated stock and broadcast to all connected clients in real time
+            Map<String, Object> nationalStock = donorDao.getNationalBloodStock();
+            SystemController.broadcastStockUpdate(nationalStock);
+
+            return ok("Inventory updated successfully", nationalStock);
+        } catch (Exception e) {
+            return serverError(e);
+        }
     }
 
     @PutMapping("/settings")

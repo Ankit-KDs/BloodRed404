@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -824,6 +825,85 @@ public class DonorDao {
             stats.put("successRate", successRate);
         }
         return stats;
+    }
+
+    public Map<String, Object> getNationalBloodStock() throws SQLException {
+        String[] groups = {"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"};
+        Map<String, Integer> unitsMap = new HashMap<>();
+        Map<String, Integer> donorsMap = new HashMap<>();
+
+        for (String g : groups) {
+            unitsMap.put(g, 0);
+            donorsMap.put(g, 0);
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            // 1. Aggregated Hospital Stock from all registered hospitals & blood banks
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT blood_type, SUM(units) FROM hospital_inventory GROUP BY blood_type")) {
+                while (rs.next()) {
+                    String bt = rs.getString(1);
+                    int u = rs.getInt(2);
+                    if (bt != null) {
+                        String clean = bt.trim().toUpperCase();
+                        if (unitsMap.containsKey(clean)) {
+                            unitsMap.put(clean, Math.max(0, u));
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            // Also include verified clinical donations completed in network
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT blood_type, SUM(units) FROM donations WHERE status IN ('Fulfilled', 'VERIFIED_INTAKE', 'Approved', 'Completed') GROUP BY blood_type")) {
+                while (rs.next()) {
+                    String bt = rs.getString(1);
+                    int u = rs.getInt(2);
+                    if (bt != null) {
+                        String clean = bt.trim().toUpperCase();
+                        if (unitsMap.containsKey(clean)) {
+                            unitsMap.put(clean, unitsMap.get(clean) + Math.max(0, u));
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            // 2. Active Donors in Network grouped by blood type
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT blood_group, COUNT(*) FROM donors WHERE availability IS NULL OR LOWER(availability) <> 'unavailable' GROUP BY blood_group")) {
+                while (rs.next()) {
+                    String bg = rs.getString(1);
+                    int cnt = rs.getInt(2);
+                    if (bg != null) {
+                        String clean = bg.trim().toUpperCase();
+                        if (donorsMap.containsKey(clean)) {
+                            donorsMap.put(clean, cnt);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        int totalUnits = 0;
+        int totalDonors = 0;
+
+        for (String g : groups) {
+            int u = unitsMap.get(g);
+            int d = donorsMap.get(g);
+            totalUnits += u;
+            totalDonors += d;
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("units", u);
+            item.put("activeDonors", d);
+            response.put(g, item);
+        }
+
+        response.put("totalUnits", totalUnits);
+        response.put("totalActiveDonors", totalDonors);
+        response.put("timestamp", System.currentTimeMillis());
+        return response;
     }
 
     public List<Map<String, Object>> donationHistory(int donorId) throws SQLException {

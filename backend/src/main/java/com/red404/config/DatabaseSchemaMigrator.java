@@ -37,6 +37,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateHospitalsTable(conn);
             migrateBloodRequestsTable(conn);
             migrateDonationsTable(conn);
+            migrateHospitalInventoryTable(conn);
             migrateIntakeSnapshotsTable(conn);
             migrateUserSessionsTable(conn);
             seedOrUpdatePrimaryDonor(conn);
@@ -264,6 +265,23 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("status", "VARCHAR(20) DEFAULT 'COMPLETED'");
 
         ensureColumns(conn, "donations", requiredColumns);
+    }
+
+    private void migrateHospitalInventoryTable(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS hospital_inventory (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "hospital_id INT NOT NULL, " +
+                    "blood_type VARCHAR(10) NOT NULL, " +
+                    "units INT DEFAULT 0, " +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
+                    "UNIQUE KEY uq_hosp_blood (hospital_id, blood_type)" +
+                    ")";
+            st.executeUpdate(sql);
+            log.info("hospital_inventory table verified/created in database.");
+        } catch (Exception e) {
+            log.warn("Notice checking hospital_inventory table: {}", e.getMessage());
+        }
     }
 
     private void migrateIntakeSnapshotsTable(Connection conn) {

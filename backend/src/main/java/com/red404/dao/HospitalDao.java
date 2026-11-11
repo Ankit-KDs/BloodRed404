@@ -137,6 +137,55 @@ public class HospitalDao {
         }
     }
 
+    public boolean updateHospitalInventory(int hospitalId, String bloodType, int change, Integer exactUnits) throws SQLException {
+        if (bloodType == null || bloodType.isBlank()) return false;
+        String bt = bloodType.trim().toUpperCase();
+        if (exactUnits != null && exactUnits >= 0) {
+            String sql = "INSERT INTO hospital_inventory (hospital_id, blood_type, units) VALUES (?, ?, ?) " +
+                         "ON DUPLICATE KEY UPDATE units = VALUES(units)";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, hospitalId);
+                ps.setString(2, bt);
+                ps.setInt(3, exactUnits);
+                return ps.executeUpdate() > 0;
+            }
+        } else {
+            String sql = "INSERT INTO hospital_inventory (hospital_id, blood_type, units) VALUES (?, ?, GREATEST(0, ?)) " +
+                         "ON DUPLICATE KEY UPDATE units = GREATEST(0, units + ?)";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, hospitalId);
+                ps.setString(2, bt);
+                ps.setInt(3, Math.max(0, change));
+                ps.setInt(4, change);
+                return ps.executeUpdate() > 0;
+            }
+        }
+    }
+
+    public Map<String, Integer> getHospitalInventory(int hospitalId) throws SQLException {
+        Map<String, Integer> map = new java.util.LinkedHashMap<>();
+        for (String bt : new String[]{"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"}) {
+            map.put(bt, 0);
+        }
+        String sql = "SELECT blood_type, units FROM hospital_inventory WHERE hospital_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, hospitalId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String bt = rs.getString("blood_type");
+                    int u = rs.getInt("units");
+                    if (bt != null) {
+                        map.put(bt.toUpperCase(), Math.max(0, u));
+                    }
+                }
+            }
+        }
+        return map;
+    }
+
     private Map<String, Object> mapHospital(ResultSet rs) throws SQLException {
         Map<String, Object> hospital = new HashMap<>();
         hospital.put("id", rs.getInt("id"));

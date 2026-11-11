@@ -1230,6 +1230,10 @@ window.refreshDonors = async function () {
 window.updateInventoryUnit = async function (bloodType, change) {
   const result = await RED404.API.put('/hospitals/inventory', { bloodType, change });
 
+  try {
+    localStorage.setItem('red404_inventory_updated', Date.now().toString());
+  } catch (_) {}
+
   if (result.success || true) {
     RED404.showToast(
       `${bloodType} inventory ${change > 0 ? 'increased' : 'decreased'} by ${Math.abs(change)} unit(s).`,

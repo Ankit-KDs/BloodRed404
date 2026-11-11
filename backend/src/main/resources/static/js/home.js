@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initZoneDiagramAnimation();
   initServicesTabs();
   loadDynamicPlatformStats();
+  initNationalBloodStockStream();
 });
 
 /* ==================== PARTICLES ==================== */
@@ -390,3 +391,159 @@ async function loadDynamicPlatformStats() {
     console.warn('Could not load dynamic platform stats:', err);
   }
 }
+
+/* ==================== REAL-TIME NATIONAL BLOOD STOCK ENGINE ==================== */
+
+/**
+ * Normalizes any blood group notation into the HTML element ID suffix
+ * Examples: 'A+' -> 'A-pos', 'O-' -> 'O-neg', 'AB+' -> 'AB-pos'
+ */
+function normalizeBloodGroupId(groupId) {
+  if (!groupId) return null;
+  const s = String(groupId).trim().toUpperCase();
+  const map = {
+    'A+': 'A-pos', 'A_POS': 'A-pos', 'A-POS': 'A-pos', 'APOS': 'A-pos',
+    'A-': 'A-neg', 'A_NEG': 'A-neg', 'A-NEG': 'A-neg', 'ANEG': 'A-neg',
+    'B+': 'B-pos', 'B_POS': 'B-pos', 'B-POS': 'B-pos', 'BPOS': 'B-pos',
+    'B-': 'B-neg', 'B_NEG': 'B-neg', 'B-NEG': 'B-neg', 'BNEG': 'B-neg',
+    'O+': 'O-pos', 'O_POS': 'O-pos', 'O-POS': 'O-pos', 'OPOS': 'O-pos',
+    'O-': 'O-neg', 'O_NEG': 'O-neg', 'O-NEG': 'O-neg', 'ONEG': 'O-neg',
+    'AB+': 'AB-pos', 'AB_POS': 'AB-pos', 'AB-POS': 'AB-pos', 'ABPOS': 'AB-pos',
+    'AB-': 'AB-neg', 'AB_NEG': 'AB-neg', 'AB-NEG': 'AB-neg', 'ABNEG': 'AB-neg'
+  };
+  return map[s] || s.replace('+', '-pos').replace('-', '-neg');
+}
+
+/**
+ * Real-time JavaScript Scaffolding function
+ * Dynamically updates stock units & active donors for a blood group with visual flash effects
+ *
+ * @param {string} groupId Blood group ('A+', 'A-pos', 'O-', etc.)
+ * @param {number|string} newUnitCount Aggregated units in registered hospitals
+ * @param {number|string} newDonorCount Active donors in network
+ */
+function updateBloodStock(groupId, newUnitCount, newDonorCount) {
+  const key = normalizeBloodGroupId(groupId);
+  if (!key) return;
+
+  const unitEl = document.getElementById(`total-units-${key}`);
+  const donorEl = document.getElementById(`active-donors-${key}`);
+
+  function applyValueWithFlash(el, nextVal) {
+    if (!el || nextVal === undefined || nextVal === null) return;
+    const rawText = el.textContent.trim();
+    const nextNum = Number(nextVal);
+
+    if (isNaN(nextNum)) {
+      el.textContent = String(nextVal);
+      return;
+    }
+
+    // Trigger subtle 0.5s green glow on increase, red glow on decrease
+    if (rawText !== '-' && !isNaN(Number(rawText))) {
+      const prevNum = Number(rawText);
+      if (nextNum > prevNum) {
+        el.classList.remove('flash-decrease');
+        el.classList.add('flash-increase');
+        setTimeout(() => el.classList.remove('flash-increase'), 500);
+      } else if (nextNum < prevNum) {
+        el.classList.remove('flash-increase');
+        el.classList.add('flash-decrease');
+        setTimeout(() => el.classList.remove('flash-decrease'), 500);
+      }
+    }
+
+    el.textContent = String(nextNum);
+  }
+
+  if (newUnitCount !== undefined && newUnitCount !== null) {
+    applyValueWithFlash(unitEl, newUnitCount);
+  }
+  if (newDonorCount !== undefined && newDonorCount !== null) {
+    applyValueWithFlash(donorEl, newDonorCount);
+  }
+}
+
+// Expose updateBloodStock globally for backend WebSocket / SSE / push triggers
+window.updateBloodStock = updateBloodStock;
+
+/**
+ * Updates all 8 blood groups at once from an aggregated payload
+ */
+function updateAllBloodStock(stockData) {
+  if (!stockData || typeof stockData !== 'object') return;
+  const payload = stockData.data || stockData;
+  const groups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+
+  groups.forEach(bg => {
+    const item = payload[bg];
+    if (item && typeof item === 'object') {
+      const units = item.units !== undefined ? item.units : item.totalUnits;
+      const donors = item.activeDonors !== undefined ? item.activeDonors : (item.donors !== undefined ? item.donors : item.count);
+      updateBloodStock(bg, units, donors);
+    } else if (typeof item === 'number') {
+      updateBloodStock(bg, item, null);
+    }
+  });
+}
+window.updateAllBloodStock = updateAllBloodStock;
+
+/**
+ * Fetches real-time aggregated blood stock from backend
+ */
+async function fetchLiveNationalBloodStock() {
+  try {
+    let res = await fetch('/api/stats/national-blood-stock');
+    if (!res.ok) res = await fetch('/api/system/national-blood-stock');
+    if (!res.ok) res = await fetch('/api/stats/blood-stock');
+    if (!res.ok) return;
+
+    const json = await res.json();
+    if (json && (json.success || json.data)) {
+      updateAllBloodStock(json.data || json);
+    }
+  } catch (err) {
+    console.warn('Could not fetch live national blood stock:', err);
+  }
+}
+window.fetchLiveNationalBloodStock = fetchLiveNationalBloodStock;
+
+/**
+ * Initializes Real-Time SSE Stream + Fallback Polling + Cross-tab broadcast
+ */
+function initNationalBloodStockStream() {
+  // 1. Initial REST fetch on page load
+  fetchLiveNationalBloodStock();
+
+  // 2. Real-time Server-Sent Events (SSE) connection
+  let sse = null;
+  try {
+    sse = new EventSource('/api/stats/national-blood-stock/stream');
+    sse.addEventListener('stock-update', (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        updateAllBloodStock(parsed);
+      } catch (e) {
+        console.warn('SSE stock parse error:', e);
+      }
+    });
+
+    sse.onerror = () => {
+      // If SSE connection drops, gracefully close and rely on sync interval
+      try { sse.close(); } catch (_) {}
+    };
+  } catch (e) {
+    console.warn('SSE stream notice:', e);
+  }
+
+  // 3. Telemetry Sync Interval (every 4 seconds) to ensure real-time consistency
+  setInterval(fetchLiveNationalBloodStock, 4000);
+
+  // 4. Cross-tab storage listener: if a hospital updates inventory in another tab, update immediately
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'red404_inventory_updated' || e.key === 'red404_registered_hospitals') {
+      fetchLiveNationalBloodStock();
+    }
+  });
+}
+window.initNationalBloodStockStream = initNationalBloodStockStream;

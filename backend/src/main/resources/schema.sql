@@ -124,3 +124,12 @@ CREATE TABLE IF NOT EXISTS burned_donor_ids (
     burned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reason VARCHAR(255) DEFAULT 'ACCOUNT_DELETED'
 );
+
+CREATE TABLE IF NOT EXISTS hospital_inventory (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hospital_id INT NOT NULL,
+    blood_type VARCHAR(10) NOT NULL,
+    units INT DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_hosp_blood (hospital_id, blood_type)
+);
