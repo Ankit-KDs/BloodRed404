@@ -1466,46 +1466,59 @@
   animation:  shimmer 2s ease-in-out infinite;
 }
 
-/* ==================== STEP 2 & 3: LIVE NATIONAL BLOOD STOCK OVERVIEW ==================== */
-.national-stock-section {
+/* ==================== STEP 2 & 3: LIVE NATIONAL BLOOD STOCK OVERVIEW CARD ==================== */
+.national-stock-card {
   margin-top: 2.75rem;
+  background: rgba(17, 17, 24, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2.5rem 2.25rem 2.25rem;
   position: relative;
-  z-index: 1;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(230, 57, 70, 0.04);
 }
 
-.national-stock-header {
+.national-stock-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(230, 57, 70, 0.5), transparent);
+}
+
+.stock-card-header {
+  text-align: center;
+  margin-bottom: 2.25rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.15rem;
-  padding: 0 0.25rem;
+  justify-content: center;
 }
 
-.national-stock-header .nsh-title {
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  font-family: var(--font-brand, 'Orbitron'), monospace;
+.stock-card-badge-row {
+  margin-bottom: 0.85rem;
 }
 
-.national-stock-header .nsh-right {
+.live-pulse-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   background: rgba(34, 197, 94, 0.08);
   border: 1px solid rgba(34, 197, 94, 0.28);
   border-radius: 9999px;
-  padding: 0.22rem 0.65rem;
+  padding: 0.26rem 0.85rem;
 }
 
 .live-pulse-dot {
-  width: 6.5px;
-  height: 6.5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background-color: #22c55e;
-  box-shadow: 0 0 8px #22c55e;
+  box-shadow: 0 0 10px #22c55e;
   animation: liveDotPulse 1.6s ease-in-out infinite;
   display: inline-block;
 }
@@ -1522,26 +1535,52 @@
 }
 
 .live-pulse-text {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 800;
   color: #22c55e;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   font-family: var(--font-brand, 'Orbitron'), monospace;
+}
+
+.stock-card-title {
+  font-family: var(--font-brand, 'Orbitron'), sans-serif;
+  font-size: clamp(1.45rem, 2.8vw, 2.05rem);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.6rem 0;
+  line-height: 1.25;
+}
+
+.stock-card-title .highlight-text {
+  color: #e63946;
+  background: linear-gradient(135deg, #e63946 0%, #ff5e6c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stock-card-subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.55;
+  font-weight: 400;
 }
 
 /* 4 columns on desktop, 2 on mobile */
 .national-stock-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.85rem;
+  gap: 0.95rem;
 }
 
 /* Borderless / Glassmorphic Blood Group Mini-Card */
 .stock-mini-card {
-  background: rgba(17, 17, 24, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(10, 11, 16, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   padding: 0.95rem 1.1rem;
   display: flex;
@@ -2225,6 +2264,10 @@
     gap: 0.65rem;
   }
 
+  .national-stock-card {
+    padding: 1.75rem 1.25rem 1.5rem;
+  }
+
   .dsa-grid {
     grid-template-columns: 1fr;
   }
@@ -2269,6 +2312,10 @@
 
   .stock-mini-card {
     padding: 0.75rem 0.85rem;
+  }
+
+  .national-stock-card {
+    padding: 1.35rem 0.95rem 1.15rem;
   }
 
   .hero-cta {
