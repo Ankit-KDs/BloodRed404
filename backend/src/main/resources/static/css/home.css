@@ -1115,9 +1115,9 @@
   z-index:       1;
 }
 
-/* ==================== HOW IT WORKS SECTION ==================== */
+/* ==================== HOW IT WORKS / PROCESS FLOW ==================== */
 .how-section {
-  padding:    7rem 0;
+  padding:    6rem 0;
   background: var(--bg-card);
   position:   relative;
   z-index:    1;
@@ -1133,100 +1133,147 @@
   pointer-events: none;
 }
 
-/* Steps container */
-.steps-container {
-  position: relative;
-  display:  flex;
+.process-flow-pill {
+  display: inline-block;
+  padding: 0.35rem 1.1rem;
+  border-radius: 9999px;
+  background: rgba(230, 57, 70, 0.12);
+  border: 1px solid rgba(230, 57, 70, 0.35);
+  color: #ff6b6b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.85rem;
+}
+
+/* Strictly static, non-animated, minimalist horizontal linear stepper */
+.stepper-linear-container {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.stepper-step-card {
+  flex: 1 1 0;
+  min-width: 0;
+  background: rgba(17, 17, 24, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.4rem 1.15rem;
+  display: flex;
   flex-direction: column;
-  gap:      0;
+  transition: none !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-.steps-line {
-  position:   absolute;
-  left:       47px;
-  top:        0;
-  bottom:     0;
-  width:      2px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    var(--red-primary) 10%,
-    var(--red-primary) 90%,
-    transparent 100%
-  );
-  opacity:    0.3;
+.ssc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-.step-item {
-  display:     flex;
-  align-items: flex-start;
-  gap:         2rem;
-  padding:     2rem 0;
-  position:    relative;
-  transition:  all var(--transition-base);
-  cursor:      default;
+.ssc-num {
+  font-family: var(--font-brand, 'Orbitron'), monospace;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #64748b;
+  line-height: 1;
 }
 
-.step-item:hover .step-icon {
-  background: linear-gradient(135deg, var(--red-primary), var(--red-dark));
-  box-shadow: 0 8px 24px var(--red-glow);
-  transform:  scale(1.1) rotate(-5deg);
+.ssc-icon {
+  font-size: 1.15rem;
+  color: #94a3b8;
 }
 
-.step-item:hover .step-content h3 {
-  color: var(--red-light);
+.ssc-icon-sos {
+  color: #e63946;
 }
 
-.step-icon-wrap {
-  display:        flex;
-  flex-direction: column;
-  align-items:    center;
-  gap:            0.5rem;
-  flex-shrink:    0;
-  position:       relative;
-  z-index:        1;
-}
-
-.step-number {
-  font-family:  var(--font-brand);
-  font-size:    0.65rem;
-  font-weight:  700;
-  color:        var(--text-muted);
-  letter-spacing: 0.1em;
-}
-
-.step-icon {
-  width:           56px;
-  height:          56px;
-  background:      var(--bg-surface2);
-  border:          2px solid var(--border-color);
-  border-radius:   var(--radius-md);
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  font-size:       1.25rem;
-  color:           var(--red-light);
-  transition:      all var(--transition-base);
-  box-shadow:      var(--shadow-sm);
-}
-
-.step-content {
-  padding-top: 0.5rem;
-  max-width:   580px;
-}
-
-.step-content h3 {
-  font-size:     1.15rem;
-  font-weight:   700;
+.ssc-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #ffffff;
   margin-bottom: 0.5rem;
-  color:         var(--text-primary);
-  transition:    color var(--transition-fast);
+  line-height: 1.3;
 }
 
-.step-content p {
-  color:      var(--text-secondary);
-  font-size:  0.9rem;
-  line-height: 1.75;
+.ssc-title-sos {
+  color: #ff4d5a;
+  text-shadow: 0 0 12px rgba(230, 57, 70, 0.45);
+}
+
+.ssc-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.zone-coverage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.75rem;
+  padding: 0.28rem 0.65rem;
+  background: rgba(230, 57, 70, 0.1);
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ff6b6b;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.stepper-arrow-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 2px;
+  color: rgba(255, 255, 255, 0.2);
+  padding: 0 0.15rem;
+}
+
+.stepper-dashed-line {
+  display: inline-block;
+  width: 14px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.3);
+}
+
+.stepper-arrow-icon {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Tablet (2 rows of 3) */
+@media (max-width: 1024px) {
+  .stepper-linear-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+  .stepper-arrow-divider {
+    display: none;
+  }
+}
+
+/* Mobile (1 column) */
+@media (max-width: 640px) {
+  .stepper-linear-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .stepper-arrow-divider {
+    display: none;
+  }
 }
 
 /* ==================== STATS SECTION ==================== */

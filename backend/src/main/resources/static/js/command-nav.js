@@ -216,19 +216,30 @@
     // 4. Settings & Privacy Modal Controller
     function getFreshUser() {
       try {
-        const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
+        const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session') || sessionStorage.getItem('red404_auth_session') || localStorage.getItem('donorUser') || localStorage.getItem('red404_user');
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && (parsed.user || parsed.id || parsed.email)) return parsed.user || parsed;
+          if (parsed && (parsed.user || parsed.id || parsed.email || parsed.donorId || parsed.donor_id)) {
+            const u = parsed.user || parsed;
+            if (u && (u.id || u.email || u.donorId)) return u;
+          }
         }
         if (typeof Auth !== 'undefined' && Auth.getSession) {
           const u = Auth.getSession();
           if (u) return u;
         }
+        if (typeof window !== 'undefined' && window.currentDonor) {
+          return window.currentDonor;
+        }
         const rawSession = localStorage.getItem('red404_session');
         if (rawSession) {
           const s = JSON.parse(rawSession);
           if (s) return s.user || s;
+        }
+        const emailEl = document.getElementById('userEmail') || document.querySelector('.dropdown-email') || document.querySelector('.nav-user-email');
+        if (emailEl && emailEl.textContent && emailEl.textContent.includes('@')) {
+          const text = emailEl.textContent.trim().replace(/^Signed in as\s*/i, '');
+          return { email: text };
         }
       } catch (_) {}
       return currentUser;
@@ -236,12 +247,15 @@
 
     function getSettingsHeaders() {
       const activeUser = getFreshUser();
-      const donorId = (activeUser && activeUser.id) || '';
+      const donorId = (activeUser && (activeUser.donorId || activeUser.donor_id || activeUser.id)) || '';
       const donorEmail = (activeUser && activeUser.email) || '';
       let token = '';
       try {
         if (typeof Store !== 'undefined' && Store.get) {
           token = Store.get('donorToken') || '';
+        }
+        if (!token) {
+          token = localStorage.getItem('red404_donorToken') || sessionStorage.getItem('red404_donorToken') || '';
         }
       } catch (_) {}
       const headers = {
@@ -525,7 +539,7 @@
           try {
             const activeUser = getFreshUser();
             const payload = {
-              donorId: (activeUser && activeUser.id) || '',
+              donorId: (activeUser && (activeUser.donorId || activeUser.donor_id || activeUser.id)) || '',
               email: (activeUser && activeUser.email) || '',
               currentPassword,
               newPassword,
@@ -622,7 +636,7 @@
           try {
             const activeUser = getFreshUser();
             const payload = {
-              donorId: (activeUser && activeUser.id) || '',
+              donorId: (activeUser && (activeUser.donorId || activeUser.donor_id || activeUser.id)) || '',
               email: (activeUser && activeUser.email) || '',
               phone: (activeUser && activeUser.phone) || ''
             };

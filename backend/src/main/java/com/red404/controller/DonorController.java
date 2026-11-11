@@ -132,6 +132,31 @@ public class DonorController {
         }
     }
 
+    @GetMapping({"/availability", "/availability-search", "/public-availability"})
+    public ResponseEntity<ApiResponse> searchPublicAvailability(
+            @RequestParam(required = false, defaultValue = "ALL") String bloodGroup,
+            @RequestParam(required = false, defaultValue = "20") double radius,
+            @RequestParam(required = false) String pincode,
+            @RequestParam(required = false) String lat,
+            @RequestParam(required = false) String lng) {
+        try {
+            Double latD = parseDouble(lat);
+            Double lngD = parseDouble(lng);
+            return ok("Public availability loaded", donorDao.searchPublicAvailability(bloodGroup, radius, pincode, latD, lngD));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping({"/platform-stats", "/system-stats"})
+    public ResponseEntity<ApiResponse> getPlatformStats() {
+        try {
+            return ok("Platform stats loaded", donorDao.getPlatformStats());
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     @GetMapping({"/donations", "/donation-history", "/history"})
     public ResponseEntity<ApiResponse> getDonations(
             @RequestParam(required = false) String donorId,

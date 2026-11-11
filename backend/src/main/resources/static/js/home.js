@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBloodTicker();
   initZoneDiagramAnimation();
   initServicesTabs();
+  loadDynamicPlatformStats();
 });
 
 /* ==================== PARTICLES ==================== */
@@ -143,7 +144,7 @@ function initStatBars() {
 /* ==================== SCROLL REVEAL ==================== */
 function initScrollRevealHome() {
   const targets = document.querySelectorAll(
-    '.about-card, .step-item, .stat-card, .zone-info-card, .cta-content'
+    '.about-card, .stat-card, .cta-content'
   );
 
   targets.forEach((el, idx) => {
@@ -205,6 +206,8 @@ function initBloodTicker() {
 
 /* ==================== ZONE DIAGRAM ANIMATION ==================== */
 function initZoneDiagramAnimation() {
+  const zoneSection = document.querySelector('.zones-section');
+  if (!zoneSection) return;
   const rings = document.querySelectorAll('.zd-ring');
   const io = new IntersectionObserver(entries => {
     entries.forEach(entry => {
@@ -235,8 +238,7 @@ function initZoneDiagramAnimation() {
     });
   }, { threshold: 0.3 });
 
-  const zoneSection = document.querySelector('.zones-section');
-  if (zoneSection) io.observe(zoneSection);
+  io.observe(zoneSection);
 }
 
 /* ==================== OUR SERVICES TABS & ACCORDION ==================== */
@@ -320,4 +322,71 @@ function initServicesTabs() {
       }
     });
   });
+}
+
+/* ==================== DYNAMIC DATABASE PLATFORM STATS ==================== */
+async function loadDynamicPlatformStats() {
+  try {
+    let res = await fetch('/api/system/stats');
+    if (!res.ok) res = await fetch('/api/stats');
+    if (!res.ok) res = await fetch('/api/donors/platform-stats');
+    if (!res.ok) return;
+
+    const json = await res.json();
+    if (!json || !json.data) return;
+
+    const data = json.data;
+    const regDonors = data.registeredDonors ?? data.totalDonors ?? 0;
+    const activeDonors = data.activeDonors ?? regDonors;
+    const hospitals = data.partnerHospitals ?? data.hospitals ?? 0;
+    const lives = data.livesSaved ?? 0;
+    const zones = data.activeZones ?? (regDonors > 0 || hospitals > 0 ? 1 : 0);
+    const avgResp = data.avgResponseMin ?? 8;
+    const successRate = data.successRate ?? 98;
+
+    // Update Hero elements data-target
+    const heroD = document.getElementById('heroActiveDonors');
+    if (heroD) heroD.dataset.target = activeDonors;
+    const heroH = document.getElementById('heroHospitals');
+    if (heroH) heroH.dataset.target = hospitals;
+    const heroL = document.getElementById('heroLivesSaved');
+    if (heroL) heroL.dataset.target = lives;
+    const heroZ = document.getElementById('heroZonesActive');
+    if (heroZ) heroZ.dataset.target = zones;
+
+    // Update Stats Section elements data-target
+    const sReg = document.getElementById('statRegDonors');
+    if (sReg) sReg.dataset.target = regDonors;
+    const sHosp = document.getElementById('statHospitals');
+    if (sHosp) sHosp.dataset.target = hospitals;
+    const sLives = document.getElementById('statLivesSaved');
+    if (sLives) sLives.dataset.target = lives;
+    const sResp = document.getElementById('statAvgResponse');
+    if (sResp) sResp.dataset.target = avgResp;
+    const sZones = document.getElementById('statActiveZones');
+    if (sZones) sZones.dataset.target = zones;
+    const sRate = document.getElementById('statSuccessRate');
+    if (sRate) sRate.dataset.target = successRate;
+
+    // Update Progress Bars based on real metrics
+    const bReg = document.getElementById('barRegDonors');
+    if (bReg) bReg.style.width = Math.min(100, Math.max(10, regDonors * 10)) + '%';
+    const bHosp = document.getElementById('barHospitals');
+    if (bHosp) bHosp.style.width = Math.min(100, Math.max(10, hospitals * 20)) + '%';
+    const bLives = document.getElementById('barLivesSaved');
+    if (bLives) bLives.style.width = Math.min(100, Math.max(10, lives * 10)) + '%';
+    const bResp = document.getElementById('barAvgResponse');
+    if (bResp) bResp.style.width = Math.min(100, Math.max(25, 100 - avgResp * 5)) + '%';
+    const bZones = document.getElementById('barActiveZones');
+    if (bZones) bZones.style.width = Math.min(100, Math.max(10, zones * 25)) + '%';
+    const bRate = document.getElementById('barSuccessRate');
+    if (bRate) bRate.style.width = Math.min(100, successRate) + '%';
+
+    // Animate counters with real database figures
+    document.querySelectorAll('.hero-stats-bar .stat-num, .stats-section .stat-count').forEach(el => {
+      animateHeroCounter(el);
+    });
+  } catch (err) {
+    console.warn('Could not load dynamic platform stats:', err);
+  }
 }

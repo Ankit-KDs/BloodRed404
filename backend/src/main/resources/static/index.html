@@ -80,22 +80,22 @@
 
       <div class="hero-stats-bar">
         <div class="stat-item">
-          <span class="stat-num" data-target="12580">0</span>
+          <span class="stat-num" id="heroActiveDonors" data-target="0">0</span>
           <span class="stat-label">Active Donors</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-num" data-target="348">0</span>
+          <span class="stat-num" id="heroHospitals" data-target="0">0</span>
           <span class="stat-label">Hospitals</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-num" data-target="9247">0</span>
+          <span class="stat-num" id="heroLivesSaved" data-target="0">0</span>
           <span class="stat-label">Lives Saved</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-num" data-target="24">0</span>
+          <span class="stat-num" id="heroZonesActive" data-target="0">0</span>
           <span class="stat-label">Zones Active</span>
         </div>
       </div>
@@ -614,81 +614,101 @@
     </div>
   </section>
 
-  <!-- ========== HOW IT WORKS ========== -->
-  <section class="how-section" id="how-it-works">
+  <!-- ========== PROCESS FLOW (HOW RED404 WORKS) ========== -->
+  <section class="how-section" id="process-flow">
     <div class="section-container">
-      <div class="section-header">
-        <span class="section-tag">Process Flow</span>
-        <h2 class="section-title">How <span class="text-red">RED404</span> Works</h2>
+      <div class="section-header" style="text-align: center; margin-bottom: 3.5rem;">
+        <span class="process-flow-pill">PROCESS FLOW</span>
+        <h2 class="section-title">How <span style="color: #e63946">RED404</span> Works</h2>
       </div>
 
-      <div class="steps-container">
-        <div class="steps-line"></div>
-
-        <div class="step-item" data-step="1">
-          <div class="step-icon-wrap">
-            <div class="step-number">01</div>
-            <div class="step-icon"><i class="fas fa-user-plus"></i></div>
+      <div class="stepper-linear-container">
+        <!-- Step 01 -->
+        <div class="stepper-step-card">
+          <div class="ssc-top">
+            <span class="ssc-num">01</span>
+            <span class="ssc-icon"><i class="fas fa-user-plus"></i></span>
           </div>
-          <div class="step-content">
-            <h3>Donor Registers</h3>
-            <p>Donors quickly register with their blood group, location, and contact information to join our life-saving community.</p>
+          <h3 class="ssc-title">Register</h3>
+          <p class="ssc-desc">Donors sign up with their blood group and location.</p>
+        </div>
+
+        <div class="stepper-arrow-divider">
+          <span class="stepper-dashed-line"></span>
+          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
+        </div>
+
+        <!-- Step 02 -->
+        <div class="stepper-step-card">
+          <div class="ssc-top">
+            <span class="ssc-num">02</span>
+            <span class="ssc-icon ssc-icon-sos"><i class="fas fa-triangle-exclamation"></i></span>
+          </div>
+          <h3 class="ssc-title ssc-title-sos">Hospital SOS</h3>
+          <p class="ssc-desc">Verified hospitals raise an urgent request.</p>
+        </div>
+
+        <div class="stepper-arrow-divider">
+          <span class="stepper-dashed-line"></span>
+          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
+        </div>
+
+        <!-- Step 03 -->
+        <div class="stepper-step-card">
+          <div class="ssc-top">
+            <span class="ssc-num">03</span>
+            <span class="ssc-icon"><i class="fas fa-satellite-dish"></i></span>
+          </div>
+          <h3 class="ssc-title">Smart Radar</h3>
+          <p class="ssc-desc">The system scans for nearby donors.</p>
+          <div class="zone-coverage-badge">
+            <span>ZONE: 5km &#10132; 10km &#10132; 20km</span>
           </div>
         </div>
 
-        <div class="step-item" data-step="2">
-          <div class="step-icon-wrap">
-            <div class="step-number">02</div>
-            <div class="step-icon"><i class="fas fa-hospital"></i></div>
-          </div>
-          <div class="step-content">
-            <h3>Hospital Raises Request</h3>
-            <p>When blood is urgently needed, the hospital creates a request specifying blood type and units needed from their portal.</p>
-          </div>
+        <div class="stepper-arrow-divider">
+          <span class="stepper-dashed-line"></span>
+          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
         </div>
 
-        <div class="step-item" data-step="3">
-          <div class="step-icon-wrap">
-            <div class="step-number">03</div>
-            <div class="step-icon"><i class="fas fa-search-location"></i></div>
+        <!-- Step 04 -->
+        <div class="stepper-step-card">
+          <div class="ssc-top">
+            <span class="ssc-num">04</span>
+            <span class="ssc-icon"><i class="fas fa-bell"></i></span>
           </div>
-          <div class="step-content">
-            <h3>Nearby Donors Located</h3>
-            <p>The network scans for compatible donors closest to the hospital, expanding into wider zones if additional donors are required.</p>
-          </div>
+          <h3 class="ssc-title">Instant Alert</h3>
+          <p class="ssc-desc">Eligible donors nearby receive a real-time ping.</p>
         </div>
 
-        <div class="step-item" data-step="4">
-          <div class="step-icon-wrap">
-            <div class="step-number">04</div>
-            <div class="step-icon"><i class="fas fa-bell"></i></div>
-          </div>
-          <div class="step-content">
-            <h3>Notification Sent</h3>
-            <p>Eligible donors receive immediate alerts on their phones with hospital details, urgency, and distance.</p>
-          </div>
+        <div class="stepper-arrow-divider">
+          <span class="stepper-dashed-line"></span>
+          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
         </div>
 
-        <div class="step-item" data-step="5">
-          <div class="step-icon-wrap">
-            <div class="step-number">05</div>
-            <div class="step-icon"><i class="fas fa-route"></i></div>
+        <!-- Step 05 -->
+        <div class="stepper-step-card">
+          <div class="ssc-top">
+            <span class="ssc-num">05</span>
+            <span class="ssc-icon"><i class="fas fa-route"></i></span>
           </div>
-          <div class="step-content">
-            <h3>Route Navigation Provided</h3>
-            <p>Upon accepting, the donor receives clear directions and the fastest travel route straight to the hospital blood center.</p>
-          </div>
+          <h3 class="ssc-title">Fast Routing</h3>
+          <p class="ssc-desc">Donors get the quickest map route to the hospital.</p>
         </div>
 
-        <div class="step-item" data-step="6">
-          <div class="step-icon-wrap">
-            <div class="step-number">06</div>
-            <div class="step-icon"><i class="fas fa-heartbeat"></i></div>
+        <div class="stepper-arrow-divider">
+          <span class="stepper-dashed-line"></span>
+          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
+        </div>
+
+        <!-- Step 06 -->
+        <div class="stepper-step-card">
+          <div class="ssc-top">
+            <span class="ssc-num">06</span>
+            <span class="ssc-icon"><i class="fas fa-heart-pulse"></i></span>
           </div>
-          <div class="step-content">
-            <h3>Life Saved</h3>
-            <p>The donor arrives, donates blood, and saves a life. The request is fulfilled and donor history and badges are updated.</p>
-          </div>
+          <h3 class="ssc-title">Life Saved</h3>
+          <p class="ssc-desc">Blood is donated, and the donor's digital badge is upgraded.</p>
         </div>
       </div>
     </div>
@@ -703,111 +723,39 @@
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-tint"></i></div>
-          <div class="stat-count" data-target="12580">0</div>
+          <div class="stat-count" id="statRegDonors" data-target="0">0</div>
           <div class="stat-text">Registered Donors</div>
-          <div class="stat-bar"><div class="bar-fill" style="width:87%"></div></div>
+          <div class="stat-bar"><div class="bar-fill" id="barRegDonors" style="width:0%"></div></div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-hospital-alt"></i></div>
-          <div class="stat-count" data-target="348">0</div>
+          <div class="stat-count" id="statHospitals" data-target="0">0</div>
           <div class="stat-text">Partner Hospitals</div>
-          <div class="stat-bar"><div class="bar-fill" style="width:65%"></div></div>
+          <div class="stat-bar"><div class="bar-fill" id="barHospitals" style="width:0%"></div></div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-heart"></i></div>
-          <div class="stat-count" data-target="9247">0</div>
+          <div class="stat-count" id="statLivesSaved" data-target="0">0</div>
           <div class="stat-text">Lives Saved</div>
-          <div class="stat-bar"><div class="bar-fill" style="width:92%"></div></div>
+          <div class="stat-bar"><div class="bar-fill" id="barLivesSaved" style="width:0%"></div></div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-clock"></i></div>
-          <div class="stat-count" data-target="8">0</div>
+          <div class="stat-count" id="statAvgResponse" data-target="0">0</div>
           <div class="stat-text">Avg. Response (min)</div>
-          <div class="stat-bar"><div class="bar-fill" style="width:45%"></div></div>
+          <div class="stat-bar"><div class="bar-fill" id="barAvgResponse" style="width:0%"></div></div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-map"></i></div>
-          <div class="stat-count" data-target="24">0</div>
+          <div class="stat-count" id="statActiveZones" data-target="0">0</div>
           <div class="stat-text">Active Zones</div>
-          <div class="stat-bar"><div class="bar-fill" style="width:75%"></div></div>
+          <div class="stat-bar"><div class="bar-fill" id="barActiveZones" style="width:0%"></div></div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-          <div class="stat-count" data-target="98">0</div>
+          <div class="stat-count" id="statSuccessRate" data-target="0">0</div>
           <div class="stat-text">% Success Rate</div>
-          <div class="stat-bar"><div class="bar-fill" style="width:98%"></div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== ZONES SECTION ========== -->
-  <section class="zones-section" id="zones">
-    <div class="section-container">
-      <div class="section-header">
-        <span class="section-tag">Zone System</span>
-        <h2 class="section-title">Smart <span class="text-red">Zone-Based</span> Coverage</h2>
-        <p class="section-desc">The city is divided into concentric zones. Emergency requests escalate outward until fulfilled.</p>
-      </div>
-
-      <div class="zones-layout">
-        <div class="zone-diagram">
-          <div class="zd-ring zd-z3">
-            <span class="zd-label">Zone 3 · 10-20km</span>
-            <div class="zd-ring zd-z2">
-              <span class="zd-label">Zone 2 · 5-10km</span>
-              <div class="zd-ring zd-z1">
-                <span class="zd-label">Zone 1 · 0-5km</span>
-                <div class="zd-center">
-                  <i class="fas fa-hospital-alt"></i>
-                  <span>Hospital</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Animated donor dots -->
-          <div class="zd-donor" style="top:10%;left:50%"><i class="fas fa-user"></i></div>
-          <div class="zd-donor" style="top:50%;left:90%"><i class="fas fa-user"></i></div>
-          <div class="zd-donor" style="top:85%;left:60%"><i class="fas fa-user"></i></div>
-          <div class="zd-donor" style="top:70%;left:15%"><i class="fas fa-user"></i></div>
-          <div class="zd-donor" style="top:30%;left:10%"><i class="fas fa-user"></i></div>
-          <div class="zd-donor" style="top:20%;left:75%"><i class="fas fa-user"></i></div>
-          <div class="zd-donor" style="top:75%;left:80%"><i class="fas fa-user"></i></div>
-        </div>
-
-        <div class="zones-info">
-          <div class="zone-info-card z1-card">
-            <div class="zone-badge">Zone 1</div>
-            <h3>0 – 5 km</h3>
-            <p>First priority zone. Donors here receive immediate alerts. Response time under 5 minutes.</p>
-            <div class="zone-features">
-              <span><i class="fas fa-check"></i> First to be notified</span>
-              <span><i class="fas fa-check"></i> Highest priority</span>
-              <span><i class="fas fa-check"></i> Real-time tracking</span>
-            </div>
-          </div>
-
-          <div class="zone-info-card z2-card">
-            <div class="zone-badge">Zone 2</div>
-            <h3>5 – 10 km</h3>
-            <p>Secondary zone activated if Zone 1 has insufficient donors. Expanded search within 5 minutes.</p>
-            <div class="zone-features">
-              <span><i class="fas fa-check"></i> Secondary fallback</span>
-              <span><i class="fas fa-check"></i> Auto-escalation</span>
-              <span><i class="fas fa-check"></i> Route optimized</span>
-            </div>
-          </div>
-
-          <div class="zone-info-card z3-card">
-            <div class="zone-badge">Zone 3</div>
-            <h3>10 – 20 km</h3>
-            <p>Tertiary zone for critical shortages. All available donors in the extended area are alerted.</p>
-            <div class="zone-features">
-              <span><i class="fas fa-check"></i> Emergency fallback</span>
-              <span><i class="fas fa-check"></i> Maximum coverage</span>
-              <span><i class="fas fa-check"></i> Multi-hospital sync</span>
-            </div>
-          </div>
+          <div class="stat-bar"><div class="bar-fill" id="barSuccessRate" style="width:0%"></div></div>
         </div>
       </div>
     </div>
@@ -867,8 +815,7 @@
         <h4>Explore</h4>
         <ul>
           <li><a href="#about"><i class="fas fa-chevron-right"></i> About Us</a></li>
-          <li><a href="#how-it-works"><i class="fas fa-chevron-right"></i> How It Works</a></li>
-          <li><a href="#zones"><i class="fas fa-chevron-right"></i> Smart Zones</a></li>
+          <li><a href="#process-flow"><i class="fas fa-chevron-right"></i> Process Flow</a></li>
           <li><a href="#stats"><i class="fas fa-chevron-right"></i> Live Impact</a></li>
         </ul>
       </div>

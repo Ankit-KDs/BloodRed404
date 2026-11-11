@@ -35,7 +35,7 @@
     }
 
     .search-hero {
-      padding: 6.5rem 0 2rem;
+      padding: 7.5rem 0 2rem;
       text-align: center;
       position: relative;
       z-index: 1;
@@ -565,7 +565,7 @@
 <body class="search-page-wrapper">
 
   <!-- ========== TOP NAVIGATION (PUBLIC) ========== -->
-  <nav class="navbar" id="navbar" style="background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+  <nav class="navbar" id="navbar" style="background: rgba(10, 10, 15, 0.98) !important; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); z-index: 1000;">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
@@ -726,87 +726,133 @@
 
   <!-- ========== SCRIPT ========== -->
   <script>
-    // Anonymous donor dataset - Strictly Smart Donor IDs: DNR-[DDMM]-[Initial][3 Random Numbers]
-    const ALL_DONORS = [
-      { id: "DNR-1205-A712", group: "A+", rh: "RH+", distKm: 2.3, status: "Ready to Donate", lastSeen: "3 mins ago" },
-      { id: "DNR-2408-O839", group: "A+", rh: "RH+", distKm: 4.1, status: "Ready to Donate", lastSeen: "8 mins ago" },
-      { id: "DNR-0911-S104", group: "O+", rh: "RH+", distKm: 3.5, status: "Ready to Donate", lastSeen: "Just now" },
-      { id: "DNR-3001-A551", group: "A-", rh: "RH-", distKm: 6.8, status: "Ready to Donate", lastSeen: "12 mins ago" },
-      { id: "DNR-1507-B928", group: "B+", rh: "RH+", distKm: 1.9, status: "Ready to Donate", lastSeen: "1 min ago" },
-      { id: "DNR-0304-A337", group: "A+", rh: "RH+", distKm: 8.4, status: "Ready to Donate", lastSeen: "15 mins ago" },
-      { id: "DNR-1910-O462", group: "O-", rh: "RH-", distKm: 9.1, status: "Ready to Donate", lastSeen: "5 mins ago" },
-      { id: "DNR-2802-A619", group: "AB+", rh: "RH+", distKm: 12.2, status: "Ready to Donate", lastSeen: "22 mins ago" },
-      { id: "DNR-0709-B205", group: "B-", rh: "RH-", distKm: 14.5, status: "Ready to Donate", lastSeen: "30 mins ago" },
-      { id: "DNR-1406-A884", group: "A+", rh: "RH+", distKm: 17.6, status: "Ready to Donate", lastSeen: "18 mins ago" },
-      { id: "DNR-2212-O190", group: "O+", rh: "RH+", distKm: 18.9, status: "Ready to Donate", lastSeen: "40 mins ago" },
-      { id: "DNR-1103-A773", group: "AB-", rh: "RH-", distKm: 19.4, status: "Ready to Donate", lastSeen: "45 mins ago" }
-    ];
-
-    function executeDonorSearch() {
+    // Real-Time Haversine Blood Availability Search (Strictly Zero Demo Data)
+    async function executeDonorSearch() {
       const selectedGroup = document.getElementById('selectBloodGroup').value;
+      const pincode = (document.getElementById('inputPincode')?.value || '').trim();
       const maxRadius = parseFloat(document.getElementById('selectRadius').value);
       const container = document.getElementById('donorListContainer');
       const countText = document.getElementById('resultsCountText');
+      const btnSearch = document.getElementById('btnSearch');
 
-      // Filter donors based on group and radius
-      const filtered = ALL_DONORS.filter(donor => {
-        const matchesGroup = (selectedGroup === 'ALL' || donor.group === selectedGroup);
-        const matchesRadius = donor.distKm <= maxRadius;
-        return matchesGroup && matchesRadius;
-      }).sort((a, b) => a.distKm - b.distKm);
-
-      countText.textContent = `Showing ${filtered.length} Anonymous Active Donors within ${maxRadius} km`;
-
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
-            <i class="fas fa-radar" style="font-size: 2.5rem; color: #ff6b6b; margin-bottom: 1rem;"></i>
-            <h4 style="color: #ffffff; margin-bottom: 0.5rem;">No Active Donors in this Specific Radial Band</h4>
-            <p style="font-size: 0.9rem;">Try expanding your search radius to 15km or 20km, or select "All Groups".</p>
-          </div>
-        `;
-        return;
+      if (btnSearch) {
+        btnSearch.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Searching...</span>';
+        btnSearch.disabled = true;
       }
 
-      container.innerHTML = filtered.map(donor => `
-        <div class="donor-search-card">
-          <!-- Left side: Basic Anonymous Details Only -->
-          <div class="donor-card-left">
-            <div class="donor-blood-badge">
-              <span class="donor-blood-group">${donor.group}</span>
-              <span class="donor-blood-rh">${donor.rh}</span>
-            </div>
-            <div class="donor-info-col">
-              <div class="donor-id-row">
-                <span class="donor-code">${donor.id}</span>
-                <span class="badge-anon-lock"><i class="fas fa-lock"></i> Identity Protected</span>
-              </div>
-              <div class="donor-meta-row">
-                <div class="donor-meta-item">
-                  <i class="fas fa-location-crosshairs"></i>
-                  <span>${donor.distKm.toFixed(1)} km away (Haversine)</span>
-                </div>
-                <div class="donor-meta-item">
-                  <span class="dot-live-pulse" style="width: 6px; height: 6px;"></span>
-                  <span class="donor-status-tag">${donor.status}</span>
-                </div>
-                <div class="donor-meta-item" style="color: #5a5a7a;">
-                  <i class="fas fa-clock" style="color: #5a5a7a;"></i>
-                  <span>${donor.lastSeen}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right side: Request Button -->
-          <div class="donor-card-right">
-            <button type="button" class="btn-donor-request" onclick="triggerRestrictedAction('${donor.id}')">
-              <i class="fas fa-hand-holding-medical"></i>
-              <span>Request</span>
-            </button>
-          </div>
+      container.innerHTML = `
+        <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
+          <i class="fas fa-satellite-dish fa-spin" style="font-size: 2.2rem; color: #ff334b; margin-bottom: 1rem;"></i>
+          <h4 style="color: #ffffff; margin-bottom: 0.5rem;">Scanning Real-Time Clinical Telemetry...</h4>
+          <p style="font-size: 0.88rem;">Querying active donor nodes within ${maxRadius}km radius band...</p>
         </div>
-      `).join('');
+      `;
+
+      try {
+        const lat = sessionStorage.getItem('red404_user_lat') || '';
+        const lng = sessionStorage.getItem('red404_user_lng') || '';
+
+        const params = new URLSearchParams();
+        if (selectedGroup && selectedGroup !== 'ALL') params.set('bloodGroup', selectedGroup);
+        params.set('radius', maxRadius);
+        if (pincode) params.set('pincode', pincode);
+        if (lat) params.set('lat', lat);
+        if (lng) params.set('lng', lng);
+
+        let res = await fetch(`/api/donors/availability?${params.toString()}`);
+        if (!res.ok) {
+          res = await fetch(`/api/donor/availability?${params.toString()}`);
+        }
+        if (!res.ok) {
+          res = await fetch(`/api/donors/nearby?${params.toString()}`);
+        }
+
+        let donors = [];
+        if (res.ok) {
+          const json = await res.json();
+          if (json && Array.isArray(json.data)) {
+            donors = json.data;
+          }
+        }
+
+        // Strictly real-time: If no active donors are found, display the clean empty state without fallback demo data!
+        countText.textContent = `Showing ${donors.length} Anonymous Active Donor${donors.length === 1 ? '' : 's'} within ${maxRadius} km`;
+
+        if (donors.length === 0) {
+          container.innerHTML = `
+            <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
+              <i class="fas fa-radar" style="font-size: 2.5rem; color: #ff6b6b; margin-bottom: 1rem;"></i>
+              <h4 style="color: #ffffff; margin-bottom: 0.5rem;">No Active Donors in this Specific Radial Band</h4>
+              <p style="font-size: 0.9rem;">No real-time registered donors currently matching ${selectedGroup === 'ALL' ? 'any blood group' : selectedGroup} within ${maxRadius}km. Try expanding your search radius to 15km or 20km, or select "All Groups".</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = donors.map(donor => {
+          const dId = donor.id || donor.donorId || 'DNR-NODE-ANON';
+          const group = donor.group || donor.bloodType || 'A+';
+          const rh = donor.rh || (group.includes('-') ? 'RH-' : 'RH+');
+          const dist = typeof donor.distKm === 'number' ? donor.distKm.toFixed(1) : (typeof donor.distance === 'number' ? donor.distance.toFixed(1) : '3.5');
+          const status = donor.status || 'Ready to Donate';
+          const lastSeen = donor.lastSeen || 'Telemetry Active';
+
+          return `
+          <div class="donor-search-card">
+            <!-- Left side: Basic Anonymous Details Only -->
+            <div class="donor-card-left">
+              <div class="donor-blood-badge">
+                <span class="donor-blood-group">${group}</span>
+                <span class="donor-blood-rh">${rh}</span>
+              </div>
+              <div class="donor-info-col">
+                <div class="donor-id-row">
+                  <span class="donor-code">${dId}</span>
+                  <span class="badge-anon-lock"><i class="fas fa-lock"></i> Identity Protected</span>
+                </div>
+                <div class="donor-meta-row">
+                  <div class="donor-meta-item">
+                    <i class="fas fa-location-crosshairs"></i>
+                    <span>${dist} km away (Haversine)</span>
+                  </div>
+                  <div class="donor-meta-item">
+                    <span class="dot-live-pulse" style="width: 6px; height: 6px;"></span>
+                    <span class="donor-status-tag">${status}</span>
+                  </div>
+                  <div class="donor-meta-item" style="color: #5a5a7a;">
+                    <i class="fas fa-clock" style="color: #5a5a7a;"></i>
+                    <span>${lastSeen}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right side: Request Button -->
+            <div class="donor-card-right">
+              <button type="button" class="btn-donor-request" onclick="triggerRestrictedAction('${dId}')">
+                <i class="fas fa-hand-holding-medical"></i>
+                <span>Request</span>
+              </button>
+            </div>
+          </div>
+        `;
+        }).join('');
+      } catch (err) {
+        console.error('Availability search error:', err);
+        countText.textContent = `Showing 0 Anonymous Active Donors within ${maxRadius} km`;
+        container.innerHTML = `
+          <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
+            <i class="fas fa-triangle-exclamation" style="font-size: 2.5rem; color: #ff6b6b; margin-bottom: 1rem;"></i>
+            <h4 style="color: #ffffff; margin-bottom: 0.5rem;">Real-Time Search Standby</h4>
+            <p style="font-size: 0.9rem;">Unable to connect to live telemetry radar. Please verify your network and retry.</p>
+          </div>
+        `;
+      } finally {
+        if (btnSearch) {
+          btnSearch.innerHTML = '<i class="fas fa-search"></i> <span>Search Availability</span>';
+          btnSearch.disabled = false;
+        }
+      }
     }
 
     // Modal logic
@@ -840,9 +886,19 @@
       });
     }
 
-    // Initialize initial search
+    // Initialize initial search & detect GPS if permitted
     document.addEventListener('DOMContentLoaded', () => {
-      executeDonorSearch();
+      if (navigator.geolocation && !sessionStorage.getItem('red404_user_lat')) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          sessionStorage.setItem('red404_user_lat', pos.coords.latitude);
+          sessionStorage.setItem('red404_user_lng', pos.coords.longitude);
+          executeDonorSearch();
+        }, () => {
+          executeDonorSearch();
+        }, { timeout: 5000 });
+      } else {
+        executeDonorSearch();
+      }
     });
   </script>
 </body>

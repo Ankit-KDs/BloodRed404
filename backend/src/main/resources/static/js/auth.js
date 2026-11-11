@@ -540,31 +540,6 @@ function initDonorLoginForm() {
       showToast('Login successful! Redirecting...', 'success', 1500);
       setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
     } else {
-      // Check local registered fallback ONLY if already registered locally and not deleted
-      try {
-        const localDonors = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
-        const cleanId = identifier.trim().toLowerCase();
-        const cleanPw = password.trim();
-        let match = localDonors.find(d =>
-          ((d.email && d.email.trim().toLowerCase() === cleanId) || (d.phone && d.phone.trim() === identifier.trim())) &&
-          (d.password && d.password.trim() === cleanPw)
-        );
-        if (match) {
-          const regTimestamp = match.createdAt || match.created_at || (cleanId ? localStorage.getItem('red404_reg_date_' + cleanId) : null) || new Date().toISOString();
-          match.createdAt = regTimestamp;
-          match.created_at = regTimestamp;
-          Auth.saveSession(match);
-          Store.set('donorToken', 'SESSION-DONOR-' + (match.id || 1));
-          localStorage.setItem('red404_donor_session', JSON.stringify({ user: match }));
-          if (match.email) {
-            localStorage.setItem('red404_reg_date_' + match.email.trim().toLowerCase(), regTimestamp);
-          }
-          showToast('Login successful! Restoring profile...', 'success', 1500);
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
-          return;
-        }
-      } catch (_) {}
-
       showToast(result.error || 'Invalid credentials or account does not exist.', 'error');
       shakeInput(document.getElementById('loginPassword'));
     }
