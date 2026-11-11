@@ -484,30 +484,60 @@ function initDonorLoginForm() {
     setButtonLoading(submitBtn, false);
 
     if (result.success) {
-      const donorData = result.data.donor;
-      if (result.data && result.data.donorId) {
-        donorData.donorId = result.data.donorId;
-        donorData.donor_id = result.data.donorId;
+      const donorData = result.data.donor || {};
+      const cleanEmail = (donorData.email || identifier || '').trim().toLowerCase();
+      const cleanPhone = (donorData.phone || identifier || '').trim();
+
+      // Check existing local registry to preserve persistent Smart Donor ID suffix
+      let existingRecord = null;
+      try {
+        const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
+        existingRecord = list.find(d =>
+          (d.email && d.email.trim().toLowerCase() === cleanEmail) ||
+          (d.phone && d.phone.trim() === cleanPhone)
+        );
+      } catch (_) {}
+
+      let currentSmartId = result.data.donorId || donorData.donorId || donorData.donor_id;
+      if (!currentSmartId && existingRecord) {
+        currentSmartId = existingRecord.donorId || existingRecord.donor_id;
       }
-      const cleanEmail = (donorData.email || '').trim().toLowerCase();
-      const cleanPhone = (donorData.phone || '').trim();
+
+      // Synchronize DDMM with Date of Birth, while preserving Initial + 3 digits suffix
+      const rawDob = donorData.dob || donorData.dateOfBirth || (existingRecord ? (existingRecord.dob || existingRecord.dateOfBirth) : null);
+      if (currentSmartId && typeof currentSmartId === 'string' && currentSmartId.startsWith('DNR-')) {
+        const p = currentSmartId.split('-');
+        if (p.length >= 3 && rawDob) {
+          function extractDDMM(dobStr) {
+            if (!dobStr) return null;
+            let s = String(dobStr).trim();
+            if (s.includes(' ')) s = s.substring(0, s.indexOf(' '));
+            if (s.includes('T')) s = s.substring(0, s.indexOf('T'));
+            const ymd = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+            if (ymd) return `${ymd[3].padStart(2, '0')}${ymd[2].padStart(2, '0')}`;
+            const dmy = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+            if (dmy) return `${dmy[1].padStart(2, '0')}${dmy[2].padStart(2, '0')}`;
+            return null;
+          }
+          const ddmm = extractDDMM(rawDob);
+          if (ddmm) {
+            currentSmartId = `DNR-${ddmm}-${p.slice(2).join('-')}`;
+          }
+        }
+      }
+
+      if (currentSmartId) {
+        donorData.donorId = currentSmartId;
+        donorData.donor_id = currentSmartId;
+      }
 
       // Ensure createdAt is preserved from backend or local registry
       let regTimestamp = donorData.createdAt || donorData.created_at;
       if (!regTimestamp && cleanEmail) {
         regTimestamp = localStorage.getItem('red404_reg_date_' + cleanEmail);
       }
-      if (!regTimestamp) {
-        try {
-          const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
-          const match = list.find(d =>
-            (d.email && d.email.trim().toLowerCase() === cleanEmail) ||
-            (d.phone && d.phone.trim() === cleanPhone)
-          );
-          if (match && (match.createdAt || match.created_at)) {
-            regTimestamp = match.createdAt || match.created_at;
-          }
-        } catch (_) {}
+      if (!regTimestamp && existingRecord && (existingRecord.createdAt || existingRecord.created_at)) {
+        regTimestamp = existingRecord.createdAt || existingRecord.created_at;
       }
       if (regTimestamp) {
         donorData.createdAt = regTimestamp;
@@ -518,7 +548,7 @@ function initDonorLoginForm() {
       }
 
       Auth.saveSession(donorData);
-      Store.set('donorToken', result.data.token);
+      Store.set('donorToken', result.data.token || ('SESSION-DONOR-' + (currentSmartId || '1')));
       localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
 
       // Keep local registry updated with authenticated donor

@@ -922,10 +922,38 @@ public class DonorDao {
             dob = rs.getDate("dob");
         } catch (Exception ignored) {}
         String name = rs.getString("name");
-        if (donorIdVal == null || donorIdVal.isBlank() || !donorIdVal.startsWith("DNR-")) {
-            donorIdVal = com.red404.util.DonorIdGenerator.updateDonorIdDob(null, dob, name);
-        } else if (dob != null) {
-            donorIdVal = com.red404.util.DonorIdGenerator.updateDonorIdDob(donorIdVal, dob, name);
+        if (donorIdVal != null && !donorIdVal.isBlank() && donorIdVal.trim().startsWith("DNR-")) {
+            donorIdVal = donorIdVal.trim();
+            if (dob != null) {
+                // If DOB exists, synchronize strictly the [DDMM] portion to match DOB, preserving the [Initial][3 Numbers] suffix intact
+                String updatedDobId = com.red404.util.DonorIdGenerator.updateDonorIdDob(donorIdVal, dob, name);
+                if (updatedDobId != null && !updatedDobId.equalsIgnoreCase(donorIdVal)) {
+                    donorIdVal = updatedDobId;
+                    try (Connection c = DBConnection.getConnection();
+                         PreparedStatement upPs = c.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
+                        upPs.setString(1, donorIdVal);
+                        upPs.setInt(2, idVal);
+                        upPs.executeUpdate();
+                    } catch (Exception ignored) {}
+                }
+            }
+        } else {
+            // Missing from database! Generate once using generator and PERMANENTLY store into MySQL
+            try (Connection c = DBConnection.getConnection()) {
+                donorIdVal = com.red404.util.DonorIdGenerator.generateUniqueDonorId(c, name, dob);
+                try (PreparedStatement upPs = c.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
+                    upPs.setString(1, donorIdVal);
+                    upPs.setInt(2, idVal);
+                    upPs.executeUpdate();
+                    log.info("Permanently assigned Smart Donor ID {} to donor #{}", donorIdVal, idVal);
+                }
+            } catch (Exception e) {
+                // Deterministic fallback tied to idVal so the exact same donor ID is returned every single time
+                char initial = com.red404.util.DonorIdGenerator.extractInitial(name);
+                String ddmm = com.red404.util.DonorIdGenerator.extractDDMM(dob);
+                int stableNum = 100 + ((idVal * 137 + 241) % 900);
+                donorIdVal = String.format("DNR-%s-%c%d", ddmm, initial, stableNum);
+            }
         }
         donor.put("donorId", donorIdVal);
         donor.put("donor_id", donorIdVal);

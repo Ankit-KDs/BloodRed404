@@ -71,7 +71,11 @@ public class AuthController {
         data.put("donor", user);
         data.put("hospital", hospital);
         if (user instanceof Map<?, ?> donor) {
-            data.put("donorId", ((Map<?, ?>) donor).get("id"));
+            Object sId = ((Map<?, ?>) donor).get("donor_id");
+            if (sId == null) sId = ((Map<?, ?>) donor).get("donorId");
+            if (sId == null) sId = ((Map<?, ?>) donor).get("id");
+            data.put("donorId", sId);
+            data.put("donor_id", sId);
             data.put("name", ((Map<?, ?>) donor).get("name"));
             data.put("email", ((Map<?, ?>) donor).get("email"));
         }

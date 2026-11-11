@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/common.css?v=20261111_v38_fresh" />
-  <link rel="stylesheet" href="css/home.css?v=20261111_v38_fresh" />
+  <link rel="stylesheet" href="css/common.css?v=20261111_v39_stable" />
+  <link rel="stylesheet" href="css/home.css?v=20261111_v39_stable" />
 
   <style>
     .eligibility-page-wrapper {
@@ -430,8 +430,12 @@
 </head>
 <body class="eligibility-page-wrapper">
 
-  <!-- ========== TOP NAVIGATION (PUBLIC) ========== -->
-  <nav class="navbar" id="navbar" style="background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+  <!-- Blood Drop Floating & Particle Elements (Matching Home Page) -->
+  <div class="particles-container" id="particles"></div>
+  <div class="floating-drops" id="floatingDrops"></div>
+
+  <!-- ========== TOP NAVIGATION (IDENTICAL TO HOME PAGE) ========== -->
+  <nav class="navbar" id="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
@@ -441,9 +445,9 @@
         <span class="logo-text">RED<span class="logo-404">404</span></span>
       </a>
 
-      <!-- Clean Minimal Navbar (Home, Donor Search, Contact only) -->
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html#home" class="nav-link">Home</a></li>
+        <li><a href="about.html" class="nav-link">About Us</a></li>
         <li><a href="blood-availability-search.html" class="nav-link">Donor Search</a></li>
         <li><a href="index.html#contact" class="nav-link">Contact</a></li>
       </ul>
@@ -520,12 +524,59 @@
     </div>
   </main>
 
-  <!-- ========== SLEEK MINIMAL FOOTER ========== -->
-  <footer class="footer" style="margin-top: auto; padding: 2.2rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
-    <div class="container" style="color: var(--text-muted, #5a5a7a); font-size: 0.85rem;">
-      <p>&copy; 2026 RED404 Emergency Blood Network • Clinical guidance complies with WHO & National Blood Transfusion Council regulations.</p>
+  <!-- ========== FOOTER (IDENTICAL TO HOME PAGE) ========== -->
+  <footer class="footer" id="contact">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <i class="fas fa-tint"></i>
+          RED<span>404</span>
+        </div>
+        <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
+        <div class="footer-social">
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-linkedin"></i></a>
+          <a href="#"><i class="fab fa-github"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="donor-register.html"><i class="fas fa-chevron-right"></i> Donor Register</a></li>
+          <li><a href="donor-login.html"><i class="fas fa-chevron-right"></i> Donor Login</a></li>
+          <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
+          <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="index.html#process-flow"><i class="fas fa-chevron-right"></i> Process Flow</a></li>
+          <li><a href="index.html#stats"><i class="fas fa-chevron-right"></i> Live Impact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h4>Contact</h4>
+        <p><i class="fas fa-envelope"></i> support@red404.org</p>
+        <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+        <p><i class="fas fa-map-marker-alt"></i> India</p>
+        <div class="emergency-tag">
+          <i class="fas fa-exclamation-circle"></i>
+          Emergency: 1800-RED-404
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
     </div>
   </footer>
+
+  <script src="js/common.js?v=20261111_v39_stable"></script>
 
   <!-- ========== CHATBOT SCRIPT ========== -->
   <script>

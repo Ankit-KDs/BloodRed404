@@ -1193,7 +1193,7 @@
 }
 
 .ssc-icon-sos {
-  color: #e63946;
+  color: #94a3b8;
 }
 
 .ssc-title {
@@ -1205,8 +1205,8 @@
 }
 
 .ssc-title-sos {
-  color: #ff4d5a;
-  text-shadow: 0 0 12px rgba(230, 57, 70, 0.45);
+  color: #ffffff;
+  text-shadow: none;
 }
 
 .ssc-desc {
@@ -1219,17 +1219,45 @@
 .zone-coverage-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.35rem;
   margin-top: 0.75rem;
-  padding: 0.28rem 0.65rem;
-  background: rgba(230, 57, 70, 0.1);
-  border: 1px solid rgba(230, 57, 70, 0.3);
+  padding: 0.3rem 0.7rem;
+  background: rgba(230, 57, 70, 0.08);
+  border: 1px solid rgba(230, 57, 70, 0.28);
   border-radius: 9999px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #ff6b6b;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #cbd5e1;
   letter-spacing: 0.02em;
   white-space: nowrap;
+  box-shadow: 0 0 12px rgba(230, 57, 70, 0.12);
+  transition: all 0.2s ease;
+}
+
+.zone-coverage-badge .zone-tag-label {
+  color: #ff5e6c;
+  font-weight: 700;
+  font-family: var(--font-brand, 'Orbitron'), monospace;
+  font-size: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.zone-coverage-badge .zone-tag-label i {
+  font-size: 0.6rem;
+  opacity: 0.85;
+}
+
+.zone-coverage-badge .zone-tag-steps {
+  color: #94a3b8;
+  font-size: 0.68rem;
+}
+
+.zone-coverage-badge .zone-tag-arr {
+  color: #e63946;
+  font-weight: 700;
+  padding: 0 2px;
 }
 
 .stepper-arrow-divider {

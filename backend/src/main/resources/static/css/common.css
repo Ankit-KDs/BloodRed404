@@ -1527,6 +1527,43 @@ button {
   }
 }
 
+/* ==================== FLOATING BLOOD DROPS (THEME MATCHING INDEX.HTML) ==================== */
+.floating-drops {
+  position:       fixed;
+  inset:          0;
+  pointer-events: none;
+  z-index:        0;
+  overflow:       hidden;
+}
+
+.floating-drop {
+  position:      absolute;
+  bottom:        -60px;
+  font-size:     1.2rem;
+  color:         var(--red-primary, #e63946);
+  opacity:       0.15;
+  animation:     floatDrop linear infinite;
+  filter:        drop-shadow(0 0 6px var(--red-glow, rgba(230, 57, 70, 0.4)));
+  pointer-events: none;
+}
+
+@keyframes floatDrop {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(-110vh) rotate(20deg);
+    opacity: 0;
+  }
+}
+
 /* ==================== LOADING SPINNER ==================== */
 .spinner {
   width: 40px;

@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/common.css?v=20261111_v38_fresh" />
-  <link rel="stylesheet" href="css/home.css?v=20261111_v38_fresh" />
+  <link rel="stylesheet" href="css/common.css?v=20261111_v39_stable" />
+  <link rel="stylesheet" href="css/home.css?v=20261111_v39_stable" />
 
   <style>
     .search-page-wrapper {
@@ -564,8 +564,12 @@
 </head>
 <body class="search-page-wrapper">
 
+  <!-- Blood Drop Floating & Particle Elements (Matching Home Page) -->
+  <div class="particles-container" id="particles"></div>
+  <div class="floating-drops" id="floatingDrops"></div>
+
   <!-- ========== TOP NAVIGATION (PUBLIC) ========== -->
-  <nav class="navbar" id="navbar" style="background: rgba(10, 10, 15, 0.98) !important; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); z-index: 1000;">
+  <nav class="navbar" id="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
@@ -718,12 +722,59 @@
     </div>
   </div>
 
-  <!-- ========== SLEEK MINIMAL FOOTER ========== -->
-  <footer class="footer" style="margin-top: auto; padding: 2.5rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
-    <div class="container" style="color: var(--text-muted, #5a5a7a); font-size: 0.85rem;">
-      <p>&copy; 2026 RED404 Emergency Blood Network • All clinical records encrypted & compliant with WHO donor standards.</p>
+  <!-- ========== FOOTER (IDENTICAL TO HOME PAGE) ========== -->
+  <footer class="footer" id="contact">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <i class="fas fa-tint"></i>
+          RED<span>404</span>
+        </div>
+        <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
+        <div class="footer-social">
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-linkedin"></i></a>
+          <a href="#"><i class="fab fa-github"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="donor-register.html"><i class="fas fa-chevron-right"></i> Donor Register</a></li>
+          <li><a href="donor-login.html"><i class="fas fa-chevron-right"></i> Donor Login</a></li>
+          <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
+          <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="index.html#process-flow"><i class="fas fa-chevron-right"></i> Process Flow</a></li>
+          <li><a href="index.html#stats"><i class="fas fa-chevron-right"></i> Live Impact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h4>Contact</h4>
+        <p><i class="fas fa-envelope"></i> support@red404.org</p>
+        <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+        <p><i class="fas fa-map-marker-alt"></i> India</p>
+        <div class="emergency-tag">
+          <i class="fas fa-exclamation-circle"></i>
+          Emergency: 1800-RED-404
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
     </div>
   </footer>
+
+  <script src="js/common.js?v=20261111_v39_stable"></script>
 
   <!-- ========== SCRIPT ========== -->
   <script>
@@ -791,7 +842,7 @@
         }
 
         container.innerHTML = donors.map(donor => {
-          const dId = donor.id || donor.donorId || 'DNR-NODE-ANON';
+          const dId = donor.donorId || donor.donor_id || (typeof donor.id === 'string' && donor.id.startsWith('DNR-') ? donor.id : ('DNR-NODE-' + (donor.id || 'ANON')));
           const group = donor.group || donor.bloodType || 'A+';
           const rh = donor.rh || (group.includes('-') ? 'RH-' : 'RH+');
           const dist = typeof donor.distKm === 'number' ? donor.distKm.toFixed(1) : (typeof donor.distance === 'number' ? donor.distance.toFixed(1) : '3.5');

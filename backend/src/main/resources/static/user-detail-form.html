@@ -1297,9 +1297,14 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="css/common.css?v=20261111_v39_stable" />
 </head>
 
 <body>
+  <!-- Blood Drop Floating & Particle Elements (Theme Matching Home Page) -->
+  <div class="particles-container" id="particles"></div>
+  <div class="floating-drops" id="floatingDrops"></div>
+
 
   <!-- ==================== A4 FORMAL CLINICAL RECORD SHEET ==================== -->
   <main class="a4-clinical-sheet" id="clinicalSheet">
@@ -1711,6 +1716,8 @@
           const ddmm = extractDDMM(rawDob) || '0811';
           uniqueId = `DNR-${ddmm}-${initial}${num}`;
         }
+        d.donorId = uniqueId;
+        d.donor_id = uniqueId;
 
         // Calculate Age
         let ageStr = 'N/A';
@@ -2037,6 +2044,7 @@
       }
     })();
   </script>
+  <script src="js/common.js?v=20261111_v39_stable"></script>
 </body>
 
 </html>

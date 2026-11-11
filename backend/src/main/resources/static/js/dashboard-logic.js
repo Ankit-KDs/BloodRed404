@@ -71,14 +71,33 @@
       }
 
       if (user) {
-        if (user.donorId || user.donor_id) {
-          donorData.donorId = user.donorId || user.donor_id;
-        } else if (typeof user.id === 'string' && user.id.startsWith('DNR-')) {
-          donorData.donorId = user.id;
+        let sid = user.donorId || user.donor_id;
+        if (!sid && typeof user.id === 'string' && user.id.startsWith('DNR-')) {
+          sid = user.id;
+        }
+        // If missing in active user object, check local registry cache
+        if (!sid) {
+          try {
+            const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
+            const m = list.find(d => (d.email && d.email === user.email) || (d.id && d.id == user.id));
+            if (m && (m.donorId || m.donor_id)) {
+              sid = m.donorId || m.donor_id;
+            }
+          } catch (_) {}
+        }
+        // Deterministic fallback if none exists yet
+        if (!sid || !sid.startsWith('DNR-')) {
+          const num = 100 + ((parseInt(user.id || 1, 10) * 137 + 241) % 900);
+          const initial = (user.name && user.name.trim().length > 0) ? user.name.trim()[0].toUpperCase() : 'A';
+          const ddmm = extractDDMM(user.dob || user.dateOfBirth) || '1011';
+          sid = `DNR-${ddmm}-${initial}${num}`;
         }
         if (user.dob || user.dateOfBirth) {
-          donorData.donorId = syncIdDob(donorData.donorId, user.dob || user.dateOfBirth);
+          sid = syncIdDob(sid, user.dob || user.dateOfBirth);
         }
+        donorData.donorId = sid;
+        user.donorId = sid;
+        user.donor_id = sid;
         if (user.name) donorData.name = user.name;
         else if (user.firstName) donorData.name = `${user.firstName} ${user.lastName || ''}`.trim();
         if (user.email) donorData.email = user.email;

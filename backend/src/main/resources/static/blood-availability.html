@@ -24,85 +24,20 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/common.css?v=20261110_v37" />
-  <link rel="stylesheet" href="css/home.css?v=20261110_v37" />
-  <link rel="stylesheet" href="css/command-nav.css?v=20261110_v37" />
-  <link rel="stylesheet" href="css/blood-availability.css?v=20261110_v37" />
+  <link rel="stylesheet" href="css/common.css?v=20261111_v39_stable" />
+  <link rel="stylesheet" href="css/home.css?v=20261111_v39_stable" />
+  <link rel="stylesheet" href="css/command-nav.css?v=20261111_v39_stable" />
+  <link rel="stylesheet" href="css/blood-availability.css?v=20261111_v39_stable" />
 </head>
 
 <body class="availability-body" id="pageBody">
 
-  <!-- ==================== 1. FLOATING GLASS COMMAND PILL NAV (FOR LOGGED-IN DONORS) ==================== -->
-  <header class="command-nav-wrapper" id="donorCommandNav" style="display: none;">
-    <div class="command-nav-pill">
-      <!-- LEFT: LOGO -->
-      <div class="command-nav-left">
-        <a href="dashboard.html" class="command-brand" title="RED404 Blood Rescue Command Network">
-          <div class="brand-icon-drop">
-            <i class="fa-solid fa-droplet"></i>
-          </div>
-          <span class="brand-text">RED<span>404</span></span>
-        </a>
-      </div>
+  <!-- Blood Drop Floating & Particle Elements (Matching Home Page) -->
+  <div class="particles-container" id="particles"></div>
+  <div class="floating-drops" id="floatingDrops"></div>
 
-      <!-- CENTER: TABS -->
-      <nav class="command-nav-center">
-        <a href="dashboard.html" class="command-tab-link" title="Command Center Dashboard">
-          <i class="fa-solid fa-gauge-high"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Active Emergencies &amp; Radar">
-          <i class="fa-solid fa-truck-medical"></i>
-          <span>Emergencies</span>
-          <span class="tab-radar-pulse"></span>
-        </a>
-        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-          <span>Donation History</span>
-        </a>
-      </nav>
-
-      <!-- RIGHT: WIDGETS -->
-      <div class="command-nav-right">
-        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location">
-          <span class="gps-dot-pulse"></span>
-          <span>Live GPS: Connected</span>
-        </div>
-        <button class="nav-icon-btn" id="navNotifBtn" title="Emergency Broadcasts" aria-label="Notifications">
-          <i class="fa-solid fa-bell"></i>
-          <span class="nav-badge-dot"></span>
-        </button>
-        <div class="user-avatar-wrap" id="userProfileTrigger" title="Donor Profile Settings" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
-          <span id="userAvatarInitials">AK</span>
-          <span class="avatar-online-dot"></span>
-          <div class="user-dropdown-menu" id="userProfileDropdown">
-            <div class="dropdown-user-header">
-              <div class="duh-name" id="dropdownUserName">Ankit Kumar</div>
-              <div class="duh-email" id="dropdownUserEmail">Signed in as <span id="dropdown-user-email"></span></div>
-              <div class="duh-id" id="dropdownUserId" style="font-size: 0.72rem; color: #ff334b; font-family: 'Space Mono', monospace; margin-top: 4px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-id-card"></i> <span id="dropdownDonorIdText">DNR-0811-A404</span></div>
-            </div>
-            <div class="dropdown-divider"></div>
-            <a href="donor-profile.html" class="dropdown-item">
-              <i class="fa-solid fa-heart-pulse"></i>
-              <span>Health Profile</span>
-            </a>
-            <button type="button" class="dropdown-item" id="privacySettingsBtn">
-              <i class="fa-solid fa-shield-halved"></i>
-              <span>Privacy &amp; Security</span>
-            </button>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item logout-btn" id="dropdownLogoutBtn">
-              <i class="fa-solid fa-arrow-right-from-bracket"></i>
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- ==================== 2. PUBLIC TOP NAVIGATION (FOR PUBLIC VISITORS) ==================== -->
-  <nav class="navbar" id="publicNavbar" style="display: none; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+  <!-- ========== TOP NAVIGATION (IDENTICAL TO HOME PAGE) ========== -->
+  <nav class="navbar" id="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
@@ -114,6 +49,7 @@
 
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html#home" class="nav-link">Home</a></li>
+        <li><a href="about.html" class="nav-link">About Us</a></li>
         <li><a href="blood-availability-search.html" class="nav-link">Donor Search</a></li>
         <li><a href="index.html#contact" class="nav-link">Contact</a></li>
       </ul>
@@ -275,90 +211,61 @@
 
   </main>
 
-  <!-- ==================== 1. SLEEK MINIMALIST MINI-FOOTER (FOR LOGGED-IN PORTAL SESSIONS ONLY) ==================== -->
-  <footer class="app-mini-footer" id="donorMiniFooter" style="display: none;">
-    <div class="mini-footer-container">
-      <div class="mf-left">
-        <span class="mf-status-dot"></span>
-        <span class="mf-status-text">System: Online</span>
-        <span class="mf-divider">&bull;</span>
-        <span class="mf-copy">&copy; 2026 RED404</span>
+  <!-- ========== FOOTER (IDENTICAL TO HOME PAGE) ========== -->
+  <footer class="footer" id="contact">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <i class="fas fa-tint"></i>
+          RED<span>404</span>
+        </div>
+        <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
+        <div class="footer-social">
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-linkedin"></i></a>
+          <a href="#"><i class="fab fa-github"></i></a>
+        </div>
       </div>
-      <nav class="mf-center" aria-label="Quick Links">
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('help')">Help &amp; Support</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('report')">Report Issue</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('privacy')">Privacy &amp; Policy</a>
-      </nav>
-      <div class="mf-right">
-        <span class="mf-version">v1.0.0 Beta</span>
+
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="donor-register.html"><i class="fas fa-chevron-right"></i> Donor Register</a></li>
+          <li><a href="donor-login.html"><i class="fas fa-chevron-right"></i> Donor Login</a></li>
+          <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
+          <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="index.html#process-flow"><i class="fas fa-chevron-right"></i> Process Flow</a></li>
+          <li><a href="index.html#stats"><i class="fas fa-chevron-right"></i> Live Impact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h4>Contact</h4>
+        <p><i class="fas fa-envelope"></i> support@red404.org</p>
+        <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+        <p><i class="fas fa-map-marker-alt"></i> India</p>
+        <div class="emergency-tag">
+          <i class="fas fa-exclamation-circle"></i>
+          Emergency: 1800-RED-404
+        </div>
       </div>
     </div>
-  </footer>
-
-  <!-- ==================== 2. PUBLIC MINIMAL FOOTER (FOR PUBLIC VISITORS) ==================== -->
-  <footer class="footer" id="publicFooter" style="display: none; margin-top: auto; padding: 2.2rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
-    <div class="container" style="color: var(--text-muted, #5a5a7a); font-size: 0.85rem;">
-      <p>&copy; 2026 RED404 Emergency Blood Network • Verified district hospital telemetry &amp; component reserves.</p>
+    <div class="footer-bottom">
+      <p>© 2024 RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
     </div>
   </footer>
 
   <!-- Scripts -->
-  <script src="js/common.js?v=20261110_v37"></script>
-  <script src="js/command-nav.js?v=20261110_v37"></script>
-  <script src="js/inventory-logic.js?v=20261110_v37"></script>
-  <script>
-    (function () {
-      // Determine if viewing inside donor portal session or as public visitor
-      const urlParams = new URLSearchParams(window.location.search);
-      const isParamDonor = urlParams.get('portal') === 'donor';
-      const ref = document.referrer || '';
-      const isRefDonor = ref.includes('dashboard') || ref.includes('donor-') || ref.includes('my-donations');
-
-      let isSessionDonor = false;
-      try {
-        const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('red404_session') || localStorage.getItem('donorUser');
-        if (raw) {
-          const u = JSON.parse(raw);
-          if (u && (u.user || u.id || u.email || u.name)) isSessionDonor = true;
-        }
-      } catch (_) {}
-
-      // If requested as donor or coming from dashboard/portal:
-      const isFromIndex = ref.includes('index.html');
-      const isDonor = isParamDonor || (isSessionDonor && !isFromIndex) || isRefDonor;
-
-      const donorNav = document.getElementById('donorCommandNav');
-      const publicNav = document.getElementById('publicNavbar');
-      const donorFoot = document.getElementById('donorMiniFooter');
-      const publicFoot = document.getElementById('publicFooter');
-      const body = document.getElementById('pageBody') || document.body;
-
-      if (isDonor) {
-        if (donorNav) donorNav.style.display = 'block';
-        if (donorFoot) donorFoot.style.display = 'block';
-        if (publicNav) publicNav.style.display = 'none';
-        if (publicFoot) publicFoot.style.display = 'none';
-        body.style.paddingTop = '0';
-      } else {
-        if (publicNav) publicNav.style.display = 'block';
-        if (publicFoot) publicFoot.style.display = 'block';
-        if (donorNav) donorNav.style.display = 'none';
-        if (donorFoot) donorFoot.style.display = 'none';
-        body.style.paddingTop = '5.5rem';
-      }
-
-      // Public hamburger toggle
-      const hamburger = document.getElementById('hamburger');
-      const navLinks = document.getElementById('navLinks');
-      if (hamburger && navLinks) {
-        hamburger.addEventListener('click', () => {
-          navLinks.classList.toggle('active');
-        });
-      }
-    })();
-  </script>
+  <script src="js/common.js?v=20261111_v39_stable"></script>
+  <script src="js/inventory-logic.js?v=20261111_v39_stable"></script>
 </body>
 
 </html>

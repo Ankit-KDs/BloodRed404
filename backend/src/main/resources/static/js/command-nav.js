@@ -78,7 +78,21 @@
       return id;
     }
 
-    let donorId = (currentUser && (currentUser.donorId || currentUser.donor_id || (typeof currentUser.id === 'string' && currentUser.id.startsWith('DNR-') ? currentUser.id : null))) || 'DNR-0811-A404';
+    let donorId = (currentUser && (currentUser.donorId || currentUser.donor_id || (typeof currentUser.id === 'string' && currentUser.id.startsWith('DNR-') ? currentUser.id : null)));
+    if (!donorId && currentUser) {
+      try {
+        const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
+        const m = list.find(d => (d.email && d.email === currentUser.email) || (d.id && d.id == currentUser.id));
+        if (m && (m.donorId || m.donor_id)) {
+          donorId = m.donorId || m.donor_id;
+        }
+      } catch (_) {}
+    }
+    if (!donorId) {
+      const num = currentUser ? (100 + ((parseInt(currentUser.id || 1, 10) * 137 + 241) % 900)) : 719;
+      const initial = (userName && userName.trim().length > 0) ? userName.trim()[0].toUpperCase() : 'A';
+      donorId = `DNR-1011-${initial}${num}`;
+    }
     if (currentUser && (currentUser.dob || currentUser.dateOfBirth)) {
       donorId = syncIdDob(donorId, currentUser.dob || currentUser.dateOfBirth);
     }
