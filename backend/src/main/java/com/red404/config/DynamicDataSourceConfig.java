@@ -13,7 +13,6 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
 import java.io.File;
-import java.net.URI;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -37,7 +36,7 @@ public class DynamicDataSourceConfig {
     public DataSource dataSource() {
         ResolvedConfig cfg = resolveMySQLConfig();
 
-        // 1. Try MySQL DataSource first
+        // 1. Try Primary / Railway / Cloud MySQL DataSource first
         if (cfg != null && cfg.jdbcUrl != null && !cfg.jdbcUrl.isBlank()) {
             DataSource ds = tryConnectMySQL(cfg.jdbcUrl, cfg.username, cfg.password);
             if (ds != null) {
@@ -83,7 +82,6 @@ public class DynamicDataSourceConfig {
 
             HikariDataSource h2Ds = new HikariDataSource(h2Config);
             runInitScript(h2Ds);
-            seedDefaultData(h2Ds);
             log.info("Persistent H2 database initialized successfully! Data will persist across restarts.");
             return h2Ds;
         } catch (Throwable ex) {
@@ -96,7 +94,6 @@ public class DynamicDataSourceConfig {
                 minimalConfig.setDriverClassName("org.h2.Driver");
                 HikariDataSource minimalDs = new HikariDataSource(minimalConfig);
                 runInitScript(minimalDs);
-                seedDefaultData(minimalDs);
                 log.info("Minimal in-memory H2 database initialized successfully! Web service is ready.");
                 return minimalDs;
             } catch (Exception e) {
@@ -107,33 +104,41 @@ public class DynamicDataSourceConfig {
     }
 
     private DataSource tryConnectMySQL(String jdbcUrl, String username, String password) {
-        try {
-            log.info("Attempting connection to primary MySQL database: {}", sanitizeUrl(jdbcUrl));
-            HikariConfig config = new HikariConfig();
-            config.setJdbcUrl(jdbcUrl);
-            config.setUsername(username);
-            config.setPassword(password);
-            config.setDriverClassName("com.mysql.cj.jdbc.Driver");
-            config.setMaximumPoolSize(10);
-            config.setMinimumIdle(2);
-            config.setConnectionTimeout(3000);
-            config.setInitializationFailTimeout(1);
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                log.info("Attempting connection to primary MySQL database (attempt {}/{}): {}", 
+                         attempt, maxAttempts, sanitizeUrl(jdbcUrl));
+                HikariConfig config = new HikariConfig();
+                config.setJdbcUrl(jdbcUrl);
+                config.setUsername(username);
+                config.setPassword(password);
+                config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+                config.setMaximumPoolSize(10);
+                config.setMinimumIdle(2);
+                config.setConnectionTimeout(15000);
+                config.setInitializationFailTimeout(1);
 
-            HikariDataSource ds = new HikariDataSource(config);
-            try (Connection conn = ds.getConnection()) {
-                log.info("Successfully connected to MySQL database: {}", sanitizeUrl(jdbcUrl));
-                runInitScript(ds);
-                seedDefaultData(ds);
-                return ds;
-            } catch (Exception connEx) {
-                ds.close();
-                log.warn("MySQL connection check failed on {}: {}", sanitizeUrl(jdbcUrl), connEx.getMessage());
-                return null;
+                HikariDataSource ds = new HikariDataSource(config);
+                try (Connection conn = ds.getConnection()) {
+                    log.info("Successfully connected to MySQL database: {}", sanitizeUrl(jdbcUrl));
+                    runInitScript(ds);
+                    return ds;
+                } catch (Exception connEx) {
+                    ds.close();
+                    log.warn("MySQL connection check failed on attempt {}/{}: {}", attempt, maxAttempts, connEx.getMessage());
+                    if (attempt < maxAttempts) {
+                        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                    }
+                }
+            } catch (Throwable t) {
+                log.warn("Could not create MySQL connection pool on attempt {}/{}: {}", attempt, maxAttempts, t.getMessage());
+                if (attempt < maxAttempts) {
+                    try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                }
             }
-        } catch (Throwable t) {
-            log.warn("Could not connect to MySQL database ({}).", t.getMessage());
-            return null;
         }
+        return null;
     }
 
     private void runInitScript(DataSource ds) {
@@ -190,53 +195,14 @@ public class DynamicDataSourceConfig {
         } catch (Exception ignored) {}
     }
 
-    private void seedDefaultData(DataSource ds) {
-        try (Connection conn = ds.getConnection();
-             Statement stmt = conn.createStatement()) {
-
-            // Clean up any old demo/placeholder strings from existing records so database strictly reflects real user data
-            try {
-                stmt.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name = 'Rajesh Kumar' OR father_name LIKE '%Rajesh%'");
-                stmt.executeUpdate("UPDATE donors SET address = NULL WHERE address LIKE '%Near Subharti%' OR address LIKE '%Delhi Road%'");
-                stmt.executeUpdate("UPDATE donors SET last_donation = NULL WHERE last_donation = '2024-01-10'");
-                stmt.executeUpdate("UPDATE donors SET allergies = NULL WHERE allergies LIKE '%No Known Drug Allergies%' OR allergies = 'No Known Drug Allergies (NKDA)'");
-                stmt.executeUpdate("UPDATE donors SET conditions = NULL WHERE conditions LIKE '%None Reported%' OR conditions = 'None Reported • Normal Screening'");
-                stmt.executeUpdate("UPDATE donors SET medications = NULL WHERE medications = 'None / Unrestricted' OR medications LIKE 'None%'");
-                stmt.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries = 'None Reported (< 12 months)'");
-                stmt.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility = 'City General Hospital' OR verified_facility LIKE '%City General%'");
-                stmt.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type = 'Voluntary Lifesaver' OR donor_type LIKE '%Voluntary%'");
-                stmt.executeUpdate("UPDATE donors SET pulse = NULL WHERE pulse = 72");
-                stmt.executeUpdate("UPDATE donors SET hemoglobin = NULL WHERE hemoglobin = 14.8");
-                stmt.executeUpdate("UPDATE donors SET blood_pressure = NULL WHERE blood_pressure = '120/80'");
-                stmt.executeUpdate("UPDATE donors SET body_temp = NULL WHERE body_temp = 98.6");
-                stmt.executeUpdate("UPDATE donors SET dob = NULL WHERE dob = '1998-05-15'");
-                stmt.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0");
-                stmt.executeUpdate("UPDATE donors SET phone = NULL WHERE phone = '9876543210'");
-                stmt.executeUpdate("UPDATE donors SET city = NULL, state = NULL, pincode = NULL WHERE city = 'Meerut' AND pincode = '250002'");
-            } catch (Exception ignored) {}
-
-            // Check if donor 'ak30kr02@gmail.com' exists
-            try (ResultSet rs = stmt.executeQuery("SELECT id FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
-                if (!rs.next()) {
-                    String seedDonor = "INSERT INTO donors (donor_id, name, email, password, blood_type, availability, created_at) " +
-                            "VALUES ('DNR-0811-A404', 'Ankit Kumar', 'ak30kr02@gmail.com', '12345678', 'A+', 'Available', '2026-11-08 14:00:00')";
-                    stmt.executeUpdate(seedDonor);
-                    log.info("Seeded primary registered donor account: ak30kr02@gmail.com (with zero demo data)");
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Notice checking/seeding default user: {}", e.getMessage());
-        }
-    }
-
     private ResolvedConfig resolveMySQLConfig() {
-        String host = System.getenv("MYSQLHOST");
-        String port = System.getenv("MYSQLPORT");
-        String user = System.getenv("MYSQLUSER");
-        String pass = System.getenv("MYSQLPASSWORD");
-        String db = System.getenv("MYSQLDATABASE");
+        // 1. Check explicit cloud environment variables (Railway, Render, etc.)
+        String host = getEnv("MYSQLHOST", "MYSQL_HOST");
+        String port = getEnv("MYSQLPORT", "MYSQL_PORT");
+        String user = getEnv("MYSQLUSER", "MYSQL_USER");
+        String pass = getEnv("MYSQLPASSWORD", "MYSQL_PASSWORD");
+        String db = getEnv("MYSQLDATABASE", "MYSQL_DATABASE");
 
-        // If explicit Railway / cloud variables are set
         if (host != null && !host.isBlank()) {
             if (port == null || port.isBlank()) port = "3306";
             if (user == null || user.isBlank()) user = (rawUsername != null && !rawUsername.isBlank()) ? rawUsername : "root";
@@ -244,52 +210,116 @@ public class DynamicDataSourceConfig {
             if (db == null || db.isBlank()) db = "railway";
 
             String jdbcUrl = String.format(
-                    "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=10000",
+                    "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=15000&socketTimeout=30000",
                     host, port, db
             );
             return new ResolvedConfig(jdbcUrl, user, pass);
         }
 
-        // Check full URLs (MYSQL_URL, MYSQL_PRIVATE_URL, DATABASE_URL)
-        String envUrl = System.getenv("MYSQL_URL");
-        if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("MYSQL_PRIVATE_URL");
-        if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("DATABASE_URL");
-        if (envUrl == null || envUrl.isBlank()) envUrl = rawUrl;
+        // 2. Check full URLs (MYSQL_URL, MYSQL_PRIVATE_URL, DATABASE_URL, DATABASE_PUBLIC_URL)
+        String envUrl = getEnv("MYSQL_URL", "MYSQL_PRIVATE_URL", "DATABASE_URL", "DATABASE_PUBLIC_URL", "SPRING_DATASOURCE_URL");
+        if (envUrl == null || envUrl.isBlank()) {
+            envUrl = rawUrl;
+        }
 
         if (envUrl != null && !envUrl.isBlank()) {
-            if (envUrl.startsWith("mysql://") || envUrl.startsWith("jdbc:mysql://")) {
-                try {
-                    String clean = envUrl.startsWith("jdbc:") ? envUrl.substring(5) : envUrl;
-                    URI uri = new URI(clean);
-                    if (uri.getHost() != null && !uri.getHost().isBlank()) host = uri.getHost();
-                    if (uri.getPort() > 0) port = String.valueOf(uri.getPort());
-                    if (uri.getUserInfo() != null) {
-                        String[] parts = uri.getUserInfo().split(":", 2);
-                        if (parts.length > 0 && !parts[0].isEmpty()) user = parts[0];
-                        if (parts.length > 1) pass = parts[1];
-                    }
-                    if (uri.getPath() != null && uri.getPath().length() > 1) db = uri.getPath().substring(1);
-                } catch (Exception e) {
-                    log.debug("Notice parsing URL: {}", e.getMessage());
-                }
-            } else if (envUrl.startsWith("jdbc:")) {
-                return new ResolvedConfig(envUrl,
-                        rawUsername != null ? rawUsername : "root",
-                        rawPassword != null ? rawPassword : "");
+            ResolvedConfig parsed = parseMySQLUrl(envUrl, rawUsername != null ? rawUsername : "root", rawPassword != null ? rawPassword : "");
+            if (parsed != null) {
+                return parsed;
             }
         }
 
-        if (host == null || host.isBlank()) host = "127.0.0.1";
-        if (port == null || port.isBlank()) port = "3307";
-        if (user == null || user.isBlank()) user = (rawUsername != null && !rawUsername.isBlank()) ? rawUsername : "root";
-        if (pass == null) pass = rawPassword != null ? rawPassword : "";
-        if (db == null || db.isBlank()) db = "red404";
+        // 3. Fallback to local default XAMPP / development port
+        host = "127.0.0.1";
+        port = "3307";
+        user = (rawUsername != null && !rawUsername.isBlank()) ? rawUsername : "root";
+        pass = rawPassword != null ? rawPassword : "";
+        db = "red404";
 
         String jdbcUrl = String.format(
-                "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=3000&socketTimeout=8000",
+                "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=10000",
                 host, port, db
         );
         return new ResolvedConfig(jdbcUrl, user, pass);
+    }
+
+    public static ResolvedConfig parseMySQLUrl(String rawUrl, String fallbackUser, String fallbackPass) {
+        if (rawUrl == null || rawUrl.isBlank()) return null;
+        String url = rawUrl.trim();
+
+        // Handle standard jdbc: urls directly
+        if (url.startsWith("jdbc:mysql://")) {
+            return new ResolvedConfig(url, fallbackUser, fallbackPass);
+        }
+
+        // Strip jdbc: prefix if present (e.g. jdbc:mysql://...)
+        boolean isJdbc = url.startsWith("jdbc:");
+        String clean = isJdbc ? url.substring(5) : url;
+
+        if (!clean.startsWith("mysql://")) {
+            if (isJdbc) {
+                return new ResolvedConfig(url, fallbackUser, fallbackPass);
+            }
+            return null;
+        }
+
+        // Format: mysql://[user[:password]@]host[:port][/database][?params]
+        String withoutScheme = clean.substring("mysql://".length());
+
+        int questionIdx = withoutScheme.indexOf('?');
+        if (questionIdx != -1) {
+            withoutScheme = withoutScheme.substring(0, questionIdx);
+        }
+
+        String user = fallbackUser;
+        String pass = fallbackPass;
+        String host = "127.0.0.1";
+        String port = "3306";
+        String db = "railway";
+
+        int slashIdx = withoutScheme.indexOf('/');
+        String authority = slashIdx != -1 ? withoutScheme.substring(0, slashIdx) : withoutScheme;
+        if (slashIdx != -1 && slashIdx < withoutScheme.length() - 1) {
+            db = withoutScheme.substring(slashIdx + 1);
+        }
+
+        int atIdx = authority.lastIndexOf('@');
+        String hostPortPart = authority;
+        if (atIdx != -1) {
+            String userPassPart = authority.substring(0, atIdx);
+            hostPortPart = authority.substring(atIdx + 1);
+
+            int colonIdx = userPassPart.indexOf(':');
+            if (colonIdx != -1) {
+                user = userPassPart.substring(0, colonIdx);
+                pass = userPassPart.substring(colonIdx + 1);
+            } else {
+                user = userPassPart;
+            }
+        }
+
+        int colonHostIdx = hostPortPart.lastIndexOf(':');
+        if (colonHostIdx != -1) {
+            host = hostPortPart.substring(0, colonHostIdx);
+            port = hostPortPart.substring(colonHostIdx + 1);
+        } else if (!hostPortPart.isBlank()) {
+            host = hostPortPart;
+        }
+
+        String jdbcUrl = String.format(
+                "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=15000&socketTimeout=30000",
+                host, port, db
+        );
+
+        return new ResolvedConfig(jdbcUrl, user, pass);
+    }
+
+    private static String getEnv(String... names) {
+        for (String name : names) {
+            String val = System.getenv(name);
+            if (val != null && !val.isBlank()) return val.trim();
+        }
+        return null;
     }
 
     private String sanitizeUrl(String url) {
@@ -297,12 +327,12 @@ public class DynamicDataSourceConfig {
         return url.replaceAll("(?i)(password=)[^&;]*", "$1****");
     }
 
-    private static class ResolvedConfig {
-        final String jdbcUrl;
-        final String username;
-        final String password;
+    public static class ResolvedConfig {
+        public final String jdbcUrl;
+        public final String username;
+        public final String password;
 
-        ResolvedConfig(String jdbcUrl, String username, String password) {
+        public ResolvedConfig(String jdbcUrl, String username, String password) {
             this.jdbcUrl = jdbcUrl;
             this.username = username;
             this.password = password;

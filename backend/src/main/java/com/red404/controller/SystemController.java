@@ -2,6 +2,7 @@ package com.red404.controller;
 
 import com.red404.dao.DonorDao;
 import com.red404.model.ApiResponse;
+import com.red404.util.DBConnection;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -37,6 +43,49 @@ public class SystemController {
             return ResponseEntity.ok(new ApiResponse(true, "National blood stock loaded", stock));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping({"/db-info", "/db-health", "/database"})
+    public ResponseEntity<ApiResponse> getDatabaseInfo() {
+        Map<String, Object> info = new LinkedHashMap<>();
+        try (Connection conn = DBConnection.getConnection()) {
+            DatabaseMetaData meta = conn.getMetaData();
+            String prodName = meta.getDatabaseProductName();
+            String prodVersion = meta.getDatabaseProductVersion();
+            String rawJdbcUrl = meta.getURL();
+            String sanitizedUrl = rawJdbcUrl != null ? rawJdbcUrl.replaceAll("(?i)(password=)[^&;]*", "$1****") : "";
+
+            info.put("status", "CONNECTED");
+            info.put("databaseProduct", prodName);
+            info.put("databaseVersion", prodVersion);
+            info.put("isMySQL", prodName != null && prodName.toLowerCase().contains("mysql"));
+            info.put("jdbcUrl", sanitizedUrl);
+
+            Map<String, Object> tableCounts = new LinkedHashMap<>();
+            String[] coreTables = {
+                "donors", "hospitals", "blood_requests", "donations",
+                "intake_snapshots", "user_sessions", "burned_donor_ids",
+                "hospital_inventory", "system_meta"
+            };
+
+            try (Statement stmt = conn.createStatement()) {
+                for (String tbl : coreTables) {
+                    try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + tbl)) {
+                        if (rs.next()) {
+                            tableCounts.put(tbl, rs.getInt(1));
+                        }
+                    } catch (Exception ex) {
+                        tableCounts.put(tbl, "MISSING_OR_UNAVAILABLE: " + ex.getMessage());
+                    }
+                }
+            }
+            info.put("tables", tableCounts);
+            return ResponseEntity.ok(new ApiResponse(true, "Database diagnostics", info));
+        } catch (Exception e) {
+            info.put("status", "ERROR");
+            info.put("error", e.getMessage());
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, "Database connection error: " + e.getMessage(), info));
         }
     }
 

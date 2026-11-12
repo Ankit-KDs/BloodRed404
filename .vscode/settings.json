@@ -3,5 +3,10 @@
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.import.maven.enabled": true,
     "java.compile.nullAnalysis.mode": "automatic",
-    "maven.pomPath": "pom.xml"
+    "maven.pomPath": "backend/pom.xml",
+    "java.project.sourcePaths": [
+        "backend/src/main/java",
+        "backend/src/main/resources"
+    ],
+    "java.project.outputPath": "backend/target/classes"
 }
