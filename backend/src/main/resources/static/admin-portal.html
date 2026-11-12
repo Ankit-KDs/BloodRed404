@@ -91,9 +91,10 @@
             <tr>
               <th>Smart ID</th>
               <th>Blood Group</th>
+              <th>Zone / City</th>
               <th>Total Donations</th>
               <th>Status</th>
-              <th>Action (Suspend)</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <!-- Completely empty tbody for real-time Java/MySQL injection -->
@@ -273,7 +274,90 @@
 
   </main>
 
+  <!-- ==================== VIEW DONOR PROFILE MODAL ==================== -->
+  <div class="modal-overlay" id="donorProfileModal" style="display:none;" onclick="if(event.target===this) closeDonorProfileModal()">
+    <div class="modal-box admin-profile-modal-box">
+      <button type="button" class="modal-close" onclick="closeDonorProfileModal()" title="Close Profile">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <div class="profile-modal-header">
+        <div class="profile-modal-badge">
+          <span class="profile-pulse-dot"></span>
+          <span>LEVEL-0 DONOR ENCLAVE</span>
+        </div>
+        <h3 class="profile-modal-title">
+          <i class="fas fa-id-card-clip"></i>
+          <span>Donor Cryptographic Profile</span>
+        </h3>
+        <p class="profile-modal-subtitle">Secure, non-reversible identity credentials &amp; spatial routing telemetry.</p>
+      </div>
+
+      <div class="profile-grid">
+        <!-- Smart ID -->
+        <div class="profile-item">
+          <span class="profile-label"><i class="fas fa-fingerprint"></i> Smart ID</span>
+          <span class="profile-val smart-id-val" id="modal-donor-smart-id">-</span>
+        </div>
+
+        <!-- Real Name -->
+        <div class="profile-item">
+          <span class="profile-label"><i class="fas fa-user-shield"></i> Real Name</span>
+          <span class="profile-val" id="modal-donor-name">-</span>
+        </div>
+
+        <!-- Email -->
+        <div class="profile-item">
+          <span class="profile-label"><i class="fas fa-envelope"></i> Email Address</span>
+          <span class="profile-val" id="modal-donor-email">-</span>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="profile-item">
+          <span class="profile-label"><i class="fas fa-phone"></i> Phone Number</span>
+          <span class="profile-val" id="modal-donor-phone">-</span>
+        </div>
+
+        <!-- Blood Group -->
+        <div class="profile-item">
+          <span class="profile-label"><i class="fas fa-droplet"></i> Blood Group</span>
+          <span class="profile-val blood-group-val" id="modal-donor-blood-group">-</span>
+        </div>
+
+        <!-- Precise Location -->
+        <div class="profile-item">
+          <span class="profile-label"><i class="fas fa-location-crosshairs"></i> Precise Location</span>
+          <span class="profile-val" id="modal-donor-location">-</span>
+        </div>
+
+        <!-- Last Donation Date -->
+        <div class="profile-item full-width-item">
+          <span class="profile-label"><i class="fas fa-clock-rotate-left"></i> Last Donation Date</span>
+          <span class="profile-val" id="modal-donor-last-donation">-</span>
+        </div>
+      </div>
+
+      <!-- CRITICAL SECURITY RULE: No Password Field Anywhere -->
+      <div class="profile-security-banner">
+        <i class="fas fa-shield-halved"></i>
+        <span><strong>CRITICAL PRIVACY RULE:</strong> Passwords are cryptographically salted and hashed. They are strictly inaccessible and cannot be viewed by admins.</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="profile-modal-actions">
+        <button type="button" class="btn-send-reset" id="btnSendPasswordReset" onclick="handleSendPasswordReset()">
+          <span class="btn-reset-text"><i class="fas fa-paper-plane"></i> Send Password Reset Link</span>
+          <span class="btn-reset-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Dispatching...</span>
+        </button>
+        <button type="button" class="btn-close-secondary" onclick="closeDonorProfileModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Admin Portal Script -->
-  <script src="js/admin-portal.js?v=20261112_v1"></script>
+  <script src="js/admin-portal.js?v=20261113_v2"></script>
 </body>
 </html>
+

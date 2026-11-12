@@ -120,7 +120,8 @@ public class AdminController {
 
         List<Map<String, Object>> donors = new ArrayList<>();
         String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.blood_type, " +
-                "d.availability, d.city, d.state, d.created_at, " +
+                "d.availability, d.address, d.city, d.state, d.pincode, d.zone, d.latitude, d.longitude, " +
+                "d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE donor_id = d.donor_id) AS total_donations " +
                 "FROM donors d ORDER BY d.id DESC";
 
@@ -137,9 +138,24 @@ public class AdminController {
                 item.put("phone", rs.getString("phone"));
                 item.put("bloodGroup", rs.getString("blood_type"));
                 item.put("totalDonations", rs.getInt("total_donations"));
-                item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Available");
-                item.put("location", (rs.getString("city") != null ? rs.getString("city") : "") +
-                        (rs.getString("state") != null ? ", " + rs.getString("state") : ""));
+                item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
+                item.put("address", rs.getString("address"));
+                item.put("city", rs.getString("city"));
+                item.put("state", rs.getString("state"));
+                item.put("pincode", rs.getString("pincode"));
+                item.put("zone", rs.getString("zone"));
+                item.put("latitude", rs.getObject("latitude"));
+                item.put("longitude", rs.getObject("longitude"));
+                item.put("lastDonation", rs.getString("last_donation"));
+
+                String city = rs.getString("city");
+                String state = rs.getString("state");
+                String zone = rs.getString("zone");
+                String locationStr = (city != null && !city.isBlank()) ? city : "Local Zone";
+                if (state != null && !state.isBlank()) {
+                    locationStr += ", " + state;
+                }
+                item.put("location", locationStr);
                 item.put("createdAt", rs.getString("created_at"));
                 donors.add(item);
             }
@@ -148,6 +164,41 @@ public class AdminController {
             log.error("Error loading donors for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Failed to load donors: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/donors/{id}/reset-password-link")
+    public ResponseEntity<ApiResponse> sendPasswordResetLink(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name, email FROM donors WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String smartId = rs.getString("donor_id");
+                    String name = rs.getString("name");
+                    String email = rs.getString("email");
+
+                    String resetToken = UUID.randomUUID().toString();
+                    addLog("PASSWORD_RESET_DISPATCHED", "Password reset link issued for Donor " + smartId + " (" + email + ")");
+
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("email", email);
+                    data.put("smartId", smartId);
+                    data.put("resetToken", resetToken);
+                    data.put("resetDispatched", true);
+
+                    return ResponseEntity.ok(new ApiResponse(true, "Password reset link dispatched to " + email, data));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ApiResponse(false, "Donor record not found"));
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error dispatching password reset link: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to dispatch password reset link: " + e.getMessage()));
         }
     }
 
@@ -468,3 +519,4 @@ public class AdminController {
                 .body(new ApiResponse(false, "Restricted: Level-0 Administrative Clearance Required."));
     }
 }
+

@@ -89,6 +89,8 @@
   }
 
   /* ==================== 3. TAB 1: DONORS ==================== */
+  let currentProfileDonorId = null;
+
   async function loadDonors() {
     const tbody = document.getElementById('donor-table-body');
     const badge = document.getElementById('donor-count-badge');
@@ -104,7 +106,7 @@
       renderDonorsTable(allDonors);
     } catch (err) {
       console.warn('Notice loading donors:', err);
-      renderEmptyTable(tbody, 5, 'No registered donors found in MySQL database.');
+      renderEmptyTable(tbody, 6, 'No registered donors found in MySQL database.');
       if (badge) badge.textContent = '0';
     }
   }
@@ -115,7 +117,7 @@
     tbody.innerHTML = '';
 
     if (!donors || donors.length === 0) {
-      renderEmptyTable(tbody, 5, 'No registered donors recorded in MySQL yet.');
+      renderEmptyTable(tbody, 6, 'No registered donors recorded in MySQL yet.');
       return;
     }
 
@@ -123,36 +125,228 @@
       const tr = document.createElement('tr');
       const isSuspended = (d.status || '').toLowerCase() === 'suspended';
 
+      // Status Badge Formatting: '🟢 Active', '🟡 Standby', '🔴 Suspended'
+      let statusClass = 'active';
+      let statusLabel = '🟢 Active';
+      const rawStatus = (d.status || '').toLowerCase();
+      if (rawStatus === 'suspended' || rawStatus === 'inactive') {
+        statusClass = 'suspended';
+        statusLabel = '🔴 Suspended';
+      } else if (rawStatus === 'standby' || rawStatus === 'busy' || rawStatus === 'pending') {
+        statusClass = 'standby';
+        statusLabel = '🟡 Standby';
+      } else {
+        statusClass = 'active';
+        statusLabel = '🟢 Active';
+      }
+
+      // Zone & City
+      const cityName = d.city || d.location || 'Local Node';
+      const zoneName = d.zone ? 'Zone ' + d.zone : (d.state || 'General Node');
+
       tr.innerHTML = `
+        <!-- Column 1: Smart ID & Burned-ID Privacy -->
         <td>
-          <div class="smart-id-tag">${escapeHtml(d.smartId || '-')}</div>
-          <div style="font-size: 11px; color: var(--admin-text-muted);">${escapeHtml(d.name || '')}</div>
+          <div class="smart-id-cell">
+            <span class="smart-id-tag">${escapeHtml(d.smartId || '-')}</span>
+            <div class="donor-name-reveal-wrap">
+              <span class="real-name-hidden" id="donor-name-${d.id}" data-masked="true" data-name="${escapeHtml(d.name || 'Anonymous')}">***</span>
+              <button type="button" class="btn-reveal-name" onclick="window.toggleRevealName(${d.id})" title="Reveal Real Name">
+                <i class="fas fa-eye" id="reveal-icon-${d.id}"></i>
+              </button>
+            </div>
+          </div>
         </td>
+
+        <!-- Column 2: Blood Group -->
         <td>
           <span class="blood-type-tag">${escapeHtml(d.bloodGroup || '-')}</span>
         </td>
+
+        <!-- Column 3: Zone / City -->
+        <td>
+          <div class="donor-zone-cell">
+            <span class="donor-city-val">${escapeHtml(cityName)}</span>
+            <span class="donor-subzone-val">${escapeHtml(zoneName)}</span>
+          </div>
+        </td>
+
+        <!-- Column 4: Total Donations -->
         <td style="font-family: var(--admin-font-mono); font-weight: 600; color: #ffffff;">
           ${Number(d.totalDonations || 0)}
         </td>
+
+        <!-- Column 5: Status -->
         <td>
-          <span class="status-pill ${isSuspended ? 'status-suspended' : 'status-available'}">
-            <span class="pulse-indicator ${isSuspended ? 'pulse-red' : 'pulse-green'}"></span>
-            ${escapeHtml(d.status || 'Available')}
+          <span class="status-badge status-badge-${statusClass}">
+            ${statusLabel}
           </span>
         </td>
+
+        <!-- Column 6: Actions (Three Dots Kebab Menu) -->
         <td>
-          <button class="admin-action-btn btn-suspend" onclick="window.toggleDonor(${d.id})">
-            <i class="fas fa-${isSuspended ? 'check' : 'ban'}"></i>
-            ${isSuspended ? 'Reactivate' : 'Suspend'}
-          </button>
+          <div class="kebab-menu-wrap">
+            <button type="button" class="admin-kebab-btn" onclick="window.toggleKebabMenu(event, ${d.id})" title="Actions">
+              <i class="fas fa-ellipsis-vertical"></i>
+            </button>
+            <div class="kebab-dropdown" id="kebab-menu-${d.id}">
+              <button type="button" class="kebab-dropdown-item" onclick="window.viewDonorProfile(${d.id})">
+                <i class="fas fa-id-card"></i>
+                <span>View Full Profile</span>
+              </button>
+              <button type="button" class="kebab-dropdown-item ${isSuspended ? 'kebab-item-reactivate' : 'kebab-item-suspend'}" onclick="window.toggleDonor(${d.id})">
+                <i class="fas fa-${isSuspended ? 'shield-check' : 'ban'}"></i>
+                <span>${isSuspended ? 'Reactivate Account' : 'Suspend Account'}</span>
+              </button>
+            </div>
+          </div>
         </td>
       `;
       tbody.appendChild(tr);
     });
   }
 
+  /* Privacy-First Name Reveal Toggle */
+  window.toggleRevealName = function(donorId) {
+    const nameEl = document.getElementById(`donor-name-${donorId}`);
+    const iconEl = document.getElementById(`reveal-icon-${donorId}`);
+    if (!nameEl) return;
+
+    const isMasked = nameEl.getAttribute('data-masked') === 'true';
+    const realName = nameEl.getAttribute('data-name') || 'Anonymous';
+
+    if (isMasked) {
+      nameEl.textContent = realName;
+      nameEl.className = 'real-name-revealed';
+      nameEl.setAttribute('data-masked', 'false');
+      if (iconEl) iconEl.className = 'fas fa-eye-slash';
+    } else {
+      nameEl.textContent = '***';
+      nameEl.className = 'real-name-hidden';
+      nameEl.setAttribute('data-masked', 'true');
+      if (iconEl) iconEl.className = 'fas fa-eye';
+    }
+  };
+
+  /* Three Dots (Kebab) Dropdown Toggle */
+  window.toggleKebabMenu = function(event, donorId) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    const targetMenu = document.getElementById(`kebab-menu-${donorId}`);
+    if (!targetMenu) return;
+
+    const isAlreadyOpen = targetMenu.classList.contains('show');
+    // Close any other open kebab dropdowns
+    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => {
+      menu.classList.remove('show');
+    });
+
+    if (!isAlreadyOpen) {
+      targetMenu.classList.add('show');
+    }
+  };
+
+  /* Global click listener to close kebab menus on click outside */
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.kebab-menu-wrap')) {
+      document.querySelectorAll('.kebab-dropdown.show').forEach(menu => {
+        menu.classList.remove('show');
+      });
+    }
+  });
+
+  /* View Donor Profile Modal */
+  window.viewDonorProfile = function(donorId) {
+    // Close any open kebab menus
+    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
+
+    const donor = allDonors.find(d => d.id === donorId);
+    if (!donor) {
+      showToast('Donor profile details not found in cache', 'error');
+      return;
+    }
+
+    currentProfileDonorId = donorId;
+
+    // Helper for empty span placeholders (zero dummy data)
+    const setSpan = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = (val && String(val).trim()) ? val : '-';
+    };
+
+    setSpan('modal-donor-smart-id', donor.smartId);
+    setSpan('modal-donor-name', donor.name);
+    setSpan('modal-donor-email', donor.email);
+    setSpan('modal-donor-phone', donor.phone);
+    setSpan('modal-donor-blood-group', donor.bloodGroup);
+
+    let preciseLoc = '';
+    if (donor.address) preciseLoc += donor.address + ', ';
+    if (donor.city) preciseLoc += donor.city + ', ';
+    if (donor.state) preciseLoc += donor.state;
+    if (donor.pincode) preciseLoc += ' - ' + donor.pincode;
+    if (donor.zone) preciseLoc += ' [Zone ' + donor.zone + ']';
+    if (!preciseLoc.trim()) preciseLoc = donor.location || '-';
+
+    setSpan('modal-donor-location', preciseLoc);
+    setSpan('modal-donor-last-donation', donor.lastDonation || 'No donation recorded yet');
+
+    const modal = document.getElementById('donorProfileModal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  };
+
+  window.closeDonorProfileModal = function() {
+    const modal = document.getElementById('donorProfileModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+    currentProfileDonorId = null;
+  };
+
+  /* Send Password Reset Link */
+  window.handleSendPasswordReset = async function() {
+    if (!currentProfileDonorId) return;
+
+    const btn = document.getElementById('btnSendPasswordReset');
+    const btnText = btn?.querySelector('.btn-reset-text');
+    const btnLoader = btn?.querySelector('.btn-reset-loader');
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.style.display = 'none';
+    if (btnLoader) btnLoader.style.display = 'inline-flex';
+
+    try {
+      const res = await fetch(`/api/admin/donors/${currentProfileDonorId}/reset-password-link`, {
+        method: 'POST'
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        showToast(data.message || 'Password reset link sent to donor’s registered email', 'success', 3500);
+        setTimeout(() => {
+          closeDonorProfileModal();
+        }, 900);
+      } else {
+        showToast(data.message || 'Failed to dispatch password reset link', 'error');
+      }
+    } catch (err) {
+      showToast('Network error while dispatching password reset link', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.style.display = 'inline-flex';
+      if (btnLoader) btnLoader.style.display = 'none';
+    }
+  };
+
   window.toggleDonor = async function(donorId) {
     if (!donorId) return;
+    // Close any open kebab menus
+    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
+
     try {
       const res = await fetch(`/api/admin/donors/${donorId}/toggle-status`, { method: 'POST' });
       const data = await res.json();
@@ -473,6 +667,9 @@
           (d.smartId && d.smartId.toLowerCase().includes(q)) ||
           (d.name && d.name.toLowerCase().includes(q)) ||
           (d.bloodGroup && d.bloodGroup.toLowerCase().includes(q)) ||
+          (d.city && d.city.toLowerCase().includes(q)) ||
+          (d.zone && d.zone.toLowerCase().includes(q)) ||
+          (d.state && d.state.toLowerCase().includes(q)) ||
           (d.location && d.location.toLowerCase().includes(q))
         );
         renderDonorsTable(filtered);
@@ -577,3 +774,4 @@
   }
 
 })();
+
