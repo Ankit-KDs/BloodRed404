@@ -151,7 +151,237 @@
     </div>
   </div>
 
+  <!-- Stealth Admin Authorization Modal (Hidden by Default) -->
+  <div class="modal-overlay" id="adminSecretModal" style="display:none;">
+    <div class="modal-box stealth-admin-box">
+      <button type="button" class="modal-close" onclick="closeAdminSecretModal()"><i class="fas fa-times"></i></button>
+      <div class="stealth-badge">
+        <span class="stealth-dot"></span>
+        <span>LEVEL-0 RESTRICTED ENCLAVE</span>
+      </div>
+      <h3 class="stealth-title"><i class="fas fa-shield-halved"></i> Master Authorization</h3>
+      <p class="stealth-desc">Enter the Secret Admin Authorization Code to unlock administrative clearance.</p>
+      
+      <form id="adminSecretForm" novalidate autocomplete="off" onsubmit="handleAdminSecretSubmit(event)">
+        <div class="form-group">
+          <label for="adminSecretCode">Secret Authorization Code <span class="req">*</span></label>
+          <div class="input-wrap">
+            <i class="fas fa-key input-icon"></i>
+            <input type="password" id="adminSecretCode" name="adminSecretCode" placeholder="Enter authorization key..." autocomplete="new-password" required/>
+            <button type="button" class="toggle-pass" onclick="togglePassword('adminSecretCode','adminSecretEye')">
+              <i class="fas fa-eye" id="adminSecretEye"></i>
+            </button>
+            <span class="input-focus-line"></span>
+          </div>
+          <span class="field-error" id="adminSecretErr" style="display:none;"></span>
+        </div>
+
+        <button type="submit" id="adminVerifyBtn" class="btn-submit full-width stealth-verify-btn">
+          <span class="btn-text"><i class="fas fa-unlock-keyhole"></i> Verify &amp; Unlock</span>
+          <span class="btn-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Authorizing...</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <style>
+    /* Stealth Admin Modal Styles - Dark Glassmorphism */
+    .stealth-admin-box {
+      background: rgba(11, 14, 23, 0.94) !important;
+      backdrop-filter: blur(28px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+      border: 1px solid rgba(230, 57, 70, 0.3) !important;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(230, 57, 70, 0.18) !important;
+      border-radius: 18px !important;
+      max-width: 440px !important;
+      padding: 34px 30px !important;
+      position: relative;
+      overflow: hidden;
+      animation: stealthModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .stealth-admin-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #e63946, #ff4d6d, transparent);
+    }
+    .stealth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      background: rgba(230, 57, 70, 0.12);
+      color: #ff4d6d;
+      border: 1px solid rgba(230, 57, 70, 0.3);
+      margin-bottom: 12px;
+    }
+    .stealth-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #e63946;
+      box-shadow: 0 0 8px #e63946;
+      animation: pulse-stealth 1.8s infinite;
+    }
+    @keyframes pulse-stealth {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+    .stealth-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stealth-title i { color: #e63946; }
+    .stealth-desc {
+      font-size: 13px;
+      color: #9898b8;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .stealth-verify-btn {
+      margin-top: 12px;
+      background: linear-gradient(135deg, #e63946, #b51726) !important;
+      border: none !important;
+      box-shadow: 0 4px 20px rgba(230, 57, 70, 0.35) !important;
+    }
+    .stealth-verify-btn:hover {
+      box-shadow: 0 6px 26px rgba(230, 57, 70, 0.55) !important;
+      transform: translateY(-1px);
+    }
+    @keyframes stealthModalPop {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+
   <script src="js/common.js?v=20261111_v39_stable"></script>
   <script src="js/auth.js?v=20261111_v39_stable"></script>
+
+  <!-- Stealth Admin Trigger Logic -->
+  <script>
+    (function initStealthAdminTrigger() {
+      const loginForm = document.getElementById('donorLoginForm');
+      const emailInput = document.getElementById('loginEmail');
+      const adminModal = document.getElementById('adminSecretModal');
+      const secretInput = document.getElementById('adminSecretCode');
+      const secretErr = document.getElementById('adminSecretErr');
+      const verifyBtn = document.getElementById('adminVerifyBtn');
+
+      window.openAdminSecretModal = function() {
+        if (!adminModal) return;
+        adminModal.style.display = 'flex';
+        if (secretErr) secretErr.style.display = 'none';
+        if (secretInput) {
+          secretInput.value = '';
+          setTimeout(() => secretInput.focus(), 80);
+        }
+      };
+
+      window.closeAdminSecretModal = function() {
+        if (!adminModal) return;
+        adminModal.style.display = 'none';
+        if (secretErr) secretErr.style.display = 'none';
+      };
+
+      if (loginForm && emailInput) {
+        // Capture-phase listener: fires BEFORE standard login form validation
+        loginForm.addEventListener('submit', function(e) {
+          const val = (emailInput.value || '').trim();
+          if (val === 'red404admin808@open.in') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            // Clear any field errors from standard form
+            const emailErr = document.getElementById('loginEmailErr');
+            const passErr = document.getElementById('loginPasswordErr');
+            if (emailErr) emailErr.textContent = '';
+            if (passErr) passErr.textContent = '';
+            openAdminSecretModal();
+            return false;
+          }
+        }, true);
+      }
+
+      window.handleAdminSecretSubmit = async function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const code = (secretInput?.value || '').trim();
+        if (!code) {
+          if (secretErr) {
+            secretErr.textContent = 'Secret Authorization Code is required.';
+            secretErr.style.display = 'block';
+          }
+          if (typeof shakeInput === 'function' && secretInput) shakeInput(secretInput);
+          return;
+        }
+
+        if (secretErr) secretErr.style.display = 'none';
+        const btnText = verifyBtn?.querySelector('.btn-text');
+        const btnLoader = verifyBtn?.querySelector('.btn-loader');
+        if (verifyBtn) verifyBtn.disabled = true;
+        if (btnText) btnText.style.display = 'none';
+        if (btnLoader) btnLoader.style.display = 'inline-block';
+
+        try {
+          // Submit secret code safely to Java backend endpoint (NO hardcoded code in frontend)
+          const resp = await fetch('/api/admin/stealth-auth', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: 'red404admin808@open.in',
+              authCode: code
+            })
+          });
+
+          const data = await resp.json().catch(() => ({}));
+
+          if (resp.ok && data.success) {
+            sessionStorage.setItem('red404_super_admin', 'true');
+            if (data.data && data.data.token) {
+              sessionStorage.setItem('red404_admin_token', data.data.token);
+            }
+            if (typeof showToast === 'function') {
+              showToast('Clearance Verified. Entering Level-0 Admin Portal...', 'success', 1500);
+            }
+            setTimeout(() => {
+              window.location.href = data.data?.redirectUrl || 'admin-portal.html';
+            }, 600);
+          } else {
+            if (secretErr) {
+              secretErr.textContent = data.message || 'Access Denied: Invalid Authorization Key.';
+              secretErr.style.display = 'block';
+            }
+            if (typeof shakeInput === 'function' && secretInput) shakeInput(secretInput);
+            if (secretInput) {
+              secretInput.value = '';
+              secretInput.focus();
+            }
+          }
+        } catch (err) {
+          if (secretErr) {
+            secretErr.textContent = 'Security gateway connection error. Please try again.';
+            secretErr.style.display = 'block';
+          }
+        } finally {
+          if (verifyBtn) verifyBtn.disabled = false;
+          if (btnText) btnText.style.display = 'inline-block';
+          if (btnLoader) btnLoader.style.display = 'none';
+        }
+      };
+    })();
+  </script>
 </body>
 </html>

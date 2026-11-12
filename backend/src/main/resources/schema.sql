@@ -133,3 +133,25 @@ CREATE TABLE IF NOT EXISTS hospital_inventory (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_hosp_blood (hospital_id, blood_type)
 );
+
+CREATE TABLE IF NOT EXISTS user_feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(50) NULL DEFAULT NULL,
+    user_name VARCHAR(150) NULL DEFAULT NULL,
+    user_email VARCHAR(150) NULL DEFAULT NULL,
+    category VARCHAR(80) NULL DEFAULT 'General',
+    rating INT DEFAULT 5,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS issue_reports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_id VARCHAR(50) NOT NULL UNIQUE,
+    reporter_name VARCHAR(150) NULL DEFAULT NULL,
+    reporter_contact VARCHAR(150) NULL DEFAULT NULL,
+    category VARCHAR(80) NOT NULL DEFAULT 'System',
+    description TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'OPEN',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

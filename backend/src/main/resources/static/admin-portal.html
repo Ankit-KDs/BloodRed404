@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RED404 — Super Admin Portal</title>
+  
+  <!-- Favicon / Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  
+  <!-- Global & Admin Portal Stylesheets -->
+  <link rel="stylesheet" href="css/common.css?v=20261111_v39_stable" />
+  <link rel="stylesheet" href="css/admin-portal.css?v=20261112_v1" />
+</head>
+<body class="admin-body">
+
+  <!-- ==================== TOP NAVBAR & TAB MENU ==================== -->
+  <header class="admin-navbar">
+    <div class="admin-nav-left">
+      <a href="admin-portal.html" class="admin-brand">
+        <div class="admin-brand-icon">
+          <i class="fas fa-shield-halved"></i>
+        </div>
+        <div class="admin-brand-title">RED404 - SUPER ADMIN</div>
+      </a>
+      <div class="admin-badge-enclave">
+        <span class="admin-pulse-dot"></span>
+        <span>LEVEL-0 ROOT PRIVILEGES</span>
+      </div>
+    </div>
+
+    <!-- Center / Right Tab Menu -->
+    <nav class="admin-tab-menu" role="tablist">
+      <button class="admin-tab-btn active" data-tab="tab-donors" role="tab" aria-selected="true">
+        <i class="fas fa-users"></i>
+        <span>Donors</span>
+      </button>
+      <button class="admin-tab-btn" data-tab="tab-hospitals" role="tab" aria-selected="false">
+        <i class="fas fa-hospital"></i>
+        <span>Hospitals</span>
+      </button>
+      <button class="admin-tab-btn" data-tab="tab-feedback" role="tab" aria-selected="false">
+        <i class="fas fa-comment-dots"></i>
+        <span>Feedback</span>
+      </button>
+      <button class="admin-tab-btn" data-tab="tab-issues" role="tab" aria-selected="false">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Issue Reports</span>
+      </button>
+      <button class="admin-tab-btn" data-tab="tab-health" role="tab" aria-selected="false">
+        <i class="fas fa-heart-pulse"></i>
+        <span>System Health</span>
+      </button>
+    </nav>
+
+    <!-- Right Controls -->
+    <div class="admin-nav-right">
+      <button type="button" class="admin-icon-btn" id="refreshTabBtn" title="Sync Latest Telemetry">
+        <i class="fas fa-rotate"></i>
+        <span>Sync</span>
+      </button>
+      <button type="button" class="admin-logout-btn" id="adminLogoutBtn" title="Exit Level-0 Enclave">
+        <i class="fas fa-power-off"></i>
+        <span>Exit Enclave</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="admin-main-container">
+
+    <!-- ====================================================
+         TAB CONTENT 1: DONORS (#tab-donors)
+    ==================================================== -->
+    <section id="tab-donors" class="admin-tab-panel active" role="tabpanel">
+      <div class="admin-panel-header">
+        <div class="admin-panel-title-wrap">
+          <h2 class="admin-panel-title">Registered Donors Directory</h2>
+          <span class="admin-count-pill" id="donor-count-badge">-</span>
+        </div>
+        <div class="admin-search-wrap">
+          <i class="fas fa-magnifying-glass"></i>
+          <input type="text" id="donorSearchInput" class="admin-search-input" placeholder="Search by Smart ID, Name, Blood Group..." />
+        </div>
+      </div>
+
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Smart ID</th>
+              <th>Blood Group</th>
+              <th>Total Donations</th>
+              <th>Status</th>
+              <th>Action (Suspend)</th>
+            </tr>
+          </thead>
+          <!-- Completely empty tbody for real-time Java/MySQL injection -->
+          <tbody id="donor-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================
+         TAB CONTENT 2: HOSPITALS (#tab-hospitals)
+    ==================================================== -->
+    <section id="tab-hospitals" class="admin-tab-panel" role="tabpanel">
+      <div class="admin-panel-header">
+        <div class="admin-panel-title-wrap">
+          <h2 class="admin-panel-title">Partner Hospitals &amp; Blood Banks</h2>
+          <span class="admin-count-pill" id="hospital-count-badge">-</span>
+        </div>
+        <div class="admin-search-wrap">
+          <i class="fas fa-magnifying-glass"></i>
+          <input type="text" id="hospitalSearchInput" class="admin-search-input" placeholder="Search by Hospital Name, City, License..." />
+        </div>
+      </div>
+
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Hospital Name &amp; Location</th>
+              <th>Verification Status</th>
+              <th>Blood Stock Overview</th>
+              <th>Last Synced</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <!-- Completely empty tbody for real-time Java/MySQL injection -->
+          <tbody id="hospital-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================
+         TAB CONTENT 3: FEEDBACK (#tab-feedback)
+    ==================================================== -->
+    <section id="tab-feedback" class="admin-tab-panel" role="tabpanel">
+      <div class="admin-panel-header">
+        <div class="admin-panel-title-wrap">
+          <h2 class="admin-panel-title">User Feedback &amp; Sentiments</h2>
+          <span class="admin-count-pill" id="feedback-count-badge">-</span>
+        </div>
+      </div>
+
+      <!-- Completely empty glassmorphism grid container for real-time Java injection -->
+      <div id="feedback-container" class="admin-feedback-grid"></div>
+    </section>
+
+    <!-- ====================================================
+         TAB CONTENT 4: ISSUE REPORTS (#tab-issues)
+    ==================================================== -->
+    <section id="tab-issues" class="admin-tab-panel" role="tabpanel">
+      <div class="admin-panel-header">
+        <div class="admin-panel-title-wrap">
+          <h2 class="admin-panel-title">Platform Issue Reports &amp; Escalations</h2>
+          <span class="admin-count-pill" id="issues-count-badge">-</span>
+        </div>
+      </div>
+
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Ticket ID</th>
+              <th>Reporter</th>
+              <th>Issue Category</th>
+              <th>Action (Resolve)</th>
+            </tr>
+          </thead>
+          <!-- Completely empty tbody for real-time Java/MySQL injection -->
+          <tbody id="issues-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ====================================================
+         TAB CONTENT 5: SYSTEM HEALTH (#tab-health)
+    ==================================================== -->
+    <section id="tab-health" class="admin-tab-panel" role="tabpanel">
+      <div class="admin-panel-header">
+        <div class="admin-panel-title-wrap">
+          <h2 class="admin-panel-title">Core System Telemetry &amp; Architecture</h2>
+        </div>
+      </div>
+
+      <!-- 2-Column Split View -->
+      <div class="admin-health-split">
+        
+        <!-- Left Column: Quick Metrics & Database Connection -->
+        <div class="admin-metrics-column">
+          <!-- Total Donors Metric Card -->
+          <div class="admin-metric-card metric-donors">
+            <div class="metric-card-content">
+              <span class="metric-label">Total Registered Donors</span>
+              <span id="total-donors" class="metric-val">-</span>
+            </div>
+            <div class="metric-icon-wrap">
+              <i class="fas fa-hand-holding-droplet"></i>
+            </div>
+          </div>
+
+          <!-- Total Hospitals Metric Card -->
+          <div class="admin-metric-card metric-hospitals">
+            <div class="metric-card-content">
+              <span class="metric-label">Total Partner Hospitals</span>
+              <span id="total-hospitals" class="metric-val">-</span>
+            </div>
+            <div class="metric-icon-wrap">
+              <i class="fas fa-hospital"></i>
+            </div>
+          </div>
+
+          <!-- Total SOS Handled Metric Card -->
+          <div class="admin-metric-card metric-sos">
+            <div class="metric-card-content">
+              <span class="metric-label">Total SOS Handled</span>
+              <span id="total-sos" class="metric-val">-</span>
+            </div>
+            <div class="metric-icon-wrap">
+              <i class="fas fa-truck-medical"></i>
+            </div>
+          </div>
+
+          <!-- MySQL Health Card -->
+          <div class="mysql-health-card">
+            <div class="mysql-status-header">
+              <div class="mysql-status-badge">
+                <span class="pulse-indicator pulse-green"></span>
+                <span id="mysql-status">MySQL Connected</span>
+              </div>
+              <span style="font-size: 11px; color: var(--admin-text-muted); font-family: var(--admin-font-mono);">TLS SECURED</span>
+            </div>
+            <div class="mysql-meta-grid">
+              <div class="mysql-meta-row">
+                <span class="mysql-meta-key">Database Engine</span>
+                <span class="mysql-meta-val" id="db-engine">-</span>
+              </div>
+              <div class="mysql-meta-row">
+                <span class="mysql-meta-key">Database Target</span>
+                <span class="mysql-meta-val" id="db-name">-</span>
+              </div>
+              <div class="mysql-meta-row">
+                <span class="mysql-meta-key">Query Round-Trip</span>
+                <span class="mysql-meta-val" id="db-latency">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Master Activity Stack (Logs) -->
+        <div class="admin-terminal-column">
+          <div class="terminal-header">
+            <div class="terminal-title-wrap">
+              <div class="terminal-dots">
+                <span class="t-dot t-dot-red"></span>
+                <span class="t-dot t-dot-amber"></span>
+                <span class="t-dot t-dot-green"></span>
+              </div>
+              <span class="terminal-title">Master Activity Stack (Logs)</span>
+            </div>
+            <span class="terminal-live-tag">LIVE STREAM</span>
+          </div>
+
+          <!-- Completely empty container styled like a terminal feed for backend logs -->
+          <div id="activity-logs-container" class="admin-terminal-feed"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Admin Portal Script -->
+  <script src="js/admin-portal.js?v=20261112_v1"></script>
+</body>
+</html>
