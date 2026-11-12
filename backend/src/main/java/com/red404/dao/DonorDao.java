@@ -51,9 +51,12 @@ public class DonorDao {
 
     public boolean insert(Map<String, Object> donor) throws SQLException {
         ensureDonorColumnsExist();
-        String sql = "INSERT INTO donors (donor_id, name, email, phone, dob, gender, password, blood_type, weight, " +
+        String sql = "INSERT INTO donors (" +
+                "donor_id, name, father_name, email, phone, dob, gender, password, blood_type, weight, " +
                 "last_donation, availability, address, city, state, pincode, latitude, longitude, zone, " +
-                "sms_notif, push_notif, email_notif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "allergies, conditions, medications, surgeries, donor_type, pulse, hemoglobin, blood_pressure, body_temp, " +
+                "verified_facility, verified_date, qr_token, sms_notif, push_notif, email_notif" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             String name = str(donor.get("name")).trim();
@@ -76,31 +79,46 @@ public class DonorDao {
             donor.put("donorId", smartId);
             donor.put("donor_id", smartId);
 
-            ps.setString(1, smartId);
-            ps.setString(2, name);
             String email = str(donor.get("email")).trim().toLowerCase();
             String phone = str(donor.get("phone")).trim();
             String rawPassword = str(donor.get("password")).trim();
             String password = PasswordUtil.isBCrypt(rawPassword) ? rawPassword : PasswordUtil.hashPassword(rawPassword);
-            ps.setString(3, email);
-            ps.setString(4, phone);
-            setDate(ps, 5, dob);
-            ps.setString(6, str(donor.get("gender")));
-            ps.setString(7, password);
-            ps.setString(8, str(donor.get("bloodType")));
-            ps.setDouble(9, donor.get("weight") == null ? 0 : ((Number) donor.get("weight")).doubleValue());
-            setDate(ps, 10, (Date) donor.get("lastDonation"));
-            ps.setString(11, str(donor.getOrDefault("availability", "Available")));
-            ps.setString(12, str(donor.get("address")));
-            ps.setString(13, str(donor.get("city")));
-            ps.setString(14, str(donor.get("state")));
-            ps.setString(15, str(donor.get("pincode")));
-            setDouble(ps, 16, (Double) donor.get("latitude"));
-            setDouble(ps, 17, (Double) donor.get("longitude"));
-            ps.setString(18, (String) donor.get("zone"));
-            ps.setBoolean(19, bool(donor.get("smsNotif"), true));
-            ps.setBoolean(20, bool(donor.get("pushNotif"), true));
-            ps.setBoolean(21, bool(donor.get("emailNotif"), false));
+
+            int idx = 1;
+            ps.setString(idx++, smartId);
+            ps.setString(idx++, name);
+            ps.setString(idx++, emptyToNull(str(donor.get("father_name") != null ? donor.get("father_name") : donor.get("fatherName"))));
+            ps.setString(idx++, email);
+            ps.setString(idx++, phone);
+            setDate(ps, idx++, dob);
+            ps.setString(idx++, emptyToNull(str(donor.get("gender"))));
+            ps.setString(idx++, password);
+            ps.setString(idx++, str(donor.get("bloodType") != null ? donor.get("bloodType") : donor.get("blood_type")));
+            setDouble(ps, idx++, donor.get("weight"));
+            setDate(ps, idx++, donor.get("lastDonation"));
+            ps.setString(idx++, str(donor.getOrDefault("availability", "Available")));
+            ps.setString(idx++, emptyToNull(str(donor.get("address"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("city"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("state"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("pincode"))));
+            setDouble(ps, idx++, donor.get("latitude"));
+            setDouble(ps, idx++, donor.get("longitude"));
+            ps.setString(idx++, emptyToNull(str(donor.get("zone"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("allergies"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("conditions"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("medications"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("surgeries"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("donor_type") != null ? donor.get("donor_type") : donor.get("donorType"))));
+            setInt(ps, idx++, donor.get("pulse"));
+            setDouble(ps, idx++, donor.get("hemoglobin"));
+            ps.setString(idx++, emptyToNull(str(donor.get("blood_pressure") != null ? donor.get("blood_pressure") : donor.get("bloodPressure"))));
+            setDouble(ps, idx++, donor.get("body_temp") != null ? donor.get("body_temp") : donor.get("bodyTemp"));
+            ps.setString(idx++, emptyToNull(str(donor.get("verified_facility") != null ? donor.get("verified_facility") : donor.get("verifiedFacility"))));
+            setDate(ps, idx++, donor.get("verified_date") != null ? donor.get("verified_date") : donor.get("verifiedDate"));
+            ps.setString(idx++, emptyToNull(str(donor.get("qr_token") != null ? donor.get("qr_token") : donor.get("qrToken"))));
+            ps.setBoolean(idx++, bool(donor.get("smsNotif"), true));
+            ps.setBoolean(idx++, bool(donor.get("pushNotif"), true));
+            ps.setBoolean(idx++, bool(donor.get("emailNotif"), false));
             return ps.executeUpdate() > 0;
         }
     }
@@ -347,21 +365,21 @@ public class DonorDao {
 
     private void ensureDonorColumnsExist() {
         try (Connection conn = DBConnection.getConnection()) {
-            ensureCol(conn, "donor_id", "VARCHAR(30) NULL");
-            ensureCol(conn, "father_name", "VARCHAR(150) NULL");
-            ensureCol(conn, "pulse", "INT NULL");
-            ensureCol(conn, "hemoglobin", "DOUBLE NULL");
-            ensureCol(conn, "blood_pressure", "VARCHAR(30) NULL");
-            ensureCol(conn, "body_temp", "DOUBLE NULL");
-            ensureCol(conn, "verified_facility", "VARCHAR(150) NULL");
-            ensureCol(conn, "verified_date", "DATE NULL");
-            ensureCol(conn, "allergies", "VARCHAR(255) NULL");
-            ensureCol(conn, "conditions", "VARCHAR(255) NULL");
-            ensureCol(conn, "medications", "VARCHAR(255) NULL");
-            ensureCol(conn, "surgeries", "VARCHAR(255) NULL");
-            ensureCol(conn, "donor_type", "VARCHAR(80) NULL");
-            ensureCol(conn, "qr_token", "VARCHAR(100) NULL");
-            ensureCol(conn, "last_donation", "DATE NULL");
+            ensureCol(conn, "donor_id", "VARCHAR(30) NULL DEFAULT NULL");
+            ensureCol(conn, "father_name", "VARCHAR(150) NULL DEFAULT NULL");
+            ensureCol(conn, "pulse", "INT NULL DEFAULT NULL");
+            ensureCol(conn, "hemoglobin", "DOUBLE NULL DEFAULT NULL");
+            ensureCol(conn, "blood_pressure", "VARCHAR(30) NULL DEFAULT NULL");
+            ensureCol(conn, "body_temp", "DOUBLE NULL DEFAULT NULL");
+            ensureCol(conn, "verified_facility", "VARCHAR(180) NULL DEFAULT NULL");
+            ensureCol(conn, "verified_date", "DATE NULL DEFAULT NULL");
+            ensureCol(conn, "allergies", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureCol(conn, "conditions", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureCol(conn, "medications", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureCol(conn, "surgeries", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureCol(conn, "donor_type", "VARCHAR(80) NULL DEFAULT NULL");
+            ensureCol(conn, "qr_token", "VARCHAR(100) NULL DEFAULT NULL");
+            ensureCol(conn, "last_donation", "DATE NULL DEFAULT NULL");
 
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name LIKE '%Rajesh%'");
@@ -385,9 +403,13 @@ public class DonorDao {
                     if (rs.next()) exists = true;
                 }
             }
-            if (!exists) {
-                try (Statement st = conn.createStatement()) {
+            try (Statement st = conn.createStatement()) {
+                if (!exists) {
                     st.executeUpdate("ALTER TABLE donors ADD COLUMN " + colName + " " + colDef);
+                } else {
+                    try {
+                        st.executeUpdate("ALTER TABLE donors MODIFY COLUMN " + colName + " " + colDef);
+                    } catch (Exception ignored) {}
                 }
             }
         } catch (Exception ignored) {}
@@ -1112,19 +1134,47 @@ public class DonorDao {
         return donor;
     }
 
-    private static void setDate(PreparedStatement ps, int index, Date date) throws SQLException {
+    private static void setDate(PreparedStatement ps, int index, Object date) throws SQLException {
         if (date == null) {
             ps.setNull(index, Types.DATE);
+        } else if (date instanceof Date) {
+            ps.setDate(index, (Date) date);
+        } else if (date instanceof java.util.Date) {
+            ps.setDate(index, new Date(((java.util.Date) date).getTime()));
         } else {
-            ps.setDate(index, date);
+            try {
+                ps.setDate(index, Date.valueOf(str(date).trim()));
+            } catch (Exception e) {
+                ps.setNull(index, Types.DATE);
+            }
         }
     }
 
-    private static void setDouble(PreparedStatement ps, int index, Double value) throws SQLException {
-        if (value == null) {
+    private static void setDouble(PreparedStatement ps, int index, Object value) throws SQLException {
+        if (value == null || str(value).isBlank()) {
             ps.setNull(index, Types.DOUBLE);
+        } else if (value instanceof Number) {
+            ps.setDouble(index, ((Number) value).doubleValue());
         } else {
-            ps.setDouble(index, value);
+            try {
+                ps.setDouble(index, Double.parseDouble(str(value).trim()));
+            } catch (Exception e) {
+                ps.setNull(index, Types.DOUBLE);
+            }
+        }
+    }
+
+    private static void setInt(PreparedStatement ps, int index, Object value) throws SQLException {
+        if (value == null || str(value).isBlank()) {
+            ps.setNull(index, Types.INTEGER);
+        } else if (value instanceof Number) {
+            ps.setInt(index, ((Number) value).intValue());
+        } else {
+            try {
+                ps.setInt(index, Integer.parseInt(str(value).trim()));
+            } catch (Exception e) {
+                ps.setNull(index, Types.INTEGER);
+            }
         }
     }
 

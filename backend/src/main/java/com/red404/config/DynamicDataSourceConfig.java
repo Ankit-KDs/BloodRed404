@@ -156,20 +156,20 @@ public class DynamicDataSourceConfig {
 
     private void ensureDonorColumns(DataSource ds) {
         try (Connection conn = ds.getConnection()) {
-            ensureColumn(conn, "donors", "father_name", "VARCHAR(150) NULL");
-            ensureColumn(conn, "donors", "pulse", "INT NULL");
-            ensureColumn(conn, "donors", "hemoglobin", "DOUBLE NULL");
-            ensureColumn(conn, "donors", "blood_pressure", "VARCHAR(30) NULL");
-            ensureColumn(conn, "donors", "body_temp", "DOUBLE NULL");
-            ensureColumn(conn, "donors", "verified_facility", "VARCHAR(150) NULL");
-            ensureColumn(conn, "donors", "verified_date", "DATE NULL");
-            ensureColumn(conn, "donors", "allergies", "VARCHAR(255) NULL");
-            ensureColumn(conn, "donors", "conditions", "VARCHAR(255) NULL");
-            ensureColumn(conn, "donors", "medications", "VARCHAR(255) NULL");
-            ensureColumn(conn, "donors", "surgeries", "VARCHAR(255) NULL");
-            ensureColumn(conn, "donors", "donor_type", "VARCHAR(80) NULL");
-            ensureColumn(conn, "donors", "qr_token", "VARCHAR(100) NULL");
-            ensureColumn(conn, "donors", "last_donation", "DATE NULL");
+            ensureColumn(conn, "donors", "father_name", "VARCHAR(150) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "pulse", "INT NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "hemoglobin", "DOUBLE NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "blood_pressure", "VARCHAR(30) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "body_temp", "DOUBLE NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "verified_facility", "VARCHAR(150) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "verified_date", "DATE NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "allergies", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "conditions", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "medications", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "surgeries", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "donor_type", "VARCHAR(80) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "qr_token", "VARCHAR(100) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "last_donation", "DATE NULL DEFAULT NULL");
         } catch (Exception e) {
             log.warn("Notice during ensureDonorColumns: {}", e.getMessage());
         }
@@ -186,10 +186,14 @@ public class DynamicDataSourceConfig {
                     if (rs.next()) exists = true;
                 }
             }
-            if (!exists) {
-                try (Statement st = conn.createStatement()) {
+            try (Statement st = conn.createStatement()) {
+                if (!exists) {
                     st.executeUpdate("ALTER TABLE " + tableName + " ADD COLUMN " + colName + " " + colDef);
                     log.info("Added missing column {} to table {}", colName, tableName);
+                } else {
+                    try {
+                        st.executeUpdate("ALTER TABLE " + tableName + " MODIFY COLUMN " + colName + " " + colDef);
+                    } catch (Exception ignored) {}
                 }
             }
         } catch (Exception ignored) {}

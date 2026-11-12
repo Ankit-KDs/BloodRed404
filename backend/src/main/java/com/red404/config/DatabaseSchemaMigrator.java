@@ -58,37 +58,37 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
             "CREATE TABLE IF NOT EXISTS donors (" +
             "    id INT AUTO_INCREMENT PRIMARY KEY," +
-            "    donor_id VARCHAR(30) NULL UNIQUE," +
+            "    donor_id VARCHAR(30) NULL DEFAULT NULL UNIQUE," +
             "    name VARCHAR(150) NOT NULL," +
-            "    father_name VARCHAR(150) NULL," +
+            "    father_name VARCHAR(150) NULL DEFAULT NULL," +
             "    email VARCHAR(150) NOT NULL UNIQUE," +
             "    phone VARCHAR(20) NOT NULL UNIQUE," +
-            "    dob DATE NULL," +
-            "    gender VARCHAR(20) NULL," +
+            "    dob DATE NULL DEFAULT NULL," +
+            "    gender VARCHAR(20) NULL DEFAULT NULL," +
             "    password VARCHAR(255) NOT NULL," +
             "    blood_type VARCHAR(5) NOT NULL," +
-            "    weight DOUBLE NULL," +
-            "    last_donation DATE NULL," +
+            "    weight DOUBLE NULL DEFAULT NULL," +
+            "    last_donation DATE NULL DEFAULT NULL," +
             "    availability VARCHAR(40) DEFAULT 'Available'," +
-            "    address VARCHAR(255) NULL," +
-            "    city VARCHAR(80) NULL," +
-            "    state VARCHAR(80) NULL," +
-            "    pincode VARCHAR(10) NULL," +
-            "    latitude DOUBLE NULL," +
-            "    longitude DOUBLE NULL," +
-            "    zone VARCHAR(80) NULL," +
-            "    allergies VARCHAR(255) NULL," +
-            "    conditions VARCHAR(255) NULL," +
-            "    medications VARCHAR(255) NULL," +
-            "    surgeries VARCHAR(255) NULL," +
-            "    donor_type VARCHAR(80) NULL," +
-            "    pulse INT NULL," +
-            "    hemoglobin DOUBLE NULL," +
-            "    blood_pressure VARCHAR(30) NULL," +
-            "    body_temp DOUBLE NULL," +
-            "    verified_facility VARCHAR(180) NULL," +
-            "    verified_date DATE NULL," +
-            "    qr_token VARCHAR(100) NULL," +
+            "    address VARCHAR(255) NULL DEFAULT NULL," +
+            "    city VARCHAR(80) NULL DEFAULT NULL," +
+            "    state VARCHAR(80) NULL DEFAULT NULL," +
+            "    pincode VARCHAR(10) NULL DEFAULT NULL," +
+            "    latitude DOUBLE NULL DEFAULT NULL," +
+            "    longitude DOUBLE NULL DEFAULT NULL," +
+            "    zone VARCHAR(80) NULL DEFAULT NULL," +
+            "    allergies VARCHAR(255) NULL DEFAULT NULL," +
+            "    conditions VARCHAR(255) NULL DEFAULT NULL," +
+            "    medications VARCHAR(255) NULL DEFAULT NULL," +
+            "    surgeries VARCHAR(255) NULL DEFAULT NULL," +
+            "    donor_type VARCHAR(80) NULL DEFAULT NULL," +
+            "    pulse INT NULL DEFAULT NULL," +
+            "    hemoglobin DOUBLE NULL DEFAULT NULL," +
+            "    blood_pressure VARCHAR(30) NULL DEFAULT NULL," +
+            "    body_temp DOUBLE NULL DEFAULT NULL," +
+            "    verified_facility VARCHAR(180) NULL DEFAULT NULL," +
+            "    verified_date DATE NULL DEFAULT NULL," +
+            "    qr_token VARCHAR(100) NULL DEFAULT NULL," +
             "    sms_notif BOOLEAN DEFAULT TRUE," +
             "    push_notif BOOLEAN DEFAULT TRUE," +
             "    email_notif BOOLEAN DEFAULT FALSE," +
@@ -230,47 +230,49 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
     private void migrateDonorsTable(Connection conn) {
         Map<String, String> requiredColumns = new LinkedHashMap<>();
-        requiredColumns.put("donor_id", "VARCHAR(30) NULL");
-        requiredColumns.put("father_name", "VARCHAR(150) NULL");
-        requiredColumns.put("dob", "DATE NULL");
-        requiredColumns.put("gender", "VARCHAR(20) NULL");
-        requiredColumns.put("weight", "DOUBLE NULL");
-        requiredColumns.put("last_donation", "DATE NULL");
+        requiredColumns.put("donor_id", "VARCHAR(30) NULL DEFAULT NULL");
+        requiredColumns.put("father_name", "VARCHAR(150) NULL DEFAULT NULL");
+        requiredColumns.put("dob", "DATE NULL DEFAULT NULL");
+        requiredColumns.put("gender", "VARCHAR(20) NULL DEFAULT NULL");
+        requiredColumns.put("weight", "DOUBLE NULL DEFAULT NULL");
+        requiredColumns.put("last_donation", "DATE NULL DEFAULT NULL");
         requiredColumns.put("availability", "VARCHAR(40) DEFAULT 'Available'");
-        requiredColumns.put("address", "VARCHAR(255) NULL");
-        requiredColumns.put("city", "VARCHAR(80) NULL");
-        requiredColumns.put("state", "VARCHAR(80) NULL");
-        requiredColumns.put("pincode", "VARCHAR(10) NULL");
-        requiredColumns.put("latitude", "DOUBLE NULL");
-        requiredColumns.put("longitude", "DOUBLE NULL");
-        requiredColumns.put("zone", "VARCHAR(80) NULL");
+        requiredColumns.put("address", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("city", "VARCHAR(80) NULL DEFAULT NULL");
+        requiredColumns.put("state", "VARCHAR(80) NULL DEFAULT NULL");
+        requiredColumns.put("pincode", "VARCHAR(10) NULL DEFAULT NULL");
+        requiredColumns.put("latitude", "DOUBLE NULL DEFAULT NULL");
+        requiredColumns.put("longitude", "DOUBLE NULL DEFAULT NULL");
+        requiredColumns.put("zone", "VARCHAR(80) NULL DEFAULT NULL");
         requiredColumns.put("sms_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("push_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("email_notif", "BOOLEAN DEFAULT FALSE");
-        requiredColumns.put("pulse", "INT NULL");
-        requiredColumns.put("hemoglobin", "DOUBLE NULL");
-        requiredColumns.put("blood_pressure", "VARCHAR(30) NULL");
-        requiredColumns.put("body_temp", "DOUBLE NULL");
-        requiredColumns.put("verified_facility", "VARCHAR(180) NULL");
-        requiredColumns.put("verified_date", "DATE NULL");
-        requiredColumns.put("allergies", "VARCHAR(255) NULL");
-        requiredColumns.put("conditions", "VARCHAR(255) NULL");
-        requiredColumns.put("medications", "VARCHAR(255) NULL");
-        requiredColumns.put("surgeries", "VARCHAR(255) NULL");
-        requiredColumns.put("donor_type", "VARCHAR(80) NULL");
-        requiredColumns.put("qr_token", "VARCHAR(100) NULL");
+        requiredColumns.put("pulse", "INT NULL DEFAULT NULL");
+        requiredColumns.put("hemoglobin", "DOUBLE NULL DEFAULT NULL");
+        requiredColumns.put("blood_pressure", "VARCHAR(30) NULL DEFAULT NULL");
+        requiredColumns.put("body_temp", "DOUBLE NULL DEFAULT NULL");
+        requiredColumns.put("verified_facility", "VARCHAR(180) NULL DEFAULT NULL");
+        requiredColumns.put("verified_date", "DATE NULL DEFAULT NULL");
+        requiredColumns.put("allergies", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("conditions", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("medications", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("surgeries", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("donor_type", "VARCHAR(80) NULL DEFAULT NULL");
+        requiredColumns.put("qr_token", "VARCHAR(100) NULL DEFAULT NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "donors", requiredColumns);
 
-        // Drop any legacy demo column defaults that were added previously
-        String[] colsToDropDefault = {
-            "father_name", "pulse", "hemoglobin", "blood_pressure", "body_temp",
-            "verified_facility", "allergies", "conditions", "medications", "surgeries", "donor_type"
+        // Explicitly ensure every nullable column has DEFAULT NULL so MySQL strict mode never fails
+        String[] colsToSetNullDefault = {
+            "donor_id", "father_name", "dob", "gender", "weight", "last_donation", "address",
+            "city", "state", "pincode", "latitude", "longitude", "zone", "pulse",
+            "hemoglobin", "blood_pressure", "body_temp", "verified_facility", "verified_date",
+            "allergies", "conditions", "medications", "surgeries", "donor_type", "qr_token"
         };
-        for (String col : colsToDropDefault) {
+        for (String col : colsToSetNullDefault) {
             try (Statement st = conn.createStatement()) {
-                st.executeUpdate("ALTER TABLE donors ALTER COLUMN " + col + " DROP DEFAULT");
+                st.executeUpdate("ALTER TABLE donors ALTER COLUMN " + col + " SET DEFAULT NULL");
             } catch (Exception ignored) {}
         }
 
@@ -556,6 +558,10 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                         } catch (Exception colEx) {
                             log.warn("Could not add column {} to {}: {}", col, tableName, colEx.getMessage());
                         }
+                    } else if (def.contains("DEFAULT")) {
+                        try {
+                            st.executeUpdate("ALTER TABLE " + tableName + " MODIFY COLUMN " + col + " " + def);
+                        } catch (Exception ignored) {}
                     }
                 }
             }
