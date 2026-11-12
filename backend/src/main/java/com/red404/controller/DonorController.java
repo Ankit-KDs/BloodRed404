@@ -509,7 +509,19 @@ public class DonorController {
                 String ua = request.getHeader("User-Agent");
                 String device = UserAgentUtil.parseDevice(ua);
                 String browser = UserAgentUtil.parseBrowser(ua);
-                String location = GeoLocationUtil.resolveLocation(ip);
+                String location = request.getHeader("X-Client-Location");
+                if (location == null || location.isBlank() || location.toLowerCase().contains("ozar")) {
+                    if (donor.get("city") != null && !donor.get("city").toString().isBlank()) {
+                        location = donor.get("city").toString();
+                        if (donor.get("state") != null && !donor.get("state").toString().isBlank()) {
+                            location += ", " + donor.get("state").toString();
+                        } else {
+                            location += ", India";
+                        }
+                    } else {
+                        location = GeoLocationUtil.resolveLocation(ip);
+                    }
+                }
                 sessionDao.recordSession(session.getId(), donorIdStr, "DONOR", ip, ua, device, browser, location);
             } catch (Exception ignored) {}
 

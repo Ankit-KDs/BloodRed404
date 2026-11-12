@@ -506,7 +506,8 @@ function initDonorLoginForm() {
         );
       } catch (_) { }
 
-      let currentSmartId = result.data.donorId || donorData.donorId || donorData.donor_id;
+      let currentSmartId = (result.data.donor && (result.data.donor.donor_id || result.data.donor.donorId)) || 
+                           result.data.donorId || donorData.donorId || donorData.donor_id;
       if (!currentSmartId && existingRecord) {
         currentSmartId = existingRecord.donorId || existingRecord.donor_id;
       }

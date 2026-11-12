@@ -75,7 +75,17 @@
         if (!sid && typeof user.id === 'string' && user.id.startsWith('DNR-')) {
           sid = user.id;
         }
-        // If missing in active user object, check local registry cache
+        // If missing in active user object, check donor session and local registry cache
+        if (!sid) {
+          try {
+            const rawDnr = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session');
+            if (rawDnr) {
+              const parsedDnr = JSON.parse(rawDnr);
+              const u = parsedDnr.user || parsedDnr;
+              if (u && (u.donorId || u.donor_id)) sid = u.donorId || u.donor_id;
+            }
+          } catch (_) {}
+        }
         if (!sid) {
           try {
             const list = JSON.parse(localStorage.getItem('red404_registered_donors') || '[]');
@@ -85,7 +95,7 @@
             }
           } catch (_) {}
         }
-        // Deterministic fallback if none exists yet
+        // Deterministic fallback ONLY if absolutely no valid ID exists anywhere
         if (!sid || !sid.startsWith('DNR-')) {
           const num = 100 + ((parseInt(user.id || 1, 10) * 137 + 241) % 900);
           const initial = (user.name && user.name.trim().length > 0) ? user.name.trim()[0].toUpperCase() : 'A';
@@ -194,6 +204,32 @@
 
     if (window.updateCommandNav) {
       window.updateCommandNav(donorData);
+    }
+
+    // Authoritative background sync with MySQL database profile
+    if (donorData.email) {
+      fetch(`/api/donor/profile?email=${encodeURIComponent(donorData.email)}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(json => {
+          if (json && json.success && json.data) {
+            const d = json.data;
+            if (d.donorId || d.donor_id) {
+              donorData.donorId = d.donorId || d.donor_id;
+            }
+            if (d.bloodType || d.bloodGroup) {
+              donorData.bloodGroup = d.bloodType || d.bloodGroup;
+            }
+            if (d.name) donorData.name = d.name;
+            renderWelcomeBanner();
+            if (window.updateCommandNav) {
+              window.updateCommandNav(d);
+            }
+            try {
+              localStorage.setItem('red404_donor_session', JSON.stringify({ user: d }));
+            } catch (_) {}
+          }
+        })
+        .catch(() => {});
     }
 
     // Dynamically detect user's current GPS location & state/district
@@ -306,7 +342,9 @@
     const navEmail = document.getElementById('dropdown-user-email');
     if (navEmail && donorData.email) navEmail.textContent = donorData.email;
     const navDonorId = document.getElementById('dropdownDonorIdText');
-    if (navDonorId) navDonorId.textContent = donorData.donorId || 'DNR-0811-A404';
+    if (navDonorId && donorData.donorId) {
+      navDonorId.textContent = donorData.donorId;
+    }
   }
 
   /**

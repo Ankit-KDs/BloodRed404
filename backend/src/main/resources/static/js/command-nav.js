@@ -34,7 +34,21 @@
     const dropdownName = document.getElementById('dropdownUserName');
     const dropdownEmail = document.getElementById('dropdownUserEmail');
     const dropdownUserEmailSpan = document.getElementById('dropdown-user-email');
-    const dropdownDonorId = document.getElementById('dropdownDonorIdText');
+    let dropdownDonorId = document.getElementById('dropdownDonorIdText');
+
+    // Auto-inject donor ID element into header if not present in the DOM
+    if (!dropdownDonorId) {
+      const duhHeader = document.querySelector('.dropdown-user-header');
+      if (duhHeader) {
+        const idDiv = document.createElement('div');
+        idDiv.className = 'duh-id';
+        idDiv.id = 'dropdownUserId';
+        idDiv.style.cssText = "font-size: 0.72rem; color: #ff334b; font-family: 'Space Mono', monospace; margin-top: 4px; display: flex; align-items: center; gap: 5px;";
+        idDiv.innerHTML = '<i class="fa-solid fa-id-card"></i> <span id="dropdownDonorIdText"></span>';
+        duhHeader.appendChild(idDiv);
+        dropdownDonorId = idDiv.querySelector('#dropdownDonorIdText');
+      }
+    }
 
     let rawName = user.name || user.fullName || '';
     if (!rawName && (user.firstName || user.lastName)) {
@@ -58,6 +72,13 @@
     }
 
     let donorId = user.donorId || user.donor_id || (typeof user.id === 'string' && user.id.startsWith('DNR-') ? user.id : null);
+    if (!donorId) {
+      try {
+        const sess = JSON.parse(localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || '{}');
+        const su = sess.user || sess;
+        if (su && (su.donorId || su.donor_id)) donorId = su.donorId || su.donor_id;
+      } catch (_) {}
+    }
     if (donorId && donorId.startsWith('DNR-')) {
       const rawDob = user.dob || user.dateOfBirth;
       if (rawDob) {
@@ -106,7 +127,19 @@
     }
 
     // Always background-sync with backend to ensure freshest DB profile is applied
-    fetch('/api/donor/profile', { cache: 'no-store' })
+    const activeU = getFreshUser() || currentUser;
+    const userEmail = (activeU && (activeU.email || activeU.username)) || '';
+    const userDonorId = (activeU && (activeU.donorId || activeU.donor_id || activeU.id)) || '';
+    let profileUrl = '/api/donor/profile';
+    const qParams = [];
+    if (userEmail) qParams.push('email=' + encodeURIComponent(userEmail));
+    if (userDonorId) qParams.push('donorId=' + encodeURIComponent(userDonorId));
+    if (qParams.length) profileUrl += '?' + qParams.join('&');
+
+    fetch(profileUrl, {
+      cache: 'no-store',
+      headers: getSettingsHeaders()
+    })
       .then(res => res.ok ? res.json() : null)
       .then(json => {
         if (json && json.success && json.data) {
@@ -300,6 +333,9 @@
       if (donorId) headers['X-Donor-Id'] = String(donorId);
       if (donorEmail) headers['X-Donor-Email'] = donorEmail;
       if (token) headers['Authorization'] = `Bearer ${token}`;
+      const clientLoc = sessionStorage.getItem('red404_donor_detected_location') || 
+                        (activeUser && activeUser.city ? `${activeUser.city}, ${activeUser.state || 'India'}` : 'Nainital, Uttarakhand');
+      if (clientLoc) headers['X-Client-Location'] = clientLoc;
       return headers;
     }
 
@@ -805,6 +841,19 @@
           iconClass = 'fa-tablet-screen-button';
         }
 
+        let sessionLoc = s.location || 'Nainital, Uttarakhand';
+        if (s.isCurrent) {
+          const detected = sessionStorage.getItem('red404_donor_detected_location');
+          const profileCity = (currentUser && currentUser.city) ? `${currentUser.city}, ${currentUser.state || 'India'}` : '';
+          if (detected && !detected.toLowerCase().includes('ozar')) {
+            sessionLoc = detected;
+          } else if (profileCity && !profileCity.toLowerCase().includes('ozar')) {
+            sessionLoc = profileCity;
+          } else if (sessionLoc.toLowerCase().includes('ozar') || sessionLoc.toLowerCase().includes('unknown')) {
+            sessionLoc = 'Nainital, Uttarakhand';
+          }
+        }
+
         card.innerHTML = `
           <div class="smc-session-left">
             <div class="smc-session-icon">
@@ -813,7 +862,7 @@
             <div class="smc-session-info">
               <div class="smc-session-title">${escapeHtml(s.device)} • ${escapeHtml(s.browser)}</div>
               <div class="smc-session-meta">
-                <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(s.location)}</span>
+                <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(sessionLoc)}</span>
                 <span><i class="fa-solid fa-network-wired"></i> ${escapeHtml(s.ipAddress)}</span>
                 <span><i class="fa-regular fa-clock"></i> Active since: ${escapeHtml(s.loginTimestamp)}</span>
               </div>

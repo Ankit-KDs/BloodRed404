@@ -19,11 +19,6 @@ if (navbar) {
 
 /* Hamburger */
 if (hamburger && navLinks) {
-  hamburger.addEventListener('click', () => {
-    hamburger.classList.toggle('open');
-    navLinks.classList.toggle('open');
-  });
-
   /* Smooth scrolling with exact offset on nav link click */
   document.querySelectorAll('.nav-link[href^="#"]').forEach(link => {
     link.addEventListener('click', function(e) {
@@ -170,7 +165,9 @@ function initNavbar() {
 
   /* Hamburger toggle */
   if (hamburger && navLinks) {
-    hamburger.addEventListener('click', () => {
+    hamburger.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const isOpen = hamburger.classList.toggle('open');
       navLinks.classList.toggle('open', isOpen);
       document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -1209,6 +1206,10 @@ const API = {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     };
+    try {
+      const clientLoc = sessionStorage.getItem('red404_donor_detected_location');
+      if (clientLoc) headers['X-Client-Location'] = clientLoc;
+    } catch (_) {}
 
     try {
       const res  = await fetch(`${this.baseUrl}${endpoint}`, {

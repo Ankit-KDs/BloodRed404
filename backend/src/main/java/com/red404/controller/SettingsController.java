@@ -90,16 +90,41 @@ public class SettingsController {
             HttpSession session = request.getSession(true);
             String currentSid = session != null ? session.getId() : "";
 
+            String clientLoc = request.getHeader("X-Client-Location");
+            if (clientLoc == null || clientLoc.isBlank() || clientLoc.toLowerCase().contains("ozar")) {
+                if (donor.get("city") != null && !donor.get("city").toString().isBlank()) {
+                    clientLoc = donor.get("city").toString();
+                    if (donor.get("state") != null && !donor.get("state").toString().isBlank()) {
+                        clientLoc += ", " + donor.get("state").toString();
+                    } else {
+                        clientLoc += ", India";
+                    }
+                }
+            }
+
             List<Map<String, Object>> sessions = sessionDao.getActiveSessions(donorIdStr, "DONOR", currentSid);
             if (sessions.isEmpty()) {
                 String clientIp = GeoLocationUtil.getClientIp(request);
                 String userAgent = request.getHeader("User-Agent");
                 String device = UserAgentUtil.parseDevice(userAgent);
                 String browser = UserAgentUtil.parseBrowser(userAgent);
-                String location = GeoLocationUtil.resolveLocation(clientIp);
+                String location = (clientLoc != null && !clientLoc.isBlank()) ? clientLoc : GeoLocationUtil.resolveLocation(clientIp);
                 String sid = (currentSid != null && !currentSid.isBlank()) ? currentSid : "SESS-" + donorIdStr + "-" + System.currentTimeMillis();
                 sessionDao.recordSession(sid, donorIdStr, "DONOR", clientIp, userAgent, device, browser, location);
                 sessions = sessionDao.getActiveSessions(donorIdStr, "DONOR", sid);
+            } else if (clientLoc != null && !clientLoc.isBlank()) {
+                for (Map<String, Object> s : sessions) {
+                    if (Boolean.TRUE.equals(s.get("isCurrent"))) {
+                        String existingLoc = (String) s.get("location");
+                        if (existingLoc == null || existingLoc.isBlank() || existingLoc.toLowerCase().contains("ozar") || existingLoc.equalsIgnoreCase("india")) {
+                            s.put("location", clientLoc);
+                            String sid = (String) s.get("sessionId");
+                            if (sid != null) {
+                                sessionDao.updateSessionLocation(sid, clientLoc);
+                            }
+                        }
+                    }
+                }
             }
             return ResponseEntity.ok(new ApiResponse(true, "Active sessions retrieved.", sessions));
         } catch (Exception e) {

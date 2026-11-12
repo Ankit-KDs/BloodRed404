@@ -72,6 +72,17 @@ public class SessionDao {
         }
     }
 
+    public void updateSessionLocation(String sessionId, String location) {
+        if (sessionId == null || sessionId.isBlank() || location == null || location.isBlank()) return;
+        String sql = "UPDATE user_sessions SET location = ? WHERE session_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, location.trim());
+            ps.setString(2, sessionId.trim());
+            ps.executeUpdate();
+        } catch (Exception ignored) {}
+    }
+
     public List<Map<String, Object>> getActiveSessions(int userId, String userType, String currentSessionId) {
         return getActiveSessions(String.valueOf(userId), userType, currentSessionId);
     }

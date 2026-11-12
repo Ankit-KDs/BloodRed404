@@ -1280,21 +1280,82 @@
   .stepper-linear-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
+    gap: 1rem;
   }
   .stepper-arrow-divider {
     display: none;
   }
 }
 
-/* Mobile (1 column) */
-@media (max-width: 640px) {
+/* Mobile (Sleek 2-column compact grid instead of tall 1-column stack) */
+@media (max-width: 768px) {
+  .process-flow-section {
+    padding: 2.25rem 0;
+  }
+  .process-flow-header {
+    margin-bottom: 1.25rem;
+  }
   .stepper-linear-container {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+  .stepper-step-card {
+    padding: 0.85rem 0.7rem;
+    border-radius: 10px;
+  }
+  .ssc-top {
+    margin-bottom: 0.45rem;
+  }
+  .ssc-num {
+    font-size: 1.05rem;
+  }
+  .ssc-icon {
+    font-size: 0.95rem;
+  }
+  .ssc-title {
+    font-size: 0.88rem;
+    margin-bottom: 0.3rem;
+    line-height: 1.25;
+  }
+  .ssc-desc {
+    font-size: 0.74rem;
+    line-height: 1.4;
+  }
+  .zone-coverage-badge {
+    margin-top: 0.5rem;
+    font-size: 0.62rem;
   }
   .stepper-arrow-divider {
     display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .stepper-linear-container {
+    gap: 0.45rem;
+  }
+  .stepper-step-card {
+    padding: 0.75rem 0.55rem;
+    border-radius: 9px;
+  }
+  .ssc-num {
+    font-size: 0.95rem;
+  }
+  .ssc-icon {
+    font-size: 0.85rem;
+  }
+  .ssc-title {
+    font-size: 0.82rem;
+    margin-bottom: 0.25rem;
+  }
+  .ssc-desc {
+    font-size: 0.7rem;
+    line-height: 1.35;
+  }
+  .zone-coverage-badge {
+    margin-top: 0.4rem;
+    font-size: 0.58rem;
   }
 }
 
@@ -2249,18 +2310,85 @@
     grid-template-columns: 1fr;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
+  .stats-section {
+    padding: 2.25rem 0 2.5rem;
   }
 
-  .national-stock-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.65rem;
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.45rem;
+  }
+
+  .stat-card {
+    padding: 0.65rem 0.4rem;
+    border-radius: 10px;
+  }
+
+  .stat-card .stat-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-card .stat-count {
+    font-size: 1.15rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .stat-card .stat-text {
+    font-size: 0.62rem;
+    margin-bottom: 0.35rem;
   }
 
   .national-stock-card {
-    padding: 1.75rem 1.25rem 1.5rem;
+    margin-top: 1.75rem;
+    padding: 1.25rem 0.85rem;
+    border-radius: 14px;
+  }
+
+  .stock-card-header {
+    margin-bottom: 1.15rem;
+  }
+
+  .stock-card-title {
+    font-size: clamp(1.2rem, 3.5vw, 1.45rem);
+    margin-bottom: 0.35rem;
+  }
+
+  .stock-card-subtitle {
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .national-stock-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.45rem;
+  }
+
+  .stock-mini-card {
+    padding: 0.6rem 0.45rem;
+    border-radius: 8px;
+  }
+
+  .blood-group-badge {
+    font-size: 0.95rem;
+  }
+
+  .stock-mini-card .smc-middle .live-data {
+    font-size: 1.1rem;
+  }
+
+  .stock-mini-card .unit-label {
+    font-size: 0.58rem;
+  }
+
+  .stock-mini-card .smc-bottom {
+    padding-top: 0.25rem;
+  }
+
+  .donor-label {
+    font-size: 0.55rem;
   }
 
   .dsa-grid {
@@ -2295,22 +2423,78 @@
     grid-template-columns: 1fr;
   }
 
+  .stats-section {
+    padding: 1.75rem 0 2rem;
+  }
+
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.45rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
   }
 
-  .national-stock-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
+  .stat-card {
+    padding: 0.55rem 0.25rem;
+    border-radius: 8px;
   }
 
-  .stock-mini-card {
-    padding: 0.75rem 0.85rem;
+  .stat-card .stat-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .stat-card .stat-count {
+    font-size: 1.05rem;
+  }
+
+  .stat-card .stat-text {
+    font-size: 0.58rem;
+    margin-bottom: 0.25rem;
   }
 
   .national-stock-card {
-    padding: 1.35rem 0.95rem 1.15rem;
+    margin-top: 1.25rem;
+    padding: 1rem 0.65rem;
+    border-radius: 12px;
+  }
+
+  .stock-card-title {
+    font-size: 1.15rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .stock-card-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .national-stock-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.35rem;
+  }
+
+  .stock-mini-card {
+    padding: 0.5rem 0.35rem;
+  }
+
+  .blood-group-badge {
+    font-size: 0.85rem;
+  }
+
+  .stock-mini-card .smc-middle .live-data {
+    font-size: 0.98rem;
+  }
+
+  .stock-mini-card .unit-label {
+    font-size: 0.52rem;
+  }
+
+  .stock-mini-card .smc-bottom {
+    padding-top: 0.2rem;
+  }
+
+  .donor-label {
+    font-size: 0.5rem;
   }
 
   .hero-cta {
