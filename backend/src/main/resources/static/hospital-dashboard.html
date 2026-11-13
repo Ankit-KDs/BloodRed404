@@ -6,7 +6,7 @@
   <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hospital Operations Dashboard — RED404</title>
+  <title>Hospital Command Center — RED404</title>
 
   <!-- Google Fonts & Font Awesome -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/common.css?v=20261114_v1" />
-  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_v1" />
+  <link rel="stylesheet" href="css/common.css?v=20261114_v2" />
+  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_v2" />
 </head>
 <body class="hospital-body">
 
@@ -65,7 +65,7 @@
 
       <!-- Right: Logged-in Hospital Identity & Logout -->
       <div class="hosp-nav-right">
-        <div class="hosp-identity-badge" title="Authenticated Hospital Enclave">
+        <div class="hosp-identity-badge" title="Authenticated Facility Enclave">
           <i class="fas fa-hospital"></i>
           <span class="hosp-identity-name" id="top-hospital-name">-</span>
         </div>
@@ -86,31 +86,32 @@
   <!-- ==================== MAIN WORKSPACE ==================== -->
   <main class="hosp-workspace">
 
-    <!-- Welcome Sub-Header with Hospital Name Prominently Displayed -->
+    <!-- 1. COMPACT WELCOME HEADER (Thin Strip Layout) -->
     <section class="hosp-welcome-banner">
       <div class="hosp-welcome-top-meta">
-        <div class="hosp-tag-label">
+        <span class="hosp-tag-label">
           <i class="fas fa-shield-alt"></i>
-          <span>Verified Healthcare Facility Enclave</span>
-        </div>
+          <span>Facility Enclave</span>
+        </span>
+        <span class="hosp-meta-sep">•</span>
         <div class="hosp-live-meta">
           <span class="hosp-pulse-dot"></span>
-          <span>Real-Time Spatial Routing Active</span>
+          <span>Routing Node Active</span>
         </div>
       </div>
       <h1 class="hosp-welcome-title">
         Welcome, <span id="nav-hospital-name" class="hosp-name-glow">-</span>
       </h1>
       <p class="hosp-welcome-desc">
-        Emergency Dispatch Operations &amp; Real-Time Blood Logistics Hub. Trigger instant hyper-local SOS alerts, supervise donor dispatches, and balance critical blood reserves.
+        Emergency Dispatch Operations &amp; Real-Time Logistics. Trigger instant SOS alerts, supervise donor dispatches, and balance critical blood reserves.
       </p>
     </section>
 
-    <!-- ==================== ACTION CARDS (CLICKABLE 3-CARD CONTAINER) ==================== -->
+    <!-- 2. THE 3 MAIN ACTION CARDS (Sleek, Compact, Fully Clickable) -->
     <section class="hosp-cards-container">
 
-      <!-- CARD 1: FIND DONORS (Clickable -> Opens SOS Request Flow) -->
-      <a href="#find-donors" class="hosp-action-card-link" id="cardLinkFindDonors">
+      <!-- CARD 1: FIND DONORS -->
+      <a href="#find-donors" class="hosp-action-card-link" id="cardLinkFindDonors" title="Click to trigger emergency donor broadcast">
         <article class="hosp-action-card">
           <div>
             <div class="card-top-row">
@@ -125,12 +126,12 @@
             <div class="card-content-body">
               <h2 class="card-title">Find Donors</h2>
               <p class="card-description">
-                Deploy instantaneous hyper-local blood requests. Automatically scans and notifies verified, eligible donors within a dynamic 5km to 20km proximity radius.
+                Deploy instantaneous hyper-local blood requests. Scans and alerts verified nearby donors in dynamic 5-20km radius.
               </p>
             </div>
 
-            <!-- Dynamic Placeholder Metrics -->
-            <div class="card-metric-preview">
+            <!-- Compact Metrics Preview -->
+            <div class="card-metric-preview compact">
               <div class="metric-item">
                 <span class="metric-label">Nearby Donors</span>
                 <span class="metric-val" id="metric-nearby-donors">-</span>
@@ -151,8 +152,8 @@
         </article>
       </a>
 
-      <!-- CARD 2: MANAGE INVENTORY (Clickable -> Opens Quick Stock Controls) -->
-      <a href="#manage-inventory" class="hosp-action-card-link" id="cardLinkManageInventory">
+      <!-- CARD 2: MANAGE INVENTORY -->
+      <a href="#manage-inventory" class="hosp-action-card-link" id="cardLinkManageInventory" title="Click to manage blood unit stockpiles">
         <article class="hosp-action-card">
           <div>
             <div class="card-top-row">
@@ -167,18 +168,18 @@
             <div class="card-content-body">
               <h2 class="card-title">Manage Inventory</h2>
               <p class="card-description">
-                Directly adjust and balance on-site hospital blood unit stockpiles. Record newly cross-matched blood bags, mark reserves, and update unit quantities in real time.
+                Directly adjust on-site blood unit stockpiles. Record newly cross-matched blood bags and maintain reserve availability.
               </p>
             </div>
 
-            <!-- Dynamic Placeholder Metrics -->
-            <div class="card-metric-preview">
+            <!-- Compact Metrics Preview -->
+            <div class="card-metric-preview compact">
               <div class="metric-item">
                 <span class="metric-label">Total Units on Hand</span>
                 <span class="metric-val" id="metric-total-units">-</span>
               </div>
               <div class="metric-item">
-                <span class="metric-label">Critical Groups</span>
+                <span class="metric-label">Critical Deficit Groups</span>
                 <span class="metric-val" id="metric-critical-groups" style="color: var(--hosp-warning);">-</span>
               </div>
             </div>
@@ -193,8 +194,8 @@
         </article>
       </a>
 
-      <!-- CARD 3: MY REQUESTS (Detailed Section for Sent Requests) -->
-      <a href="#my-requests" class="hosp-action-card-link" id="cardLinkMyRequests">
+      <!-- CARD 3: MY REQUESTS (Tight 2-Column Grid Layout) -->
+      <a href="#my-requests" class="hosp-action-card-link" id="cardLinkMyRequests" title="Click to view full dispatch history">
         <article class="hosp-action-card">
           <div>
             <div class="card-top-row">
@@ -209,39 +210,39 @@
             <div class="card-content-body">
               <h2 class="card-title">My Requests</h2>
               <p class="card-description">
-                Real-time tracking stack for high-priority blood dispatch requests emitted by this hospital. Monitors response milestones and donor arrivals.
+                Real-time tracking stack for high-priority blood dispatch requests emitted by this hospital node.
               </p>
             </div>
 
-            <!-- Detailed Placeholder Formats as Requested -->
-            <div class="card-requests-container">
-              <div class="req-field-row">
-                <span class="req-label"><i class="fas fa-vial"></i> Units Requested</span>
-                <span class="req-value"><span id="req-units">-</span> Units</span>
+            <!-- Tight Compact 2-Column Grid Format (No heavy backgrounds) -->
+            <div class="req-compact-grid">
+              <div class="req-compact-item">
+                <span class="req-mini-label"><i class="fas fa-vial"></i> Units</span>
+                <span class="req-mini-val"><span id="req-units">-</span> Units</span>
               </div>
-              <div class="req-field-row">
-                <span class="req-label"><i class="fas fa-dna"></i> Blood Type</span>
-                <span class="req-value highlight-blue"><span id="req-blood-type">-</span></span>
+              <div class="req-compact-item">
+                <span class="req-mini-label"><i class="fas fa-dna"></i> Blood Type</span>
+                <span class="req-mini-val highlight-blue"><span id="req-blood-type">-</span></span>
               </div>
-              <div class="req-field-row">
-                <span class="req-label"><i class="fas fa-route"></i> Accurate Distance</span>
-                <span class="req-value"><span id="req-distance">-</span> km away</span>
+              <div class="req-compact-item">
+                <span class="req-mini-label"><i class="fas fa-route"></i> Distance</span>
+                <span class="req-mini-val"><span id="req-distance">-</span> km away</span>
               </div>
-              <div class="req-field-row">
-                <span class="req-label"><i class="fas fa-info-circle"></i> Status</span>
-                <span class="req-value"><span id="req-status" class="req-status-pill">-</span></span>
+              <div class="req-compact-item">
+                <span class="req-mini-label"><i class="fas fa-info-circle"></i> Status</span>
+                <span class="req-mini-val"><span id="req-status" class="req-status-pill">-</span></span>
               </div>
-              <div class="req-field-row">
-                <span class="req-label"><i class="fas fa-paper-plane"></i> Sent Time &amp; Date</span>
-                <span class="req-value"><span id="req-sent-time">-</span></span>
+              <div class="req-compact-item">
+                <span class="req-mini-label"><i class="fas fa-paper-plane"></i> Sent At</span>
+                <span class="req-mini-val"><span id="req-sent-time">-</span></span>
               </div>
-              <div class="req-field-row">
-                <span class="req-label"><i class="fas fa-check-double"></i> Respond Time &amp; Date</span>
-                <span class="req-value"><span id="req-respond-time">-</span></span>
+              <div class="req-compact-item">
+                <span class="req-mini-label"><i class="fas fa-check-double"></i> Respond At</span>
+                <span class="req-mini-val"><span id="req-respond-time">-</span></span>
               </div>
             </div>
 
-            <!-- Dynamic Request List Anchor for Backend Injection -->
+            <!-- Dynamic Injection Hook -->
             <div id="hospital-requests-list" class="requests-dynamic-list"></div>
           </div>
 
@@ -256,7 +257,7 @@
 
     </section>
 
-    <!-- ==================== STATUS SECTION: HOSPITAL BLOOD STOCK ALERTS ==================== -->
+    <!-- 3. HOSPITAL BLOOD STOCK ALERTS (Condensed Grid Section) -->
     <section class="hosp-status-section" id="inventory-alerts">
       
       <div class="status-header-row">
@@ -275,7 +276,7 @@
         <div class="status-filter-pills">
           <div class="status-pill-info">
             <i class="fas fa-bell" style="color: var(--hosp-warning);"></i>
-            <span>Critical Deficit Trigger: &lt; 5 Units</span>
+            <span>Critical Deficit: &lt; 5 Units</span>
           </div>
           <button type="button" class="btn-stock-adjust" id="btnRefreshStock" title="Refresh Live Levels">
             <i class="fas fa-rotate"></i>
@@ -283,10 +284,10 @@
         </div>
       </div>
 
-      <!-- 8-Blood Group Responsive Stock Alerts Grid -->
+      <!-- Condensed 8-Blood Group Grid (Tighter spacing) -->
       <div class="stock-alerts-grid" id="blood-stock-alerts-grid">
 
-        <!-- O Negative (Universal Donor - Critical) -->
+        <!-- O Negative (Universal Donor - Critical Deficit) -->
         <div class="stock-alert-item critical" id="stock-item-o-neg">
           <div class="stock-blood-badge">O-</div>
           <div class="stock-item-info">
@@ -296,16 +297,16 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-o-neg" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="O-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="O-" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="O-" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="O-" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <!-- O Positive -->
+        <!-- O Positive (Standard Stock) -->
         <div class="stock-alert-item" id="stock-item-o-pos">
           <div class="stock-blood-badge">O+</div>
           <div class="stock-item-info">
@@ -315,16 +316,16 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-o-pos" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="O+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="O+" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="O+" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="O+" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <!-- A Negative -->
+        <!-- A Negative (Critical Deficit) -->
         <div class="stock-alert-item critical" id="stock-item-a-neg">
           <div class="stock-blood-badge">A-</div>
           <div class="stock-item-info">
@@ -334,16 +335,16 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-a-neg" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="A-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="A-" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="A-" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="A-" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <!-- A Positive -->
+        <!-- A Positive (Standard Stock) -->
         <div class="stock-alert-item" id="stock-item-a-pos">
           <div class="stock-blood-badge">A+</div>
           <div class="stock-item-info">
@@ -353,16 +354,16 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-a-pos" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="A+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="A+" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="A+" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="A+" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <!-- B Negative -->
+        <!-- B Negative (Critical Deficit) -->
         <div class="stock-alert-item critical" id="stock-item-b-neg">
           <div class="stock-blood-badge">B-</div>
           <div class="stock-item-info">
@@ -372,16 +373,16 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-b-neg" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="B-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="B-" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="B-" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="B-" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <!-- B Positive -->
+        <!-- B Positive (Standard Stock) -->
         <div class="stock-alert-item" id="stock-item-b-pos">
           <div class="stock-blood-badge">B+</div>
           <div class="stock-item-info">
@@ -391,16 +392,16 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-b-pos" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="B+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="B+" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="B+" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="B+" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <!-- AB Negative -->
+        <!-- AB Negative (Critical Deficit) -->
         <div class="stock-alert-item critical" id="stock-item-ab-neg">
           <div class="stock-blood-badge">AB-</div>
           <div class="stock-item-info">
@@ -410,16 +411,16 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-ab-neg" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="AB-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="AB-" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="AB-" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="AB-" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <!-- AB Positive (Universal Recipient) -->
+        <!-- AB Positive (Standard Stock) -->
         <div class="stock-alert-item" id="stock-item-ab-pos">
           <div class="stock-blood-badge">AB+</div>
           <div class="stock-item-info">
@@ -429,18 +430,18 @@
             </span>
             <div class="low-stock-count-text">
               <span id="low-stock-count-ab-pos" class="low-stock-count">-</span>
-              <span class="unit-text">Units Available</span>
+              <span class="unit-text">Units</span>
             </div>
           </div>
           <div class="stock-actions-group">
-            <button class="btn-stock-adjust btn-decrement" data-type="AB+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
-            <button class="btn-stock-adjust btn-increment" data-type="AB+" title="Increase Unit"><i class="fas fa-plus"></i></button>
+            <button class="btn-stock-adjust btn-decrement" data-type="AB+" title="Decrease"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="AB+" title="Increase"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
       </div>
 
-      <!-- General Fallback Hook for Backend Count -->
+      <!-- General Backend Hooks -->
       <div style="display: none;">
         <span id="low-stock-count">-</span>
         <span id="hosp-name">-</span>
@@ -450,7 +451,7 @@
 
   </main>
 
-  <!-- ==================== MODAL 1: DISPATCH SOS BLOOD REQUEST ==================== -->
+  <!-- ==================== MODAL: DISPATCH SOS BLOOD REQUEST ==================== -->
   <div class="hosp-modal-backdrop" id="modalSosDispatch" role="dialog" aria-modal="true">
     <div class="hosp-modal-box">
       <div class="modal-header-row">
@@ -521,7 +522,7 @@
   </footer>
 
   <!-- ==================== LOGIC JAVASCRIPT ==================== -->
-  <script src="js/common.js?v=20261114_v1"></script>
-  <script src="js/hospital-dashboard.js?v=20261114_v1"></script>
+  <script src="js/common.js?v=20261114_v2"></script>
+  <script src="js/hospital-dashboard.js?v=20261114_v2"></script>
 </body>
 </html>

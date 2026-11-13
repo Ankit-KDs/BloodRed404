@@ -389,3 +389,4 @@ function initStockAlerts() {
     });
   }
 }
+

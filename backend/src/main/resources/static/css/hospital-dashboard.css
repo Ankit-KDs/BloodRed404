@@ -1,33 +1,34 @@
 /* ============================================================
-   RED404 — HOSPITAL DASHBOARD CSS (NEW ARCHITECTURE)
-   Theme: Dark Slate/Navy with Professional Medical Blue Accent
-   Responsive: Mobile, Tablet, Desktop (CSS Grid & Flexbox)
+   RED404 — HOSPITAL DASHBOARD CSS (COMMAND CENTER ARCHITECTURE)
+   Theme: Sleek Dark Slate/Navy with Professional Blue Accent
+   Layout: Compact, Tight, High-Density Command Center Aesthetic
+   Border-Radius: 8px Precision Radius
 ============================================================ */
 
 :root {
   --hosp-bg: #080d1a;
-  --hosp-bg-radial: radial-gradient(circle at 18% 12%, rgba(37, 99, 235, 0.12) 0%, rgba(13, 23, 42, 0.98) 55%, #080d1a 100%);
-  --hosp-bg-surface: #0e172a;
-  --hosp-bg-card: rgba(14, 23, 42, 0.85);
-  --hosp-bg-card-hover: rgba(20, 34, 62, 0.95);
-  --hosp-bg-glass: rgba(15, 26, 46, 0.65);
+  --hosp-bg-radial: radial-gradient(circle at 18% 12%, rgba(37, 99, 235, 0.1) 0%, rgba(11, 19, 36, 0.98) 55%, #080d1a 100%);
+  --hosp-bg-surface: #0c1527;
+  --hosp-bg-card: rgba(13, 22, 40, 0.88);
+  --hosp-bg-card-hover: rgba(18, 30, 56, 0.96);
+  --hosp-bg-glass: rgba(14, 24, 44, 0.7);
 
   /* Professional Medical Blue Accent */
   --hosp-blue-primary: #2563eb;
   --hosp-blue-light: #3b82f6;
   --hosp-blue-accent: #60a5fa;
-  --hosp-blue-glow: rgba(59, 130, 246, 0.25);
-  --hosp-blue-soft: rgba(37, 99, 235, 0.12);
-  --hosp-blue-border: rgba(59, 130, 246, 0.22);
-  --hosp-blue-border-hover: rgba(59, 130, 246, 0.58);
+  --hosp-blue-glow: rgba(59, 130, 246, 0.22);
+  --hosp-blue-soft: rgba(37, 99, 235, 0.1);
+  --hosp-blue-border: rgba(59, 130, 246, 0.16);
+  --hosp-blue-border-hover: rgba(59, 130, 246, 0.45);
 
   /* Status Colors */
   --hosp-warning: #f97316;
-  --hosp-warning-glow: rgba(249, 115, 22, 0.25);
+  --hosp-warning-glow: rgba(249, 115, 22, 0.22);
   --hosp-danger: #ef4444;
-  --hosp-danger-glow: rgba(239, 68, 68, 0.25);
+  --hosp-danger-glow: rgba(239, 68, 68, 0.22);
   --hosp-success: #10b981;
-  --hosp-success-glow: rgba(16, 185, 129, 0.25);
+  --hosp-success-glow: rgba(16, 185, 129, 0.22);
 
   /* Typography */
   --hosp-text-white: #ffffff;
@@ -38,11 +39,12 @@
   --hosp-font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --hosp-font-brand: 'Space Grotesk', 'Orbitron', sans-serif;
 
-  --hosp-radius-sm: 8px;
-  --hosp-radius-md: 14px;
-  --hosp-radius-lg: 20px;
+  /* Tighter Corner Radii */
+  --hosp-radius-xs: 4px;
+  --hosp-radius-sm: 6px;
+  --hosp-radius-md: 8px; /* Standard tightened 8px radius */
   --hosp-radius-full: 9999px;
-  --hosp-transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --hosp-transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 *, *::before, *::after {
@@ -58,47 +60,47 @@ body.hospital-body {
   color: var(--hosp-text-primary);
   font-family: var(--hosp-font-main);
   min-height: 100vh;
-  line-height: 1.55;
+  line-height: 1.45;
   overflow-x: hidden;
   position: relative;
 }
 
-/* Subtle slate grid texture overlay */
+/* Subtle slate command grid texture */
 body.hospital-body::before {
   content: '';
   position: fixed;
   inset: 0;
   background-image: 
-    linear-gradient(rgba(59, 130, 246, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.025) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(rgba(59, 130, 246, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
   pointer-events: none;
   z-index: 0;
 }
 
-/* ==================== HOSPITAL TOP NAVBAR ==================== */
+/* ==================== 1. COMPACT TOP NAVBAR ==================== */
 .hosp-navbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 9999;
-  background: rgba(10, 16, 30, 0.88);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(9, 15, 28, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--hosp-blue-border);
-  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.4);
   transition: var(--hosp-transition);
 }
 
 .hosp-nav-container {
-  max-width: 1360px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 0.85rem 1.75rem;
+  padding: 0.65rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1.25rem;
   position: relative;
 }
 
@@ -106,37 +108,37 @@ body.hospital-body::before {
 .hosp-nav-left {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   flex-shrink: 0;
 }
 
 .hosp-nav-left .nav-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   text-decoration: none;
 }
 
 .hosp-nav-left .logo-icon {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   background: linear-gradient(135deg, #e63946, #b01b28);
-  border-radius: 9px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 1.15rem;
-  box-shadow: 0 0 16px rgba(230, 57, 70, 0.4);
+  font-size: 1rem;
+  box-shadow: 0 0 12px rgba(230, 57, 70, 0.35);
 }
 
 .hosp-nav-left .logo-text {
   font-family: var(--hosp-font-brand);
-  font-size: 1.35rem;
+  font-size: 1.22rem;
   font-weight: 800;
   color: var(--hosp-text-white);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .hosp-nav-left .logo-404 {
@@ -146,24 +148,24 @@ body.hospital-body::before {
 .hosp-enclave-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.28rem 0.75rem;
-  background: rgba(37, 99, 235, 0.14);
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.28);
   border-radius: var(--hosp-radius-full);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--hosp-blue-accent);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .hosp-pulse-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--hosp-blue-accent);
-  box-shadow: 0 0 8px var(--hosp-blue-accent);
+  box-shadow: 0 0 6px var(--hosp-blue-accent);
   animation: pulseBlue 2s infinite ease-in-out;
 }
 
@@ -176,20 +178,20 @@ body.hospital-body::before {
 .hosp-nav-menu {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.25rem;
   list-style: none;
 }
 
 .hosp-nav-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.15rem;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
   color: var(--hosp-text-secondary);
   text-decoration: none;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  border-radius: var(--hosp-radius-full);
+  border-radius: var(--hosp-radius-md);
   transition: var(--hosp-transition);
   position: relative;
 }
@@ -198,53 +200,38 @@ body.hospital-body::before {
 .hosp-nav-link:hover {
   color: var(--hosp-blue-accent) !important;
   background: var(--hosp-blue-soft);
-  box-shadow: 0 0 16px var(--hosp-blue-glow);
 }
 
 .hosp-nav-link.active {
   color: var(--hosp-blue-accent) !important;
-  background: rgba(37, 99, 235, 0.18);
-  border: 1px solid rgba(59, 130, 246, 0.38);
-  box-shadow: 0 0 18px rgba(37, 99, 235, 0.28);
-}
-
-.hosp-nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 2px;
-  background: var(--hosp-blue-accent);
-  border-radius: 2px;
-  box-shadow: 0 0 8px var(--hosp-blue-accent);
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.32);
 }
 
 /* Right Hospital Identity & Actions */
 .hosp-nav-right {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.75rem;
   flex-shrink: 0;
 }
 
 .hosp-identity-badge {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.42rem 1rem;
-  background: rgba(14, 23, 42, 0.9);
+  gap: 0.5rem;
+  padding: 0.32rem 0.85rem;
+  background: rgba(13, 22, 40, 0.9);
   border: 1px solid var(--hosp-blue-border);
-  border-radius: var(--hosp-radius-full);
-  font-size: 0.85rem;
+  border-radius: var(--hosp-radius-md);
+  font-size: 0.82rem;
   color: var(--hosp-text-primary);
-  max-width: 260px;
+  max-width: 240px;
 }
 
 .hosp-identity-badge i {
   color: var(--hosp-blue-accent);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 .hosp-identity-name {
@@ -258,13 +245,13 @@ body.hospital-body::before {
 .btn-hosp-logout {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 1rem;
+  gap: 0.35rem;
+  padding: 0.32rem 0.85rem;
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: var(--hosp-radius-full);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--hosp-radius-md);
   color: #fca5a5;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -272,27 +259,27 @@ body.hospital-body::before {
 }
 
 .btn-hosp-logout:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.12);
   border-color: var(--hosp-danger);
   color: #fff;
-  box-shadow: 0 0 16px var(--hosp-danger-glow);
+  box-shadow: 0 0 12px var(--hosp-danger-glow);
 }
 
 /* Mobile Hamburger */
 .hosp-hamburger {
   display: none;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   border-radius: var(--hosp-radius-sm);
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(26, 36, 56, 0.7);
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .hosp-hamburger span {
   display: block;
-  width: 24px;
+  width: 22px;
   height: 2px;
   background: var(--hosp-text-primary);
   border-radius: 2px;
@@ -300,7 +287,7 @@ body.hospital-body::before {
 }
 
 .hosp-hamburger.open span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
+  transform: translateY(6px) rotate(45deg);
   background: var(--hosp-blue-accent);
 }
 
@@ -309,27 +296,27 @@ body.hospital-body::before {
 }
 
 .hosp-hamburger.open span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
+  transform: translateY(-6px) rotate(-45deg);
   background: var(--hosp-blue-accent);
 }
 
-/* ==================== MAIN WORKSPACE ==================== */
+/* ==================== 2. MAIN WORKSPACE ==================== */
 .hosp-workspace {
-  max-width: 1360px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 6.25rem 1.75rem 4rem;
+  padding: 4.8rem 1.5rem 3rem; /* Compact top padding */
   position: relative;
   z-index: 1;
 }
 
-/* Welcome Sub-Header */
+/* ==================== 3. COMPACT WELCOME HEADER (THIN STRIP) ==================== */
 .hosp-welcome-banner {
-  background: linear-gradient(135deg, rgba(14, 23, 42, 0.85) 0%, rgba(20, 36, 68, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(13, 22, 40, 0.9) 0%, rgba(18, 30, 56, 0.75) 100%);
   border: 1px solid var(--hosp-blue-border);
-  border-radius: var(--hosp-radius-lg);
-  padding: 1.75rem 2.25rem;
-  margin-bottom: 2.25rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  border-radius: var(--hosp-radius-md); /* Tight 8px radius */
+  padding: 1rem 1.5rem; /* Significantly reduced padding: sleek thin strip */
+  margin-bottom: 1.5rem; /* Tightened spacing */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -339,112 +326,120 @@ body.hospital-body::before {
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 3px;
   height: 100%;
   background: linear-gradient(180deg, var(--hosp-blue-accent), var(--hosp-blue-primary));
-  box-shadow: 0 0 12px var(--hosp-blue-accent);
+  box-shadow: 0 0 10px var(--hosp-blue-accent);
 }
 
 .hosp-welcome-banner::after {
   content: '';
   position: absolute;
-  right: -60px;
-  top: -60px;
-  width: 220px;
-  height: 220px;
+  right: -40px;
+  top: -40px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.09) 0%, transparent 70%);
   pointer-events: none;
 }
 
 .hosp-welcome-top-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.3rem;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 0.6rem;
 }
 
 .hosp-tag-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.76rem;
+  gap: 0.35rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--hosp-blue-accent);
+}
+
+.hosp-meta-sep {
+  color: var(--hosp-text-muted);
+  font-size: 0.7rem;
 }
 
 .hosp-live-meta {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.82rem;
+  gap: 0.4rem;
+  font-size: 0.76rem;
   color: var(--hosp-text-secondary);
 }
 
 .hosp-welcome-title {
-  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  font-size: clamp(1.22rem, 2.2vw, 1.6rem); /* Sleek compact header size */
   font-weight: 800;
   color: var(--hosp-text-white);
   line-height: 1.25;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.25rem;
   letter-spacing: -0.01em;
 }
 
 .hosp-welcome-title span.hosp-name-glow {
   color: var(--hosp-blue-accent);
-  text-shadow: 0 0 24px rgba(59, 130, 246, 0.35);
+  text-shadow: 0 0 18px rgba(59, 130, 246, 0.35);
 }
 
 .hosp-welcome-desc {
-  font-size: 0.95rem;
+  font-size: 0.86rem; /* Shrunk paragraph size */
+  line-height: 1.45; /* Reduced line height */
   color: var(--hosp-text-secondary);
-  max-width: 720px;
+  max-width: 820px;
 }
 
-/* ==================== ACTION CARDS SECTION (GRID/FLEX) ==================== */
+/* ==================== 4. THE 3 MAIN ACTION CARDS (SLEEK & COMPACT) ==================== */
 .hosp-cards-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.75rem;
-  margin-bottom: 3rem;
+  gap: 1.25rem; /* Tighter gap */
+  margin-bottom: 2rem;
   align-items: stretch;
 }
 
-/* Clickable Action Card Structure */
+/* Entire card wrapped in <a> and clickable */
 .hosp-action-card-link {
   text-decoration: none;
   color: inherit;
   display: flex;
   height: 100%;
+  cursor: pointer;
 }
 
 .hosp-action-card {
   flex: 1;
   background: var(--hosp-bg-card);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--hosp-blue-border);
-  border-radius: var(--hosp-radius-lg);
-  padding: 1.85rem;
+  border-radius: var(--hosp-radius-md); /* Tightened 8px radius */
+  padding: 1.25rem 1.35rem; /* Reduced vertical & horizontal padding */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   overflow: hidden;
   transition: var(--hosp-transition);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
 }
 
-/* Card Hover Effects with Blue Highlight */
+/* Distinct Hover Effect: Translate Y -3px & Subtle Blue Glow */
+.hosp-action-card-link:hover .hosp-action-card,
 .hosp-action-card:hover {
   background: var(--hosp-bg-card-hover);
   border-color: var(--hosp-blue-border-hover);
-  transform: translateY(-5px);
-  box-shadow: 0 16px 45px rgba(37, 99, 235, 0.22);
+  transform: translateY(-3px); /* Upward translation -3px */
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.2); /* Subtle blue glow */
 }
 
 .hosp-action-card::before {
@@ -453,12 +448,13 @@ body.hospital-body::before {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
   background: linear-gradient(90deg, transparent, var(--hosp-blue-light), transparent);
   opacity: 0;
   transition: var(--hosp-transition);
 }
 
+.hosp-action-card-link:hover .hosp-action-card::before,
 .hosp-action-card:hover::before {
   opacity: 1;
 }
@@ -466,184 +462,187 @@ body.hospital-body::before {
 /* Card Header */
 .card-top-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .card-icon-wrapper {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--hosp-radius-md);
+  width: 40px; /* Compact icon container */
+  height: 40px;
+  border-radius: var(--hosp-radius-sm);
   background: rgba(37, 99, 235, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.28);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--hosp-blue-accent);
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   transition: var(--hosp-transition);
 }
 
+.hosp-action-card-link:hover .card-icon-wrapper,
 .hosp-action-card:hover .card-icon-wrapper {
-  background: rgba(37, 99, 235, 0.24);
+  background: rgba(37, 99, 235, 0.22);
   border-color: var(--hosp-blue-accent);
   color: #fff;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-  transform: scale(1.06);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
+  transform: scale(1.04);
 }
 
 .card-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.75rem;
+  gap: 0.3rem;
+  padding: 0.22rem 0.6rem;
   border-radius: var(--hosp-radius-full);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .badge-sos {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   color: #ff6b6b;
 }
 
 .badge-inventory {
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: #34d399;
 }
 
 .badge-requests {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   color: var(--hosp-blue-accent);
 }
 
 /* Card Body */
 .card-content-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 0.75rem;
 }
 
 .card-title {
-  font-size: 1.35rem;
+  font-size: 1.12rem; /* Tightened title size */
   font-weight: 700;
   color: var(--hosp-text-white);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   transition: var(--hosp-transition);
 }
 
+.hosp-action-card-link:hover .card-title,
 .hosp-action-card:hover .card-title {
   color: var(--hosp-blue-accent);
 }
 
 .card-description {
-  font-size: 0.9rem;
-  color: var(--hosp-text-secondary);
-  line-height: 1.5;
-  margin-bottom: 1.25rem;
+  font-size: 0.82rem; /* Subtle muted grey description */
+  color: var(--hosp-text-muted);
+  line-height: 1.42;
 }
 
-/* Card Specific Dynamic/Placeholder Details */
-
-/* Card 1 Quick Stats */
-.card-metric-preview {
+/* Compact Metric Preview */
+.card-metric-preview.compact {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 0.85rem 1rem;
-  background: rgba(10, 16, 30, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 1rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(9, 15, 28, 0.55);
+  border: 1px solid rgba(59, 130, 246, 0.1);
   border-radius: var(--hosp-radius-sm);
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.85rem;
 }
 
 .metric-item {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.1rem;
 }
 
 .metric-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--hosp-text-muted);
   text-transform: uppercase;
   font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .metric-val {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--hosp-text-white);
 }
 
-/* Card 3 (My Requests) Detailed Layout */
-.card-requests-container {
+/* Compact 2-Column Grid for 'My Requests' Card */
+.req-compact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  background: rgba(9, 15, 28, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  border-radius: var(--hosp-radius-sm); /* Clean without heavy backgrounds */
+}
+
+.req-compact-item {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  margin-bottom: 1.25rem;
+  gap: 0.15rem;
 }
 
-.req-field-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.45rem 0.7rem;
-  background: rgba(10, 16, 30, 0.5);
-  border: 1px solid rgba(59, 130, 246, 0.1);
-  border-radius: var(--hosp-radius-sm);
-  font-size: 0.82rem;
-}
-
-.req-label {
+.req-mini-label {
+  font-size: 0.68rem;
   color: var(--hosp-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-weight: 500;
+  gap: 0.3rem;
 }
 
-.req-label i {
+.req-mini-label i {
   color: var(--hosp-blue-light);
-  font-size: 0.78rem;
-  width: 14px;
-  text-align: center;
+  font-size: 0.7rem;
+  width: 12px;
 }
 
-.req-value {
+.req-mini-val {
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--hosp-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.req-value.highlight-blue {
+.req-mini-val.highlight-blue {
   color: var(--hosp-blue-accent);
 }
 
 .req-status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.18rem 0.6rem;
+  gap: 0.3rem;
+  padding: 0.12rem 0.5rem;
   border-radius: var(--hosp-radius-full);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   background: rgba(249, 115, 22, 0.14);
   color: var(--hosp-warning);
   border: 1px solid rgba(249, 115, 22, 0.3);
 }
 
-/* Card Footer / Action Button */
+/* Card Action Footer */
 .card-action-bar {
   margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -652,34 +651,37 @@ body.hospital-body::before {
 .card-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.88rem;
+  gap: 0.45rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--hosp-blue-accent);
   transition: var(--hosp-transition);
 }
 
 .card-btn i {
-  transition: transform 0.25s ease;
+  font-size: 0.75rem;
+  transition: transform 0.22s ease;
 }
 
+.hosp-action-card-link:hover .card-btn,
 .hosp-action-card:hover .card-btn {
   color: #fff;
 }
 
+.hosp-action-card-link:hover .card-btn i,
 .hosp-action-card:hover .card-btn i {
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
-/* ==================== STATUS SECTION: BLOOD STOCK ALERTS ==================== */
+/* ==================== 5. CONDENSED BLOOD STOCK ALERTS SECTION ==================== */
 .hosp-status-section {
   background: var(--hosp-bg-card);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--hosp-blue-border);
-  border-radius: var(--hosp-radius-lg);
-  padding: 2.25rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  border-radius: var(--hosp-radius-md); /* Tight 8px radius */
+  padding: 1.35rem 1.5rem; /* Tightened padding */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
 }
 
@@ -688,175 +690,182 @@ body.hospital-body::before {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.14);
+  gap: 0.85rem;
+  margin-bottom: 1.15rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.12);
 }
 
 .status-heading-group {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.75rem;
 }
 
 .status-icon-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--hosp-radius-md);
+  width: 36px; /* Compact icon */
+  height: 36px;
+  border-radius: var(--hosp-radius-sm);
   background: rgba(249, 115, 22, 0.12);
-  border: 1px solid rgba(249, 115, 22, 0.35);
+  border: 1px solid rgba(249, 115, 22, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--hosp-warning);
-  font-size: 1.25rem;
-  box-shadow: 0 0 16px var(--hosp-warning-glow);
+  font-size: 1rem;
 }
 
 .status-title {
-  font-size: 1.45rem;
+  font-size: 1.22rem; /* Compact section header */
   font-weight: 800;
   color: var(--hosp-text-white);
   letter-spacing: -0.01em;
 }
 
 .status-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--hosp-text-secondary);
 }
 
 .status-filter-pills {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .status-pill-info {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.85rem;
-  background: rgba(14, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  background: rgba(13, 22, 40, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--hosp-radius-full);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--hosp-text-muted);
 }
 
-/* Stock Alerts Grid (8 Blood Groups) */
+/* Condensed Stock Alerts Grid (Tighter gap: 0.85rem) */
 .stock-alerts-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
+  gap: 0.85rem; /* Tighter grid */
 }
 
-/* Individual Blood Stock Card */
+/* Individual Condensed Blood Stock Item */
 .stock-alert-item {
-  background: rgba(10, 16, 30, 0.7);
-  border: 1px solid rgba(59, 130, 246, 0.14);
-  border-radius: var(--hosp-radius-md);
-  padding: 1.25rem;
+  background: rgba(9, 15, 28, 0.65);
+  border: 1px solid rgba(59, 130, 246, 0.12); /* Standard subtle border */
+  border-radius: var(--hosp-radius-md); /* Tight 8px radius */
+  padding: 0.75rem 0.95rem; /* Reduced height and padding */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   transition: var(--hosp-transition);
   position: relative;
   overflow: hidden;
 }
 
 .stock-alert-item:hover {
-  background: rgba(16, 27, 50, 0.85);
-  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(14, 24, 46, 0.85);
+  border-color: rgba(59, 130, 246, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* Blood Type Badge */
 .stock-blood-badge {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 38px; /* Compact badge */
+  height: 38px;
+  border-radius: var(--hosp-radius-sm);
   background: rgba(37, 99, 235, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--hosp-font-brand);
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--hosp-blue-accent);
-  box-shadow: 0 0 14px rgba(37, 99, 235, 0.2);
+  flex-shrink: 0;
 }
 
-/* Critical Stock Alert Variant */
+/* Orange/Red Warning Border ONLY for Critical Stock (< 5) */
 .stock-alert-item.critical {
-  border-color: rgba(249, 115, 22, 0.4);
-  background: rgba(249, 115, 22, 0.04);
+  border: 1px solid rgba(249, 115, 22, 0.45) !important;
+  background: rgba(249, 115, 22, 0.04) !important;
 }
 
 .stock-alert-item.critical .stock-blood-badge {
-  background: rgba(249, 115, 22, 0.14);
-  border-color: rgba(249, 115, 22, 0.45);
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.4);
   color: var(--hosp-warning);
-  box-shadow: 0 0 16px var(--hosp-warning-glow);
 }
 
-/* Stock Info */
+/* Stock Item Info */
 .stock-item-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
 .stock-item-label {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   color: var(--hosp-text-muted);
   text-transform: uppercase;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Subtle Warning Color strictly for Low Stock Text */
+/* Subtle Attention Warning Text Strictly for Low Count */
 .low-stock-count-text {
-  font-size: 1.18rem;
+  font-size: 1.05rem; /* Clean readable count */
   font-weight: 800;
-  color: var(--hosp-warning); /* Subtle warning orange/red to grab attention */
-  text-shadow: 0 0 12px var(--hosp-warning-glow);
+  color: var(--hosp-text-primary);
   display: flex;
   align-items: baseline;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  line-height: 1.2;
+}
+
+.stock-alert-item.critical .low-stock-count-text {
+  color: var(--hosp-warning); /* Attention-grabbing subtle warning color */
+  text-shadow: 0 0 10px var(--hosp-warning-glow);
 }
 
 .low-stock-count-text .unit-text {
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  color: var(--hosp-text-secondary);
+  color: var(--hosp-text-muted);
 }
 
-/* Action controls (+/- buttons) inside inventory */
+/* Small, Subtle +/- Adjustment Buttons on the Right */
 .stock-actions-group {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
+  flex-shrink: 0;
 }
 
 .btn-stock-adjust {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  width: 24px; /* Small, subtle buttons */
+  height: 24px;
+  border-radius: var(--hosp-radius-xs);
+  background: rgba(26, 36, 56, 0.7);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   color: var(--hosp-blue-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   transition: var(--hosp-transition);
 }
 
@@ -864,22 +873,22 @@ body.hospital-body::before {
   background: var(--hosp-blue-primary);
   border-color: var(--hosp-blue-accent);
   color: #fff;
-  box-shadow: 0 0 10px var(--hosp-blue-glow);
+  box-shadow: 0 0 8px var(--hosp-blue-glow);
 }
 
-/* ==================== MODALS (DISPATCH SOS & INVENTORY UPDATE) ==================== */
+/* ==================== 6. MODALS ==================== */
 .hosp-modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(5, 10, 20, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 99999;
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
-  animation: fadeInModal 0.25s ease;
+  padding: 1.25rem;
+  animation: fadeInModal 0.2s ease;
 }
 
 .hosp-modal-backdrop.open {
@@ -887,18 +896,18 @@ body.hospital-body::before {
 }
 
 @keyframes fadeInModal {
-  from { opacity: 0; transform: scale(0.96); }
+  from { opacity: 0; transform: scale(0.97); }
   to { opacity: 1; transform: scale(1); }
 }
 
 .hosp-modal-box {
   background: var(--hosp-bg-surface);
   border: 1px solid var(--hosp-blue-border);
-  border-radius: var(--hosp-radius-lg);
-  padding: 2.25rem;
-  max-width: 580px;
+  border-radius: var(--hosp-radius-md); /* Tight 8px radius */
+  padding: 1.75rem;
+  max-width: 520px;
   width: 100%;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 35px var(--hosp-blue-glow);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 25px var(--hosp-blue-glow);
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
@@ -908,24 +917,24 @@ body.hospital-body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.12);
 }
 
 .modal-title {
-  font-size: 1.35rem;
+  font-size: 1.18rem;
   font-weight: 800;
   color: var(--hosp-text-white);
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .modal-close-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--hosp-radius-sm);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--hosp-radius-xs);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--hosp-text-secondary);
@@ -937,33 +946,33 @@ body.hospital-body::before {
 }
 
 .modal-close-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.18);
   border-color: var(--hosp-danger);
   color: #fff;
 }
 
 .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .form-label {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--hosp-text-secondary);
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.35rem;
 }
 
 .form-control {
   width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(10, 16, 30, 0.8);
+  padding: 0.65rem 0.85rem;
+  background: rgba(9, 15, 28, 0.8);
   border: 1px solid var(--hosp-blue-border);
-  border-radius: var(--hosp-radius-sm);
+  border-radius: var(--hosp-radius-xs);
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-family: inherit;
   transition: var(--hosp-transition);
 }
@@ -971,50 +980,50 @@ body.hospital-body::before {
 .form-control:focus {
   outline: none;
   border-color: var(--hosp-blue-accent);
-  box-shadow: 0 0 16px var(--hosp-blue-glow);
+  box-shadow: 0 0 12px var(--hosp-blue-glow);
 }
 
 .btn-primary-blue {
   width: 100%;
-  padding: 0.85rem 1.5rem;
+  padding: 0.75rem 1.25rem;
   background: linear-gradient(135deg, var(--hosp-blue-primary), #1d4ed8);
   border: 1px solid var(--hosp-blue-light);
-  border-radius: var(--hosp-radius-full);
+  border-radius: var(--hosp-radius-md);
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   transition: var(--hosp-transition);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 20px var(--hosp-blue-glow);
+  gap: 0.45rem;
+  box-shadow: 0 4px 16px var(--hosp-blue-glow);
 }
 
 .btn-primary-blue:hover {
   background: linear-gradient(135deg, var(--hosp-blue-light), var(--hosp-blue-primary));
-  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.45);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(59, 130, 246, 0.4);
 }
 
-/* ==================== FOOTER ==================== */
+/* ==================== 7. FOOTER ==================== */
 .hosp-footer {
   text-align: center;
-  padding: 2.5rem 1.75rem;
+  padding: 2rem 1.5rem;
   color: var(--hosp-text-muted);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   border-top: 1px solid rgba(59, 130, 246, 0.1);
   position: relative;
   z-index: 1;
 }
 
-/* ==================== RESPONSIVE MEDIA QUERIES ==================== */
+/* ==================== 8. RESPONSIVE BREAKPOINTS ==================== */
 
-/* Tablets & Medium Screens (max-width: 1024px) */
+/* Tablets & Mid Screens (max-width: 1024px) */
 @media (max-width: 1024px) {
   .hosp-cards-container {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .hosp-cards-container > .hosp-action-card-link:nth-child(3) {
@@ -1023,17 +1032,14 @@ body.hospital-body::before {
 
   .stock-alerts-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 }
 
-/* Tablets Portrait & Small Screens (max-width: 768px) */
+/* Tablets Portrait & Phones (max-width: 768px) */
 @media (max-width: 768px) {
-  .hosp-navbar {
-    padding: 0.5rem 0;
-  }
-
   .hosp-nav-container {
-    padding: 0.75rem 1.25rem;
+    padding: 0.6rem 1rem;
   }
 
   .hosp-hamburger {
@@ -1045,10 +1051,10 @@ body.hospital-body::before {
     flex-direction: column;
     position: fixed;
     inset: 0;
-    top: 60px;
-    background: rgba(8, 13, 26, 0.97);
-    padding: 2.5rem 1.5rem;
-    gap: 1rem;
+    top: 52px;
+    background: rgba(8, 13, 26, 0.98);
+    padding: 2rem 1.25rem;
+    gap: 0.75rem;
     z-index: 99998;
     border-top: 1px solid var(--hosp-blue-border);
   }
@@ -1060,11 +1066,8 @@ body.hospital-body::before {
 
   .hosp-nav-link {
     width: 100%;
-    padding: 0.9rem 1.5rem;
-    font-size: 1.05rem;
-    border-radius: var(--hosp-radius-md);
-    background: rgba(14, 23, 42, 0.85);
-    border: 1px solid rgba(59, 130, 246, 0.18);
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
   }
 
   .hosp-nav-right {
@@ -1072,47 +1075,65 @@ body.hospital-body::before {
   }
 
   .hosp-workspace {
-    padding: 5.5rem 1.25rem 3rem;
+    padding: 4.5rem 1rem 2.5rem;
   }
 
+  .hosp-welcome-banner {
+    padding: 0.9rem 1.15rem;
+  }
+
+  .hosp-welcome-title {
+    font-size: 1.25rem;
+  }
+
+  .hosp-welcome-desc {
+    font-size: 0.82rem;
+  }
+
+  /* 3 Action Cards Stack Vertically on Mobile */
   .hosp-cards-container {
     grid-template-columns: 1fr;
-    gap: 1.25rem;
+    gap: 1rem;
   }
 
   .hosp-cards-container > .hosp-action-card-link:nth-child(3) {
     grid-column: span 1;
   }
 
+  .hosp-action-card {
+    padding: 1.1rem 1.15rem;
+  }
+
+  .card-title {
+    font-size: 1.05rem;
+  }
+
+  .card-description {
+    font-size: 0.78rem;
+  }
+
   .stock-alerts-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .hosp-welcome-banner {
-    padding: 1.5rem 1.25rem;
-  }
-
-  .hosp-welcome-title {
-    font-size: 1.35rem;
-  }
-}
-
-/* Small Mobile Screens (max-width: 480px) */
-@media (max-width: 480px) {
-  .hosp-welcome-banner {
-    padding: 1.25rem 1rem;
-  }
-
-  .hosp-action-card {
-    padding: 1.35rem;
+    gap: 0.65rem;
   }
 
   .hosp-status-section {
-    padding: 1.35rem;
+    padding: 1.15rem;
   }
 
   .status-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+  }
+}
+
+/* Extra Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+  .req-compact-grid {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .hosp-welcome-title {
+    font-size: 1.15rem;
   }
 }
