@@ -208,9 +208,29 @@
 
     // Authoritative background sync with MySQL database profile
     if (donorData.email) {
-      fetch(`/api/donor/profile?email=${encodeURIComponent(donorData.email)}`, { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : null)
+      fetch(`/api/donor/profile?email=${encodeURIComponent(donorData.email)}`, {
+        cache: 'no-store',
+        credentials: 'include'
+      })
+        .then(r => {
+          if (r.status === 401 || r.status === 404) {
+            try {
+              localStorage.removeItem('red404_donor_session');
+              localStorage.removeItem('red404_auth_session');
+              localStorage.removeItem('red404_session');
+              localStorage.removeItem('donorUser');
+              localStorage.removeItem('red404_user');
+              localStorage.removeItem('red404_token');
+              localStorage.removeItem('red404_donorToken');
+              sessionStorage.clear();
+            } catch (_) {}
+            window.location.replace('donor-login.html');
+            return null;
+          }
+          return r.ok ? r.json() : null;
+        })
         .then(json => {
+          if (!json) return;
           if (json && json.success && json.data) {
             const d = json.data;
             if (d.donorId || d.donor_id) {
@@ -227,6 +247,12 @@
             try {
               localStorage.setItem('red404_donor_session', JSON.stringify({ user: d }));
             } catch (_) {}
+          } else if (json && json.success === false) {
+            try {
+              localStorage.clear();
+              sessionStorage.clear();
+            } catch (_) {}
+            window.location.replace('donor-login.html');
           }
         })
         .catch(() => {});

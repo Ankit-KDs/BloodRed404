@@ -25,6 +25,9 @@ if (hamburger && navLinks) {
       if (hamburger && navLinks) {
         hamburger.classList.remove('open');
         navLinks.classList.remove('open');
+        if (navbar) navbar.classList.remove('menu-open');
+        document.body.classList.remove('nav-open');
+        document.body.style.overflow = '';
       }
 
       const href = this.getAttribute('href');
@@ -191,6 +194,8 @@ function initNavbar() {
       if (!navbar.contains(e.target)) {
         hamburger.classList.remove('open');
         navLinks.classList.remove('open');
+        navbar.classList.remove('menu-open');
+        document.body.classList.remove('nav-open');
         document.body.style.overflow = '';
       }
     });

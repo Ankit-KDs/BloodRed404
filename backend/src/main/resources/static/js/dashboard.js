@@ -58,8 +58,21 @@
 
   async function fetchDashboardData() {
     try {
-      let res = await fetch(`/api/donor/profile?donorId=${currentDonor.id}`);
-      if (!res.ok) res = await fetch(`/api/donor/profile-data?donorId=${currentDonor.id}`);
+      let res = await fetch(`/api/donor/profile?donorId=${currentDonor.id}`, { cache: 'no-store', credentials: 'include' });
+      if (!res.ok && res.status !== 404 && res.status !== 401) {
+        res = await fetch(`/api/donor/profile-data?donorId=${currentDonor.id}`, { cache: 'no-store', credentials: 'include' });
+      }
+      if (res.status === 401 || res.status === 404) {
+        try {
+          localStorage.removeItem('red404_donor_session');
+          localStorage.removeItem('red404_auth_session');
+          localStorage.removeItem('red404_session');
+          localStorage.removeItem('donorUser');
+          sessionStorage.clear();
+        } catch (_) {}
+        window.location.replace('donor-login.html');
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         const d = data.data || data;

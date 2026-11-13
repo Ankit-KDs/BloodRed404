@@ -331,11 +331,11 @@ public class AdminController {
             try (PreparedStatement ps = conn.prepareStatement("DELETE FROM intake_snapshots WHERE donor_id = ? OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)")) {
                 ps.setInt(1, id); ps.setInt(2, id); ps.executeUpdate();
             } catch (Exception ignored) {}
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donations WHERE donor_id = ?")) {
-                ps.setString(1, smartId); ps.executeUpdate();
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donations WHERE donor_id = ? OR donor_id = ?")) {
+                ps.setString(1, smartId); ps.setString(2, String.valueOf(id)); ps.executeUpdate();
             } catch (Exception ignored) {}
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM user_sessions WHERE user_id = ?")) {
-                ps.setString(1, smartId); ps.executeUpdate();
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM user_sessions WHERE user_id = ? OR user_id = ?")) {
+                ps.setString(1, smartId); ps.setString(2, String.valueOf(id)); ps.executeUpdate();
             } catch (Exception ignored) {}
 
             // Delete the donor record

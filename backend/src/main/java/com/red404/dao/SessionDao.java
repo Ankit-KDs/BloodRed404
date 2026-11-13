@@ -178,9 +178,9 @@ public class SessionDao {
                 }
             }
         } catch (Exception e) {
-            return true; // Fallback to avoid locking user out if transient
+            return false;
         }
-        return true;
+        return false;
     }
 
     public void touchSession(String sessionId) {

@@ -65,8 +65,12 @@ public class DonorController {
                 }
             }
             if (donorProfile == null) {
+                HttpSession s = request.getSession(false);
+                if (s != null) {
+                    try { s.invalidate(); } catch (Exception ignored) {}
+                }
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse(false, "Donor profile not found."));
+                        .body(new ApiResponse(false, "Donor profile not found or account deleted."));
             }
             return ok("Profile loaded", donorProfile);
         } catch (Exception e) {

@@ -126,6 +126,60 @@
       updateCommandNav(currentUser);
     }
 
+    // Purge and redirect helper if session revoked or account deleted
+    function purgeAllSessionAndRedirect(reason) {
+      if (window._isPurgingSession) return;
+      window._isPurgingSession = true;
+      try {
+        localStorage.removeItem('red404_donor_session');
+        localStorage.removeItem('red404_auth_session');
+        localStorage.removeItem('red404_session');
+        localStorage.removeItem('donorUser');
+        localStorage.removeItem('red404_user');
+        localStorage.removeItem('red404_token');
+        localStorage.removeItem('red404_donorToken');
+        sessionStorage.clear();
+        if (typeof Auth !== 'undefined' && Auth.clearSession) {
+          Auth.clearSession();
+        }
+      } catch (_) { }
+      const path = (window.location.pathname || '').toLowerCase();
+      const isPublic = path.endsWith('index.html') || path.endsWith('about.html') || path.endsWith('donor-login.html') || path.endsWith('hospital-login.html') || path.endsWith('donor-register.html') || path.endsWith('hospital-register.html') || path === '/' || path === '';
+      if (!isPublic) {
+        window.location.replace('donor-login.html');
+      }
+    }
+    window.purgeAllSessionAndRedirect = purgeAllSessionAndRedirect;
+
+    // Real-time Auth & Session Heartbeat Guard: detects account deletion & remote kill within ~2s
+    function startRealtimeSessionGuard() {
+      if (window._realtimeSessionGuardStarted) return;
+      window._realtimeSessionGuardStarted = true;
+
+      async function checkAuthHeartbeat() {
+        try {
+          const res = await fetch('/api/auth/check-session', {
+            method: 'GET',
+            cache: 'no-store',
+            credentials: 'include',
+            headers: getSettingsHeaders()
+          });
+          if (res.status === 401 || res.status === 403 || res.status === 404) {
+            purgeAllSessionAndRedirect('Session terminated or account deleted.');
+            return;
+          }
+          const json = await res.json().catch(() => null);
+          if (json && json.success === false) {
+            purgeAllSessionAndRedirect((json && json.message) || 'Session invalid.');
+          }
+        } catch (_) {}
+      }
+
+      setTimeout(checkAuthHeartbeat, 600);
+      setInterval(checkAuthHeartbeat, 2500);
+    }
+    startRealtimeSessionGuard();
+
     // Always background-sync with backend to ensure freshest DB profile is applied
     const activeU = getFreshUser() || currentUser;
     const userEmail = (activeU && (activeU.email || activeU.username)) || '';
@@ -138,10 +192,18 @@
 
     fetch(profileUrl, {
       cache: 'no-store',
+      credentials: 'include',
       headers: getSettingsHeaders()
     })
-      .then(res => res.ok ? res.json() : null)
+      .then(res => {
+        if (res.status === 401 || res.status === 404) {
+          purgeAllSessionAndRedirect('Donor account was deleted or session expired.');
+          return null;
+        }
+        return res.ok ? res.json() : null;
+      })
       .then(json => {
+        if (!json) return;
         if (json && json.success && json.data) {
           updateCommandNav(json.data);
           try {
@@ -151,6 +213,8 @@
               Auth.saveSession(json.data);
             }
           } catch (_) { }
+        } else if (json.success === false) {
+          purgeAllSessionAndRedirect(json.message);
         }
       })
       .catch(() => { });
