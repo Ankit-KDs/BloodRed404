@@ -11,7 +11,7 @@
   
   <!-- Global & Admin Portal Stylesheets -->
   <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
-  <link rel="stylesheet" href="css/admin-portal.css?v=20261113_v3" />
+  <link rel="stylesheet" href="css/admin-portal.css?v=20261113_v4" />
 </head>
 <body class="admin-body">
 
@@ -455,6 +455,9 @@
           <span class="btn-reset-text"><i class="fas fa-paper-plane"></i> Send Password Reset Link</span>
           <span class="btn-reset-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Dispatching...</span>
         </button>
+        <button type="button" class="btn-delete-from-modal" id="btnDeleteFromProfileModal" onclick="handleDeleteFromModal()" title="Permanently Delete Donor Account">
+          <i class="fas fa-trash-can"></i> <span>Delete Account</span>
+        </button>
         <button type="button" class="btn-close-secondary" onclick="closeDonorProfileModal()">
           Close
         </button>
@@ -463,7 +466,7 @@
   </div>
 
   <!-- Admin Portal Script -->
-  <script src="js/admin-portal.js?v=20261113_v3"></script>
+  <script src="js/admin-portal.js?v=20261113_v4"></script>
 </body>
 </html>
 

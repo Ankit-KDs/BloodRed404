@@ -115,6 +115,8 @@
     const tbody = document.getElementById('donor-table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
+    // Clean up any detached kebab dropdowns from previous render
+    document.querySelectorAll('body > .kebab-dropdown').forEach(el => el.remove());
 
     if (!donors || donors.length === 0) {
       renderEmptyTable(tbody, 6, 'No registered donors found.');
@@ -187,14 +189,18 @@
           </button>
         </td>
 
-        <!-- Column 6: Actions (Direct Profile Button + Kebab Menu) -->
+        <!-- Column 6: Actions (Direct Profile Button + Direct Delete Button + Kebab Menu) -->
         <td>
           <div class="admin-actions-cell">
             <button type="button" class="btn-view-profile" onclick="window.viewDonorProfile(${d.id})" title="View Full Dossier">
               <i class="fas fa-id-card"></i>
               <span>Profile</span>
             </button>
-              <div class="kebab-menu-wrap">
+            <button type="button" class="btn-delete-donor" onclick="window.deleteDonorAccount(${d.id}, '${escapeHtml(d.name || 'this donor')}')" title="Permanently Delete Donor">
+              <i class="fas fa-trash-can"></i>
+              <span>Delete</span>
+            </button>
+            <div class="kebab-menu-wrap">
               <button type="button" class="admin-kebab-btn" onclick="window.toggleKebabMenu(event, ${d.id})" title="More Actions">
                 <i class="fas fa-ellipsis-vertical"></i>
               </button>
@@ -259,12 +265,16 @@
     });
 
     if (!isAlreadyOpen && btn) {
+      // Move to body if needed so NO parent backdrop-filter or overflow-x can clip it
+      if (targetMenu.parentElement !== document.body) {
+        document.body.appendChild(targetMenu);
+      }
       const rect = btn.getBoundingClientRect();
-      const openUpwards = (window.innerHeight - rect.bottom) < 150;
+      const openUpwards = (window.innerHeight - rect.bottom) < 160;
       targetMenu.style.position = 'fixed';
-      targetMenu.style.right = Math.max(10, window.innerWidth - rect.right) + 'px';
-      targetMenu.style.top = openUpwards ? (rect.top - 95) + 'px' : (rect.bottom + 6) + 'px';
-      targetMenu.style.zIndex = '99999';
+      targetMenu.style.right = Math.max(12, window.innerWidth - rect.right) + 'px';
+      targetMenu.style.top = openUpwards ? (rect.top - 142) + 'px' : (rect.bottom + 6) + 'px';
+      targetMenu.style.zIndex = '999999';
       targetMenu.classList.add('show');
     }
   };
@@ -442,6 +452,16 @@
       if (btnText) btnText.style.display = 'inline-flex';
       if (btnLoader) btnLoader.style.display = 'none';
     }
+  };
+
+  /* Delete Donor from Profile Modal */
+  window.handleDeleteFromModal = async function() {
+    if (!currentProfileDonorId) return;
+    const donor = allDonors.find(d => d.id === currentProfileDonorId);
+    const donorName = donor ? donor.name : 'this donor';
+    const did = currentProfileDonorId;
+    closeDonorProfileModal();
+    await window.deleteDonorAccount(did, donorName);
   };
 
   window.toggleDonor = async function(donorId) {

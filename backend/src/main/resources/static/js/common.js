@@ -170,6 +170,8 @@ function initNavbar() {
       e.stopPropagation();
       const isOpen = hamburger.classList.toggle('open');
       navLinks.classList.toggle('open', isOpen);
+      navbar.classList.toggle('menu-open', isOpen);
+      document.body.classList.toggle('nav-open', isOpen);
       document.body.style.overflow = isOpen ? 'hidden' : '';
     });
 
@@ -178,6 +180,8 @@ function initNavbar() {
       link.addEventListener('click', () => {
         hamburger.classList.remove('open');
         navLinks.classList.remove('open');
+        navbar.classList.remove('menu-open');
+        document.body.classList.remove('nav-open');
         document.body.style.overflow = '';
       });
     });
