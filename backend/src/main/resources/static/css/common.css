@@ -515,7 +515,7 @@ button {
   right: 0;
   z-index: 9999;
   padding: 1rem 0;
-  transition: all var(--transition-base);
+  transition: background-color 0.25s ease, padding 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .navbar:has(.nav-links.open),
@@ -529,6 +529,7 @@ body.nav-open .navbar.scrolled,
   background: transparent !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
+  transition: none !important;
 }
 
 .navbar.scrolled {
@@ -2203,9 +2204,40 @@ body.nav-open .navbar.scrolled,
 
 /* Tablets Portrait & Large Phones (max-width: 768px) */
 @media (max-width: 768px) {
-  .navbar .nav-links,
-  .navbar .nav-actions {
+  .navbar,
+  .navbar.scrolled {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    transform: none !important;
+    perspective: none !important;
+    contain: none !important;
+    transition: background-color 0.25s ease, padding 0.25s ease, border-color 0.25s ease !important;
+  }
+
+  .navbar.scrolled {
+    background: rgba(10, 10, 15, 0.96) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .navbar .nav-links {
     display: none;
+  }
+
+  /* Pre-dock to viewport bottom so it can never be laid out in top bar */
+  .navbar .nav-actions {
+    display: none !important;
+    position: fixed !important;
+    bottom: 1.75rem !important;
+    top: auto !important;
+    left: 1.5rem !important;
+    right: 1.5rem !important;
+    max-width: 300px !important;
+    margin: 0 auto !important;
+    z-index: 100001 !important;
+    flex-direction: column !important;
+    gap: 0.65rem !important;
   }
 
   .navbar {
@@ -2281,6 +2313,7 @@ body.nav-open .navbar.scrolled,
     display: flex !important;
     position: fixed !important;
     bottom: 1.75rem !important;
+    top: auto !important;
     left: 1.5rem !important;
     right: 1.5rem !important;
     max-width: 300px !important;
@@ -2288,6 +2321,7 @@ body.nav-open .navbar.scrolled,
     z-index: 100001 !important;
     flex-direction: column !important;
     gap: 0.65rem !important;
+    animation: fadeIn 0.18s ease both !important;
   }
 
   .navbar .nav-links.open ~ .nav-actions .btn,
