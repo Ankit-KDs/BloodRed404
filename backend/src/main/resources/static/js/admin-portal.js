@@ -194,7 +194,7 @@
               <i class="fas fa-id-card"></i>
               <span>Profile</span>
             </button>
-            <div class="kebab-menu-wrap">
+              <div class="kebab-menu-wrap">
               <button type="button" class="admin-kebab-btn" onclick="window.toggleKebabMenu(event, ${d.id})" title="More Actions">
                 <i class="fas fa-ellipsis-vertical"></i>
               </button>
@@ -206,6 +206,10 @@
                 <button type="button" class="kebab-dropdown-item ${isSuspended ? 'kebab-item-reactivate' : 'kebab-item-suspend'}" onclick="window.toggleDonor(${d.id})">
                   <i class="fas fa-${isSuspended ? 'shield-check' : 'ban'}"></i>
                   <span>${isSuspended ? 'Set to Active' : 'Set to Suspended'}</span>
+                </button>
+                <button type="button" class="kebab-dropdown-item kebab-item-delete" onclick="window.deleteDonorAccount(${d.id}, '${escapeHtml(d.name || 'this donor')}')">
+                  <i class="fas fa-trash-can"></i>
+                  <span>Delete Account</span>
                 </button>
               </div>
             </div>
@@ -462,6 +466,48 @@
       }
     } catch (err) {
       showToast('Connection error updating donor', 'error');
+    }
+  };
+
+  /* DELETE DONOR ACCOUNT - requires double confirmation */
+  window.deleteDonorAccount = async function(donorId, donorName) {
+    if (!donorId) return;
+    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
+
+    // First confirmation
+    const confirmed = window.confirm(
+      `⚠️ PERMANENT DELETE\n\nYou are about to permanently delete the account of:\n"${donorName}"\n\nThis action CANNOT be undone. All donation history and profile data will be erased.\n\nClick OK to continue to final confirmation, or Cancel to abort.`
+    );
+    if (!confirmed) {
+      showToast('Delete cancelled.', 'info', 2000);
+      return;
+    }
+
+    // Second confirmation (type-to-confirm style)
+    const typedConfirm = window.prompt(
+      `Final confirmation required.\n\nType  DELETE  (all caps) to permanently delete this donor account.`
+    );
+    if (!typedConfirm || typedConfirm.trim() !== 'DELETE') {
+      showToast('Delete aborted. You must type DELETE exactly to confirm.', 'error', 3000);
+      return;
+    }
+
+    try {
+      showToast('Deleting donor account...', 'info', 2000);
+      const res = await fetch(`/api/admin/donors/${donorId}/delete`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(`Donor "${donorName}" account permanently deleted.`, 'success', 4000);
+        // Remove from local cache and re-render
+        allDonors = allDonors.filter(item => item.id !== donorId);
+        const badge = document.getElementById('donor-count-badge');
+        if (badge) badge.textContent = allDonors.length;
+        renderDonorsTable(allDonors);
+      } else {
+        showToast(data.message || 'Failed to delete donor account.', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error while deleting donor account.', 'error');
     }
   };
 

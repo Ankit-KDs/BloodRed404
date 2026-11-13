@@ -2735,21 +2735,29 @@
 @media (max-width: 900px) {
   .about-page-hero {
     padding-top: 7.5rem;
+    padding-bottom: 2.5rem;
   }
   .about-deepdive-container {
-    gap: 4.5rem;
+    gap: 3.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;
   }
   .z-row,
   .z-row.reverse {
     flex-direction: column;
     text-align: center;
-    gap: 2.25rem;
+    gap: 1.5rem;
   }
   .z-content {
     max-width: 100%;
   }
   .z-subheading {
     justify-content: center;
+    margin-bottom: 0.4rem;
+  }
+  .z-title {
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.55rem, 5vw, 2rem);
   }
   .z-visual {
     flex: 0 0 auto;
@@ -2760,5 +2768,52 @@
   }
   .about-utility-footnotes .dot-sep {
     display: none;
+  }
+  .about-hero-title {
+    font-size: clamp(1.7rem, 6vw, 2.4rem);
+    margin-bottom: 1rem;
+  }
+  .about-hero-narrative {
+    font-size: 0.95rem;
+  }
+}
+
+/* About page - Extra small screens (mobile portrait) */
+@media (max-width: 480px) {
+  .about-page-hero {
+    padding: 6.5rem 1rem 2rem;
+  }
+  .about-deepdive-container {
+    gap: 2.5rem;
+    padding: 0 1rem;
+  }
+  .z-row,
+  .z-row.reverse {
+    gap: 1.25rem;
+  }
+  .z-title {
+    font-size: 1.45rem;
+    margin-bottom: 0.6rem;
+  }
+  .z-subheading {
+    font-size: 0.78rem;
+    margin-bottom: 0.3rem;
+  }
+  .z-paragraph {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+  .z-visual-art {
+    width: 180px;
+    height: 180px;
+  }
+  .z-visual-icon-core {
+    width: 76px;
+    height: 76px;
+    font-size: 1.9rem;
+  }
+  .about-utility-footnotes {
+    padding: 2rem 1rem 3rem;
+    font-size: 0.78rem;
   }
 }

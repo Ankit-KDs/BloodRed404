@@ -1316,8 +1316,13 @@
             currentDonor.age = null;
           }
 
-          // Ensure Smart Donor ID reflects updated Date of Birth while preserving suffix
-          currentDonor.donorId = syncSmartDonorIdWithDob(currentDonor.donorId, currentDonor.dob, currentDonor.name, currentDonor.id);
+          // Keep the donor ID exactly as returned by backend — do NOT re-compute it locally.
+          // Backend already handles donor_id sync when DOB changes (DonorDao.updateProfile).
+          // Local re-computation was causing the ID to change on every save.
+          if (!currentDonor.donorId || !String(currentDonor.donorId).startsWith('DNR-')) {
+            // Only fall back to local generation if backend returned no valid DNR- ID
+            currentDonor.donorId = syncSmartDonorIdWithDob(currentDonor.donorId, currentDonor.dob, currentDonor.name, currentDonor.id);
+          }
           currentDonor.donor_id = currentDonor.donorId;
 
           // 3. Update localStorage session & cache

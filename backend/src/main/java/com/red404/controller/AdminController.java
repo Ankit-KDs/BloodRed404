@@ -304,6 +304,60 @@ public class AdminController {
     }
 
     // ==========================================
+    // 3b. PERMANENTLY DELETE DONOR ACCOUNT
+    // ==========================================
+    @DeleteMapping("/donors/{id}/delete")
+    public ResponseEntity<ApiResponse> deleteDonor(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        try (Connection conn = DBConnection.getConnection()) {
+            // Fetch donor info for the log before deletion
+            String smartId = "";
+            String donorName = "";
+            try (PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name FROM donors WHERE id = ?")) {
+                ps.setInt(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        smartId = rs.getString("donor_id");
+                        donorName = rs.getString("name");
+                    } else {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ApiResponse(false, "Donor not found"));
+                    }
+                }
+            }
+
+            // Delete related records first (cascade-safe)
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM intake_snapshots WHERE donor_id = ? OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)")) {
+                ps.setInt(1, id); ps.setInt(2, id); ps.executeUpdate();
+            } catch (Exception ignored) {}
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donations WHERE donor_id = ?")) {
+                ps.setString(1, smartId); ps.executeUpdate();
+            } catch (Exception ignored) {}
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM user_sessions WHERE user_id = ?")) {
+                ps.setString(1, smartId); ps.executeUpdate();
+            } catch (Exception ignored) {}
+
+            // Delete the donor record
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donors WHERE id = ?")) {
+                ps.setInt(1, id);
+                int rows = ps.executeUpdate();
+                if (rows == 0) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ApiResponse(false, "Donor not found or already deleted"));
+                }
+            }
+
+            addLog("DONOR_DELETED", "Donor account permanently deleted: " + donorName + " (" + smartId + ")");
+            return ResponseEntity.ok(new ApiResponse(true, "Donor account for " + donorName + " permanently deleted."));
+        } catch (Exception e) {
+            log.error("Error deleting donor {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to delete donor: " + e.getMessage()));
+        }
+    }
+
+    // ==========================================
     // 4. HOSPITALS DIRECTORY
     // ==========================================
     @GetMapping("/hospitals")

@@ -349,17 +349,18 @@ body.admin-body {
 }
 
 .admin-table th {
-  padding: 14px 20px;
+  padding: 11px 14px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--admin-text-muted);
   border: none;
+  white-space: nowrap;
 }
 
 .admin-table td {
-  padding: 16px 20px;
+  padding: 12px 14px;
   font-size: 13px;
   color: var(--admin-text-secondary);
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
@@ -1169,6 +1170,70 @@ body.admin-body {
 .kebab-item-reactivate:hover {
   background: rgba(16, 185, 129, 0.15) !important;
   color: #4ade80 !important;
+}
+
+/* Delete Account - Danger Red (more intense than suspend) */
+.kebab-item-delete {
+  color: #ff4d6d !important;
+  border-top: 1px solid rgba(255, 77, 109, 0.15);
+  margin-top: 2px;
+}
+
+.kebab-item-delete i {
+  color: #ff4d6d !important;
+}
+
+.kebab-item-delete:hover {
+  background: rgba(255, 0, 60, 0.18) !important;
+  color: #ff2d55 !important;
+}
+
+/* Smart ID column — no wrap */
+.smart-id-tag {
+  white-space: nowrap;
+}
+
+/* System Health 2-col → 1-col stacked on mobile */
+@media (max-width: 768px) {
+  .admin-health-split {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-metrics-column,
+  .admin-terminal-column {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .admin-terminal-feed {
+    max-height: 320px;
+  }
+
+  .log-entry {
+    font-size: 11px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .log-time {
+    font-size: 10px;
+  }
+
+  .log-type {
+    font-size: 10px;
+  }
+
+  .admin-metric-card {
+    padding: 16px 18px;
+  }
+
+  .metric-val {
+    font-size: 26px;
+  }
+
+  .mysql-health-card {
+    padding: 16px 18px;
+  }
 }
 
 /* ============================================================
