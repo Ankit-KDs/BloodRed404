@@ -6,2109 +6,522 @@
   <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hospital Dashboard — RED404</title>
+  <title>Hospital Operations Dashboard — RED404</title>
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>🏥</text></svg>" />
-
+  <!-- Google Fonts & Font Awesome -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet" />
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
-  <link rel="stylesheet" href="css/donor-dashboard.css?v=20261113_v40" />
-  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261113_v40" />
-
-  <style>
-    /* Toggle switch + small inline helpers */
-    .toggle-switch{position:relative;display:inline-block;width:46px;height:24px;cursor:pointer}
-    .toggle-switch input{opacity:0;width:0;height:0}
-    .toggle-slider{position:absolute;inset:0;background:var(--bg-surface2,#2a2a3a);border:1px solid var(--border-color,#3a3a4a);border-radius:24px;transition:.3s}
-    .toggle-slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;top:3px;background:var(--text-muted,#888);border-radius:50%;transition:.3s}
-    .toggle-switch input:checked + .toggle-slider{background:var(--red-glow-soft,rgba(230,57,70,.2));border-color:var(--red-primary,#e63946)}
-    .toggle-switch input:checked + .toggle-slider::before{transform:translateX(22px);background:var(--red-primary,#e63946);box-shadow:0 0 8px var(--red-glow,rgba(230,57,70,.6))}
-    .setting-row{display:flex;justify-content:space-between;align-items:center;padding:1rem 0;border-bottom:1px solid var(--border-color)}
-    .setting-row:last-child{border-bottom:none}
-    .setting-row .st-info{flex:1}
-    .setting-row .st-title{color:var(--text-primary);font-weight:600;font-size:.9rem}
-    .setting-row .st-desc{color:var(--text-muted);font-size:.78rem;margin-top:.2rem}
-    .live-indicator{display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .65rem;background:rgba(0,204,102,.12);border:1px solid rgba(0,204,102,.3);border-radius:var(--radius-full);color:#00cc66;font-size:.7rem;font-weight:600}
-    .live-indicator .pulse-dot{width:6px;height:6px;border-radius:50%;background:#00cc66;animation:pulse 1.5s infinite}
-    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
-    .last-update{font-size:.7rem;color:var(--text-muted);margin-left:.5rem}
-  </style>
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/common.css?v=20261114_v1" />
+  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_v1" />
 </head>
+<body class="hospital-body">
 
-<body>
+  <!-- ==================== TOP NAVBAR ==================== -->
+  <header class="hosp-navbar" id="hospNavbar">
+    <div class="hosp-nav-container">
+      
+      <!-- Left: Logo & Medical Enclave Tag -->
+      <div class="hosp-nav-left">
+        <a href="index.html" class="nav-logo" title="RED404 Emergency Network">
+          <div class="logo-icon">
+            <i class="fas fa-tint"></i>
+            <div class="pulse-ring"></div>
+          </div>
+          <span class="logo-text">RED<span class="logo-404">404</span></span>
+        </a>
+        <div class="hosp-enclave-pill">
+          <span class="hosp-pulse-dot"></span>
+          <span>Hospital Portal</span>
+        </div>
+      </div>
 
-  <!-- ======================== SIDEBAR ======================== -->
-  <aside class="sidebar hospital-sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <a href="index.html" class="sidebar-logo">
-        <div class="sidebar-logo-icon"><i class="fas fa-hospital-symbol"></i></div>
-        <span class="sidebar-logo-text">RED<span>404</span></span>
+      <!-- Center: Navbar Links (Blue Accent Hover) -->
+      <nav>
+        <ul class="hosp-nav-menu" id="hospNavMenu">
+          <li>
+            <a href="hospital-dashboard.html" class="hosp-nav-link active">
+              <i class="fas fa-chart-pie"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="blood-availability-search.html" class="hosp-nav-link" id="navLinkFindDonor">
+              <i class="fas fa-satellite-dish"></i>
+              <span>Find Donor</span>
+            </a>
+          </li>
+          <li>
+            <a href="#inventory-alerts" class="hosp-nav-link" id="navLinkInventory">
+              <i class="fas fa-boxes-stacked"></i>
+              <span>Inventory</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Right: Logged-in Hospital Identity & Logout -->
+      <div class="hosp-nav-right">
+        <div class="hosp-identity-badge" title="Authenticated Hospital Enclave">
+          <i class="fas fa-hospital"></i>
+          <span class="hosp-identity-name" id="top-hospital-name">-</span>
+        </div>
+        <a href="/api/auth/logout" class="btn-hosp-logout" id="hospLogoutBtn" title="Terminate Session">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </div>
+
+      <!-- Mobile Hamburger -->
+      <div class="hosp-hamburger" id="hospHamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <main class="hosp-workspace">
+
+    <!-- Welcome Sub-Header with Hospital Name Prominently Displayed -->
+    <section class="hosp-welcome-banner">
+      <div class="hosp-welcome-top-meta">
+        <div class="hosp-tag-label">
+          <i class="fas fa-shield-alt"></i>
+          <span>Verified Healthcare Facility Enclave</span>
+        </div>
+        <div class="hosp-live-meta">
+          <span class="hosp-pulse-dot"></span>
+          <span>Real-Time Spatial Routing Active</span>
+        </div>
+      </div>
+      <h1 class="hosp-welcome-title">
+        Welcome, <span id="nav-hospital-name" class="hosp-name-glow">-</span>
+      </h1>
+      <p class="hosp-welcome-desc">
+        Emergency Dispatch Operations &amp; Real-Time Blood Logistics Hub. Trigger instant hyper-local SOS alerts, supervise donor dispatches, and balance critical blood reserves.
+      </p>
+    </section>
+
+    <!-- ==================== ACTION CARDS (CLICKABLE 3-CARD CONTAINER) ==================== -->
+    <section class="hosp-cards-container">
+
+      <!-- CARD 1: FIND DONORS (Clickable -> Opens SOS Request Flow) -->
+      <a href="#find-donors" class="hosp-action-card-link" id="cardLinkFindDonors">
+        <article class="hosp-action-card">
+          <div>
+            <div class="card-top-row">
+              <div class="card-icon-wrapper">
+                <i class="fas fa-satellite-dish"></i>
+              </div>
+              <span class="card-badge badge-sos">
+                <i class="fas fa-bolt"></i> SOS Alert
+              </span>
+            </div>
+            
+            <div class="card-content-body">
+              <h2 class="card-title">Find Donors</h2>
+              <p class="card-description">
+                Deploy instantaneous hyper-local blood requests. Automatically scans and notifies verified, eligible donors within a dynamic 5km to 20km proximity radius.
+              </p>
+            </div>
+
+            <!-- Dynamic Placeholder Metrics -->
+            <div class="card-metric-preview">
+              <div class="metric-item">
+                <span class="metric-label">Nearby Donors</span>
+                <span class="metric-val" id="metric-nearby-donors">-</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Dispatch Latency</span>
+                <span class="metric-val" id="metric-latency">&lt; 0.2s</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-action-bar">
+            <span class="card-btn">
+              <span>Dispatch SOS Blood Request</span>
+              <i class="fas fa-arrow-right"></i>
+            </span>
+          </div>
+        </article>
       </a>
-      <button class="sidebar-toggle" aria-label="Toggle sidebar">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-    </div>
 
-    <div class="sidebar-profile">
-      <div class="profile-avatar" id="sbAvatar">CH</div>
-      <div class="profile-info">
-        <div class="profile-name" id="sbName">Loading…</div>
-        <div class="profile-blood" id="sbStatus"><i class="fas fa-shield-alt"></i> Verified</div>
-      </div>
-    </div>
+      <!-- CARD 2: MANAGE INVENTORY (Clickable -> Opens Quick Stock Controls) -->
+      <a href="#manage-inventory" class="hosp-action-card-link" id="cardLinkManageInventory">
+        <article class="hosp-action-card">
+          <div>
+            <div class="card-top-row">
+              <div class="card-icon-wrapper">
+                <i class="fas fa-boxes-stacked"></i>
+              </div>
+              <span class="card-badge badge-inventory">
+                <i class="fas fa-vials"></i> Supply Control
+              </span>
+            </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-section-title">Main</div>
-      <a href="#" class="nav-item active" data-page="overview"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
-      <a href="#" class="nav-item" data-page="requests"><i class="fas fa-tint"></i><span>Blood Requests</span><span class="nav-badge" id="navReqBadge" style="display:none">0</span></a>
-      <a href="#" class="nav-item" data-page="donors"><i class="fas fa-users"></i><span>Find Donors</span></a>
-      <a href="#" class="nav-item" data-page="inventory"><i class="fas fa-warehouse"></i><span>Inventory</span></a>
+            <div class="card-content-body">
+              <h2 class="card-title">Manage Inventory</h2>
+              <p class="card-description">
+                Directly adjust and balance on-site hospital blood unit stockpiles. Record newly cross-matched blood bags, mark reserves, and update unit quantities in real time.
+              </p>
+            </div>
 
-      <div class="nav-section-title">Insights</div>
-      <a href="#" class="nav-item" data-page="analytics"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
-
-      <div class="nav-section-title">Account</div>
-      <a href="#" class="nav-item" data-page="profile"><i class="fas fa-id-card"></i><span>Hospital Profile</span></a>
-      <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
-    </nav>
-  </aside>
-
-  <!-- ======================== MAIN ======================== -->
-  <main class="dashboard-main" id="main">
-
-    <header class="dashboard-topbar">
-      <div class="topbar-left">
-        <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" aria-label="Open menu"><i class="fas fa-bars"></i></button>
-        <div>
-          <h1 class="page-title">Overview</h1>
-          <p class="page-subtitle">Manage blood requests and donors in real-time.</p>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <span class="live-indicator"><span class="pulse-dot"></span> LIVE</span>
-        <span class="last-update" id="lastUpdate">Updated just now</span>
-        <button class="topbar-btn topbar-notif" id="notifBtn" aria-label="Notifications">
-          <i class="fas fa-bell"></i>
-          <span class="topbar-notif-count" id="notifBadge" style="display:none">0</span>
-        </button>
-        <button class="topbar-btn"><i class="fas fa-envelope"></i></button>
-        <div class="topbar-divider"></div>
-        <div class="topbar-user">
-          <div class="topbar-user-avatar" id="topAvatar">CH</div>
-          <div class="topbar-user-info">
-            <div class="topbar-user-name" id="topName">Loading…</div>
-            <div class="topbar-user-role" id="topRole">Hospital Admin</div>
+            <!-- Dynamic Placeholder Metrics -->
+            <div class="card-metric-preview">
+              <div class="metric-item">
+                <span class="metric-label">Total Units on Hand</span>
+                <span class="metric-val" id="metric-total-units">-</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Critical Groups</span>
+                <span class="metric-val" id="metric-critical-groups" style="color: var(--hosp-warning);">-</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </header>
 
-    <!-- ========== OVERVIEW PAGE ========== -->
-    <section class="dash-page" id="page-overview">
+          <div class="card-action-bar">
+            <span class="card-btn">
+              <span>Update Stock Levels</span>
+              <i class="fas fa-arrow-right"></i>
+            </span>
+          </div>
+        </article>
+      </a>
 
-      <!-- Welcome Banner -->
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text">
-          <h2>Welcome back, <span id="welName">Hospital</span> 👋</h2>
-          <p>Here's a snapshot of your blood request activity for today.</p>
-          <div class="hosp-banner-meta">
-            <span class="hosp-meta-tag"><i class="fas fa-map-marker-alt"></i> <span id="welLoc">—</span></span>
-            <span class="hosp-meta-tag" id="welVerified"><i class="fas fa-shield-alt"></i> Verified</span>
-            <span class="hosp-meta-tag" id="welBB"><i class="fas fa-tint"></i> Blood Bank</span>
-            <span class="hosp-meta-tag"><i class="fas fa-clock"></i> <span id="welTime">—</span></span>
-          </div>
-        </div>
-      </div>
+      <!-- CARD 3: MY REQUESTS (Detailed Section for Sent Requests) -->
+      <a href="#my-requests" class="hosp-action-card-link" id="cardLinkMyRequests">
+        <article class="hosp-action-card">
+          <div>
+            <div class="card-top-row">
+              <div class="card-icon-wrapper">
+                <i class="fas fa-clipboard-list"></i>
+              </div>
+              <span class="card-badge badge-requests">
+                <i class="fas fa-clock"></i> Active Dispatch
+              </span>
+            </div>
 
-      <!-- Quick Actions -->
-      <div class="quick-actions-bar">
-        <a href="#" class="qa-card blood-req" data-action="new-request">
-          <div class="qa-icon"><i class="fas fa-tint"></i></div>
-          <span class="qa-label">New Blood Request</span>
-          <span class="qa-desc">Dispatch urgent request to nearby donors.</span>
-        </a>
-        <a href="#" class="qa-card find-donor" data-nav="donors">
-          <div class="qa-icon"><i class="fas fa-search-location"></i></div>
-          <span class="qa-label">Find Donors</span>
-          <span class="qa-desc">Search active donors in your zone.</span>
-        </a>
-        <a href="#" class="qa-card inventory" data-nav="inventory">
-          <div class="qa-icon"><i class="fas fa-warehouse"></i></div>
-          <span class="qa-label">Blood Inventory</span>
-          <span class="qa-desc">Track and update blood stock.</span>
-        </a>
-        <a href="#" class="qa-card profile" data-nav="profile">
-          <div class="qa-icon"><i class="fas fa-id-card"></i></div>
-          <span class="qa-label">Hospital Profile</span>
-          <span class="qa-desc">View and manage hospital info.</span>
-        </a>
-      </div>
+            <div class="card-content-body">
+              <h2 class="card-title">My Requests</h2>
+              <p class="card-description">
+                Real-time tracking stack for high-priority blood dispatch requests emitted by this hospital. Monitors response milestones and donor arrivals.
+              </p>
+            </div>
 
-      <!-- Stats -->
-      <div class="hosp-stats-row">
-        <div class="hosp-stat-card">
-          <div class="hsc-top">
-            <div class="hsc-icon red"><i class="fas fa-tint"></i></div>
-            <div class="hsc-trend up"><i class="fas fa-arrow-up"></i> 12%</div>
-          </div>
-          <div class="hsc-value" id="stTotalReq">0</div>
-          <div class="hsc-label">Total Requests</div>
-        </div>
-        <div class="hosp-stat-card">
-          <div class="hsc-top">
-            <div class="hsc-icon green"><i class="fas fa-check-circle"></i></div>
-            <div class="hsc-trend up"><i class="fas fa-arrow-up"></i> 8%</div>
-          </div>
-          <div class="hsc-value" id="stFulfilled">0</div>
-          <div class="hsc-label">Fulfilled</div>
-        </div>
-        <div class="hosp-stat-card">
-          <div class="hsc-top">
-            <div class="hsc-icon orange"><i class="fas fa-hourglass-half"></i></div>
-            <div class="hsc-trend same"><i class="fas fa-minus"></i> 0%</div>
-          </div>
-          <div class="hsc-value" id="stPending">0</div>
-          <div class="hsc-label">Pending</div>
-        </div>
-        <div class="hosp-stat-card">
-          <div class="hsc-top">
-            <div class="hsc-icon blue"><i class="fas fa-users"></i></div>
-            <div class="hsc-trend up"><i class="fas fa-arrow-up"></i> 24%</div>
-          </div>
-          <div class="hsc-value" id="stReached">0</div>
-          <div class="hsc-label">Donors Reached</div>
-        </div>
-        <div class="hosp-stat-card">
-          <div class="hsc-top">
-            <div class="hsc-icon purple"><i class="fas fa-stopwatch"></i></div>
-            <div class="hsc-trend down"><i class="fas fa-arrow-down"></i> 5%</div>
-          </div>
-          <div class="hsc-value" id="stAvg">7m</div>
-          <div class="hsc-label">Avg. Response</div>
-        </div>
-      </div>
-
-      <!-- Blood Request Form -->
-      <div class="blood-request-card" id="bloodReqCard">
-        <div class="brc-header">
-          <h3><i class="fas fa-tint"></i> Create New Blood Request</h3>
-          <div class="brc-live-badge"><span class="brc-live-dot"></span> LIVE DISPATCH</div>
-        </div>
-        <div class="brc-body">
-          <form id="reqForm" autocomplete="off" novalidate>
-            <div class="brc-form-group" style="margin-bottom:1.5rem">
-              <label>Blood Type Required <span style="color:var(--red-primary)">*</span></label>
-              <div class="brc-blood-selector">
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="A+" /><span>A+</span></label>
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="A-" /><span>A-</span></label>
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="B+" /><span>B+</span></label>
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="B-" /><span>B-</span></label>
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="AB+" /><span>AB+</span></label>
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="AB-" /><span>AB-</span></label>
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="O+" checked /><span>O+</span></label>
-                <label class="brc-bt-opt"><input type="radio" name="bloodType" value="O-" /><span>O-</span></label>
+            <!-- Detailed Placeholder Formats as Requested -->
+            <div class="card-requests-container">
+              <div class="req-field-row">
+                <span class="req-label"><i class="fas fa-vial"></i> Units Requested</span>
+                <span class="req-value"><span id="req-units">-</span> Units</span>
+              </div>
+              <div class="req-field-row">
+                <span class="req-label"><i class="fas fa-dna"></i> Blood Type</span>
+                <span class="req-value highlight-blue"><span id="req-blood-type">-</span></span>
+              </div>
+              <div class="req-field-row">
+                <span class="req-label"><i class="fas fa-route"></i> Accurate Distance</span>
+                <span class="req-value"><span id="req-distance">-</span> km away</span>
+              </div>
+              <div class="req-field-row">
+                <span class="req-label"><i class="fas fa-info-circle"></i> Status</span>
+                <span class="req-value"><span id="req-status" class="req-status-pill">-</span></span>
+              </div>
+              <div class="req-field-row">
+                <span class="req-label"><i class="fas fa-paper-plane"></i> Sent Time &amp; Date</span>
+                <span class="req-value"><span id="req-sent-time">-</span></span>
+              </div>
+              <div class="req-field-row">
+                <span class="req-label"><i class="fas fa-check-double"></i> Respond Time &amp; Date</span>
+                <span class="req-value"><span id="req-respond-time">-</span></span>
               </div>
             </div>
 
-            <div class="brc-form-grid">
-              <div class="brc-form-group">
-                <label>Units Needed <span style="color:var(--red-primary)">*</span></label>
-                <input type="number" name="unitsNeeded" min="1" max="100" value="2" required />
-              </div>
-              <div class="brc-form-group">
-                <label>Patient Name (Optional)</label>
-                <input type="text" name="patientName" placeholder="e.g. John Doe" maxlength="100" />
-              </div>
-              <div class="brc-form-group">
-                <label>Department</label>
-                <select name="department">
-                  <option>Emergency</option><option>ICU</option><option>Surgery</option>
-                  <option>Trauma</option><option>Maternity</option><option>Oncology</option>
-                  <option>Cardiology</option><option>Other</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="brc-form-group" style="margin-bottom:1.5rem">
-              <label>Notes / Additional Details</label>
-              <input type="text" name="notes" placeholder="e.g. Pre-surgery requirement…" maxlength="500" />
-            </div>
-
-            <div class="brc-form-group" style="margin-bottom:1.5rem">
-              <label>Urgency Level <span style="color:var(--red-primary)">*</span></label>
-              <div class="urgency-selector">
-                <label class="urgency-opt"><input type="radio" name="urgencyLevel" value="LOW" /><div class="urgency-btn normal"><i class="fas fa-info-circle"></i> Low <small style="opacity:.7;margin-left:.3rem">(72h)</small></div></label>
-                <label class="urgency-opt"><input type="radio" name="urgencyLevel" value="MEDIUM" /><div class="urgency-btn normal"><i class="fas fa-circle"></i> Medium <small style="opacity:.7;margin-left:.3rem">(24h)</small></div></label>
-                <label class="urgency-opt"><input type="radio" name="urgencyLevel" value="HIGH" checked /><div class="urgency-btn high"><i class="fas fa-exclamation-circle"></i> High <small style="opacity:.7;margin-left:.3rem">(6h)</small></div></label>
-                <label class="urgency-opt"><input type="radio" name="urgencyLevel" value="CRITICAL" /><div class="urgency-btn critical"><i class="fas fa-exclamation-triangle"></i> Critical <small style="opacity:.7;margin-left:.3rem">(2h)</small></div></label>
-              </div>
-            </div>
-
-            <div class="brc-form-group" style="margin-bottom:1.5rem">
-              <label>Initial Search Zone</label>
-              <div class="zone-selector">
-                <label class="zone-sel-opt"><input type="radio" name="notificationRadius" value="5" checked /><div class="zone-sel-btn"><i class="fas fa-bullseye"></i><span>Zone 1</span><span class="zone-km">0–5 km</span></div></label>
-                <label class="zone-sel-opt"><input type="radio" name="notificationRadius" value="10" /><div class="zone-sel-btn"><i class="fas fa-circle-notch"></i><span>Zone 2</span><span class="zone-km">5–10 km</span></div></label>
-                <label class="zone-sel-opt"><input type="radio" name="notificationRadius" value="20" /><div class="zone-sel-btn"><i class="fas fa-globe"></i><span>Zone 3</span><span class="zone-km">10–20 km</span></div></label>
-                <label class="zone-sel-opt"><input type="radio" name="notificationRadius" value="50" /><div class="zone-sel-btn"><i class="fas fa-globe-americas"></i><span>Zone 4</span><span class="zone-km">20–50 km</span></div></label>
-              </div>
-            </div>
-
-            <div class="brc-dispatch-section">
-              <div class="brc-dispatch-info">
-                <p><i class="fas fa-broadcast-tower"></i> Will notify <strong id="estDonors">~0</strong> active donors in selected zone.</p>
-                <p><i class="fas fa-clock"></i> Estimated response: <strong id="estResp">5–10 min</strong></p>
-              </div>
-              <button type="submit" class="btn-dispatch" id="dispatchBtn">
-                <i class="fas fa-paper-plane"></i><span>Dispatch Request</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Active Requests -->
-      <div class="active-requests-card">
-        <div class="arc-header">
-          <h3><i class="fas fa-bolt"></i> Active Requests <span id="activeCount" style="color:var(--text-muted);font-weight:500;font-size:.85rem;margin-left:.5rem">(0)</span></h3>
-          <div class="arc-filters">
-            <button class="arc-filter-btn active" data-filter="ALL">All</button>
-            <button class="arc-filter-btn" data-filter="CRITICAL">Critical</button>
-            <button class="arc-filter-btn" data-filter="HIGH">High</button>
-            <button class="arc-filter-btn" data-filter="MEDIUM">Medium</button>
-            <button class="arc-filter-btn" data-filter="LOW">Low</button>
+            <!-- Dynamic Request List Anchor for Backend Injection -->
+            <div id="hospital-requests-list" class="requests-dynamic-list"></div>
           </div>
-        </div>
-        <div id="activeList"></div>
-      </div>
 
-      <!-- Donors Map -->
-      <div class="donors-map-card">
-        <div class="dmc-header">
-          <h3><i class="fas fa-map-marked-alt"></i> Nearby Donors Map</h3>
-          <div class="dmc-zone-pills">
-            <span class="zone-pill z1" data-zone="1"><i class="fas fa-circle"></i> Zone 1 · <span id="z1c">0</span></span>
-            <span class="zone-pill z2" data-zone="2"><i class="fas fa-circle"></i> Zone 2 · <span id="z2c">0</span></span>
-            <span class="zone-pill z3" data-zone="3"><i class="fas fa-circle"></i> Zone 3 · <span id="z3c">0</span></span>
+          <div class="card-action-bar">
+            <span class="card-btn">
+              <span>View Dispatch Logs</span>
+              <i class="fas fa-arrow-right"></i>
+            </span>
           </div>
-        </div>
-        <div class="dmc-map" id="donorMap">
-          <div class="dmc-zone-ring z3r"></div>
-          <div class="dmc-zone-ring z2r"></div>
-          <div class="dmc-zone-ring z1r"></div>
-          <div class="dmc-hosp-pin" title="Your hospital"><i class="fas fa-hospital"></i><span>YOU</span></div>
-        </div>
-        <div class="dmc-legend">
-          <div class="legend-item"><span class="legend-dot hospital"></span> Your Hospital</div>
-          <div class="legend-item"><span class="legend-dot available"></span> Available</div>
-          <div class="legend-item"><span class="legend-dot busy"></span> Busy</div>
-          <div class="legend-item"><span class="legend-dot offline"></span> Offline</div>
-        </div>
-      </div>
+        </article>
+      </a>
 
-      <!-- Donors List -->
-      <div class="donors-list-card">
-        <div class="dlc-header">
-          <h3><i class="fas fa-users"></i> Available Donors <span id="donorCount" style="color:var(--text-muted);font-weight:500;font-size:.85rem;margin-left:.5rem">(0)</span></h3>
-          <div class="dlc-controls">
-            <div class="dlc-search"><i class="fas fa-search"></i><input type="text" id="dSearch" placeholder="Search donor by name…" /></div>
-            <select class="dlc-filter" id="dBlood">
-              <option value="ALL">All Blood Types</option>
-              <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-              <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
-            </select>
-            <select class="dlc-filter" id="dZone">
-              <option value="ALL">All Zones</option>
-              <option value="1">Zone 1 (0–5 km)</option><option value="2">Zone 2 (5–10 km)</option>
-              <option value="3">Zone 3 (10–20 km)</option><option value="4">Zone 4 (20+ km)</option>
-            </select>
-            <select class="dlc-filter" id="dStatus">
-              <option value="ALL">All Status</option>
-              <option value="online">Online</option>
-              <option value="busy">Busy</option>
-              <option value="offline">Offline</option>
-            </select>
-          </div>
-        </div>
-        <div id="donorList"></div>
-      </div>
-
-      <!-- Analytics -->
-      <div class="analytics-grid">
-        <div class="analytics-card">
-          <div class="analytics-card-header">
-            <h3><i class="fas fa-chart-line"></i> Requests Trend (Last 7 Days)</h3>
-          </div>
-          <div class="line-chart-area">
-            <svg viewBox="0 0 600 200" preserveAspectRatio="none" id="trendSvg">
-              <defs>
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#e63946" stop-opacity=".5" />
-                  <stop offset="100%" stop-color="#e63946" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-              <line class="lc-grid-line" x1="0" y1="40" x2="600" y2="40" />
-              <line class="lc-grid-line" x1="0" y1="80" x2="600" y2="80" />
-              <line class="lc-grid-line" x1="0" y1="120" x2="600" y2="120" />
-              <line class="lc-grid-line" x1="0" y1="160" x2="600" y2="160" />
-              <path class="lc-area" id="trendArea"></path>
-              <path class="lc-path" id="trendPath"></path>
-              <g id="trendDots"></g>
-            </svg>
-          </div>
-        </div>
-
-        <div class="analytics-card">
-          <div class="analytics-card-header"><h3><i class="fas fa-chart-pie"></i> Blood Type Demand</h3></div>
-          <div class="donut-chart-wrap">
-            <div class="donut-chart">
-              <svg viewBox="0 0 100 100" id="donutSvg"></svg>
-              <div class="donut-center-text">
-                <div class="donut-center-value" id="donutTotal">0</div>
-                <div class="donut-center-label">Requests</div>
-              </div>
-            </div>
-            <div class="donut-legend" id="donutLegend"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Dispatch Log + Profile -->
-      <div class="analytics-grid" style="grid-template-columns:2fr 1fr">
-        <div class="dispatch-log-card">
-          <div class="dlg-header">
-            <h3><i class="fas fa-paper-plane"></i> Recent Dispatch Activity</h3>
-          </div>
-          <div id="logList"></div>
-        </div>
-
-        <div class="hosp-profile-card">
-          <div class="hpc-cover">
-            <div class="hpc-avatar"><i class="fas fa-hospital"></i></div>
-          </div>
-          <div class="hpc-body">
-            <div class="hpc-name" id="hpcName">—</div>
-            <div class="hpc-type"><i class="fas fa-stethoscope"></i> <span id="hpcType">—</span></div>
-            <div class="hpc-tags">
-              <span class="hpc-tag verified" id="hpcVer"><i class="fas fa-shield-alt"></i> Verified</span>
-              <span class="hpc-tag zone"><i class="fas fa-map-marker-alt"></i> <span id="hpcCity">—</span></span>
-              <span class="hpc-tag beds" id="hpcBB"><i class="fas fa-tint"></i> Blood Bank</span>
-            </div>
-          </div>
-          <div class="hpc-stats-row">
-            <div class="hpc-stat"><div class="hpc-stat-val" id="hpcReq">0</div><div class="hpc-stat-label">Requests</div></div>
-            <div class="hpc-stat"><div class="hpc-stat-val" id="hpcLives">0</div><div class="hpc-stat-label">Lives Saved</div></div>
-            <div class="hpc-stat"><div class="hpc-stat-val" id="hpcUnits">0</div><div class="hpc-stat-label">Units</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Inventory -->
-      <div class="inventory-card">
-        <div class="inv-header">
-          <h3><i class="fas fa-warehouse"></i> Blood Inventory Status</h3>
-          <button class="arc-filter-btn active" id="invRefresh"><i class="fas fa-sync-alt"></i> Refresh</button>
-        </div>
-        <div class="inv-grid" id="invGrid"></div>
-      </div>
     </section>
 
-    <!-- ========== BLOOD REQUESTS PAGE ========== -->
-    <section class="dash-page" id="page-requests" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text">
-          <h2>Blood <span>Requests</span></h2>
-          <p>All your active and historical blood requests.</p>
-        </div>
-      </div>
-
-      <div class="hosp-stats-row" style="grid-template-columns:repeat(4,1fr)">
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon red"><i class="fas fa-tint"></i></div></div><div class="hsc-value" id="rqTotal">0</div><div class="hsc-label">Total</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon orange"><i class="fas fa-hourglass-half"></i></div></div><div class="hsc-value" id="rqPending">0</div><div class="hsc-label">Pending</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon green"><i class="fas fa-check-circle"></i></div></div><div class="hsc-value" id="rqFulfilled">0</div><div class="hsc-label">Fulfilled</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon purple"><i class="fas fa-times-circle"></i></div></div><div class="hsc-value" id="rqCancelled">0</div><div class="hsc-label">Cancelled / Expired</div></div>
-      </div>
-
-      <div class="active-requests-card">
-        <div class="arc-header">
-          <h3><i class="fas fa-list"></i> All Requests</h3>
-          <div class="arc-filters">
-            <button class="arc-filter-btn active" data-rfilter="ALL">All</button>
-            <button class="arc-filter-btn" data-rfilter="PENDING">Pending</button>
-            <button class="arc-filter-btn" data-rfilter="FULFILLED">Fulfilled</button>
-            <button class="arc-filter-btn" data-rfilter="CANCELLED">Cancelled</button>
-            <button class="arc-filter-btn" data-rfilter="EXPIRED">Expired</button>
+    <!-- ==================== STATUS SECTION: HOSPITAL BLOOD STOCK ALERTS ==================== -->
+    <section class="hosp-status-section" id="inventory-alerts">
+      
+      <div class="status-header-row">
+        <div class="status-heading-group">
+          <div class="status-icon-badge">
+            <i class="fas fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h2 class="status-title">Hospital Blood Stock Alerts</h2>
+            <p class="status-subtitle">
+              Live inventory monitor tracking deficit thresholds across all 8 standard biological blood groups.
+            </p>
           </div>
         </div>
-        <div id="rqList"></div>
-      </div>
-    </section>
 
-    <!-- ========== FIND DONORS PAGE ========== -->
-    <section class="dash-page" id="page-donors" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text">
-          <h2>Find <span>Donors</span></h2>
-          <p>Search and filter donors by blood type, zone, and availability. Distance is computed live based on location.</p>
+        <div class="status-filter-pills">
+          <div class="status-pill-info">
+            <i class="fas fa-bell" style="color: var(--hosp-warning);"></i>
+            <span>Critical Deficit Trigger: &lt; 5 Units</span>
+          </div>
+          <button type="button" class="btn-stock-adjust" id="btnRefreshStock" title="Refresh Live Levels">
+            <i class="fas fa-rotate"></i>
+          </button>
         </div>
       </div>
 
-      <div class="blood-request-card">
-        <div class="brc-header"><h3><i class="fas fa-tint"></i> Blood Compatibility Check</h3></div>
-        <div class="brc-body">
-          <div class="brc-form-group" style="margin-bottom:1rem">
-            <label>Recipient blood type:</label>
-            <div class="brc-blood-selector">
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="A+" /><span>A+</span></label>
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="A-" /><span>A-</span></label>
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="B+" /><span>B+</span></label>
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="B-" /><span>B-</span></label>
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="AB+" /><span>AB+</span></label>
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="AB-" /><span>AB-</span></label>
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="O+" checked /><span>O+</span></label>
-              <label class="brc-bt-opt"><input type="radio" name="cBlood" value="O-" /><span>O-</span></label>
+      <!-- 8-Blood Group Responsive Stock Alerts Grid -->
+      <div class="stock-alerts-grid" id="blood-stock-alerts-grid">
+
+        <!-- O Negative (Universal Donor - Critical) -->
+        <div class="stock-alert-item critical" id="stock-item-o-neg">
+          <div class="stock-blood-badge">O-</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-exclamation" style="color: var(--hosp-warning);"></i>
+              <span>Universal Urgent</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-o-neg" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
             </div>
           </div>
-          <div id="compatRes" style="padding:1rem;background:var(--bg-surface);border-radius:var(--radius-md);font-size:.85rem"></div>
-        </div>
-      </div>
-
-      <div class="donors-list-card" style="margin-top:1.5rem">
-        <div class="dlc-header">
-          <h3><i class="fas fa-users"></i> All Donors <span id="dpgCount" style="color:var(--text-muted);font-weight:500;font-size:.85rem;margin-left:.5rem">(0)</span></h3>
-          <div class="dlc-controls">
-            <div class="dlc-search"><i class="fas fa-search"></i><input type="text" id="dpgSearch" placeholder="Search donor…" /></div>
-            <select class="dlc-filter" id="dpgBlood">
-              <option value="ALL">All Blood Types</option>
-              <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-              <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
-            </select>
-            <select class="dlc-filter" id="dpgZone">
-              <option value="ALL">All Zones</option>
-              <option value="1">Zone 1</option><option value="2">Zone 2</option>
-              <option value="3">Zone 3</option><option value="4">Zone 4</option>
-            </select>
-            <select class="dlc-filter" id="dpgStatus">
-              <option value="ALL">All Status</option>
-              <option value="online">Online</option><option value="busy">Busy</option><option value="offline">Offline</option>
-            </select>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="O-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="O-" title="Increase Unit"><i class="fas fa-plus"></i></button>
           </div>
         </div>
-        <div id="dpgList"></div>
-      </div>
-    </section>
 
-    <!-- ========== INVENTORY PAGE ========== -->
-    <section class="dash-page" id="page-inventory" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text">
-          <h2>Blood <span>Inventory</span></h2>
-          <p>Manage your hospital's blood stock. Critical types (&lt; 5 units) are flagged automatically.</p>
-        </div>
-      </div>
-
-      <div class="hosp-stats-row" style="grid-template-columns:repeat(4,1fr)">
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon red"><i class="fas fa-tint"></i></div></div><div class="hsc-value" id="ivTotal">0</div><div class="hsc-label">Total Units</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon green"><i class="fas fa-check"></i></div></div><div class="hsc-value" id="ivGood">0</div><div class="hsc-label">Good Stock</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon orange"><i class="fas fa-exclamation"></i></div></div><div class="hsc-value" id="ivLow">0</div><div class="hsc-label">Low</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon purple"><i class="fas fa-exclamation-triangle"></i></div></div><div class="hsc-value" id="ivCrit">0</div><div class="hsc-label">Critical</div></div>
-      </div>
-
-      <div class="inventory-card">
-        <div class="inv-header">
-          <h3><i class="fas fa-warehouse"></i> Blood Stock</h3>
-          <button class="arc-filter-btn active" id="ivRefresh"><i class="fas fa-sync-alt"></i> Refresh</button>
-        </div>
-        <div class="inv-grid" id="ivGrid"></div>
-      </div>
-
-      <div class="blood-request-card" style="margin-top:1.5rem">
-        <div class="brc-header"><h3><i class="fas fa-edit"></i> Update Inventory</h3></div>
-        <div class="brc-body">
-          <form id="ivForm" onsubmit="return false">
-            <div class="brc-form-grid">
-              <div class="brc-form-group">
-                <label>Blood Type</label>
-                <select id="ivBT">
-                  <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-                  <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
-                </select>
-              </div>
-              <div class="brc-form-group">
-                <label>Action</label>
-                <select id="ivAct">
-                  <option value="ADD">Add Units (Donation Received)</option>
-                  <option value="USE">Use Units (Patient Used)</option>
-                  <option value="SET">Set Exact Units</option>
-                </select>
-              </div>
-              <div class="brc-form-group">
-                <label>Units</label>
-                <input type="number" id="ivU" min="1" max="100" value="1" />
-              </div>
-            </div>
-            <div class="brc-dispatch-section">
-              <div class="brc-dispatch-info">
-                <p><i class="fas fa-info-circle"></i> Updates apply to <code>Hospital.bloodInventory</code> immediately.</p>
-              </div>
-              <button type="submit" class="btn-dispatch"><i class="fas fa-save"></i> <span>Update</span></button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========== ANALYTICS PAGE ========== -->
-    <section class="dash-page" id="page-analytics" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text"><h2>Hospital <span>Analytics</span></h2><p>Insights, trends & performance.</p></div>
-      </div>
-
-      <div class="hosp-stats-row" style="grid-template-columns:repeat(4,1fr)">
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon red"><i class="fas fa-tint"></i></div><div class="hsc-trend up"><i class="fas fa-arrow-up"></i> 12%</div></div><div class="hsc-value" id="anReq">0</div><div class="hsc-label">Requests (30d)</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon green"><i class="fas fa-percentage"></i></div><div class="hsc-trend up"><i class="fas fa-arrow-up"></i> 4%</div></div><div class="hsc-value" id="anRate">0%</div><div class="hsc-label">Fulfillment Rate</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon blue"><i class="fas fa-stopwatch"></i></div><div class="hsc-trend down"><i class="fas fa-arrow-down"></i> 8%</div></div><div class="hsc-value" id="anAvg">7m</div><div class="hsc-label">Avg Response</div></div>
-        <div class="hosp-stat-card"><div class="hsc-top"><div class="hsc-icon purple"><i class="fas fa-heartbeat"></i></div><div class="hsc-trend up"><i class="fas fa-arrow-up"></i> 18%</div></div><div class="hsc-value" id="anLives">0</div><div class="hsc-label">Lives Saved</div></div>
-      </div>
-
-      <div class="analytics-card">
-        <div class="analytics-card-header"><h3><i class="fas fa-chart-line"></i> 30-Day Request Trend</h3></div>
-        <div class="line-chart-area" style="height:300px">
-          <svg viewBox="0 0 600 200" preserveAspectRatio="none" id="anSvg">
-            <line class="lc-grid-line" x1="0" y1="40" x2="600" y2="40" />
-            <line class="lc-grid-line" x1="0" y1="80" x2="600" y2="80" />
-            <line class="lc-grid-line" x1="0" y1="120" x2="600" y2="120" />
-            <line class="lc-grid-line" x1="0" y1="160" x2="600" y2="160" />
-            <path class="lc-area" id="anArea"></path>
-            <path class="lc-path" id="anPath"></path>
-            <g id="anDots"></g>
-          </svg>
-        </div>
-      </div>
-
-      <div class="analytics-grid" style="margin-top:1.5rem">
-        <div class="analytics-card"><div class="analytics-card-header"><h3><i class="fas fa-exclamation-circle"></i> Requests by Urgency</h3></div><div style="padding:1.5rem" id="urgBreak"></div></div>
-        <div class="analytics-card"><div class="analytics-card-header"><h3><i class="fas fa-map-marker-alt"></i> Requests by Zone</h3></div><div style="padding:1.5rem" id="znBreak"></div></div>
-      </div>
-    </section>
-
-
-
-    <!-- ========== PROFILE PAGE ========== -->
-    <section class="dash-page" id="page-profile" style="display:none">
-      <div class="hosp-welcome-banner">
-        <div class="hosp-banner-text"><h2>Hospital <span>Profile</span></h2><p>Update hospital info & verification.</p></div>
-      </div>
-
-      <div class="analytics-grid" style="grid-template-columns:1fr 2fr">
-        <div class="hosp-profile-card">
-          <div class="hpc-cover"><div class="hpc-avatar"><i class="fas fa-hospital"></i></div></div>
-          <div class="hpc-body">
-            <div class="hpc-name" id="pfName">—</div>
-            <div class="hpc-type"><i class="fas fa-stethoscope"></i> <span id="pfType">—</span></div>
-            <div class="hpc-tags">
-              <span class="hpc-tag verified" id="pfVer"><i class="fas fa-shield-alt"></i> Verified</span>
-              <span class="hpc-tag zone"><i class="fas fa-map-marker-alt"></i> <span id="pfCity">—</span></span>
-              <span class="hpc-tag beds" id="pfBB"><i class="fas fa-tint"></i> Blood Bank</span>
+        <!-- O Positive -->
+        <div class="stock-alert-item" id="stock-item-o-pos">
+          <div class="stock-blood-badge">O+</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-dot"></i>
+              <span>High Demand</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-o-pos" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
             </div>
           </div>
-          <div class="hpc-stats-row">
-            <div class="hpc-stat"><div class="hpc-stat-val" id="pfReq">0</div><div class="hpc-stat-label">Requests</div></div>
-            <div class="hpc-stat"><div class="hpc-stat-val" id="pfLives">0</div><div class="hpc-stat-label">Lives Saved</div></div>
-            <div class="hpc-stat"><div class="hpc-stat-val" id="pfUnits">0</div><div class="hpc-stat-label">Units</div></div>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="O+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="O+" title="Increase Unit"><i class="fas fa-plus"></i></button>
           </div>
         </div>
 
-        <div class="blood-request-card">
-                    <div class="brc-header"><h3><i class="fas fa-edit"></i> Edit Hospital Information</h3></div>
-          <div class="brc-body">
-            <form id="pfForm" onsubmit="return false">
-              <div class="brc-form-grid">
-                <div class="brc-form-group"><label>Hospital Name *</label><input type="text" id="ipfName" required /></div>
-                <div class="brc-form-group"><label>Email *</label><input type="email" id="ipfEmail" required /></div>
-                <div class="brc-form-group"><label>Phone *</label><input type="tel" id="ipfPhone" required /></div>
-              </div>
-              <div class="brc-form-grid">
-                <div class="brc-form-group"><label>Registration Number</label><input type="text" id="ipfReg" /></div>
-                <div class="brc-form-group">
-                  <label>Type</label>
-                  <select id="ipfType">
-                    <option value="GOVERNMENT">Government</option>
-                    <option value="PRIVATE">Private</option>
-                    <option value="TRUST">Trust</option>
-                  </select>
-                </div>
-                <div class="brc-form-group"><label>Pincode</label><input type="text" id="ipfPin" maxlength="6" /></div>
-              </div>
-              <div class="brc-form-group" style="margin-bottom:1rem"><label>Address</label><input type="text" id="ipfAddr" /></div>
-              <div class="brc-form-grid">
-                <div class="brc-form-group"><label>City</label><input type="text" id="ipfCity" /></div>
-                <div class="brc-form-group"><label>State</label><input type="text" id="ipfState" /></div>
-                <div class="brc-form-group"><label>Blood Bank License</label><input type="text" id="ipfBB" /></div>
-              </div>
-              <div class="brc-dispatch-section">
-                <div class="brc-dispatch-info">
-                  <p><i class="fas fa-info-circle"></i> Validates per <code>Hospital.validate()</code> rules.</p>
-                </div>
-                <button type="submit" class="btn-dispatch" id="pfSaveBtn"><i class="fas fa-save"></i> <span>Save Changes</span></button>
-              </div>
-            </form>
+        <!-- A Negative -->
+        <div class="stock-alert-item critical" id="stock-item-a-neg">
+          <div class="stock-blood-badge">A-</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-exclamation" style="color: var(--hosp-warning);"></i>
+              <span>Rare Group</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-a-neg" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
+            </div>
+          </div>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="A-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="A-" title="Increase Unit"><i class="fas fa-plus"></i></button>
           </div>
         </div>
+
+        <!-- A Positive -->
+        <div class="stock-alert-item" id="stock-item-a-pos">
+          <div class="stock-blood-badge">A+</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-dot"></i>
+              <span>Standard Stock</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-a-pos" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
+            </div>
+          </div>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="A+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="A+" title="Increase Unit"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+
+        <!-- B Negative -->
+        <div class="stock-alert-item critical" id="stock-item-b-neg">
+          <div class="stock-blood-badge">B-</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-exclamation" style="color: var(--hosp-warning);"></i>
+              <span>Low Reserve</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-b-neg" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
+            </div>
+          </div>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="B-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="B-" title="Increase Unit"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+
+        <!-- B Positive -->
+        <div class="stock-alert-item" id="stock-item-b-pos">
+          <div class="stock-blood-badge">B+</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-dot"></i>
+              <span>Standard Stock</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-b-pos" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
+            </div>
+          </div>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="B+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="B+" title="Increase Unit"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+
+        <!-- AB Negative -->
+        <div class="stock-alert-item critical" id="stock-item-ab-neg">
+          <div class="stock-blood-badge">AB-</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-exclamation" style="color: var(--hosp-warning);"></i>
+              <span>Ultra-Rare</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-ab-neg" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
+            </div>
+          </div>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="AB-" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="AB-" title="Increase Unit"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+
+        <!-- AB Positive (Universal Recipient) -->
+        <div class="stock-alert-item" id="stock-item-ab-pos">
+          <div class="stock-blood-badge">AB+</div>
+          <div class="stock-item-info">
+            <span class="stock-item-label">
+              <i class="fas fa-circle-dot"></i>
+              <span>Universal Plasma</span>
+            </span>
+            <div class="low-stock-count-text">
+              <span id="low-stock-count-ab-pos" class="low-stock-count">-</span>
+              <span class="unit-text">Units Available</span>
+            </div>
+          </div>
+          <div class="stock-actions-group">
+            <button class="btn-stock-adjust btn-decrement" data-type="AB+" title="Decrease Unit"><i class="fas fa-minus"></i></button>
+            <button class="btn-stock-adjust btn-increment" data-type="AB+" title="Increase Unit"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+
       </div>
+
+      <!-- General Fallback Hook for Backend Count -->
+      <div style="display: none;">
+        <span id="low-stock-count">-</span>
+        <span id="hosp-name">-</span>
+      </div>
+
     </section>
-
-    <!-- ==================== SLEEK MINIMALIST MINI-FOOTER ==================== -->
-    <footer class="app-mini-footer">
-      <div class="mini-footer-container">
-        <div class="mf-left">
-          <span class="mf-status-dot"></span>
-          <span class="mf-status-text">System: Online</span>
-          <span class="mf-divider">&bull;</span>
-          <span class="mf-copy">&copy; 2026 RED404</span>
-        </div>
-        <nav class="mf-center" aria-label="Quick Links">
-          <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('help')">Help &amp; Support</a>
-          <span class="mf-link-sep">&bull;</span>
-          <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('report')">Report Issue</a>
-          <span class="mf-link-sep">&bull;</span>
-          <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('privacy')">Privacy &amp; Policy</a>
-        </nav>
-        <div class="mf-right">
-          <span class="mf-version">v1.0.0 Beta</span>
-        </div>
-      </div>
-    </footer>
 
   </main>
 
-  <!-- ============================================================
-       SCRIPTS — single self-contained controller
-  ============================================================ -->
-  <script src="js/common.js?v=20261113_v40"></script>
-  <script>
-  'use strict';
-
-  if (typeof window.openMiniFooterModal !== 'function') {
-    window.openMiniFooterModal = function(topic) {
-      if (topic === 'help') {
-        alert("Help & Support Center\n\nNeed urgent assistance with SOS dispatch, finding nearby blood banks, or managing your donor profile? Our team is available round the clock.\n\n📞 24/7 Emergency Helpline: +91-1800-RED-404 | National Emergency: 112\n✉️ Support Desk: support@red404.org");
-      } else if (topic === 'report') {
-        alert("Report an Issue / Bug\n\nIf you encounter a problem while using the RED404 platform, please report it immediately. Our engineering team monitors the system 24/7.\n\nWhen emailing us, please include:\n1. A clear description of the issue.\n2. Screenshots of the error.\n3. Your device and browser name.\n\n🛠️ Technical Triage Team: dev-ops@red404.org");
-      } else if (topic === 'privacy') {
-        alert("Privacy & Platform Policies\nLast Updated: November 10, 2026\n\n• Introduction: RED404 is a real-time SOS blood network. We prioritize the security of your clinical and personal data.\n• Data Collection: We collect personally identifiable information (Name, Contact), clinical vitals (Blood Group, Hemoglobin), and live GPS location.\n• QR Code & Digital ID: Your profile generates a secure QR code. Scanning this code shares a read-only intake form with authorized hospital nodes.\n• Data Usage & Sharing: Your data is NEVER sold. It is exclusively shared with verified hospital networks for emergency dispatch and matching.\n• Security Standards: All databases and communications are secured using end-to-end encryption (TLS 1.3 / AES-256).\n• User Rights & Deletion: You have the absolute right to edit your medical details or permanently delete your account at any time from your dashboard.\n• Medical Disclaimer: RED404 is a routing utility. We do not provide medical advice. Final blood screening and phlebotomy are conducted by certified professionals at the destination hospital.");
-      }
-    };
-  }
-
-  /* ============================================================
-     CONSTANTS — match Hospital.java + BloodRequest.java
-  ============================================================ */
-  const VALID_BLOOD_TYPES = ['A+','A-','B+','B-','O+','O-','AB+','AB-'];
-
-  const URGENCY = { CRITICAL:'CRITICAL', HIGH:'HIGH', MEDIUM:'MEDIUM', LOW:'LOW' };
-  const STATUS  = { PENDING:'PENDING', FULFILLED:'FULFILLED', CANCELLED:'CANCELLED', EXPIRED:'EXPIRED' };
-
-  const URGENCY_META = {
-    CRITICAL: { color:'#ff4444', icon:'exclamation-triangle', rowClass:'critical-row', expiryHours:2,  priority:1 },
-    HIGH:     { color:'#ff8800', icon:'exclamation-circle',   rowClass:'high-row',     expiryHours:6,  priority:2 },
-    MEDIUM:   { color:'#ffcc00', icon:'circle',               rowClass:'',             expiryHours:24, priority:3 },
-    LOW:      { color:'#00cc66', icon:'info-circle',          rowClass:'',             expiryHours:72, priority:4 }
-  };
-
-  const BLOOD_COLORS = {
-    'O+':'#e63946','A+':'#4285f4','B+':'#00cc66','AB+':'#ffcc00',
-    'O-':'#ff8800','A-':'#bb77ee','B-':'#9932cc','AB-':'#ff6b6b'
-  };
-
-  /* Blood compatibility (recipient → donors) */
-  const COMPAT = {
-    'A+':['A+','A-','O+','O-'], 'A-':['A-','O-'],
-    'B+':['B+','B-','O+','O-'], 'B-':['B-','O-'],
-    'AB+':VALID_BLOOD_TYPES,    'AB-':['A-','B-','AB-','O-'],
-    'O+':['O+','O-'],            'O-':['O-']
-  };
-
-  /* API base — change this to your Java servlet URL */
-  const API_BASE = '/api';
-
-  /* ============================================================
-     STATE STORE
-  ============================================================ */
-  const state = {
-    hospital: null,
-    activeRequests: [],
-    history: [],
-    donors: [],
-    log: [],
-    activeFilter: 'ALL',
-    rqFilter: 'ALL',
-    dpFilter: 'ALL',
-    pollHandle: null
-  };
-
-  /* Clean out legacy demo/mock data stored in previous browser sessions */
-  function cleanLegacyMockData() {
-    try {
-      const h = Store.get('hospitalProfile');
-      if (h && (h.name === 'City General Hospital' || h.id === 1)) {
-        Store.rm('hospitalProfile');
-      }
-      Store.rm('cachedDonors');
-      Store.rm('activeRequests');
-      Store.rm('historyRequests');
-      Store.rm('dispatchLog');
-    } catch(e) {}
-  }
-
-  /* ============================================================
-     UTILITIES
-  ============================================================ */
-  function $(id) { return document.getElementById(id); }
-  function qs(sel, root=document) { return root.querySelector(sel); }
-  function qsa(sel, root=document) { return root.querySelectorAll(sel); }
-
-  function initials(name='') {
-    return name.split(' ').filter(Boolean).slice(0,2).map(p=>p[0].toUpperCase()).join('') || 'H';
-  }
-  function capitalize(s='') {
-    return s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : '';
-  }
-  function timeAgo(d) {
-    if (!d) return '—';
-    const sec = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
-    if (sec < 60)    return `${sec}s ago`;
-    if (sec < 3600)  return `${Math.floor(sec/60)}m ago`;
-    if (sec < 86400) return `${Math.floor(sec/3600)}h ago`;
-    return `${Math.floor(sec/86400)}d ago`;
-  }
-  function formatDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-  }
-
-  /* Haversine distance — same as Java backend logic */
-  function haversineKm(lat1, lon1, lat2, lon2) {
-    const R = 6371; // km
-    const toRad = x => x * Math.PI / 180;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat/2)**2 +
-              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-              Math.sin(dLon/2)**2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
-  function zoneFromKm(km) {
-    if (km <= 5)  return 1;
-    if (km <= 10) return 2;
-    if (km <= 20) return 3;
-    return 4;
-  }
-
-  function toast(msg, type='info', dur=2500) {
-    const t = document.createElement('div');
-    t.style.cssText = `
-      position:fixed;top:20px;right:20px;z-index:99999;
-      padding:.85rem 1.25rem;border-radius:8px;
-      background:${type==='success'?'#00cc66':type==='error'?'#ff4444':type==='warning'?'#ff8800':'#4285f4'};
-      color:white;font-weight:600;font-size:.85rem;
-      box-shadow:0 8px 24px rgba(0,0,0,.3);
-      animation:slideInRight .3s ease;
-      max-width:320px;
-    `;
-    t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'times-circle':type==='warning'?'exclamation-triangle':'info-circle'}"></i> ${msg}`;
-    document.body.appendChild(t);
-    setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; }, dur);
-    setTimeout(()=>t.remove(), dur+400);
-  }
-
-  /* Persistent local store */
-  const Store = {
-    get(k, def=null) { try { const v = localStorage.getItem('red404_'+k); return v ? JSON.parse(v) : def; } catch(e){ return def; } },
-    set(k, v) { try { localStorage.setItem('red404_'+k, JSON.stringify(v)); } catch(e){} },
-    rm(k) { try { localStorage.removeItem('red404_'+k); } catch(e){} }
-  };
-
-  /* API helper with credentials and real endpoints */
-  async function api(method, path, body) {
-    try {
-      const opts = { method, headers:{'Content-Type':'application/json'}, credentials:'include' };
-      const tok = Store.get('hospitalToken');
-      if (tok) opts.headers['Authorization'] = 'Bearer ' + tok;
-      if (body) opts.body = JSON.stringify(body);
-      const res = await fetch(API_BASE + path, opts);
-      if (res.status === 401 && path !== '/hospitals/login') {
-        Store.rm('hospitalToken');
-        Store.rm('hospitalProfile');
-        window.location.href = 'hospital-login.html';
-        return { success:false, error:'Unauthorized' };
-      }
-      const data = await res.json();
-      return data;
-    } catch(e) {
-      return { success:false, error:e.message };
-    }
-  }
-
-  /* ============================================================
-     INIT
-  ============================================================ */
-  document.addEventListener('DOMContentLoaded', async () => {
-    cleanLegacyMockData();
-    const isAuthed = await loadHospital();
-    if (!isAuthed) return;
-
-    initSidebar();
-    initNav();
-    initLogout();
-    initQuickActions();
-    initForms();
-    initFilters();
-    initCompat();
-    initClock();
-
-    await loadDonors();
-    await loadRequests();
-    await loadHistory();
-    await loadDispatchLog();
-
-    renderAll();
-
-    /* Live updates every 15s */
-    state.pollHandle = setInterval(liveTick, 15000);
-  });
-
-  /* ============================================================
-     SIDEBAR + NAV
-  ============================================================ */
-  function initSidebar() {
-    const sb = $('sidebar');
-    const tg = qs('.sidebar-toggle', sb);
-    const mn = $('main');
-    const mb = qs('.mobile-sidebar-toggle');
-
-    tg?.addEventListener('click', () => {
-      const c = sb.classList.toggle('collapsed');
-      mn?.classList.toggle('sidebar-collapsed', c);
-      tg.innerHTML = c ? '<i class="fas fa-chevron-right"></i>' : '<i class="fas fa-chevron-left"></i>';
-      Store.set('sbCollapsed', c);
-    });
-
-    if (Store.get('sbCollapsed')) {
-      sb.classList.add('collapsed');
-      mn?.classList.add('sidebar-collapsed');
-      if (tg) tg.innerHTML = '<i class="fas fa-chevron-right"></i>';
-    }
-
-    const bdrop = document.getElementById('mobileSidebarBackdrop');
-
-    mb?.addEventListener('click', e => {
-      e.stopPropagation();
-      const open = sb.classList.toggle('mobile-open');
-      if (bdrop) bdrop.style.display = open ? 'block' : 'none';
-    });
-    bdrop?.addEventListener('click', () => {
-      sb.classList.remove('mobile-open');
-      bdrop.style.display = 'none';
-    });
-    document.addEventListener('click', e => {
-      if (window.innerWidth < 1024 && sb.classList.contains('mobile-open') &&
-          !sb.contains(e.target) && !mb?.contains(e.target)) {
-        sb.classList.remove('mobile-open');
-        if (bdrop) bdrop.style.display = 'none';
-      }
-    });
-  }
-
-  const PAGES = {
-    overview:  { t:'Overview',          s:'Manage blood requests and donors in real-time.' },
-    requests:  { t:'Blood Requests',    s:'All your active and historical requests.' },
-    donors:    { t:'Find Donors',       s:'Search active donors by zone & blood type.' },
-    inventory: { t:'Blood Inventory',   s:'Track and manage your hospital blood stock.' },
-    analytics: { t:'Analytics',         s:'Insights and performance metrics.' },
-    profile:   { t:'Hospital Profile',  s:'Update hospital info & verification.' }
-  };
-
-  function initNav() {
-    qsa('.nav-item[data-page]').forEach(item => {
-      item.addEventListener('click', e => {
-        e.preventDefault();
-        gotoPage(item.dataset.page);
-      });
-    });
-  }
-
-  function gotoPage(page) {
-    if (window.innerWidth < 1024) {
-      document.querySelector('.sidebar')?.classList.remove('mobile-open');
-      const bdrop = document.getElementById('mobileSidebarBackdrop');
-      if (bdrop) bdrop.style.display = 'none';
-    }
-
-    qsa('.nav-item').forEach(i => i.classList.remove('active'));
-    qs(`.nav-item[data-page="${page}"]`)?.classList.add('active');
-    qsa('.dash-page').forEach(p => p.style.display = (p.id === `page-${page}`) ? 'block' : 'none');
-
-    qs('.page-title').textContent = PAGES[page]?.t || 'Dashboard';
-    qs('.page-subtitle').textContent = PAGES[page]?.s || '';
-
-    /* Render page-specific content */
-    if      (page === 'requests')  renderRequestsPage();
-    else if (page === 'donors')    renderDonorsPage();
-    else if (page === 'inventory') renderInventoryPage();
-    else if (page === 'analytics') renderAnalyticsPage();
-    else if (page === 'profile')   renderProfilePage();
-
-    window.scrollTo({ top:0, behavior:'smooth' });
-  }
-
-  function initQuickActions() {
-    qsa('[data-nav]').forEach(el => el.addEventListener('click', e => {
-      e.preventDefault();
-      gotoPage(el.dataset.nav);
-    }));
-    qs('[data-action="new-request"]')?.addEventListener('click', e => {
-      e.preventDefault();
-      $('bloodReqCard')?.scrollIntoView({ behavior:'smooth' });
-    });
-  }
-
-  function initLogout() {
-    $('logoutBtn')?.addEventListener('click', async e => {
-      e.preventDefault();
-      const ok = await showAppConfirm({
-        title: 'Logout',
-        message: 'Are you sure you want to logout from the Hospital Portal?',
-        type: 'danger',
-        icon: 'fa-sign-out-alt',
-        confirmText: 'Logout',
-        cancelText: 'Stay Logged In'
-      });
-      if (!ok) return;
-      await api('POST', '/auth/logout');
-      Store.rm('hospitalToken');
-      Store.rm('hospitalProfile');
-      localStorage.removeItem('red404_token');
-      localStorage.removeItem('red404_user');
-      toast('Logging out…', 'info', 1000);
-      setTimeout(() => window.location.href = 'hospital-login.html', 800);
-    });
-  }
-
-  function initClock() {
-    const upd = () => {
-      $('welTime').textContent = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-    };
-    upd();
-    setInterval(upd, 30000);
-  }
-
-  /* ============================================================
-     LOAD HOSPITAL — Hospital.toFullMap()
-  ============================================================ */
-  async function loadHospital() {
-    const r = await api('GET', '/hospitals/profile');
-    if (!r || !r.success || !r.data) {
-      Store.rm('hospitalToken');
-      Store.rm('hospitalProfile');
-      window.location.href = 'hospital-login.html';
-      return false;
-    }
-    const h = r.data;
-    Store.set('hospitalProfile', h);
-    h.name = h.name || h.hospitalName || 'Hospital Portal';
-    h.phone = h.phone || h.hospitalPhone || '';
-    h.email = h.email || h.hospitalEmail || '';
-    h.type = h.type || h.hospitalType || 'HOSPITAL';
-    state.hospital = h;
-    h.bloodInventory = h.bloodInventory || {};
-    VALID_BLOOD_TYPES.forEach(b => { if (h.bloodInventory[b] === undefined) h.bloodInventory[b] = 0; });
-    h.totalBloodUnits = Object.values(h.bloodInventory).reduce((a,b)=>a+b,0);
-    return true;
-  }
-
-  /* ============================================================
-     LOAD DONORS — with Haversine distance (Real Database Donors)
-  ============================================================ */
-  async function loadDonors() {
-    const r = await api('GET', '/hospitals/donors/nearby');
-    let donors = [];
-
-    if (r.success && Array.isArray(r.data)) {
-      donors = r.data;
-    } else {
-      donors = [];
-    }
-
-    /* Recompute distance with Haversine using hospital coords */
-    const hLat = state.hospital?.latitude || 25.5941;
-    const hLng = state.hospital?.longitude || 85.1376;
-    donors.forEach(d => {
-      d.name = d.name || d.donorName || d.fullName || 'Donor';
-      d.bloodType = d.bloodType || d.bloodGroup || 'O+';
-      d.phone = d.phone || d.mobileNumber || d.mobile || '—';
-      d.status = d.status || (d.isAvailable ? 'online' : 'offline');
-      d.donations = d.donations || d.donationCount || 0;
-      d.level = d.level || (d.donations >= 10 ? 'Champion' : d.donations >= 5 ? 'Hero Donor' : 'Active Donor');
-      if (d.latitude !== undefined && d.longitude !== undefined && d.latitude !== null && d.longitude !== null) {
-        d.distance = +haversineKm(hLat, hLng, d.latitude, d.longitude).toFixed(2);
-      } else {
-        d.distance = (typeof d.distance === 'number') ? +d.distance.toFixed(2) : 0;
-      }
-      d.zone = zoneFromKm(d.distance || 0);
-    });
-
-    /* Sort by distance (DSA — sorting) */
-    donors.sort((a,b) => (a.distance || 0) - (b.distance || 0));
-    state.donors = donors;
-    Store.set('cachedDonors', donors);
-  }
-
-  /* ============================================================
-     LOAD REQUESTS (Real Database Requests)
-  ============================================================ */
-  async function loadRequests() {
-    const r = await api('GET', '/hospitals/requests/active');
-    let reqs = [];
-    if (r.success && Array.isArray(r.data)) reqs = r.data;
-    else reqs = [];
-
-    /* Recompute expiry/remaining */
-    reqs.forEach(r => {
-      r.unitsNeeded = r.unitsNeeded || r.unitsRequested || r.units || 1;
-      r.unitsFulfilled = r.unitsFulfilled || 0;
-      r.requestDate = r.requestDate || r.createdAt || r.time || Date.now();
-      r.notes = r.notes || (r.patientName ? ('Patient: ' + r.patientName) : 'Blood Request');
-      updateRequestLive(r);
-    });
-    /* Sort by urgency (DSA) */
-    reqs.sort((a,b) => (URGENCY_META[a.urgencyLevel]?.priority||5) - (URGENCY_META[b.urgencyLevel]?.priority||5));
-    state.activeRequests = reqs;
-    Store.set('activeRequests', reqs);
-  }
-
-  function updateRequestLive(r) {
-    const now = Date.now();
-    if (r.expiryDate && now > new Date(r.expiryDate).getTime() && r.status === STATUS.PENDING) {
-      r.status = STATUS.EXPIRED;
-    }
-    r.minutesUntilExpiry = r.expiryDate ? Math.max(0, Math.floor((new Date(r.expiryDate).getTime() - now) / 60000)) : 0;
-    r.unitsRemaining = Math.max(0, (r.unitsNeeded || 0) - (r.unitsFulfilled || 0));
-    r.fulfillmentPercentage = r.unitsNeeded ? Math.round((r.unitsFulfilled / r.unitsNeeded) * 100) : 0;
-    r.urgencyPriority = URGENCY_META[r.urgencyLevel]?.priority || 5;
-    r.totalNotified = r.notifiedDonors?.length ?? r.totalNotified ?? 0;
-    r.totalAccepted = r.acceptedDonors?.length ?? r.totalAccepted ?? 0;
-    r.totalDeclined = r.declinedDonors?.length ?? r.totalDeclined ?? 0;
-  }
-
-  /* ============================================================
-     LOAD HISTORY (Real Fulfilled/Expired Requests)
-  ============================================================ */
-  async function loadHistory() {
-    const r = await api('GET', '/hospitals/requests/history');
-    let hist = [];
-    if (r.success && Array.isArray(r.data)) hist = r.data;
-    else hist = [];
-    hist.forEach(r => {
-      r.unitsNeeded = r.unitsNeeded || r.unitsRequested || r.units || 1;
-      r.unitsFulfilled = r.unitsFulfilled || 0;
-      r.requestDate = r.requestDate || r.createdAt || r.time || Date.now();
-      r.notes = r.notes || (r.patientName ? ('Patient: ' + r.patientName) : 'Blood Request');
-      updateRequestLive(r);
-    });
-    state.history = hist;
-    Store.set('historyRequests', state.history);
-  }
-
-  /* ============================================================
-     LOAD DISPATCH LOG (Real Dispatch Activity)
-  ============================================================ */
-  async function loadDispatchLog() {
-    const r = await api('GET', '/hospitals/dispatch-log');
-    let logs = [];
-    if (r.success && Array.isArray(r.data)) {
-      logs = r.data.map(item => ({
-        type: 'sent',
-        title: 'Blood Request Dispatched',
-        desc: `Request for ${item.bloodType || 'blood'} (${item.unitsRequested || item.unitsNeeded || 1} units).`,
-        time: item.createdAt ? new Date(item.createdAt).getTime() : Date.now()
-      }));
-    } else {
-      logs = [];
-    }
-    state.log = logs;
-    Store.set('dispatchLog', state.log);
-  }
-
-  function addLog(entry) {
-    state.log.unshift({ ...entry, time: Date.now() });
-    state.log = state.log.slice(0, 100);
-    Store.set('dispatchLog', state.log);
-    renderRecentLog();
-  }
-
-  /* ============================================================
-     LIVE TICK — refresh expiry, badges
-  ============================================================ */
-  function liveTick() {
-    state.activeRequests.forEach(updateRequestLive);
-    state.history.forEach(updateRequestLive);
-    Store.set('activeRequests', state.activeRequests);
-    renderActiveRequests();
-    renderBadges();
-    $('lastUpdate').textContent = `Updated ${new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`;
-  }
-
-  /* ============================================================
-     RENDER ALL
-  ============================================================ */
-  function renderAll() {
-    renderHospitalUI();
-    renderStats();
-    renderActiveRequests();
-    renderDonorsList();
-    renderDonorsMap();
-    renderInventory();
-    renderRecentLog();
-    renderTrendChart();
-    renderDonut();
-    renderBadges();
-  }
-
-  /* ============================================================
-     HOSPITAL UI
-  ============================================================ */
-  function renderHospitalUI() {
-    const h = state.hospital;
-    if (!h) return;
-
-    const init = initials(h.name);
-
-    /* Sidebar */
-    $('sbAvatar').textContent = init;
-    $('sbName').textContent = h.name;
-    $('sbStatus').innerHTML = h.isVerified
-      ? '<i class="fas fa-shield-alt"></i> Verified'
-      : '<i class="fas fa-clock"></i> Pending';
-
-    /* Topbar */
-    $('topAvatar').textContent = init;
-    $('topName').textContent = h.name;
-    $('topRole').textContent = `${capitalize(h.type||'Hospital')} · ${h.city||'—'}`;
-
-    /* Welcome banner */
-    $('welName').textContent = h.name;
-    $('welLoc').textContent = `${h.city||'—'}, ${h.state||''}`;
-    $('welVerified').style.display = h.isVerified ? 'flex' : 'none';
-    $('welBB').style.display = h.hasBloodBank ? 'flex' : 'none';
-
-    /* Profile preview card */
-    $('hpcName').textContent = h.name;
-    $('hpcType').textContent = `${capitalize(h.type||'Hospital')} · ${h.address||''}`;
-    $('hpcCity').textContent = `${h.city||'—'}, ${h.state||''}`;
-    $('hpcVer').style.display = h.isVerified ? 'inline-flex' : 'none';
-    $('hpcBB').style.display = h.hasBloodBank ? 'inline-flex' : 'none';
-    $('hpcUnits').textContent = h.totalBloodUnits || 0;
-  }
-
-  /* ============================================================
-     STATS
-  ============================================================ */
-  function renderStats() {
-    const all = [...state.activeRequests, ...state.history];
-    const total = all.length;
-    const fulfilled = all.filter(r => r.status === STATUS.FULFILLED).length;
-    const pending = state.activeRequests.filter(r => r.status === STATUS.PENDING).length;
-    const reached = all.reduce((a,r) => a + (r.totalNotified || 0), 0);
-
-    animate('stTotalReq', total);
-    animate('stFulfilled', fulfilled);
-    animate('stPending', pending);
-    animate('stReached', reached);
-    $('stAvg').textContent = total > 0 ? '7m' : '—';
-
-    $('hpcReq').textContent = total;
-    $('hpcLives').textContent = fulfilled;
-  }
-
-  function animate(id, target) {
-    const el = $(id);
-    if (!el) return;
-    let cur = 0;
-    const steps = 30;
-    const step = target / steps;
-    const t = setInterval(() => {
-      cur = Math.min(cur + step, target);
-      el.textContent = Math.floor(cur).toLocaleString();
-      if (cur >= target) clearInterval(t);
-    }, 25);
-  }
-
-  /* ============================================================
-     ACTIVE REQUESTS
-  ============================================================ */
-  function renderActiveRequests() {
-    const list = $('activeList');
-    const filtered = state.activeFilter === 'ALL'
-      ? state.activeRequests
-      : state.activeRequests.filter(r => r.urgencyLevel === state.activeFilter);
-
-    $('activeCount').textContent = `(${filtered.length})`;
-
-    if (!filtered.length) {
-      list.innerHTML = `<div class="request-row" style="justify-content:center;color:var(--text-muted);font-size:.85rem;padding:2rem">
-        <i class="fas fa-inbox" style="margin-right:.5rem;font-size:1.2rem"></i>
-        ${state.activeFilter==='ALL' ? 'No active requests. Create one above to notify donors.' : `No ${state.activeFilter.toLowerCase()} requests.`}
-      </div>`;
-      return;
-    }
-
-    list.innerHTML = filtered.map((r, i) => requestRowHTML(r, i)).join('');
-    list.querySelectorAll('.rr-btn').forEach(btn =>
-      btn.addEventListener('click', () => handleReq(btn.dataset.action, parseInt(btn.dataset.id)))
-    );
-  }
-
-  function requestRowHTML(r, i=0) {
-    const meta = URGENCY_META[r.urgencyLevel] || URGENCY_META.MEDIUM;
-    const pct  = r.fulfillmentPercentage || 0;
-    const minutes = r.minutesUntilExpiry || 0;
-    const exp = minutes >= 60 ? `${Math.floor(minutes/60)}h ${minutes%60}m` : `${minutes}m`;
-    const isExpired = r.status === STATUS.EXPIRED;
-
-    return `
-      <div class="request-row ${meta.rowClass}" style="animation:slideInDown .3s ease ${i*40}ms both;${isExpired?'opacity:.6':''}">
-        <div class="rr-blood">${r.bloodType}</div>
-        <div class="rr-info">
-          <div class="rr-id">REQ-${String(r.id).padStart(6,'0')} · ${r.urgencyLevel} · ${r.status}</div>
-          <div class="rr-hospital">${r.notes || 'Blood Request'}</div>
-          <div class="rr-meta">
-            <span class="rr-meta-item"><i class="fas fa-tint"></i> ${r.unitsFulfilled}/${r.unitsNeeded} units</span>
-            <span class="rr-meta-item"><i class="fas fa-clock"></i> ${timeAgo(r.requestDate)}</span>
-            <span class="rr-meta-item"><i class="fas fa-map-marker-alt"></i> ${r.notificationRadius}km</span>
-            ${!isExpired ? `<span class="rr-meta-item" style="color:${meta.color}"><i class="fas fa-${meta.icon}"></i> Expires in ${exp}</span>` : '<span class="rr-meta-item" style="color:#999"><i class="fas fa-times-circle"></i> EXPIRED</span>'}
-          </div>
-        </div>
-        <div class="rr-progress">
-          <div class="rr-progress-label"><span>Fulfilled</span><span>${pct}%</span></div>
-          <div class="rr-progress-bar"><div class="rr-progress-fill" style="width:${pct}%"></div></div>
-          <div class="rr-progress-label" style="margin-top:.3rem">
-            <span><i class="fas fa-bell"></i> ${r.totalNotified}</span>
-            <span><i class="fas fa-check"></i> ${r.totalAccepted}</span>
-            <span><i class="fas fa-times"></i> ${r.totalDeclined}</span>
-          </div>
-        </div>
-        <div class="rr-actions">
-          <button class="rr-btn view" data-action="view" data-id="${r.id}" title="View"><i class="fas fa-eye"></i></button>
-          ${r.status === STATUS.PENDING ? `
-            <button class="rr-btn complete" data-action="fulfill" data-id="${r.id}" title="Fulfill"><i class="fas fa-check"></i></button>
-            <button class="rr-btn cancel" data-action="cancel" data-id="${r.id}" title="Cancel"><i class="fas fa-times"></i></button>
-          ` : ''}
-        </div>
-      </div>`;
-  }
-
-  async function handleReq(action, id) {
-    const r = state.activeRequests.find(x => x.id === id);
-    if (!r) return;
-
-    if (action === 'view') {
-      showRequestDetailModal(r);
-      return;
-    }
-
-    if (action === 'fulfill') {
-      const ok = await showAppConfirm({
-        title: 'Fulfill Blood Request',
-        message: `Mark Request #${r.id} (${r.bloodType}, ${r.unitsNeeded} units) as FULFILLED?`,
-        type: 'success',
-        icon: 'fa-check-circle',
-        confirmText: 'Mark Fulfilled',
-        cancelText: 'Cancel'
-      });
-      if (!ok) return;
-      await api('POST', `/hospitals/requests/${id}/fulfill`);
-      r.status = STATUS.FULFILLED;
-      r.unitsFulfilled = r.unitsNeeded;
-      r.fulfilledDate = Date.now();
-      state.history.unshift(r);
-      state.activeRequests = state.activeRequests.filter(x => x.id !== id);
-      Store.set('activeRequests', state.activeRequests);
-      Store.set('historyRequests', state.history);
-      addLog({ type:'completed', title:'Request Fulfilled', desc:`${r.bloodType} request (${r.unitsNeeded} units) completed.` });
-      toast(`Request #${r.id} fulfilled.`, 'success');
-      renderActiveRequests(); renderStats(); renderBadges();
-      return;
-    }
-
-    if (action === 'cancel') {
-      const ok = await showAppConfirm({
-        title: 'Cancel Blood Request',
-        message: `Are you sure you want to cancel Request #${r.id} (${r.bloodType})?`,
-        type: 'danger',
-        icon: 'fa-times-circle',
-        confirmText: 'Yes, Cancel Request',
-        cancelText: 'Keep Request'
-      });
-      if (!ok) return;
-      await api('POST', `/hospitals/requests/${id}/cancel`);
-      r.status = STATUS.CANCELLED;
-      state.history.unshift(r);
-      state.activeRequests = state.activeRequests.filter(x => x.id !== id);
-      Store.set('activeRequests', state.activeRequests);
-      Store.set('historyRequests', state.history);
-      addLog({ type:'declined', title:'Request Cancelled', desc:`${r.bloodType} request was cancelled.` });
-      toast(`Request #${r.id} cancelled.`, 'warning');
-      renderActiveRequests(); renderStats(); renderBadges();
-    }
-  }
-
-  /* ============================================================
-     DONORS LIST + MAP
-  ============================================================ */
-  function renderDonorsList() {
-    const list = $('donorList');
-    const search = ($('dSearch').value || '').toLowerCase().trim();
-    const blood  = $('dBlood').value;
-    const zone   = $('dZone').value;
-    const stat   = $('dStatus').value;
-
-    const filtered = state.donors.filter(d => {
-      if (search && !d.name.toLowerCase().includes(search)) return false;
-      if (blood !== 'ALL' && d.bloodType !== blood) return false;
-      if (zone !== 'ALL' && String(d.zone) !== zone) return false;
-      if (stat !== 'ALL' && d.status !== stat) return false;
-      return true;
-    });
-
-    $('donorCount').textContent = `(${filtered.length})`;
-
-    /* Update zone counts */
-    $('z1c').textContent = state.donors.filter(d => d.zone === 1).length;
-    $('z2c').textContent = state.donors.filter(d => d.zone === 2).length;
-    $('z3c').textContent = state.donors.filter(d => d.zone === 3).length;
-
-    if (!filtered.length) {
-      list.innerHTML = `<div class="donor-row" style="justify-content:center;color:var(--text-muted);padding:2rem">
-        <i class="fas fa-user-slash" style="margin-right:.5rem"></i>${state.donors.length === 0 ? 'No registered donors found nearby yet.' : 'No donors match the filters.'}
-      </div>`;
-      return;
-    }
-
-    list.innerHTML = filtered.slice(0, 10).map((d, i) => donorRowHTML(d, i)).join('');
-    list.querySelectorAll('.dr-action-btn').forEach(btn =>
-      btn.addEventListener('click', () => handleDonor(btn.dataset.action, parseInt(btn.dataset.id), btn))
-    );
-  }
-
-  function donorRowHTML(d, i=0) {
-    const distText = (typeof d.distance === 'number') ? d.distance.toFixed(1) : (d.distance || '0.0');
-    return `
-      <div class="donor-row" style="animation:slideInUp .3s ease ${i*30}ms both">
-        <div class="donor-row-avatar">${initials(d.name)}<div class="donor-row-status-dot ${d.status}"></div></div>
-        <div class="donor-row-info">
-          <div class="donor-row-name">${d.name}</div>
-          <div class="donor-row-sub">
-            <span><i class="fas fa-phone"></i> ${d.phone}</span>
-            <span><i class="fas fa-tint"></i> ${d.donations} donations</span>
-            <span><i class="fas fa-star"></i> ${d.level}</span>
-          </div>
-        </div>
-        <div class="donor-row-blood"><span>${d.bloodType}</span></div>
-        <div class="donor-row-dist"><i class="fas fa-map-marker-alt"></i> ${distText} km</div>
-        <div class="donor-row-actions">
-          <button class="dr-action-btn notify" data-action="notify" data-id="${d.id}" ${d.status==='offline'?'disabled style="opacity:.5;cursor:not-allowed"':''}>
-            <i class="fas fa-bell"></i> Notify
-          </button>
-          <button class="dr-action-btn view" data-action="view" data-id="${d.id}"><i class="fas fa-eye"></i> View</button>
-        </div>
-      </div>`;
-  }
-
-  async function handleDonor(action, id, btn) {
-    const d = state.donors.find(x => x.id === id);
-    if (!d) return;
-
-    if (action === 'view') {
-      showDonorDetailModal(d);
-      return;
-    }
-
-    if (action === 'notify') {
-      if (d.status === 'offline') { toast('Donor is offline.', 'warning'); return; }
-      const orig = btn.innerHTML;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
-      btn.disabled = true;
-
-            await api('POST', `/hospitals/donors/${id}/notify`, { hospitalId: state.hospital.id });
-
-      setTimeout(() => {
-        btn.innerHTML = '<i class="fas fa-check"></i> Notified';
-        toast(`Notification sent to ${d.name}.`, 'success');
-        addLog({ type:'sent', title:'Direct Notification', desc:`Sent direct notification to ${d.name} (${d.bloodType}).` });
-        setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2500);
-      }, 800);
-    }
-  }
-
-  function renderDonorsMap(mapId='donorMap') {
-    const map = $(mapId);
-    if (!map) return;
-    map.querySelectorAll('.dmc-donor-pin').forEach(p => p.remove());
-
-    /* Place donors at angle based on their lat/lng offset, distance based on zone */
-    const hLat = state.hospital?.latitude || 25.5941;
-    const hLng = state.hospital?.longitude || 85.1376;
-
-    state.donors.slice(0, 30).forEach((d, i) => {
-      let angle, ringPx;
-      if (d.latitude !== undefined && d.longitude !== undefined) {
-        angle = Math.atan2(d.latitude - hLat, d.longitude - hLng);
-      } else {
-        angle = (i / state.donors.length) * 2 * Math.PI;
-      }
-      ringPx = d.zone === 1 ? 70 : d.zone === 2 ? 120 : d.zone === 3 ? 160 : 175;
-
-      const pin = document.createElement('div');
-      pin.className = `dmc-donor-pin ${d.status === 'online' ? 'available' : d.status}`;
-      pin.style.top  = `calc(50% + ${Math.sin(angle) * ringPx}px)`;
-      pin.style.left = `calc(50% + ${Math.cos(angle) * ringPx}px)`;
-      pin.title = `${d.name} · ${d.bloodType} · ${d.distance}km`;
-      pin.innerHTML = `
-        <div class="dp-dot"><i class="fas fa-user"></i></div>
-        ${d.status === 'online' ? '<div class="dp-ping"></div>' : ''}
-        <div class="dp-tooltip">${d.name} · ${d.bloodType} · ${d.distance}km</div>
-      `;
-      map.appendChild(pin);
-    });
-  }
-
-  /* ============================================================
-     INVENTORY
-  ============================================================ */
-  function renderInventory() {
-    const inv = state.hospital?.bloodInventory || {};
-    renderInvGrid('invGrid', inv);
-  }
-
-  function renderInvGrid(elId, inv) {
-    const grid = $(elId);
-    if (!grid) return;
-    grid.innerHTML = VALID_BLOOD_TYPES.map(bt => {
-      const u = inv[bt] || 0;
-      const max = 60;
-      const pct = Math.min((u/max)*100, 100);
-      let level, statusText;
-      if (u < 5)       { level='critical'; statusText='Critical'; }
-      else if (u < 15) { level='low';      statusText='Low'; }
-      else if (u < 30) { level='medium';   statusText='Medium'; }
-      else             { level='good';     statusText='Good'; }
-
-      return `
-        <div class="inv-item" data-bt="${bt}">
-          <div class="inv-blood-type">${bt}</div>
-          <div class="inv-level-bar">
-            <div class="inv-level-fill ${level}" data-target="${pct}" style="width:0%"></div>
-          </div>
-          <div class="inv-units">${u} unit${u !== 1 ? 's' : ''}</div>
-          <div class="inv-status ${level}">${statusText}</div>
-        </div>`;
-    }).join('');
-
-    setTimeout(() => {
-      grid.querySelectorAll('.inv-level-fill').forEach(f => {
-        f.style.width = `${f.dataset.target}%`;
-      });
-    }, 100);
-  }
-
-  /* ============================================================
-     RECENT DISPATCH LOG (Overview)
-  ============================================================ */
-  function renderRecentLog() {
-    const list = $('logList');
-    if (!list) return;
-    if (!state.log.length) {
-      list.innerHTML = `<div class="log-item" style="justify-content:center;color:var(--text-muted)"><i class="fas fa-history" style="margin-right:.5rem"></i>No activity yet.</div>`;
-      return;
-    }
-    const ICONS = { sent:'paper-plane', accepted:'check', declined:'times', completed:'flag-checkered' };
-    list.innerHTML = state.log.slice(0, 6).map(log => `
-      <div class="log-item">
-        <div class="log-time-col"><div class="log-time">${timeAgo(log.time)}</div></div>
-        <div class="log-icon-col"><div class="log-icon ${log.type}"><i class="fas fa-${ICONS[log.type]||'circle'}"></i></div></div>
-        <div class="log-body">
-          <div class="log-title">${log.title}</div>
-          <div class="log-desc">${log.desc}</div>
-        </div>
+  <!-- ==================== MODAL 1: DISPATCH SOS BLOOD REQUEST ==================== -->
+  <div class="hosp-modal-backdrop" id="modalSosDispatch" role="dialog" aria-modal="true">
+    <div class="hosp-modal-box">
+      <div class="modal-header-row">
+        <h3 class="modal-title">
+          <i class="fas fa-satellite-dish" style="color: var(--hosp-blue-accent);"></i>
+          <span>Dispatch Emergency SOS Request</span>
+        </h3>
+        <button type="button" class="modal-close-btn" id="btnCloseSosModal" aria-label="Close modal">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
-    `).join('');
-  }
 
-  /* ============================================================
-     CHARTS — trend & donut
-  ============================================================ */
-  function renderTrendChart() {
-    const data = computeTrend(7);
-    drawTrend('trendPath','trendArea','trendDots', data);
-  }
-
-  function computeTrend(days) {
-    const all = [...state.activeRequests, ...state.history];
-    const now = Date.now();
-    const buckets = new Array(days).fill(0);
-    all.forEach(r => {
-      const diff = Math.floor((now - new Date(r.requestDate).getTime()) / 86400000);
-      if (diff >= 0 && diff < days) buckets[days - 1 - diff]++;
-    });
-    return buckets;
-  }
-
-  function drawTrend(pathId, areaId, dotsId, data) {
-    const w = 600, h = 200, pad = 20;
-    const max = Math.max(...data, 1);
-    const stepX = data.length > 1 ? w / (data.length - 1) : w;
-    const points = data.map((v, i) => ({
-      x: i * stepX,
-      y: h - pad - ((v / max) * (h - 2 * pad))
-    }));
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`).join(' ');
-    const areaPath = `${linePath} L ${w},${h} L 0,${h} Z`;
-    $(pathId).setAttribute('d', linePath);
-    $(areaId).setAttribute('d', areaPath);
-    $(dotsId).innerHTML = points.map((p, i) =>
-      `<circle class="lc-dot" cx="${p.x}" cy="${p.y}" r="4"><title>Day ${i+1}: ${data[i]} requests</title></circle>`
-    ).join('');
-  }
-
-  function renderDonut() {
-    const all = [...state.activeRequests, ...state.history];
-    const dist = {};
-    VALID_BLOOD_TYPES.forEach(bt => dist[bt] = 0);
-    all.forEach(r => { if (dist[r.bloodType] !== undefined) dist[r.bloodType]++; });
-    const total = Object.values(dist).reduce((a,b)=>a+b, 0);
-    $('donutTotal').textContent = total;
-
-    const svg = $('donutSvg');
-    const r = 40, c = 2 * Math.PI * r;
-    let offset = 0;
-    if (total === 0) {
-      svg.innerHTML = `<circle cx="50" cy="50" r="${r}" fill="none" stroke="#252538" stroke-width="14" />`;
-    } else {
-      svg.innerHTML = Object.entries(dist).map(([bt, v]) => {
-        const pct = total ? v/total : 0;
-        const dash = pct * c;
-        const seg = `<circle cx="50" cy="50" r="${r}" fill="none"
-          stroke="${BLOOD_COLORS[bt]||'#999'}" stroke-width="14"
-          stroke-dasharray="${dash} ${c-dash}" stroke-dashoffset="${-offset}">
-          <title>${bt}: ${v} (${Math.round(pct*100)}%)</title></circle>`;
-        offset += dash;
-        return seg;
-      }).join('');
-    }
-
-    $('donutLegend').innerHTML = Object.entries(dist)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([bt,v]) => {
-        const pct = total ? Math.round((v/total)*100) : 0;
-        return `<div class="dl-item">
-          <div class="dl-left"><span class="dl-color" style="background:${BLOOD_COLORS[bt]||'#999'}"></span><span class="dl-name">${bt}</span></div>
-          <div class="dl-right"><span class="dl-count">${v}</span><span class="dl-pct">${pct}%</span></div>
-        </div>`;
-      }).join('');
-  }
-
-  /* ============================================================
-     BADGES
-  ============================================================ */
-  function renderBadges() {
-    const pending = state.activeRequests.filter(r => r.status === STATUS.PENDING).length;
-    const navBadge = $('navReqBadge');
-    const notifBadge = $('notifBadge');
-
-    if (pending > 0) {
-      navBadge.textContent = pending;
-      navBadge.style.display = 'flex';
-      notifBadge.textContent = pending;
-      notifBadge.style.display = 'flex';
-    } else {
-      navBadge.style.display = 'none';
-      notifBadge.style.display = 'none';
-    }
-  }
-
-  /* ============================================================
-     FORM HANDLERS
-  ============================================================ */
-  function initForms() {
-    /* New request form */
-    const f = $('reqForm');
-    const updateEstimate = () => {
-      const radius = parseInt(f.querySelector('input[name="notificationRadius"]:checked')?.value || 5);
-      const matched = state.donors.filter(d => d.distance <= radius && d.status === 'online').length;
-      const respMap = { 5:'5–10 min', 10:'10–15 min', 20:'15–25 min', 50:'25–45 min' };
-      $('estDonors').textContent = `~${matched}`;
-      $('estResp').textContent = respMap[radius] || '—';
-    };
-    f.querySelectorAll('input[name="notificationRadius"]').forEach(i =>
-      i.addEventListener('change', updateEstimate)
-    );
-    updateEstimate();
-
-    f.addEventListener('submit', async e => {
-      e.preventDefault();
-
-      const data = new FormData(f);
-      const bloodType         = data.get('bloodType');
-      const unitsNeeded       = parseInt(data.get('unitsNeeded'));
-      const urgencyLevel      = data.get('urgencyLevel');
-      const notificationRadius = parseInt(data.get('notificationRadius'));
-      const patientName       = data.get('patientName')?.trim() || '';
-      const department        = data.get('department');
-      const notesField        = data.get('notes')?.trim() || '';
-
-      const noteParts = [];
-      if (patientName) noteParts.push(`Patient: ${patientName}`);
-      if (department)  noteParts.push(`Dept: ${department}`);
-      if (notesField)  noteParts.push(notesField);
-
-      /* Validate (matches BloodRequest.validate()) */
-      if (!VALID_BLOOD_TYPES.includes(bloodType)) { toast('Select valid blood type.', 'warning'); return; }
-      if (!unitsNeeded || unitsNeeded <= 0)        { toast('Units must be > 0.', 'warning'); return; }
-      if (unitsNeeded > 100)                        { toast('Units cannot exceed 100.', 'warning'); return; }
-      if (!URGENCY[urgencyLevel])                   { toast('Select urgency level.', 'warning'); return; }
-
-      const ok = await showAppConfirm({
-        title: `Dispatch ${bloodType} Blood Request?`,
-        message: `• Units: ${unitsNeeded}\n• Urgency: ${urgencyLevel}\n• Radius: ${notificationRadius}km`,
-        type: 'danger',
-        icon: 'fa-paper-plane',
-        confirmText: 'Dispatch Request',
-        cancelText: 'Cancel'
-      });
-      if (!ok) return;
-
-      const btn = $('dispatchBtn');
-      const orig = btn.innerHTML;
-      btn.classList.add('dispatching');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Dispatching…</span>';
-
-      const payload = {
-        hospitalId: state.hospital.id,
-        bloodType, unitsNeeded, urgencyLevel,
-        notes: noteParts.join(' | '),
-        notificationRadius
-      };
-
-      const result = await api('POST', '/hospitals/requests', payload);
-      const newReq = result.success && result.data ? result.data : buildLocalRequest(payload);
-
-      /* Find compatible donors using compatibility map and zone radius */
-      const compatibleDonors = state.donors.filter(d =>
-        COMPAT[bloodType]?.includes(d.bloodType) &&
-        d.distance <= notificationRadius &&
-        d.status !== 'offline'
-      );
-      newReq.notifiedDonors = compatibleDonors.map(d => d.id);
-      updateRequestLive(newReq);
-
-      state.activeRequests.unshift(newReq);
-      state.activeRequests.sort((a,b) => (URGENCY_META[a.urgencyLevel]?.priority||5) - (URGENCY_META[b.urgencyLevel]?.priority||5));
-      Store.set('activeRequests', state.activeRequests);
-
-      addLog({
-        type:'sent', title:'Request Dispatched',
-        desc:`${bloodType} request sent to ${compatibleDonors.length} donors in ${notificationRadius}km zone.`
-      });
-
-      toast(`${bloodType} request dispatched to ${compatibleDonors.length} donors!`, 'success');
-
-      setTimeout(() => {
-        btn.classList.remove('dispatching');
-        btn.disabled = false;
-        btn.innerHTML = orig;
-      }, 1500);
-
-      f.reset();
-      f.querySelector('input[name="bloodType"][value="O+"]').checked = true;
-      f.querySelector('input[name="urgencyLevel"][value="HIGH"]').checked = true;
-      f.querySelector('input[name="notificationRadius"][value="5"]').checked = true;
-      f.querySelector('input[name="unitsNeeded"]').value = 2;
-      updateEstimate();
-
-      renderActiveRequests(); renderStats(); renderBadges(); renderDonut();
-
-      /* Simulate live response from a donor after 6 sec */
-      simulateDonorResponse(newReq);
-    });
-
-    /* Inventory form */
-    $('ivForm')?.addEventListener('submit', async () => {
-      const bt = $('ivBT').value;
-      const act = $('ivAct').value;
-      const u = parseInt($('ivU').value);
-      if (!u || u <= 0) { toast('Enter valid units.', 'warning'); return; }
-
-      const inv = state.hospital.bloodInventory;
-      const cur = inv[bt] || 0;
-      let next = cur;
-      if      (act === 'ADD') next = cur + u;
-      else if (act === 'USE') {
-        if (cur < u) { toast(`Only ${cur} units available.`, 'error'); return; }
-        next = cur - u;
-      }
-      else if (act === 'SET') next = u;
-
-      inv[bt] = next;
-      state.hospital.totalBloodUnits = Object.values(inv).reduce((a,b)=>a+b,0);
-      Store.set('hospitalProfile', state.hospital);
-
-      await api('PUT', '/hospitals/inventory', { bloodType:bt, action:act, units:u });
-
-      toast(`${bt} inventory: ${cur} → ${next} units.`, 'success');
-      renderInventory();
-      renderInventoryPage();
-      renderHospitalUI();
-    });
-
-    $('invRefresh')?.addEventListener('click', async () => {
-      toast('Refreshing inventory…', 'info', 1000);
-      await loadHospital();
-      renderInventory();
-      renderHospitalUI();
-    });
-
-    $('ivRefresh')?.addEventListener('click', async () => {
-      toast('Refreshing…', 'info', 1000);
-      await loadHospital();
-      renderInventoryPage();
-      renderHospitalUI();
-    });
-
-    /* Profile form */
-    $('pfForm')?.addEventListener('submit', async () => {
-      const payload = {
-        name:               $('ipfName').value.trim(),
-        email:              $('ipfEmail').value.trim(),
-        phone:              $('ipfPhone').value.trim(),
-        registrationNumber: $('ipfReg').value.trim(),
-        type:               $('ipfType').value,
-        pincode:            $('ipfPin').value.trim(),
-        address:            $('ipfAddr').value.trim(),
-        city:               $('ipfCity').value.trim(),
-        state:              $('ipfState').value.trim(),
-        bloodBankLicenseNumber: $('ipfBB').value.trim()
-      };
-
-      /* Validation matches Hospital.validate() */
-      if (!payload.name || payload.name.length < 3) { toast('Name min 3 chars.', 'warning'); return; }
-      if (!payload.email.match(/^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$/)) { toast('Invalid email.', 'warning'); return; }
-      if (!payload.phone || payload.phone.replace(/\D/g,'').length < 10) { toast('Phone must be 10+ digits.', 'warning'); return; }
-      if (payload.pincode && !/^[0-9]{6}$/.test(payload.pincode)) { toast('Pincode must be 6 digits.', 'warning'); return; }
-      if (payload.type && !['GOVERNMENT','PRIVATE','TRUST'].includes(payload.type)) { toast('Invalid type.', 'warning'); return; }
-
-      const btn = $('pfSaveBtn');
-      const orig = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Saving…</span>';
-
-      const r = await api('PUT', '/hospitals/profile', payload);
-
-      Object.assign(state.hospital, payload);
-      Store.set('hospitalProfile', state.hospital);
-
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = orig;
-        toast('Profile updated.', 'success');
-        renderHospitalUI();
-        renderProfilePage();
-      }, 700);
-    });
-  }
-
-  function buildLocalRequest(p) {
-    const meta = URGENCY_META[p.urgencyLevel];
-    const now = Date.now();
-    return {
-      id: Math.floor(Math.random()*9000) + 1000,
-      hospitalId: p.hospitalId,
-      hospitalName: state.hospital?.name || 'Hospital',
-      hospitalLatitude: state.hospital?.latitude,
-      hospitalLongitude: state.hospital?.longitude,
-      bloodType: p.bloodType,
-      unitsNeeded: p.unitsNeeded,
-      unitsFulfilled: 0,
-      urgencyLevel: p.urgencyLevel,
-      status: STATUS.PENDING,
-      notes: p.notes,
-      requestDate: now,
-      expiryDate: now + meta.expiryHours * 3600000,
-      currentZone: p.urgencyLevel,
-      notificationRadius: p.notificationRadius,
-      notifiedDonors: [],
-      acceptedDonors: [],
-      declinedDonors: []
-    };
-  }
-
-  /* Real donor responses occur when donors accept in real time */
-  function simulateDonorResponse(req) {
-    // Mock simulation removed: notifications are sent to real registered donors.
-  }
-
-  /* ============================================================
-     FILTERS — overview + donor list
-  ============================================================ */
-  function initFilters() {
-    qsa('[data-filter]').forEach(b => b.addEventListener('click', () => {
-      qsa('[data-filter]').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      state.activeFilter = b.dataset.filter;
-      renderActiveRequests();
-    }));
-
-    ['dSearch','dBlood','dZone','dStatus'].forEach(id => {
-      const el = $(id);
-      el?.addEventListener('input', renderDonorsList);
-      el?.addEventListener('change', renderDonorsList);
-    });
-
-    /* Zone pill clicks */
-    qsa('.zone-pill').forEach(p => p.addEventListener('click', () => {
-      const z = p.dataset.zone;
-      $('dZone').value = z;
-      renderDonorsList();
-      qs('.donors-list-card')?.scrollIntoView({ behavior:'smooth' });
-      toast(`Filtered to Zone ${z}`, 'info', 1500);
-    }));
-
-    /* Requests page filters */
-    qsa('[data-rfilter]').forEach(b => b.addEventListener('click', () => {
-      qsa('[data-rfilter]').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      state.rqFilter = b.dataset.rfilter;
-      renderRequestsPage();
-    }));
-
-    /* Donors page */
-    ['dpgSearch','dpgBlood','dpgZone','dpgStatus'].forEach(id => {
-      const el = $(id);
-      el?.addEventListener('input', renderDonorsPage);
-      el?.addEventListener('change', renderDonorsPage);
-    });
-  }
-
-  function initCompat() {
-    qsa('input[name="cBlood"]').forEach(r =>
-      r.addEventListener('change', () => {
-        const bt = qs('input[name="cBlood"]:checked')?.value || 'O+';
-        const compatible = COMPAT[bt] || [];
-        $('compatRes').innerHTML = `
-          <div style="margin-bottom:.5rem;color:var(--text-primary)">
-            <i class="fas fa-check-circle" style="color:#00cc66"></i>
-            Recipient <strong>${bt}</strong> can receive blood from:
-          </div>
-          ${compatible.map(b => `<span class="hpc-tag verified" style="margin:.2rem">${b}</span>`).join(' ')}
-          <div style="margin-top:.75rem;color:var(--text-secondary);font-size:.78rem">
-            Compatible donors in your network: <strong style="color:var(--red-light)">${state.donors.filter(d => compatible.includes(d.bloodType) && d.status==='online').length}</strong>
-          </div>
-        `;
-      })
-    );
-    qs('input[name="cBlood"]:checked')?.dispatchEvent(new Event('change'));
-  }
-
-  /* ============================================================
-     PAGE-SPECIFIC RENDERERS
-  ============================================================ */
-
-  /* Requests Page */
-  function renderRequestsPage() {
-    const all = [...state.activeRequests, ...state.history];
-    $('rqTotal').textContent = all.length;
-    $('rqPending').textContent = all.filter(r => r.status === STATUS.PENDING).length;
-    $('rqFulfilled').textContent = all.filter(r => r.status === STATUS.FULFILLED).length;
-    $('rqCancelled').textContent = all.filter(r => r.status === STATUS.CANCELLED || r.status === STATUS.EXPIRED).length;
-
-    const list = $('rqList');
-    let filtered = all;
-    if (state.rqFilter !== 'ALL') filtered = filtered.filter(r => r.status === state.rqFilter);
-
-    if (!filtered.length) {
-      list.innerHTML = `<div class="request-row" style="justify-content:center;color:var(--text-muted);padding:2rem">
-        <i class="fas fa-inbox" style="margin-right:.5rem"></i>No requests found.
-      </div>`;
-      return;
-    }
-
-    list.innerHTML = filtered.map((r, i) => requestRowHTML(r, i)).join('');
-    list.querySelectorAll('.rr-btn').forEach(btn =>
-      btn.addEventListener('click', () => handleReq(btn.dataset.action, parseInt(btn.dataset.id)))
-    );
-  }
-
-  /* Donors Page */
-          /* Donors Page */
-  function renderDonorsPage() {
-    const search = ($('dpgSearch')?.value || '').toLowerCase().trim();
-    const blood  = $('dpgBlood')?.value || 'ALL';
-    const zone   = $('dpgZone')?.value || 'ALL';
-    const stat   = $('dpgStatus')?.value || 'ALL';
-
-    const filtered = state.donors.filter(d => {
-      if (search && !d.name.toLowerCase().includes(search)) return false;
-      if (blood !== 'ALL' && d.bloodType !== blood) return false;
-      if (zone !== 'ALL' && String(d.zone) !== zone) return false;
-      if (stat !== 'ALL' && d.status !== stat) return false;
-      return true;
-    });
-
-    $('dpgCount').textContent = `(${filtered.length})`;
-
-    const list = $('dpgList');
-    if (!filtered.length) {
-      list.innerHTML = `<div class="donor-row" style="justify-content:center;color:var(--text-muted);padding:2rem">
-        <i class="fas fa-user-slash" style="margin-right:.5rem"></i>No donors match.
-      </div>`;
-      return;
-    }
-
-    list.innerHTML = filtered.map((d, i) => donorRowHTML(d, i)).join('');
-    list.querySelectorAll('.dr-action-btn').forEach(btn =>
-      btn.addEventListener('click', () => handleDonor(btn.dataset.action, parseInt(btn.dataset.id), btn))
-    );
-  }
-
-  /* Inventory Page */
-  function renderInventoryPage() {
-    const inv = state.hospital?.bloodInventory || {};
-    const total = Object.values(inv).reduce((a,b) => a+b, 0);
-    let good=0, low=0, crit=0;
-    Object.values(inv).forEach(v => {
-      if (v < 5) crit++;
-      else if (v < 15) low++;
-      else good++;
-    });
-
-    $('ivTotal').textContent = total;
-    $('ivGood').textContent = good;
-    $('ivLow').textContent = low;
-    $('ivCrit').textContent = crit;
-
-    renderInvGrid('ivGrid', inv);
-  }
-
-  /* Analytics Page */
-  function renderAnalyticsPage() {
-    const all = [...state.activeRequests, ...state.history];
-    const fulfilled = all.filter(r => r.status === STATUS.FULFILLED).length;
-    const rate = all.length ? Math.round((fulfilled / all.length) * 100) : 0;
-
-    $('anReq').textContent = all.length;
-    $('anRate').textContent = rate + '%';
-    $('anAvg').textContent = '7m';
-    $('anLives').textContent = fulfilled;
-
-    /* 30-day trend */
-    drawTrend('anPath','anArea','anDots', computeTrend(30));
-
-    /* Urgency breakdown */
-    const urg = { CRITICAL:0, HIGH:0, MEDIUM:0, LOW:0 };
-    all.forEach(r => { if (urg[r.urgencyLevel] !== undefined) urg[r.urgencyLevel]++; });
-    const urgTotal = Object.values(urg).reduce((a,b)=>a+b,0) || 1;
-    $('urgBreak').innerHTML = Object.entries(urg).map(([k,v]) => {
-      const meta = URGENCY_META[k];
-      const pct = Math.round((v/urgTotal)*100);
-      return `<div style="margin-bottom:1rem">
-        <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.4rem">
-          <span style="color:${meta.color};font-weight:600"><i class="fas fa-${meta.icon}"></i> ${k}</span>
-          <span style="color:var(--text-secondary)">${v} (${pct}%)</span>
+      <form id="formSosDispatch">
+        <div class="form-group">
+          <label class="form-label" for="sosPatientName">Patient Reference / Name (Optional)</label>
+          <input type="text" id="sosPatientName" class="form-control" placeholder="e.g. Critical Trauma Room 4" />
         </div>
-        <div class="rr-progress-bar" style="height:8px"><div class="rr-progress-fill" style="width:${pct}%;background:${meta.color}"></div></div>
-      </div>`;
-    }).join('');
 
-    /* Zone breakdown */
-    const zones = { 'Zone 1':0, 'Zone 2':0, 'Zone 3':0, 'Zone 4':0 };
-    all.forEach(r => {
-      const radius = r.notificationRadius || 5;
-      if (radius <= 5) zones['Zone 1']++;
-      else if (radius <= 10) zones['Zone 2']++;
-      else if (radius <= 20) zones['Zone 3']++;
-      else zones['Zone 4']++;
-    });
-    const zTotal = Object.values(zones).reduce((a,b)=>a+b,0) || 1;
-    const zCols = ['#e63946','#ff8800','#ffcc00','#4285f4'];
-    $('znBreak').innerHTML = Object.entries(zones).map(([k,v], i) => {
-      const pct = Math.round((v/zTotal)*100);
-      return `<div style="margin-bottom:1rem">
-        <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.4rem">
-          <span style="color:${zCols[i]};font-weight:600"><i class="fas fa-map-marker-alt"></i> ${k}</span>
-          <span style="color:var(--text-secondary)">${v} (${pct}%)</span>
+        <div class="form-group">
+          <label class="form-label" for="sosBloodType">Target Blood Group *</label>
+          <select id="sosBloodType" class="form-control" required>
+            <option value="">Select Blood Group...</option>
+            <option value="O-">O Negative (O-)</option>
+            <option value="O+">O Positive (O+)</option>
+            <option value="A-">A Negative (A-)</option>
+            <option value="A+">A Positive (A+)</option>
+            <option value="B-">B Negative (B-)</option>
+            <option value="B+">B Positive (B+)</option>
+            <option value="AB-">AB Negative (AB-)</option>
+            <option value="AB+">AB Positive (AB+)</option>
+          </select>
         </div>
-        <div class="rr-progress-bar" style="height:8px"><div class="rr-progress-fill" style="width:${pct}%;background:${zCols[i]}"></div></div>
-      </div>`;
-    }).join('');
-  }
 
-  /* Profile Page */
-  function renderProfilePage() {
-    const h = state.hospital;
-    if (!h) return;
+        <div class="form-group">
+          <label class="form-label" for="sosUnitsNeeded">Units Required (Bags) *</label>
+          <input type="number" id="sosUnitsNeeded" class="form-control" min="1" max="20" value="1" required />
+        </div>
 
-    /* Display card */
-    $('pfName').textContent = h.name;
-    $('pfType').textContent = `${capitalize(h.type||'')} · ${h.address || ''}`;
-    $('pfCity').textContent = `${h.city||'—'}, ${h.state||''}`;
-    $('pfVer').style.display = h.isVerified ? 'inline-flex' : 'none';
-    $('pfBB').style.display = h.hasBloodBank ? 'inline-flex' : 'none';
+        <div class="form-group">
+          <label class="form-label" for="sosUrgency">Urgency Tier</label>
+          <select id="sosUrgency" class="form-control">
+            <option value="Critical">🔴 Critical (Immediate / &lt; 30 mins)</option>
+            <option value="High" selected>🟠 High Priority (&lt; 2 hours)</option>
+            <option value="Standard">🔵 Scheduled / Planned Surgery</option>
+          </select>
+        </div>
 
-    const all = [...state.activeRequests, ...state.history];
-    $('pfReq').textContent = all.length;
-    $('pfLives').textContent = all.filter(r => r.status === STATUS.FULFILLED).length;
-    $('pfUnits').textContent = h.totalBloodUnits || 0;
+        <div class="form-group">
+          <label class="form-label" for="sosRadius">Notification Radius</label>
+          <select id="sosRadius" class="form-control">
+            <option value="5">5 km (Immediate Urban Vicinity)</option>
+            <option value="10" selected>10 km (Standard City Enclave)</option>
+            <option value="20">20 km (Extended Metropolitan Radius)</option>
+          </select>
+        </div>
 
-    /* Edit form pre-fill */
-    $('ipfName').value = h.name || '';
-    $('ipfEmail').value = h.email || '';
-    $('ipfPhone').value = h.phone || '';
-    $('ipfReg').value = h.registrationNumber || '';
-    $('ipfType').value = h.type || 'PRIVATE';
-    $('ipfPin').value = h.pincode || '';
-    $('ipfAddr').value = h.address || '';
-    $('ipfCity').value = h.city || '';
-    $('ipfState').value = h.state || '';
-    $('ipfBB').value = h.bloodBankLicenseNumber || '';
-  }
+        <button type="submit" class="btn-primary-blue" id="btnSubmitSos">
+          <i class="fas fa-paper-plane"></i>
+          <span>Broadcast SOS to Nearby Donors</span>
+        </button>
+      </form>
+    </div>
+  </div>
 
-  /* ============================================================
-     CSS animation keyframes injected
-  ============================================================ */
-  (function injectAnimations() {
-    if (document.getElementById('hospAnim')) return;
-    const s = document.createElement('style');
-    s.id = 'hospAnim';
-    s.textContent = `
-      @keyframes slideInRight { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
-      @keyframes slideInDown  { from{transform:translateY(-15px);opacity:0} to{transform:translateY(0);opacity:1} }
-      @keyframes slideInUp    { from{transform:translateY(15px);opacity:0} to{transform:translateY(0);opacity:1} }
-      @keyframes scaleIn      { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
-    `;
-    document.head.appendChild(s);
-  })();
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="hosp-footer">
+    <p>© 2026 RED404 · Hospital Emergency Medical Infrastructure · High-Priority Dispatch Node</p>
+  </footer>
 
-  </script>
-
-  <!-- Mobile sidebar backdrop -->
-  <div id="mobileSidebarBackdrop" class="sidebar-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);"></div>
+  <!-- ==================== LOGIC JAVASCRIPT ==================== -->
+  <script src="js/common.js?v=20261114_v1"></script>
+  <script src="js/hospital-dashboard.js?v=20261114_v1"></script>
 </body>
 </html>
