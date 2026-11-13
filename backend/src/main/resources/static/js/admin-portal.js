@@ -117,7 +117,7 @@
     tbody.innerHTML = '';
 
     if (!donors || donors.length === 0) {
-      renderEmptyTable(tbody, 6, 'No registered donors recorded in MySQL yet.');
+      renderEmptyTable(tbody, 6, 'No registered donors found.');
       return;
     }
 
@@ -125,7 +125,7 @@
       const tr = document.createElement('tr');
       const isSuspended = (d.status || '').toLowerCase() === 'suspended';
 
-      // Status Badge Formatting: '🟢 Active', '🟡 Standby', '🔴 Suspended'
+      // Status Badge: '🟢 Active', '🟡 Standby', '🔴 Suspended'
       let statusClass = 'active';
       let statusLabel = '🟢 Active';
       const rawStatus = (d.status || '').toLowerCase();
@@ -142,7 +142,7 @@
 
       // Zone & City
       const cityName = d.city || d.location || 'Local Node';
-      const zoneName = d.zone ? 'Zone ' + d.zone : (d.state || 'General Node');
+      const zoneName = d.zone ? 'Zone ' + d.zone : (d.state || 'General Area');
 
       tr.innerHTML = `
         <!-- Column 1: Smart ID & Burned-ID Privacy -->
@@ -176,28 +176,38 @@
           ${Number(d.totalDonations || 0)}
         </td>
 
-        <!-- Column 5: Status -->
+        <!-- Column 5: Status (Direct Interactive Clickable Toggle) -->
         <td>
-          <span class="status-badge status-badge-${statusClass}">
-            ${statusLabel}
-          </span>
+          <button type="button" 
+                  class="status-badge-btn status-badge-${statusClass}" 
+                  onclick="window.toggleDonor(${d.id})" 
+                  title="Click to toggle status between Active and Suspended">
+            <span class="status-badge-text">${statusLabel}</span>
+            <i class="fas fa-arrows-rotate status-toggle-icon"></i>
+          </button>
         </td>
 
-        <!-- Column 6: Actions (Three Dots Kebab Menu) -->
+        <!-- Column 6: Actions (Direct Profile Button + Kebab Menu) -->
         <td>
-          <div class="kebab-menu-wrap">
-            <button type="button" class="admin-kebab-btn" onclick="window.toggleKebabMenu(event, ${d.id})" title="Actions">
-              <i class="fas fa-ellipsis-vertical"></i>
+          <div class="admin-actions-cell">
+            <button type="button" class="btn-view-profile" onclick="window.viewDonorProfile(${d.id})" title="View Full Dossier">
+              <i class="fas fa-id-card"></i>
+              <span>Profile</span>
             </button>
-            <div class="kebab-dropdown" id="kebab-menu-${d.id}">
-              <button type="button" class="kebab-dropdown-item" onclick="window.viewDonorProfile(${d.id})">
-                <i class="fas fa-id-card"></i>
-                <span>View Full Profile</span>
+            <div class="kebab-menu-wrap">
+              <button type="button" class="admin-kebab-btn" onclick="window.toggleKebabMenu(event, ${d.id})" title="More Actions">
+                <i class="fas fa-ellipsis-vertical"></i>
               </button>
-              <button type="button" class="kebab-dropdown-item ${isSuspended ? 'kebab-item-reactivate' : 'kebab-item-suspend'}" onclick="window.toggleDonor(${d.id})">
-                <i class="fas fa-${isSuspended ? 'shield-check' : 'ban'}"></i>
-                <span>${isSuspended ? 'Reactivate Account' : 'Suspend Account'}</span>
-              </button>
+              <div class="kebab-dropdown" id="kebab-menu-${d.id}">
+                <button type="button" class="kebab-dropdown-item" onclick="window.viewDonorProfile(${d.id})">
+                  <i class="fas fa-id-card"></i>
+                  <span>View Full Profile</span>
+                </button>
+                <button type="button" class="kebab-dropdown-item ${isSuspended ? 'kebab-item-reactivate' : 'kebab-item-suspend'}" onclick="window.toggleDonor(${d.id})">
+                  <i class="fas fa-${isSuspended ? 'shield-check' : 'ban'}"></i>
+                  <span>${isSuspended ? 'Set to Active' : 'Set to Suspended'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </td>
@@ -228,74 +238,162 @@
     }
   };
 
-  /* Three Dots (Kebab) Dropdown Toggle */
+  /* Three Dots (Kebab) Dropdown Toggle - Fixed Positioning to Never Clip */
   window.toggleKebabMenu = function(event, donorId) {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
     }
+    const btn = (event && event.currentTarget) || (event && event.target && event.target.closest('.admin-kebab-btn'));
     const targetMenu = document.getElementById(`kebab-menu-${donorId}`);
     if (!targetMenu) return;
 
     const isAlreadyOpen = targetMenu.classList.contains('show');
-    // Close any other open kebab dropdowns
-    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => {
-      menu.classList.remove('show');
+    // Close any other open menus
+    document.querySelectorAll('.kebab-dropdown.show').forEach(m => {
+      m.classList.remove('show');
     });
 
-    if (!isAlreadyOpen) {
+    if (!isAlreadyOpen && btn) {
+      const rect = btn.getBoundingClientRect();
+      const openUpwards = (window.innerHeight - rect.bottom) < 150;
+      targetMenu.style.position = 'fixed';
+      targetMenu.style.right = Math.max(10, window.innerWidth - rect.right) + 'px';
+      targetMenu.style.top = openUpwards ? (rect.top - 95) + 'px' : (rect.bottom + 6) + 'px';
+      targetMenu.style.zIndex = '99999';
       targetMenu.classList.add('show');
     }
   };
 
   /* Global click listener to close kebab menus on click outside */
   document.addEventListener('click', e => {
-    if (!e.target.closest('.kebab-menu-wrap')) {
+    if (!e.target.closest('.kebab-menu-wrap') && !e.target.closest('.kebab-dropdown')) {
       document.querySelectorAll('.kebab-dropdown.show').forEach(menu => {
         menu.classList.remove('show');
       });
     }
   });
 
-  /* View Donor Profile Modal */
-  window.viewDonorProfile = function(donorId) {
-    // Close any open kebab menus
-    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
-
-    const donor = allDonors.find(d => d.id === donorId);
-    if (!donor) {
-      showToast('Donor profile details not found in cache', 'error');
-      return;
+  /* Calculate Age from DOB string */
+  function calcAge(dobStr) {
+    if (!dobStr) return null;
+    const birthDate = new Date(dobStr);
+    if (isNaN(birthDate.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
+    return age > 0 ? age : null;
+  }
 
-    currentProfileDonorId = donorId;
-
-    // Helper for empty span placeholders (zero dummy data)
+  /* Populate all fields in the comprehensive donor profile modal */
+  function populateDonorProfileModal(donor) {
+    if (!donor) return;
     const setSpan = (id, val) => {
       const el = document.getElementById(id);
       if (el) el.textContent = (val && String(val).trim()) ? val : '-';
     };
 
+    // 1. Identity & Demographics
     setSpan('modal-donor-smart-id', donor.smartId);
     setSpan('modal-donor-name', donor.name);
+    setSpan('modal-donor-father-name', donor.fatherName || 'Not recorded');
+
+    let genderDobAge = (donor.gender || '-');
+    if (donor.dob) {
+      const age = calcAge(donor.dob);
+      genderDobAge += (age ? ` • ${age} yrs` : '') + ` (${donor.dob})`;
+    }
+    setSpan('modal-donor-dob-age', genderDobAge);
+    setSpan('modal-donor-blood-group', donor.bloodGroup);
+    setSpan('modal-donor-type', donor.donorType || 'Regular LifeSaver');
+
+    // 2. Communication & Contact
     setSpan('modal-donor-email', donor.email);
     setSpan('modal-donor-phone', donor.phone);
-    setSpan('modal-donor-blood-group', donor.bloodGroup);
+    setSpan('modal-donor-status', donor.status || 'Active');
 
-    let preciseLoc = '';
-    if (donor.address) preciseLoc += donor.address + ', ';
-    if (donor.city) preciseLoc += donor.city + ', ';
-    if (donor.state) preciseLoc += donor.state;
-    if (donor.pincode) preciseLoc += ' - ' + donor.pincode;
-    if (donor.zone) preciseLoc += ' [Zone ' + donor.zone + ']';
-    if (!preciseLoc.trim()) preciseLoc = donor.location || '-';
+    // 3. Spatial Routing & Location
+    setSpan('modal-donor-address', donor.address || 'Address Not Recorded');
+    const cityStatePin = `${donor.city || '-'}${donor.state ? ', ' + donor.state : ''}${donor.pincode ? ' - ' + donor.pincode : ''}`;
+    setSpan('modal-donor-city-state-pin', cityStatePin);
 
-    setSpan('modal-donor-location', preciseLoc);
+    const zoneCoords = `${donor.zone ? 'Zone ' + donor.zone : 'Zone Standard'}${donor.latitude && donor.longitude ? ' • GPS: ' + donor.latitude + ', ' + donor.longitude : ''}`;
+    setSpan('modal-donor-zone-coords', zoneCoords);
+
+    // 4. Clinical Health Screening
+    setSpan('modal-donor-weight', donor.weight ? donor.weight + ' kg' : 'Not recorded');
+    setSpan('modal-donor-allergies', donor.allergies || 'None declared');
+    setSpan('modal-donor-conditions', donor.conditions || 'None declared');
+    setSpan('modal-donor-medications', donor.medications || 'None declared');
+    setSpan('modal-donor-surgeries', donor.surgeries || 'None declared');
+
+    // 5. Lifesaving Impact & History
+    setSpan('modal-donor-total-donations', `${Number(donor.totalDonations || 0)} Successful Rescues`);
     setSpan('modal-donor-last-donation', donor.lastDonation || 'No donation recorded yet');
+    setSpan('modal-donor-created-at', formatTimestamp(donor.createdAt));
+  }
+
+  /* View Donor Profile Modal - Immediately fetches 100% fresh live DB data */
+  window.viewDonorProfile = async function(donorId) {
+    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
+
+    currentProfileDonorId = donorId;
+
+    // First populate from cache for instant display
+    const cached = allDonors.find(d => d.id === donorId);
+    if (cached) {
+      populateDonorProfileModal(cached);
+    }
 
     const modal = document.getElementById('donorProfileModal');
     if (modal) {
       modal.style.display = 'flex';
+    }
+
+    // Immediately fetch 100% fresh, real-time data from database
+    try {
+      const res = await fetch(`/api/admin/donors/${donorId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          populateDonorProfileModal(json.data);
+          // Sync cache
+          const idx = allDonors.findIndex(item => item.id === donorId);
+          if (idx !== -1) allDonors[idx] = Object.assign(allDonors[idx], json.data);
+        }
+      }
+    } catch (err) {
+      console.warn('Notice fetching fresh donor profile:', err);
+    }
+  };
+
+  /* Sync Live Button inside Profile Modal */
+  window.refreshCurrentDonorProfile = async function() {
+    if (!currentProfileDonorId) return;
+
+    const btn = document.getElementById('btnRefreshDonorProfile');
+    const icon = btn?.querySelector('i');
+    if (icon) icon.classList.add('fa-spin');
+
+    try {
+      const res = await fetch(`/api/admin/donors/${currentProfileDonorId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          populateDonorProfileModal(json.data);
+          // Sync cache
+          const idx = allDonors.findIndex(item => item.id === currentProfileDonorId);
+          if (idx !== -1) allDonors[idx] = Object.assign(allDonors[idx], json.data);
+          showToast('Donor profile synced live with database', 'info', 1500);
+        }
+      }
+    } catch (_) {
+      showToast('Connection error syncing profile', 'error');
+    } finally {
+      if (icon) icon.classList.remove('fa-spin');
     }
   };
 
@@ -344,7 +442,6 @@
 
   window.toggleDonor = async function(donorId) {
     if (!donorId) return;
-    // Close any open kebab menus
     document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
 
     try {
@@ -352,7 +449,14 @@
       const data = await res.json();
       if (res.ok && data.success) {
         showToast(data.message || 'Donor status updated', 'success');
-        loadDonors();
+        // Update donor in cache immediately
+        const newStatus = data.data?.newStatus || 'Active';
+        const d = allDonors.find(item => item.id === donorId);
+        if (d) {
+          d.status = newStatus;
+          d.availability = newStatus;
+        }
+        renderDonorsTable(allDonors);
       } else {
         showToast(data.message || 'Failed to update donor status', 'error');
       }
@@ -658,20 +762,58 @@
     const donorSearch = document.getElementById('donorSearchInput');
     if (donorSearch) {
       donorSearch.addEventListener('input', e => {
-        const q = (e.target.value || '').trim().toLowerCase();
+        const rawQ = (e.target.value || '').trim();
+        const q = rawQ.toLowerCase();
+        const badge = document.getElementById('donor-count-badge');
+
         if (!q) {
           renderDonorsTable(allDonors);
+          if (badge) badge.textContent = allDonors.length;
           return;
         }
-        const filtered = allDonors.filter(d =>
-          (d.smartId && d.smartId.toLowerCase().includes(q)) ||
-          (d.name && d.name.toLowerCase().includes(q)) ||
-          (d.bloodGroup && d.bloodGroup.toLowerCase().includes(q)) ||
-          (d.city && d.city.toLowerCase().includes(q)) ||
-          (d.zone && d.zone.toLowerCase().includes(q)) ||
-          (d.state && d.state.toLowerCase().includes(q)) ||
-          (d.location && d.location.toLowerCase().includes(q))
-        );
+
+        const cleanQ = q.replace(/\s+/g, '');
+        const validBloodGroups = ['a+', 'a-', 'b+', 'b-', 'o+', 'o-', 'ab+', 'ab-'];
+        let filtered = [];
+
+        // 1. If user is explicitly searching a blood group (e.g. "O+", "A-", "AB+", etc.)
+        if (validBloodGroups.includes(cleanQ)) {
+          filtered = allDonors.filter(d => {
+            const bg = (d.bloodGroup || '').toLowerCase().replace(/\s+/g, '');
+            return bg === cleanQ;
+          });
+        }
+        // 2. If user is searching by Smart ID (e.g. "DNR-1505-S184", "dnr")
+        else if (cleanQ.startsWith('dnr')) {
+          filtered = allDonors.filter(d => {
+            const sid = (d.smartId || '').toLowerCase().replace(/\s+/g, '');
+            return sid.includes(cleanQ);
+          });
+        }
+        // 3. Name, city, phone, zone or precise attribute search
+        else {
+          filtered = allDonors.filter(d => {
+            const name = (d.name || '').toLowerCase();
+            const sid = (d.smartId || '').toLowerCase();
+            const email = (d.email || '').toLowerCase();
+            const phone = (d.phone || '').toLowerCase();
+            const city = (d.city || '').toLowerCase();
+            const zone = (d.zone || '').toLowerCase();
+            const state = (d.state || '').toLowerCase();
+            const bg = (d.bloodGroup || '').toLowerCase().replace(/\s+/g, '');
+
+            return name.includes(q) ||
+                   sid.includes(q) ||
+                   email.includes(q) ||
+                   phone.includes(q) ||
+                   city.includes(q) ||
+                   zone.includes(q) ||
+                   state.includes(q) ||
+                   bg === cleanQ;
+          });
+        }
+
+        if (badge) badge.textContent = filtered.length;
         renderDonorsTable(filtered);
       });
     }

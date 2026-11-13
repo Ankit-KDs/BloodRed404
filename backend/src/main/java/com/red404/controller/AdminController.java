@@ -119,8 +119,9 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         List<Map<String, Object>> donors = new ArrayList<>();
-        String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.blood_type, " +
-                "d.availability, d.address, d.city, d.state, d.pincode, d.zone, d.latitude, d.longitude, " +
+        String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
+                "d.weight, d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
+                "d.latitude, d.longitude, d.allergies, d.conditions, d.medications, d.surgeries, " +
                 "d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE donor_id = d.donor_id) AS total_donations " +
                 "FROM donors d ORDER BY d.id DESC";
@@ -134,10 +135,14 @@ public class AdminController {
                 item.put("id", rs.getInt("id"));
                 item.put("smartId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("id"));
                 item.put("name", rs.getString("name"));
+                item.put("fatherName", rs.getString("father_name"));
                 item.put("email", rs.getString("email"));
                 item.put("phone", rs.getString("phone"));
+                item.put("dob", rs.getString("dob"));
+                item.put("gender", rs.getString("gender"));
                 item.put("bloodGroup", rs.getString("blood_type"));
-                item.put("totalDonations", rs.getInt("total_donations"));
+                item.put("weight", rs.getObject("weight"));
+                item.put("donorType", rs.getString("donor_type"));
                 item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
                 item.put("address", rs.getString("address"));
                 item.put("city", rs.getString("city"));
@@ -146,11 +151,15 @@ public class AdminController {
                 item.put("zone", rs.getString("zone"));
                 item.put("latitude", rs.getObject("latitude"));
                 item.put("longitude", rs.getObject("longitude"));
+                item.put("allergies", rs.getString("allergies"));
+                item.put("conditions", rs.getString("conditions"));
+                item.put("medications", rs.getString("medications"));
+                item.put("surgeries", rs.getString("surgeries"));
                 item.put("lastDonation", rs.getString("last_donation"));
+                item.put("totalDonations", rs.getInt("total_donations"));
 
                 String city = rs.getString("city");
                 String state = rs.getString("state");
-                String zone = rs.getString("zone");
                 String locationStr = (city != null && !city.isBlank()) ? city : "Local Zone";
                 if (state != null && !state.isBlank()) {
                     locationStr += ", " + state;
@@ -164,6 +173,63 @@ public class AdminController {
             log.error("Error loading donors for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Failed to load donors: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/donors/{id}")
+    public ResponseEntity<ApiResponse> getDonorDetails(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
+                "d.weight, d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
+                "d.latitude, d.longitude, d.allergies, d.conditions, d.medications, d.surgeries, " +
+                "d.last_donation, d.created_at, " +
+                "(SELECT COUNT(*) FROM donations WHERE donor_id = d.donor_id) AS total_donations " +
+                "FROM donors d WHERE d.id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", rs.getInt("id"));
+                    item.put("smartId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("id"));
+                    item.put("name", rs.getString("name"));
+                    item.put("fatherName", rs.getString("father_name"));
+                    item.put("email", rs.getString("email"));
+                    item.put("phone", rs.getString("phone"));
+                    item.put("dob", rs.getString("dob"));
+                    item.put("gender", rs.getString("gender"));
+                    item.put("bloodGroup", rs.getString("blood_type"));
+                    item.put("weight", rs.getObject("weight"));
+                    item.put("donorType", rs.getString("donor_type"));
+                    item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
+                    item.put("address", rs.getString("address"));
+                    item.put("city", rs.getString("city"));
+                    item.put("state", rs.getString("state"));
+                    item.put("pincode", rs.getString("pincode"));
+                    item.put("zone", rs.getString("zone"));
+                    item.put("latitude", rs.getObject("latitude"));
+                    item.put("longitude", rs.getObject("longitude"));
+                    item.put("allergies", rs.getString("allergies"));
+                    item.put("conditions", rs.getString("conditions"));
+                    item.put("medications", rs.getString("medications"));
+                    item.put("surgeries", rs.getString("surgeries"));
+                    item.put("lastDonation", rs.getString("last_donation"));
+                    item.put("totalDonations", rs.getInt("total_donations"));
+                    item.put("createdAt", rs.getString("created_at"));
+
+                    return ResponseEntity.ok(new ApiResponse(true, "Fresh donor details loaded", item));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ApiResponse(false, "Donor not found"));
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error loading fresh donor profile for admin: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to load donor details: " + e.getMessage()));
         }
     }
 
@@ -207,7 +273,7 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         try (Connection conn = DBConnection.getConnection()) {
-            String currentStatus = "Available";
+            String currentStatus = "Active";
             String smartId = "";
             try (PreparedStatement ps = conn.prepareStatement("SELECT donor_id, availability FROM donors WHERE id = ?")) {
                 ps.setInt(1, id);
@@ -222,7 +288,7 @@ public class AdminController {
                 }
             }
 
-            String nextStatus = "Suspended".equalsIgnoreCase(currentStatus) ? "Available" : "Suspended";
+            String nextStatus = "Suspended".equalsIgnoreCase(currentStatus) ? "Active" : "Suspended";
             try (PreparedStatement ps = conn.prepareStatement("UPDATE donors SET availability = ? WHERE id = ?")) {
                 ps.setString(1, nextStatus);
                 ps.setInt(2, id);
@@ -230,7 +296,7 @@ public class AdminController {
             }
 
             addLog("DONOR_STATUS_TOGGLE", "Donor " + smartId + " status updated to " + nextStatus);
-            return ResponseEntity.ok(new ApiResponse(true, "Donor status changed to " + nextStatus, Map.of("newStatus", nextStatus)));
+            return ResponseEntity.ok(new ApiResponse(true, "Donor status changed to " + nextStatus, Map.of("newStatus", nextStatus, "donorId", id)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, e.getMessage()));
