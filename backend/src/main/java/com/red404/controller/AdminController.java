@@ -414,6 +414,194 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/hospitals/{id}")
+    public ResponseEntity<ApiResponse> getHospitalDetails(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        String sql = "SELECT * FROM hospitals WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", rs.getInt("id"));
+                    item.put("hospitalName", rs.getString("hospital_name"));
+                    item.put("name", rs.getString("hospital_name"));
+                    item.put("registrationNo", rs.getString("registration_no"));
+                    item.put("hospitalType", rs.getString("hospital_type"));
+                    item.put("type", rs.getString("hospital_type"));
+                    item.put("beds", rs.getInt("beds"));
+                    String lic = rs.getString("blood_bank_license");
+                    item.put("bloodBankLicense", (lic != null && !lic.isBlank()) ? lic : "N/A");
+                    item.put("verificationStatus", (lic != null && !lic.isBlank()) ? "Verified" : "Pending");
+                    item.put("hospitalEmail", rs.getString("hospital_email"));
+                    item.put("email", rs.getString("hospital_email"));
+                    item.put("hospitalPhone", rs.getString("hospital_phone"));
+                    item.put("phone", rs.getString("hospital_phone"));
+                    item.put("website", rs.getString("website"));
+                    item.put("services", rs.getString("services"));
+                    item.put("adminName", rs.getString("admin_name"));
+                    item.put("adminDesignation", rs.getString("admin_designation"));
+                    item.put("adminPhone", rs.getString("admin_phone"));
+                    item.put("adminEmail", rs.getString("admin_email"));
+                    item.put("emergencyContact", rs.getString("emergency_contact"));
+                    item.put("address", rs.getString("address"));
+                    item.put("landmark", rs.getString("landmark"));
+                    item.put("city", rs.getString("city"));
+                    item.put("state", rs.getString("state"));
+                    item.put("pincode", rs.getString("pincode"));
+                    item.put("latitude", rs.getObject("latitude"));
+                    item.put("longitude", rs.getObject("longitude"));
+                    item.put("zone", rs.getString("zone"));
+                    item.put("operatingHours", rs.getString("operating_hours"));
+                    item.put("zoneRadius", rs.getInt("zone_radius"));
+                    item.put("smsNotif", rs.getBoolean("sms_notif"));
+                    item.put("pushNotif", rs.getBoolean("push_notif"));
+                    item.put("emailNotif", rs.getBoolean("email_notif"));
+                    item.put("createdAt", rs.getString("created_at"));
+
+                    // Location summary string
+                    String city = rs.getString("city");
+                    String state = rs.getString("state");
+                    String loc = (city != null ? city : "") + (state != null ? (city != null ? ", " : "") + state : "");
+                    item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
+
+                    // Blood inventory breakdown
+                    Map<String, Integer> inventory = new LinkedHashMap<>();
+                    int totalUnits = 0;
+                    StringBuilder stockOverview = new StringBuilder();
+                    for (String bt : new String[]{"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"}) {
+                        inventory.put(bt, 0);
+                    }
+                    try (PreparedStatement stockPs = conn.prepareStatement(
+                            "SELECT blood_type, units FROM hospital_inventory WHERE hospital_id = ?")) {
+                        stockPs.setInt(1, id);
+                        try (ResultSet sRs = stockPs.executeQuery()) {
+                            while (sRs.next()) {
+                                String bt = sRs.getString("blood_type");
+                                int u = sRs.getInt("units");
+                                if (bt != null) {
+                                    inventory.put(bt.toUpperCase(), Math.max(0, u));
+                                    totalUnits += u;
+                                    if (u > 0) {
+                                        if (stockOverview.length() > 0) stockOverview.append(", ");
+                                        stockOverview.append(bt).append(": ").append(u);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    item.put("inventory", inventory);
+                    item.put("totalStockUnits", totalUnits);
+                    item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
+
+                    // Total SOS / Blood Requests handled
+                    int totalRequests = 0;
+                    try (PreparedStatement reqPs = conn.prepareStatement(
+                            "SELECT COUNT(*) FROM blood_requests WHERE hospital_id = ?")) {
+                        reqPs.setInt(1, id);
+                        try (ResultSet rRs = reqPs.executeQuery()) {
+                            if (rRs.next()) totalRequests = rRs.getInt(1);
+                        }
+                    } catch (Exception ignored) {}
+                    item.put("totalRequests", totalRequests);
+
+                    return ResponseEntity.ok(new ApiResponse(true, "Fresh hospital details loaded", item));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ApiResponse(false, "Hospital not found"));
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error loading fresh hospital profile for admin: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to load hospital details: " + e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 4b. PERMANENTLY DELETE HOSPITAL ACCOUNT
+    // ==========================================
+    @DeleteMapping({"/hospitals/{id}", "/hospitals/{id}/delete"})
+    public ResponseEntity<ApiResponse> deleteHospital(@PathVariable int id, HttpServletRequest request) {
+        return executeDeleteHospital(id, request);
+    }
+
+    @PostMapping("/hospitals/{id}/delete")
+    public ResponseEntity<ApiResponse> deleteHospitalPost(@PathVariable int id, HttpServletRequest request) {
+        return executeDeleteHospital(id, request);
+    }
+
+    private ResponseEntity<ApiResponse> executeDeleteHospital(int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        try (Connection conn = DBConnection.getConnection()) {
+            String hospitalName = "";
+            String hospitalEmail = "";
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT hospital_name, hospital_email FROM hospitals WHERE id = ?")) {
+                ps.setInt(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        hospitalName = rs.getString("hospital_name");
+                        hospitalEmail = rs.getString("hospital_email");
+                    } else {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ApiResponse(false, "Hospital not found"));
+                    }
+                }
+            }
+
+            // 1. Delete associated blood requests (foreign key fk_br_hospital)
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM blood_requests WHERE hospital_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (Exception e) {
+                log.warn("Notice deleting blood_requests for hospital {}: {}", id, e.getMessage());
+            }
+
+            // 2. Delete inventory records
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM hospital_inventory WHERE hospital_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (Exception e) {
+                log.warn("Notice deleting hospital_inventory for hospital {}: {}", id, e.getMessage());
+            }
+
+            // 3. Nullify donations hospital_id
+            try (PreparedStatement ps = conn.prepareStatement("UPDATE donations SET hospital_id = NULL WHERE hospital_id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (Exception ignored) {}
+
+            // 4. Terminate all active sessions for this hospital (by numeric id or email)
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "DELETE FROM user_sessions WHERE user_type = 'HOSPITAL' AND (user_id = ? OR user_id = ?)")) {
+                ps.setString(1, String.valueOf(id));
+                ps.setString(2, hospitalEmail != null ? hospitalEmail : "");
+                ps.executeUpdate();
+            } catch (Exception ignored) {}
+
+            // 5. Delete the hospital record
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM hospitals WHERE id = ?")) {
+                ps.setInt(1, id);
+                int rows = ps.executeUpdate();
+                if (rows == 0) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ApiResponse(false, "Hospital not found or already deleted"));
+                }
+            }
+
+            addLog("HOSPITAL_DELETED", "Hospital account permanently deleted: " + hospitalName + " (ID: " + id + ", Email: " + hospitalEmail + ")");
+            return ResponseEntity.ok(new ApiResponse(true, "Hospital account for \"" + hospitalName + "\" permanently deleted."));
+        } catch (Exception e) {
+            log.error("Error deleting hospital {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to delete hospital: " + e.getMessage()));
+        }
+    }
+
     // ==========================================
     // 5. USER FEEDBACK
     // ==========================================

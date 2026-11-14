@@ -11,7 +11,7 @@
   
   <!-- Global & Admin Portal Stylesheets -->
   <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
-  <link rel="stylesheet" href="css/admin-portal.css?v=20261113_v4" />
+  <link rel="stylesheet" href="css/admin-portal.css?v=20261114_v1" />
 </head>
 <body class="admin-body">
 
@@ -465,8 +465,223 @@
     </div>
   </div>
 
+  <!-- ==================== VIEW HOSPITAL PROFILE MODAL ==================== -->
+  <div class="modal-overlay" id="hospitalProfileModal" style="display:none;" onclick="if(event.target===this) closeHospitalProfileModal()">
+    <div class="modal-box admin-profile-modal-box">
+      <button type="button" class="modal-close" onclick="closeHospitalProfileModal()" title="Close Profile">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <div class="profile-modal-header">
+        <div class="profile-modal-badge hospital-badge">
+          <span class="profile-pulse-dot hospital-pulse"></span>
+          <span>LEVEL-0 HEALTHCARE FACILITY ENCLAVE</span>
+        </div>
+        <div class="profile-modal-title-row">
+          <h3 class="profile-modal-title">
+            <i class="fas fa-hospital" style="color: #38bdf8;"></i>
+            <span id="modal-hosp-header-title">Hospital Comprehensive Dossier</span>
+          </h3>
+          <button type="button" class="btn-refresh-profile" id="btnRefreshHospitalProfile" onclick="refreshCurrentHospitalProfile()" title="Fetch latest live data from database">
+            <i class="fas fa-rotate"></i> <span>Sync Live</span>
+          </button>
+        </div>
+        <p class="profile-modal-subtitle">Official institutional credentials, clinical services, administrative contact &amp; spatial routing telemetry.</p>
+      </div>
+
+      <!-- Scrollable Container for All Hospital Registration Details -->
+      <div class="profile-scroll-body">
+        
+        <!-- SECTION 1: FACILITY CREDENTIALS & INFRASTRUCTURE -->
+        <div class="profile-section-title"><i class="fas fa-building-circle-check"></i> Institutional &amp; Facility Credentials</div>
+        <div class="profile-grid">
+          <!-- Hospital Name -->
+          <div class="profile-item full-width-item">
+            <span class="profile-label"><i class="fas fa-hospital"></i> Hospital / Blood Bank Name</span>
+            <span class="profile-val smart-id-val" id="modal-hosp-name">-</span>
+          </div>
+
+          <!-- Registration Number -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-certificate"></i> Registration / License Number</span>
+            <span class="profile-val" id="modal-hosp-reg-no">-</span>
+          </div>
+
+          <!-- Facility Type -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-sitemap"></i> Hospital Category / Type</span>
+            <span class="profile-val" id="modal-hosp-type">-</span>
+          </div>
+
+          <!-- Inpatient Beds -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-bed"></i> Total Inpatient Beds</span>
+            <span class="profile-val" id="modal-hosp-beds">-</span>
+          </div>
+
+          <!-- Blood Bank License -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-id-card"></i> Blood Bank License No.</span>
+            <span class="profile-val blood-group-val" id="modal-hosp-license">-</span>
+          </div>
+
+          <!-- Official Email -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-envelope"></i> Official Facility Email</span>
+            <span class="profile-val" id="modal-hosp-email">-</span>
+          </div>
+
+          <!-- Desk Phone -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-phone-volume"></i> Official Desk Phone</span>
+            <span class="profile-val" id="modal-hosp-phone">-</span>
+          </div>
+
+          <!-- Official Website -->
+          <div class="profile-item full-width-item">
+            <span class="profile-label"><i class="fas fa-globe"></i> Official Portal / Website</span>
+            <span class="profile-val" id="modal-hosp-website">-</span>
+          </div>
+
+          <!-- Clinical Services Offered -->
+          <div class="profile-item full-width-item">
+            <span class="profile-label"><i class="fas fa-briefcase-medical"></i> Clinical Services &amp; Specialized Units</span>
+            <div class="hosp-services-tags" id="modal-hosp-services">
+              <!-- Dynamically populated chips -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: ADMINISTRATIVE POINT OF CONTACT -->
+        <div class="profile-section-title"><i class="fas fa-user-tie"></i> Administrative Authority &amp; Contact</div>
+        <div class="profile-grid">
+          <!-- Authorized Officer Name -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-user-doctor"></i> Authorized Officer Name</span>
+            <span class="profile-val" id="modal-hosp-admin-name">-</span>
+          </div>
+
+          <!-- Officer Designation -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-id-badge"></i> Officer Designation</span>
+            <span class="profile-val" id="modal-hosp-admin-designation">-</span>
+          </div>
+
+          <!-- Admin Phone -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-phone"></i> Officer Direct Phone</span>
+            <span class="profile-val" id="modal-hosp-admin-phone">-</span>
+          </div>
+
+          <!-- Admin Official Email -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-envelope-circle-check"></i> Officer Official Email</span>
+            <span class="profile-val" id="modal-hosp-admin-email">-</span>
+          </div>
+
+          <!-- 24/7 Critical Emergency Hotline -->
+          <div class="profile-item full-width-item">
+            <span class="profile-label"><i class="fas fa-truck-medical"></i> 24/7 Critical Emergency Hotline</span>
+            <span class="profile-val hotline-highlight" id="modal-hosp-emergency">-</span>
+          </div>
+        </div>
+
+        <!-- SECTION 3: SPATIAL ROUTING, ADDRESS & DISPATCH -->
+        <div class="profile-section-title"><i class="fas fa-map-location-dot"></i> Spatial Geocoding &amp; Dispatch Routing</div>
+        <div class="profile-grid">
+          <!-- Street Address -->
+          <div class="profile-item full-width-item">
+            <span class="profile-label"><i class="fas fa-location-dot"></i> Street / Campus Address</span>
+            <span class="profile-val" id="modal-hosp-address">-</span>
+          </div>
+
+          <!-- Landmark -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-landmark"></i> Prominent Landmark</span>
+            <span class="profile-val" id="modal-hosp-landmark">-</span>
+          </div>
+
+          <!-- City, State & PIN -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-city"></i> City, State &amp; PIN</span>
+            <span class="profile-val" id="modal-hosp-city-state-pin">-</span>
+          </div>
+
+          <!-- GPS Coordinates -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-crosshairs"></i> GPS Coordinates (Lat / Lng)</span>
+            <span class="profile-val" id="modal-hosp-coords">-</span>
+          </div>
+
+          <!-- Operating Schedule & Radius -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-clock"></i> Operating Schedule &amp; Zone Radius</span>
+            <span class="profile-val" id="modal-hosp-hours-zone">-</span>
+          </div>
+        </div>
+
+        <!-- SECTION 4: BLOOD STOCK TELEMETRY & SOS ACTIVITY -->
+        <div class="profile-section-title"><i class="fas fa-cubes-stacked"></i> Blood Stock Reserves &amp; SOS Activity</div>
+        <div class="profile-grid">
+          <!-- Total Stock -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-layer-group"></i> Total Units in Reserve</span>
+            <span class="profile-val" id="modal-hosp-total-units">-</span>
+          </div>
+
+          <!-- Total Blood Requests Broadcasted -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-bullhorn"></i> Total SOS Broadcasts</span>
+            <span class="profile-val" id="modal-hosp-total-requests">-</span>
+          </div>
+
+          <!-- Stock Breakdown Grid -->
+          <div class="profile-item full-width-item">
+            <span class="profile-label"><i class="fas fa-flask"></i> Inventory Breakdown by Blood Group</span>
+            <div class="modal-stock-grid" id="modal-hosp-stock-grid">
+              <!-- Dynamically populated blood type units -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: ACCOUNT & VERIFICATION STATUS -->
+        <div class="profile-section-title"><i class="fas fa-clock-rotate-left"></i> Account Audit &amp; System Timestamps</div>
+        <div class="profile-grid">
+          <!-- Verification Status -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-circle-check"></i> Verification Clearance</span>
+            <span class="profile-val" id="modal-hosp-status">-</span>
+          </div>
+
+          <!-- Enrolled Since -->
+          <div class="profile-item">
+            <span class="profile-label"><i class="fas fa-calendar-days"></i> Enrolled in Network Since</span>
+            <span class="profile-val" id="modal-hosp-created-at">-</span>
+          </div>
+        </div>
+
+        <!-- CRITICAL SECURITY RULE: No Password Field Anywhere -->
+        <div class="profile-security-banner">
+          <i class="fas fa-shield-halved"></i>
+          <span><strong>CRITICAL PRIVACY RULE:</strong> Facility credentials and administrative passwords are encrypted with BCrypt (Cost Factor 12). Passwords are cryptographically sealed and inaccessible to all portal operators.</span>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="profile-modal-actions">
+        <button type="button" class="btn-delete-from-modal" id="btnDeleteHospitalFromModal" onclick="handleDeleteHospitalFromModal()" title="Permanently Delete Hospital Account">
+          <i class="fas fa-trash-can"></i> <span>Delete Facility Account</span>
+        </button>
+        <button type="button" class="btn-close-secondary" onclick="closeHospitalProfileModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Admin Portal Script -->
-  <script src="js/admin-portal.js?v=20261113_v4"></script>
+  <script src="js/admin-portal.js?v=20261114_v1"></script>
 </body>
 </html>
 

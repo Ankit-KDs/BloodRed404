@@ -552,6 +552,8 @@
     }
   }
 
+  let currentProfileHospitalId = null;
+
   function renderHospitalsTable(hospitals) {
     const tbody = document.getElementById('hospital-table-body');
     if (!tbody) return;
@@ -565,10 +567,11 @@
     hospitals.forEach(h => {
       const tr = document.createElement('tr');
       const isVerified = (h.verificationStatus || '').toLowerCase() === 'verified';
+      const safeHospName = (h.name || h.hospitalName || 'Hospital').replace(/'/g, "\\'");
 
       tr.innerHTML = `
         <td>
-          <div style="font-weight: 700; color: #ffffff;">${escapeHtml(h.name || '-')}</div>
+          <div style="font-weight: 700; color: #ffffff;">${escapeHtml(h.name || h.hospitalName || '-')}</div>
           <div style="font-size: 11px; color: var(--admin-text-muted);">
             <i class="fas fa-location-dot"></i> ${escapeHtml(h.location || 'Location Not Specified')}
           </div>
@@ -585,22 +588,264 @@
           </span>
         </td>
         <td style="font-size: 11px; color: var(--admin-text-muted); font-family: var(--admin-font-mono);">
-          ${formatTimestamp(h.lastSynced)}
+          ${formatTimestamp(h.lastSynced || h.createdAt)}
         </td>
         <td>
-          <button class="admin-action-btn" onclick="window.viewHospitalDetails(${h.id})">
-            <i class="fas fa-eye"></i> Details
-          </button>
+          <div style="display: inline-flex; align-items: center; gap: 8px;">
+            <button class="admin-action-btn" onclick="window.viewHospitalDetails(${h.id})" title="View Complete Registration & Facility Dossier">
+              <i class="fas fa-eye"></i> Details
+            </button>
+            <button class="admin-action-btn btn-danger-action" onclick="window.deleteHospitalAccount(${h.id}, '${safeHospName}')" title="Permanently Delete Hospital Account">
+              <i class="fas fa-trash-can"></i>
+            </button>
+          </div>
         </td>
       `;
       tbody.appendChild(tr);
     });
   }
 
-  window.viewHospitalDetails = function(hospId) {
-    const hosp = allHospitals.find(item => item.id === hospId);
+  /* Populate all fields in the comprehensive hospital dossier modal */
+  function populateHospitalProfileModal(hosp) {
     if (!hosp) return;
-    showToast(`Hospital: ${hosp.name} (${hosp.location || 'N/A'}) - Total Stock: ${hosp.totalStockUnits || 0} Units`, 'info', 4000);
+    const setSpan = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = (val !== null && val !== undefined && String(val).trim()) ? String(val).trim() : '-';
+    };
+
+    // Header Title
+    const headerTitle = document.getElementById('modal-hosp-header-title');
+    if (headerTitle) {
+      headerTitle.textContent = hosp.name || hosp.hospitalName || 'Hospital Comprehensive Dossier';
+    }
+
+    // 1. Institutional & Facility Credentials
+    setSpan('modal-hosp-name', hosp.name || hosp.hospitalName);
+    setSpan('modal-hosp-reg-no', hosp.registrationNo);
+    setSpan('modal-hosp-type', hosp.hospitalType || hosp.type || 'General Healthcare Facility');
+    setSpan('modal-hosp-beds', hosp.beds ? `${hosp.beds} Beds` : 'Not Specified');
+    setSpan('modal-hosp-license', (hosp.bloodBankLicense && hosp.bloodBankLicense !== 'N/A') ? hosp.bloodBankLicense : 'No Dedicated License Recorded');
+    setSpan('modal-hosp-email', hosp.hospitalEmail || hosp.email);
+    setSpan('modal-hosp-phone', hosp.hospitalPhone || hosp.phone);
+
+    // Website link or text
+    const websiteEl = document.getElementById('modal-hosp-website');
+    if (websiteEl) {
+      const web = hosp.website;
+      if (web && web.trim()) {
+        const fullUrl = web.startsWith('http') ? web : 'https://' + web;
+        websiteEl.innerHTML = `<a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;"><i class="fas fa-arrow-up-right-from-square"></i> ${escapeHtml(web)}</a>`;
+      } else {
+        websiteEl.textContent = 'None Provided';
+      }
+    }
+
+    // Clinical Services Tags
+    const servicesEl = document.getElementById('modal-hosp-services');
+    if (servicesEl) {
+      servicesEl.innerHTML = '';
+      const rawServices = hosp.services || '';
+      let serviceList = [];
+      if (Array.isArray(rawServices)) {
+        serviceList = rawServices;
+      } else if (typeof rawServices === 'string') {
+        try {
+          const parsed = JSON.parse(rawServices);
+          if (Array.isArray(parsed)) serviceList = parsed;
+          else serviceList = rawServices.split(',').map(s => s.trim());
+        } catch (_) {
+          serviceList = rawServices.split(',').map(s => s.trim());
+        }
+      }
+      serviceList = serviceList.filter(Boolean);
+
+      const serviceMeta = {
+        emergency: { label: '24/7 Emergency & Trauma', icon: 'truck-medical' },
+        bloodbank: { label: 'Dedicated Blood Bank', icon: 'droplet' },
+        icu: { label: 'Intensive Care Unit (ICU)', icon: 'heart-pulse' },
+        surgery: { label: 'Trauma & Operation Theaters', icon: 'bed-pulse' },
+        maternity: { label: 'Maternity & Neonatal Care', icon: 'person-breastfeeding' },
+        dialysis: { label: 'Dialysis Center', icon: 'flask-round-pulse' }
+      };
+
+      if (serviceList.length === 0) {
+        servicesEl.innerHTML = `<span style="font-size: 11px; color: var(--admin-text-muted);">Standard Clinical & Emergency Services</span>`;
+      } else {
+        serviceList.forEach(s => {
+          const key = s.toLowerCase().trim();
+          const meta = serviceMeta[key] || { label: s.charAt(0).toUpperCase() + s.slice(1), icon: 'circle-check' };
+          const chip = document.createElement('span');
+          chip.className = 'hosp-service-chip';
+          chip.innerHTML = `<i class="fas fa-${meta.icon}"></i> ${escapeHtml(meta.label)}`;
+          servicesEl.appendChild(chip);
+        });
+      }
+    }
+
+    // 2. Administrative Point of Contact
+    setSpan('modal-hosp-admin-name', hosp.adminName || 'Not recorded');
+    setSpan('modal-hosp-admin-designation', hosp.adminDesignation || 'Hospital Administrator');
+    setSpan('modal-hosp-admin-phone', hosp.adminPhone || hosp.phone);
+    setSpan('modal-hosp-admin-email', hosp.adminEmail || hosp.email);
+    setSpan('modal-hosp-emergency', hosp.emergencyContact || hosp.hospitalPhone || '24/7 Emergency Hotline Unlisted');
+
+    // 3. Spatial Routing & Address
+    setSpan('modal-hosp-address', hosp.address || 'Address Not Recorded');
+    setSpan('modal-hosp-landmark', hosp.landmark || 'None Specified');
+    const cityStatePin = `${hosp.city || '-'}${hosp.state ? ', ' + hosp.state : ''}${hosp.pincode ? ' - ' + hosp.pincode : ''}`;
+    setSpan('modal-hosp-city-state-pin', cityStatePin);
+    const coordsStr = (hosp.latitude && hosp.longitude) ? `${hosp.latitude}, ${hosp.longitude}` : 'GPS Telemetry Pending';
+    setSpan('modal-hosp-coords', coordsStr);
+    const hoursZone = `${hosp.operatingHours || '24x7'} • Radius: ${hosp.zoneRadius || 10} km (${hosp.zone || 'Standard Zone'})`;
+    setSpan('modal-hosp-hours-zone', hoursZone);
+
+    // 4. Blood Stock & SOS Activity
+    setSpan('modal-hosp-total-units', `${Number(hosp.totalStockUnits || 0)} Units in Reserve`);
+    setSpan('modal-hosp-total-requests', `${Number(hosp.totalRequests || 0)} SOS Requests Broadcasted`);
+
+    // Stock Breakdown Grid
+    const stockGrid = document.getElementById('modal-hosp-stock-grid');
+    if (stockGrid) {
+      stockGrid.innerHTML = '';
+      const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+      const inv = hosp.inventory || {};
+      bloodTypes.forEach(bt => {
+        const units = Number(inv[bt] || 0);
+        const item = document.createElement('div');
+        item.className = 'modal-stock-item';
+        item.innerHTML = `
+          <div class="modal-stock-type">${bt}</div>
+          <div class="modal-stock-qty ${units === 0 ? 'zero' : ''}">${units} <span style="font-size: 10px; font-weight: normal; opacity: 0.8;">Units</span></div>
+        `;
+        stockGrid.appendChild(item);
+      });
+    }
+
+    // 5. Account & Verification Status
+    const isVerified = (hosp.verificationStatus || '').toLowerCase() === 'verified';
+    const statusEl = document.getElementById('modal-hosp-status');
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="status-pill ${isVerified ? 'status-verified' : 'status-pending'}"><i class="fas fa-${isVerified ? 'circle-check' : 'clock'}"></i> ${escapeHtml(hosp.verificationStatus || 'Pending Verification')}</span>`;
+    }
+    setSpan('modal-hosp-created-at', formatTimestamp(hosp.createdAt));
+  }
+
+  /* View Hospital Details Modal - Immediately fetches live DB data */
+  window.viewHospitalDetails = async function(hospId) {
+    if (!hospId) return;
+    currentProfileHospitalId = hospId;
+
+    // 1. First populate from cache for instant display
+    const cached = allHospitals.find(item => item.id === hospId);
+    if (cached) {
+      populateHospitalProfileModal(cached);
+    }
+
+    const modal = document.getElementById('hospitalProfileModal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+
+    // 2. Fetch fresh live data from database
+    try {
+      const res = await fetch(`/api/admin/hospitals/${hospId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          populateHospitalProfileModal(json.data);
+          // Sync cache
+          const idx = allHospitals.findIndex(item => item.id === hospId);
+          if (idx !== -1) allHospitals[idx] = Object.assign(allHospitals[idx], json.data);
+        }
+      }
+    } catch (err) {
+      console.warn('Notice fetching fresh hospital profile:', err);
+    }
+  };
+
+  /* Sync Live Button inside Hospital Profile Modal */
+  window.refreshCurrentHospitalProfile = async function() {
+    if (!currentProfileHospitalId) return;
+    const btn = document.getElementById('btnRefreshHospitalProfile');
+    const icon = btn?.querySelector('i');
+    if (icon) icon.classList.add('fa-spin');
+
+    try {
+      const res = await fetch(`/api/admin/hospitals/${currentProfileHospitalId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          populateHospitalProfileModal(json.data);
+          const idx = allHospitals.findIndex(item => item.id === currentProfileHospitalId);
+          if (idx !== -1) allHospitals[idx] = Object.assign(allHospitals[idx], json.data);
+          showToast('Hospital dossier synced live with database', 'info', 1500);
+        }
+      }
+    } catch (_) {
+      showToast('Connection error syncing hospital profile', 'error');
+    } finally {
+      if (icon) icon.classList.remove('fa-spin');
+    }
+  };
+
+  /* Close Hospital Profile Modal */
+  window.closeHospitalProfileModal = function() {
+    const modal = document.getElementById('hospitalProfileModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+    currentProfileHospitalId = null;
+  };
+
+  /* Delete Hospital from Profile Modal */
+  window.handleDeleteHospitalFromModal = async function() {
+    if (!currentProfileHospitalId) return;
+    const hid = currentProfileHospitalId;
+    const hosp = allHospitals.find(h => h.id === hid);
+    const hospName = hosp ? (hosp.name || hosp.hospitalName) : 'this facility';
+    closeHospitalProfileModal();
+    await window.deleteHospitalAccount(hid, hospName);
+  };
+
+  /* DELETE HOSPITAL ACCOUNT - double confirmation required */
+  window.deleteHospitalAccount = async function(hospId, hospName) {
+    if (!hospId) return;
+
+    // Step 1: Warning confirmation
+    const confirmed = window.confirm(
+      `⚠️ PERMANENT DELETE\n\nYou are about to permanently delete the hospital account of:\n"${hospName}"\n\nThis action CANNOT be undone. All active sessions across all devices will be terminated, blood requests removed, and inventory erased.\n\nClick OK to continue to final confirmation, or Cancel to abort.`
+    );
+    if (!confirmed) {
+      showToast('Delete cancelled.', 'info', 2000);
+      return;
+    }
+
+    // Step 2: Strict security typing confirmation
+    const typedConfirm = window.prompt(
+      `Final confirmation required.\n\nType  DELETE  (all caps) to permanently delete this hospital account.`
+    );
+    if (!typedConfirm || typedConfirm.trim() !== 'DELETE') {
+      showToast('Delete aborted. You must type DELETE exactly to confirm.', 'error', 3000);
+      return;
+    }
+
+    try {
+      showToast('Deleting hospital account and invalidating all active sessions...', 'info', 2500);
+      const res = await fetch(`/api/admin/hospitals/${hospId}/delete`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(`Hospital "${hospName}" account permanently deleted.`, 'success', 4000);
+        // Remove from local cache and re-render
+        allHospitals = allHospitals.filter(item => item.id !== hospId);
+        const badge = document.getElementById('hospital-count-badge');
+        if (badge) badge.textContent = allHospitals.length;
+        renderHospitalsTable(allHospitals);
+      } else {
+        showToast(data.message || 'Failed to delete hospital account.', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error while deleting hospital account.', 'error');
+    }
   };
 
   /* ==================== 5. TAB 3: FEEDBACK ==================== */
@@ -885,18 +1130,27 @@
     }
 
     const hospSearch = document.getElementById('hospitalSearchInput');
+    const hospBadge = document.getElementById('hospital-count-badge');
     if (hospSearch) {
       hospSearch.addEventListener('input', e => {
         const q = (e.target.value || '').trim().toLowerCase();
         if (!q) {
+          if (hospBadge) hospBadge.textContent = allHospitals.length;
           renderHospitalsTable(allHospitals);
           return;
         }
-        const filtered = allHospitals.filter(h =>
-          (h.name && h.name.toLowerCase().includes(q)) ||
-          (h.location && h.location.toLowerCase().includes(q)) ||
-          (h.verificationStatus && h.verificationStatus.toLowerCase().includes(q))
-        );
+        const filtered = allHospitals.filter(h => {
+          const name = (h.name || h.hospitalName || '').toLowerCase();
+          const loc = (h.location || h.city || '').toLowerCase();
+          const status = (h.verificationStatus || '').toLowerCase();
+          const reg = (h.registrationNo || '').toLowerCase();
+          const lic = (h.bloodBankLicense || h.license || '').toLowerCase();
+          const type = (h.hospitalType || h.type || '').toLowerCase();
+          const admin = (h.adminName || '').toLowerCase();
+          return name.includes(q) || loc.includes(q) || status.includes(q) ||
+                 reg.includes(q) || lic.includes(q) || type.includes(q) || admin.includes(q);
+        });
+        if (hospBadge) hospBadge.textContent = filtered.length;
         renderHospitalsTable(filtered);
       });
     }

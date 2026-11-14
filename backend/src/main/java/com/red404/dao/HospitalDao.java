@@ -137,6 +137,15 @@ public class HospitalDao {
         }
     }
 
+    public boolean delete(int id) throws SQLException {
+        String sql = "DELETE FROM hospitals WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public boolean updateHospitalInventory(int hospitalId, String bloodType, int change, Integer exactUnits) throws SQLException {
         if (bloodType == null || bloodType.isBlank()) return false;
         String bt = bloodType.trim().toUpperCase();
@@ -192,18 +201,37 @@ public class HospitalDao {
         hospital.put("name", rs.getString("hospital_name"));
         hospital.put("hospitalName", rs.getString("hospital_name"));
         hospital.put("email", rs.getString("hospital_email"));
+        hospital.put("hospitalEmail", rs.getString("hospital_email"));
         hospital.put("phone", rs.getString("hospital_phone"));
+        hospital.put("hospitalPhone", rs.getString("hospital_phone"));
         hospital.put("city", rs.getString("city"));
         hospital.put("state", rs.getString("state"));
         hospital.put("zone", rs.getString("zone"));
         hospital.put("radius", rs.getInt("zone_radius"));
+        hospital.put("zoneRadius", rs.getInt("zone_radius"));
         hospital.put("type", rs.getString("hospital_type"));
+        hospital.put("hospitalType", rs.getString("hospital_type"));
         hospital.put("registrationNo", rs.getString("registration_no"));
         hospital.put("beds", rs.getInt("beds"));
+        hospital.put("bloodBankLicense", rs.getString("blood_bank_license"));
+        hospital.put("website", rs.getString("website"));
+        hospital.put("services", rs.getString("services"));
         hospital.put("adminName", rs.getString("admin_name"));
+        hospital.put("adminDesignation", rs.getString("admin_designation"));
+        hospital.put("adminPhone", rs.getString("admin_phone"));
+        hospital.put("adminEmail", rs.getString("admin_email"));
+        hospital.put("emergencyContact", rs.getString("emergency_contact"));
+        hospital.put("address", rs.getString("address"));
+        hospital.put("landmark", rs.getString("landmark"));
+        hospital.put("pincode", rs.getString("pincode"));
         hospital.put("latitude", rs.getObject("latitude"));
         hospital.put("longitude", rs.getObject("longitude"));
-        hospital.put("address", rs.getString("address"));
+        hospital.put("operatingHours", rs.getString("operating_hours"));
+        hospital.put("smsNotif", rs.getBoolean("sms_notif"));
+        hospital.put("pushNotif", rs.getBoolean("push_notif"));
+        hospital.put("emailNotif", rs.getBoolean("email_notif"));
+        java.sql.Timestamp ts = rs.getTimestamp("created_at");
+        hospital.put("createdAt", ts != null ? ts.toString() : null);
         return hospital;
     }
 

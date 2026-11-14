@@ -475,6 +475,111 @@ body.admin-body {
   border-color: rgba(16, 185, 129, 0.35);
 }
 
+.admin-action-btn.btn-danger-action {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.admin-action-btn.btn-danger-action:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #ffffff;
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Hospital Modal Badge Theme */
+.profile-modal-badge.hospital-badge {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.profile-pulse-dot.hospital-pulse {
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+/* Hospital Services Chips */
+.hosp-services-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.hosp-service-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #93c5fd;
+  letter-spacing: 0.3px;
+}
+
+.hosp-service-chip i {
+  color: #38bdf8;
+}
+
+/* Hotline Highlight */
+.hotline-highlight {
+  color: #ef4444 !important;
+  font-weight: 700 !important;
+  font-family: var(--admin-font-mono) !important;
+  font-size: 13.5px !important;
+}
+
+/* Modal Stock Grid */
+.modal-stock-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.modal-stock-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.modal-stock-item:hover {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.modal-stock-type {
+  font-size: 12px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-family: var(--admin-font-mono);
+}
+
+.modal-stock-qty {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+  font-family: var(--admin-font-mono);
+  margin-top: 2px;
+}
+
+.modal-stock-qty.zero {
+  color: var(--admin-text-muted);
+  font-weight: 500;
+}
+
 /* ==================== TAB 3: FEEDBACK GRID ==================== */
 .admin-feedback-grid {
   display: grid;
@@ -1698,6 +1803,11 @@ body.admin-body {
   .profile-grid {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .modal-stock-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
   }
 
   .profile-modal-actions {
