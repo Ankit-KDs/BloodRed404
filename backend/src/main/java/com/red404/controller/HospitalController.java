@@ -10,6 +10,7 @@ import com.red404.dao.BloodRequestDao;
 import com.red404.dao.DonorDao;
 import com.red404.dao.HospitalDao;
 import com.red404.model.ApiResponse;
+import com.red404.service.DonorEligibilityService;
 import com.red404.util.JsonUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -696,39 +697,20 @@ public class HospitalController {
             double weight = wtObj instanceof Number ? ((Number) wtObj).doubleValue() : 60.0;
             details.put("weight", weight);
 
-            // Last donation & eligibility calculation (90-day rule)
-            Object lastDonationObj = donor.get("last_donation");
-            if (lastDonationObj == null) {
-                details.put("lastDonation", "Never");
-                details.put("lastDonationDaysAgo", "Never (First-time donor)");
-                details.put("daysSinceDonation", -1);
-                details.put("isEligible", true);
-                details.put("eligibilityReason", "Eligible (First-time donor)");
-            } else {
-                try {
-                    java.time.LocalDate lastDate = java.time.LocalDate.parse(lastDonationObj.toString());
-                    long days = java.time.temporal.ChronoUnit.DAYS.between(lastDate, java.time.LocalDate.now());
-                    details.put("lastDonation", lastDate.toString());
-                    details.put("daysSinceDonation", days);
-                    if (days == 0) {
-                        details.put("lastDonationDaysAgo", "Donated today");
-                    } else {
-                        details.put("lastDonationDaysAgo", days + " days ago");
-                    }
-                    if (days < 90) {
-                        details.put("isEligible", false);
-                        details.put("eligibilityReason", "Last donated " + (days == 0 ? "today" : days + " days ago") + "; eligible in " + (90 - days) + " days");
-                    } else {
-                        details.put("isEligible", true);
-                        details.put("eligibilityReason", "Eligible (" + days + " days since last donation)");
-                    }
-                } catch (Exception e) {
-                    details.put("lastDonation", lastDonationObj.toString());
-                    details.put("lastDonationDaysAgo", "Unknown");
-                    details.put("isEligible", true);
-                    details.put("eligibilityReason", "Eligible");
-                }
-            }
+            // Authoritative Donor Eligibility Service single source of truth
+            Map<String, Object> elig = DonorEligibilityService.computeEligibility(donor);
+            details.put("eligibility", elig);
+            details.put("isEligible", elig.get("eligible"));
+            details.put("eligible", elig.get("eligible"));
+            details.put("eligibilityReason", elig.get("reason"));
+            details.put("lastDonation", elig.get("last_donation_date") != null ? elig.get("last_donation_date") : "Never");
+            details.put("lastDonationDate", elig.get("last_donation_date"));
+            details.put("daysUntilEligible", elig.get("days_until_eligible"));
+            details.put("days_until_eligible", elig.get("days_until_eligible"));
+            details.put("nextEligibleDate", elig.get("next_eligible_date"));
+            details.put("next_eligible_date", elig.get("next_eligible_date"));
+            details.put("progress_pct", elig.get("progress_pct"));
+            details.put("cooldown_days", elig.get("cooldown_days"));
 
             // Health verification status
             String availability = (String) donor.get("availability");

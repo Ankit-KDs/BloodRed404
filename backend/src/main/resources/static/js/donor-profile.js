@@ -332,6 +332,9 @@
             currentDonor.dob = null;
             currentDonor.age = null;
           }
+          if (d.eligibility) {
+            currentDonor.eligibility = d.eligibility;
+          }
           if (d.latitude && d.longitude) {
             currentDonor.latitude = parseFloat(d.latitude);
             currentDonor.longitude = parseFloat(d.longitude);
@@ -519,16 +522,13 @@
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
       // ======================== 4. PRECISE TELEMETRY DATA LOGIC ========================
-  function renderTelemetryData(lastDonationDate) {
-    const now = new Date();
-    
+  function renderTelemetryData() {
     // Check elements
     const primary = document.getElementById('telemetryPrimary');
     const label = document.getElementById('telemetryPrimaryLabel');
     const percent = document.getElementById('telemetryPercent');
     const caption = document.getElementById('telemetryCaption');
     const badge = document.getElementById('telemetryBadge');
-    const badgeTxt = document.getElementById('badgeText');
     const textRecovery = document.getElementById('textRecovery');
     const iconRecovery = document.getElementById('iconRecovery');
     const textVitals = document.getElementById('textVitals');
@@ -537,41 +537,50 @@
     const metaTag = document.getElementById('eligibilityMetaTag');
     const fluidContainer = document.getElementById('dnaFluidContainer') || document.getElementById('bloodFluid');
 
-    // Days elapsed calculation
-    const donationDate = lastDonationDate ? new Date(lastDonationDate) : null;
-    const daysPassed = donationDate && !isNaN(donationDate.getTime()) ? Math.floor((now.getTime() - donationDate.getTime()) / (1000 * 60 * 60 * 24)) : 90;
+    // Authoritative Single Source of Truth from Server computeEligibility
+    const elig = currentDonor.eligibility || {
+      eligible: currentDonor.isEligible !== false,
+      days_until_eligible: currentDonor.daysToNextEligible || currentDonor.daysUntilEligible || 0,
+      last_donation_date: currentDonor.lastDonationDate || currentDonor.lastDonation || null,
+      next_eligible_date: currentDonor.nextEligibleDate || null,
+      progress_pct: (currentDonor.daysToNextEligible ? Math.round(((90 - currentDonor.daysToNextEligible) / 90) * 100) : 100),
+      reason: currentDonor.eligibilityReason || 'Eligible to donate'
+    };
 
-    // CASE 1: Cooldown completed OR Never Donated (100% READY)
-    if (!donationDate || isNaN(donationDate.getTime()) || daysPassed >= 90) {
+    const isEligible = Boolean(elig.eligible);
+    const daysUntil = typeof elig.days_until_eligible === 'number' ? elig.days_until_eligible : 0;
+    const progressPct = typeof elig.progress_pct === 'number' ? elig.progress_pct : (isEligible ? 100 : 0);
+    const nextDateStr = elig.next_eligible_date;
+
+    // CASE 1: Eligible today (100% Ready)
+    if (isEligible) {
       if (primary) {
         primary.innerText = "READY";
-        primary.style.color = "#10b981"; // Vibrant Emerald
+        primary.style.color = "#10b981";
       }
       if (label) {
         label.innerText = "TO DONATE";
         label.style.color = "#34d399";
       }
       if (percent) {
-        percent.innerText = "100% RECOVERED";
+        percent.innerText = "100% READY";
         percent.style.color = "#cbd5e1";
       }
       if (caption) {
-        caption.innerText = "(biological volume fully restored)";
+        caption.innerText = "(eligible to donate whole blood)";
       }
 
-      // Set green badge
       if (badge) {
         badge.className = "status-badge eligible-ready";
         badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span id="badgeText">ELIGIBLE TO DONATE</span>`;
       }
 
-      // Checklist 100% complete
       if (iconRecovery) {
         iconRecovery.className = "fa-solid fa-check";
         iconRecovery.style.color = "#10b981";
       }
       if (textRecovery) {
-        textRecovery.innerText = "Recovery interval: complete";
+        textRecovery.innerText = "Recovery period: complete";
       }
 
       if (iconVitals) {
@@ -579,7 +588,7 @@
         iconVitals.style.color = "#10b981";
       }
       if (textVitals) {
-        textVitals.innerText = "Biological markers fully restocked";
+        textVitals.innerText = "Ready for donation";
       }
 
       if (dateUnlock) {
@@ -589,47 +598,41 @@
 
       if (metaTag) {
         metaTag.className = "card-meta-tag scanner-meta-tag tag-ready";
-        metaTag.innerHTML = `<i class="fas fa-check-circle"></i> 100% Regenerated`;
+        metaTag.innerHTML = `<i class="fas fa-check-circle"></i> Ready to Donate`;
       }
 
-      // Also sync the DNA fluid container height
       if (fluidContainer) {
         fluidContainer.style.height = '100%';
       }
     } else {
-      // CASE 2: Active Cooldown (<90 days elapsed)
-      const remainingDays = 90 - daysPassed;
-      const recoveryPercentage = Math.max(0, Math.min(100, Math.floor((daysPassed / 90) * 100)));
-
+      // CASE 2: Active Recovery Period
       if (primary) {
-        primary.innerText = `${remainingDays} DAYS`;
+        primary.innerText = `${daysUntil} ${daysUntil === 1 ? 'DAY' : 'DAYS'}`;
         primary.style.color = "#f8fafc";
       }
       if (label) {
-        label.innerText = "REMAINING";
+        label.innerText = "UNTIL ELIGIBLE";
         label.style.color = "#64748b";
       }
       if (percent) {
-        percent.innerText = `${recoveryPercentage}% RECOVERED`;
+        percent.innerText = `${progressPct}% RECOVERED`;
         percent.style.color = "#cbd5e1";
       }
       if (caption) {
-        caption.innerText = "(reducing day by day post-donation)";
+        caption.innerText = "(recovery period in progress)";
       }
 
-      // Amber Badge
       if (badge) {
         badge.className = "status-badge cooldown-active";
-        badge.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> <span id="badgeText">COOLDOWN ACTIVE • Recovery in Progress</span>`;
+        badge.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> <span id="badgeText">${elig.reason || 'Recovery in Progress'}</span>`;
       }
 
-      // Cooldown active details
       if (iconRecovery) {
         iconRecovery.className = "fa-solid fa-hourglass";
         iconRecovery.style.color = "#f59e0b";
       }
       if (textRecovery) {
-        textRecovery.innerText = `Recovery interval: ${remainingDays} days left`;
+        textRecovery.innerText = `Recovery period: ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'} left`;
       }
 
       if (iconVitals) {
@@ -637,34 +640,37 @@
         iconVitals.style.color = "#10b981";
       }
       if (textVitals) {
-        textVitals.innerText = "Vitals regeneration in progress";
+        textVitals.innerText = "Normal recovery in progress";
       }
 
-      // Calculate custom future unlock date
-      const nextAvailableDate = new Date(donationDate);
-      nextAvailableDate.setDate(nextAvailableDate.getDate() + 90);
-      
-      // Render locale date (e.g. 15 Oct 2026)
-      const options = { day: 'numeric', month: 'short', year: 'numeric' };
       if (dateUnlock) {
-        dateUnlock.innerText = nextAvailableDate.toLocaleDateString('en-GB', options);
+        if (nextDateStr) {
+          try {
+            const nextD = new Date(nextDateStr);
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            dateUnlock.innerText = !isNaN(nextD.getTime()) ? nextD.toLocaleDateString('en-GB', options) : nextDateStr;
+          } catch (_) {
+            dateUnlock.innerText = nextDateStr;
+          }
+        } else {
+          dateUnlock.innerText = "Soon";
+        }
         dateUnlock.style.color = "#cbd5e1";
       }
 
       if (metaTag) {
         metaTag.className = "card-meta-tag scanner-meta-tag tag-cooldown";
-        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Regeneration in Progress`;
+        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Recovery in Progress`;
       }
 
-      // Also sync the DNA fluid container height
       if (fluidContainer) {
-        fluidContainer.style.height = `${recoveryPercentage}%`;
+        fluidContainer.style.height = `${progressPct}%`;
       }
     }
   }
 
   function renderMedicalEligibilityTracker() {
-    renderTelemetryData(currentDonor.lastDonationDate);
+    renderTelemetryData();
   }
 
   // ======================== 4. DYNAMIC DONOR BADGES EVALUATION ========================

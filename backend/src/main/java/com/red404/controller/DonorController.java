@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.red404.dao.BloodRequestDao;
 import com.red404.dao.DonorDao;
 import com.red404.dao.SessionDao;
+import com.red404.service.DonorEligibilityService;
 import com.red404.model.ApiResponse;
 import com.red404.util.DBConnection;
 import com.red404.util.DistanceCalculator;
@@ -75,6 +76,7 @@ public class DonorController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse(false, "Donor profile not found or account deleted."));
             }
+            DonorEligibilityService.attachEligibility(donorProfile);
             return ok("Profile loaded", donorProfile);
         } catch (Exception e) {
             return serverError(e);
@@ -104,6 +106,7 @@ public class DonorController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse(false, "Donor intake record not found. Please re-scan QR code."));
             }
+            DonorEligibilityService.attachEligibility(profile);
             return ok("Donor scan profile retrieved successfully", profile);
         } catch (Exception e) {
             return serverError(e);
@@ -197,14 +200,27 @@ public class DonorController {
         try {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null) return unauthorized();
+            Map<String, Object> freshDonor = donorDao.findById((Integer) donor.get("id"));
+            if (freshDonor != null) donor = freshDonor;
+            Map<String, Object> elig = DonorEligibilityService.computeEligibility(donor);
             List<Map<String, Object>> history = donorDao.donationHistory((Integer) donor.get("id"));
             Map<String, Object> stats = new HashMap<>();
             stats.put("totalDonations", history.size());
             stats.put("livesImpacted", history.size() * 3);
             stats.put("badgesEarned", history.isEmpty() ? 1 : Math.min(history.size(), 4));
             stats.put("donationsThisYear", history.size());
-            stats.put("daysToNextEligible", 0);
-            stats.put("nextEligibleDate", null);
+            stats.put("daysToNextEligible", elig.get("days_until_eligible"));
+            stats.put("days_until_eligible", elig.get("days_until_eligible"));
+            stats.put("nextEligibleDate", elig.get("next_eligible_date"));
+            stats.put("next_eligible_date", elig.get("next_eligible_date"));
+            stats.put("lastDonationDate", elig.get("last_donation_date"));
+            stats.put("last_donation_date", elig.get("last_donation_date"));
+            stats.put("isEligible", elig.get("eligible"));
+            stats.put("eligible", elig.get("eligible"));
+            stats.put("progress_pct", elig.get("progress_pct"));
+            stats.put("eligibilityReason", elig.get("reason"));
+            stats.put("reason", elig.get("reason"));
+            stats.put("eligibility", elig);
             stats.put("donorLevel", history.size() >= 5 ? "Active Donor" : "New Donor");
             stats.put("donorLevelNumber", 1);
             stats.put("donationsToNextLevel", Math.max(0, 5 - history.size()));
@@ -850,11 +866,8 @@ public class DonorController {
                 fields.put("verified_facility", (facility != null && !facility.isBlank()) ? facility.trim() : null);
             }
 
-            if (body.has("lastDonationDate") || body.has("lastDonation") || body.has("last_donation")) {
-                String lastDon = JsonUtil.textOrNull(body, "lastDonationDate") != null ? JsonUtil.text(body, "lastDonationDate") : JsonUtil.textOrNull(body, "lastDonation");
-                if (lastDon == null) lastDon = JsonUtil.textOrNull(body, "last_donation");
-                fields.put("last_donation", (lastDon != null && !lastDon.isBlank()) ? lastDon.trim() : null);
-            }
+            // Clinical last_donation is written ONLY upon hospital check-in / verified donation completion.
+            // Direct profile edits cannot arbitrarily modify last_donation.
 
             donorDao.updateProfile(targetId, fields);
             Map<String, Object> updated = donorDao.findById(targetId);

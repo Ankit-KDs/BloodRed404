@@ -682,43 +682,26 @@
     const strip = document.getElementById('mini-eligibility-strip');
     if (!strip) return;
 
-    if (!donorData.donations || donorData.donations.length === 0) {
-      // 0 donations -> 100% Eligible immediately
+    const elig = donorData.eligibility || {
+      eligible: (!donorData.donations || donorData.donations.length === 0),
+      days_until_eligible: 0,
+      reason: 'Eligible to donate'
+    };
+
+    const isEligible = Boolean(elig.eligible);
+    const daysLeft = typeof elig.days_until_eligible === 'number' ? elig.days_until_eligible : 0;
+
+    if (isEligible) {
       strip.className = 'mini-eligibility-strip eligible';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE</span>
-      `;
-      return;
-    }
-
-    // Check latest donation date
-    const latestDonation = donorData.donations[0];
-    const donationDate = new Date(latestDonation.date);
-    if (isNaN(donationDate.getTime())) {
-      strip.className = 'mini-eligibility-strip eligible';
-      strip.innerHTML = `
-        <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE</span>
-      `;
-      return;
-    }
-
-    const today = new Date();
-    const diffDays = Math.floor((today - donationDate) / (1000 * 60 * 60 * 24));
-    const daysLeft = Math.max(0, 90 - diffDays);
-
-    if (daysLeft === 0) {
-      strip.className = 'mini-eligibility-strip eligible';
-      strip.innerHTML = `
-        <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE</span>
+        <span>Status: ELIGIBLE TO DONATE • Recovery Complete</span>
       `;
     } else {
       strip.className = 'mini-eligibility-strip cooldown';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: COOLDOWN ACTIVE • ${daysLeft} Days Remaining</span>
+        <span>Status: ${elig.reason || `ELIGIBLE IN ${daysLeft} DAYS`}</span>
       `;
     }
   }

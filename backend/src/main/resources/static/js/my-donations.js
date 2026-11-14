@@ -60,6 +60,20 @@
     const textEl = document.getElementById('headerEligibilityText');
     if (!badge || !textEl) return;
 
+    // 1. Authoritative Server-side Eligibility (Single Source of Truth)
+    if (user && user.eligibility) {
+      const elig = user.eligibility;
+      if (elig.eligible) {
+        badge.className = 'status-eligibility-btn eligible-ready';
+        textEl.textContent = 'Status: ELIGIBLE TO DONATE';
+      } else {
+        const daysLeft = elig.days_until_eligible || 0;
+        badge.className = 'status-eligibility-btn recovering';
+        textEl.textContent = `Status: RECOVERY PERIOD • ${daysLeft} ${daysLeft === 1 ? 'Day' : 'Days'} Left`;
+      }
+      return;
+    }
+
     // Check user availability
     const availability = (user && user.availability) || 'Available';
     if (availability.toLowerCase() === 'unavailable') {

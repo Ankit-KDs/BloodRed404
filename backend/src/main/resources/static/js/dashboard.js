@@ -139,27 +139,26 @@
     const strip = document.getElementById('bentoEligibilityStrip');
     if (!strip) return;
 
-    const now = new Date();
-    const lastDate = currentDonor.lastDonationDate ? new Date(currentDonor.lastDonationDate) : null;
-    let daysPassed = 90;
-    if (lastDate && !isNaN(lastDate.getTime())) {
-      daysPassed = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
-    }
+    const elig = currentDonor.eligibility || {
+      eligible: currentDonor.isEligible !== false,
+      days_until_eligible: currentDonor.daysToNextEligible || currentDonor.daysUntilEligible || 0,
+      reason: currentDonor.eligibilityReason || 'Eligible to donate'
+    };
 
-    const isEligible = daysPassed >= 90;
+    const isEligible = Boolean(elig.eligible);
+    const remaining = typeof elig.days_until_eligible === 'number' ? elig.days_until_eligible : 0;
 
     if (isEligible) {
       strip.className = 'mini-eligibility-strip eligible';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE • Cooldown Complete</span>
+        <span>Status: ELIGIBLE TO DONATE • Recovery Complete</span>
       `;
     } else {
-      const remaining = 90 - daysPassed;
       strip.className = 'mini-eligibility-strip cooldown';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: COOLDOWN ACTIVE • ${remaining} Days Remaining</span>
+        <span>Status: ${elig.reason || `ELIGIBLE IN ${remaining} DAYS`}</span>
       `;
     }
   }

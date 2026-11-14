@@ -2,6 +2,7 @@ package com.red404.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.red404.model.ApiResponse;
+import com.red404.service.DonorEligibilityService;
 import com.red404.util.DBConnection;
 import com.red404.util.GeoLocationUtil;
 import com.red404.util.JsonUtil;
@@ -219,7 +220,7 @@ public class AdminController {
                     item.put("lastDonation", rs.getString("last_donation"));
                     item.put("totalDonations", rs.getInt("total_donations"));
                     item.put("createdAt", rs.getString("created_at"));
-
+                    DonorEligibilityService.attachEligibility(item);
                     return ResponseEntity.ok(new ApiResponse(true, "Fresh donor details loaded", item));
                 } else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
