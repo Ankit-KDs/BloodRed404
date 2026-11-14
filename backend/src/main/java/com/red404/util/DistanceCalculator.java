@@ -61,27 +61,9 @@ public class DistanceCalculator {
     }
 
     // ============================================
-    // BLOOD COMPATIBILITY LOGIC (RED404 Core)
+    // BLOOD COMPATIBILITY LOGIC (Delegates to Core BloodCompatibilityUtil)
     // ============================================
     public static boolean isCompatibleBloodType(String donorType, String recipientType) {
-        if (donorType == null || recipientType == null) return false;
-        
-        // Universal Donor Logic
-        if (donorType.equals("O-")) return true;
-        // Universal Recipient Logic
-        if (recipientType.equals("AB+")) return true;
-        // Identical Match
-        if (donorType.equals(recipientType)) return true;
-
-        // Specific Compatibility Map
-        Map<String, List<String>> compatibility = new HashMap<>();
-        compatibility.put("O+",  Arrays.asList("O+", "A+", "B+", "AB+"));
-        compatibility.put("A+",  Arrays.asList("A+", "AB+"));
-        compatibility.put("A-",  Arrays.asList("A+", "A-", "AB+", "AB-"));
-        compatibility.put("B+",  Arrays.asList("B+", "AB+"));
-        compatibility.put("B-",  Arrays.asList("B+", "B-", "AB+", "AB-"));
-        compatibility.put("AB-", Arrays.asList("AB+", "AB-"));
-
-        return compatibility.containsKey(donorType) && compatibility.get(donorType).contains(recipientType);
+        return BloodCompatibilityUtil.isCompatible(donorType, recipientType);
     }
 }

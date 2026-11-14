@@ -24,6 +24,7 @@ public class HospitalController {
     private final HospitalDao hospitalDao = new HospitalDao();
     private final DonorDao donorDao = new DonorDao();
     private final BloodRequestDao requestDao = new BloodRequestDao();
+    private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
 
     // ======================== GET ========================
 
@@ -300,6 +301,127 @@ public class HospitalController {
             SystemController.broadcastStockUpdate(nationalStock);
 
             return ok("Inventory updated successfully", nationalStock);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    // ======================== DONATION DRIVES ========================
+
+    @GetMapping("/drives")
+    public ResponseEntity<ApiResponse> getDrives(HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) hospitalId = 1;
+            List<Map<String, Object>> drives = donationDriveDao.listDrivesForHospital(hospitalId);
+            return ok("Donation drives loaded", drives);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/drives")
+    public ResponseEntity<ApiResponse> createDrive(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null && body != null && body.has("hospitalId")) {
+                hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
+            }
+            if (hospitalId == null) hospitalId = 1;
+
+            String title = JsonUtil.textOrNull(body, "title");
+            if (title == null || title.isBlank()) title = "Blood donation drive";
+
+            String bloodGroups = JsonUtil.textOrNull(body, "bloodGroups");
+            if (bloodGroups == null || bloodGroups.isBlank()) bloodGroups = "All";
+
+            String driveDate = JsonUtil.textOrNull(body, "driveDate");
+            if (driveDate == null || driveDate.isBlank()) {
+                driveDate = java.time.LocalDate.now().plusDays(1).toString();
+            }
+
+            String startTime = JsonUtil.textOrNull(body, "startTime");
+            if (startTime == null || startTime.isBlank()) startTime = "09:00";
+
+            String endTime = JsonUtil.textOrNull(body, "endTime");
+            if (endTime == null || endTime.isBlank()) endTime = "17:00";
+
+            String venue = JsonUtil.textOrNull(body, "venue");
+            if (venue == null || venue.isBlank()) {
+                Map<String, Object> hospProfile = hospitalDao.findById(hospitalId);
+                venue = hospProfile != null ? (String) hospProfile.get("address") : "Hospital Blood Bank";
+                if (venue == null || venue.isBlank()) venue = "Hospital Blood Bank";
+            }
+
+            Integer targetUnits = (body != null && body.has("targetUnits")) ? JsonUtil.asInt(body, "targetUnits", 0) : null;
+            if (targetUnits != null && targetUnits <= 0) targetUnits = null;
+
+            int radius = (body != null && body.has("radius")) ? JsonUtil.asInt(body, "radius", 10) : 10;
+            String notes = JsonUtil.textOrNull(body, "notes");
+
+            int driveId = donationDriveDao.createDrive(hospitalId, title, bloodGroups, driveDate, startTime, endTime, venue, targetUnits, radius, notes);
+
+            // Send non-urgent invitation notifications to eligible, compatible donors in radius
+            try {
+                Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+                Double hLat = hosp != null ? asDouble(hosp.get("latitude")) : null;
+                Double hLng = hosp != null ? asDouble(hosp.get("longitude")) : null;
+
+                List<Map<String, Object>> nearbyDonors = donorDao.findNearby(hLat, hLng, radius, null);
+                List<String> invitedDonorIds = new ArrayList<>();
+                for (Map<String, Object> donor : nearbyDonors) {
+                    String dType = (String) donor.get("bloodType");
+                    String dId = String.valueOf(donor.get("id"));
+
+                    boolean comp = false;
+                    if (bloodGroups.equalsIgnoreCase("All")) {
+                        comp = true;
+                    } else {
+                        String[] needed = bloodGroups.split("[,;/ ]+");
+                        for (String n : needed) {
+                            if (!n.isBlank() && com.red404.util.BloodCompatibilityUtil.isCompatible(dType, n.trim())) {
+                                comp = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (comp) {
+                        invitedDonorIds.add(dId);
+                    }
+                }
+                donationDriveDao.recordInvitations(driveId, invitedDonorIds);
+            } catch (Exception ignored) {}
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("driveId", driveId);
+            resp.put("title", title);
+            resp.put("status", "upcoming");
+            return ok("Donation drive scheduled successfully", resp);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/drives/{id}/cancel")
+    public ResponseEntity<ApiResponse> cancelDrive(@PathVariable int id, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) hospitalId = 1;
+            boolean success = donationDriveDao.updateStatus(id, hospitalId, "cancelled");
+            return ok("Drive cancelled", success);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/drives/{id}/complete")
+    public ResponseEntity<ApiResponse> completeDrive(@PathVariable int id, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) hospitalId = 1;
+            // Rule 6: When a drive is marked completed, do NOT auto-change stock. Stock changes only through the Inventory page.
+            boolean success = donationDriveDao.updateStatus(id, hospitalId, "completed");
+            return ok("Drive marked as completed", success);
         } catch (Exception e) {
             return serverError(e);
         }

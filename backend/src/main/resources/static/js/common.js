@@ -5,6 +5,40 @@
 
 'use strict';
 
+/**
+ * RED404 Core Shared Blood Compatibility Engine.
+ * Recipient group -> donor groups that can donate to it:
+ * O- : O-
+ * O+ : O+, O-
+ * A- : A-, O-
+ * A+ : A+, A-, O+, O-
+ * B- : B-, O-
+ * B+ : B+, B-, O+, O-
+ * AB- : AB-, A-, B-, O-
+ * AB+ : AB+, AB-, A+, A-, B+, B-, O+, O-
+ */
+window.BloodCompatibility = {
+  map: {
+    'O-': ['O-'],
+    'O+': ['O+', 'O-'],
+    'A-': ['A-', 'O-'],
+    'A+': ['A+', 'A-', 'O+', 'O-'],
+    'B-': ['B-', 'O-'],
+    'B+': ['B+', 'B-', 'O+', 'O-'],
+    'AB-': ['AB-', 'A-', 'B-', 'O-'],
+    'AB+': ['AB+', 'AB-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-']
+  },
+  getCompatibleDonors(recipientGroup) {
+    if (!recipientGroup) return [];
+    return this.map[recipientGroup.trim().toUpperCase()] || [];
+  },
+  isCompatible(donorGroup, recipientGroup) {
+    if (!donorGroup || !recipientGroup) return false;
+    const compatible = this.getCompatibleDonors(recipientGroup);
+    return compatible.includes(donorGroup.trim().toUpperCase());
+  }
+};
+
 /* ==================== NAVBAR ==================== */
 const navbar = document.getElementById('navbar');
 const hamburger = document.getElementById('hamburger');
@@ -137,6 +171,40 @@ function initFloatingDrops(containerId = 'floatingDrops', count = 15) {
 //TO THE HERE
 
 'use strict';
+
+/**
+ * RED404 Core Shared Blood Compatibility Engine.
+ * Recipient group -> donor groups that can donate to it:
+ * O- : O-
+ * O+ : O+, O-
+ * A- : A-, O-
+ * A+ : A+, A-, O+, O-
+ * B- : B-, O-
+ * B+ : B+, B-, O+, O-
+ * AB- : AB-, A-, B-, O-
+ * AB+ : AB+, AB-, A+, A-, B+, B-, O+, O-
+ */
+window.BloodCompatibility = {
+  map: {
+    'O-': ['O-'],
+    'O+': ['O+', 'O-'],
+    'A-': ['A-', 'O-'],
+    'A+': ['A+', 'A-', 'O+', 'O-'],
+    'B-': ['B-', 'O-'],
+    'B+': ['B+', 'B-', 'O+', 'O-'],
+    'AB-': ['AB-', 'A-', 'B-', 'O-'],
+    'AB+': ['AB+', 'AB-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-']
+  },
+  getCompatibleDonors(recipientGroup) {
+    if (!recipientGroup) return [];
+    return this.map[recipientGroup.trim().toUpperCase()] || [];
+  },
+  isCompatible(donorGroup, recipientGroup) {
+    if (!donorGroup || !recipientGroup) return false;
+    const compatible = this.getCompatibleDonors(recipientGroup);
+    return compatible.includes(donorGroup.trim().toUpperCase());
+  }
+};
 
 /* ==================== DOM READY ==================== */
 document.addEventListener('DOMContentLoaded', () => {

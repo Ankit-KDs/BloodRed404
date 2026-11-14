@@ -41,6 +41,7 @@ public class DonorController {
     private final DonorDao donorDao = new DonorDao();
     private final BloodRequestDao requestDao = new BloodRequestDao();
     private final SessionDao sessionDao = new SessionDao();
+    private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
 
     // ======================== GET ========================
 
@@ -308,6 +309,45 @@ public class DonorController {
             result.sort((a, b) -> Double.compare((Double) a.getOrDefault("distanceKm", 0.0), (Double) b.getOrDefault("distanceKm", 0.0)));
 
             return ok("Active alerts loaded", result);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    // ======================== DONATION DRIVES & INVITATIONS ========================
+
+    @GetMapping("/drives/invitations")
+    public ResponseEntity<ApiResponse> getDriveInvitations(HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null) return unauthorized();
+            String donorId = String.valueOf(donor.get("id"));
+            String bloodType = (String) donor.get("bloodType");
+            Double lat = asDouble(donor.get("latitude"));
+            Double lng = asDouble(donor.get("longitude"));
+
+            List<Map<String, Object>> invitations = donationDriveDao.listUpcomingInvitationsForDonor(donorId, bloodType, lat, lng);
+            return ok("Drive invitations loaded", invitations);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/drives/{id}/rsvp")
+    public ResponseEntity<ApiResponse> rsvpDrive(@PathVariable int id, @RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null) return unauthorized();
+            String donorId = String.valueOf(donor.get("id"));
+            String status = JsonUtil.textOrNull(body, "status");
+            if (status == null || status.isBlank()) status = "ATTENDING";
+            status = status.toUpperCase().trim();
+            if (!status.equals("ATTENDING") && !status.equals("DECLINED")) {
+                status = "ATTENDING";
+            }
+
+            boolean ok = donationDriveDao.saveRsvp(id, donorId, status);
+            return ok("RSVP recorded: " + status, Map.of("driveId", id, "status", status));
         } catch (Exception e) {
             return serverError(e);
         }

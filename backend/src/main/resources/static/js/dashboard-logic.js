@@ -441,14 +441,63 @@
 
   /**
    * 3. System Notifications & Logs
-   * ONLY notification by default:
-   * 'System: Donor Profile officially verified and created on [Current Date]'
+   * Displays verified initialization, active emergency alerts, and non-urgent donation drive invitations
    */
-  function renderSystemLogs() {
+  async function renderSystemLogs() {
     const logsContainer = document.getElementById('system-logs-container');
     if (!logsContainer) return;
 
-    let logsHtml = `
+    let driveHtml = '';
+    try {
+      const driveRes = await fetch('/api/donor/drives/invitations', { credentials: 'include' });
+      if (driveRes.ok) {
+        const dJson = await driveRes.json();
+        const driveInvitations = dJson.data || [];
+        if (driveInvitations.length > 0) {
+          driveHtml = driveInvitations.map(drive => {
+            const rsvp = (drive.rsvpStatus || '').toUpperCase();
+            let rsvpContent = '';
+            if (rsvp === 'ATTENDING') {
+              rsvpContent = `<span class="drive-rsvp-done attending" style="color: #38bdf8; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-check"></i> You're attending</span>`;
+            } else if (rsvp === 'DECLINED') {
+              rsvpContent = `<span class="drive-rsvp-done declined" style="color: #94a3b8; font-size: 0.8rem;">Response: Not now</span>`;
+            } else {
+              rsvpContent = `
+                <div class="drive-rsvp-actions" style="display: inline-flex; gap: 8px; margin-top: 6px;">
+                  <button type="button" class="btn-drive-rsvp attend" onclick="window.submitDriveRsvp(${drive.id}, 'ATTENDING')">I'll attend</button>
+                  <button type="button" class="btn-drive-rsvp notnow" onclick="window.submitDriveRsvp(${drive.id}, 'DECLINED')">Not now</button>
+                </div>
+              `;
+            }
+
+            return `
+              <div class="terminal-log-item camp drive-invitation-item">
+                <div class="log-icon-wrap">
+                  <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <div class="log-content">
+                  <div class="log-meta-row">
+                    <span class="log-time">[COMMUNITY DRIVE]</span>
+                    <span class="log-type-tag">DONATION DRIVE INVITATION</span>
+                  </div>
+                  <div class="log-message">
+                    <strong>${drive.hospitalName || 'Local Hospital'}</strong> invites you to <strong>${drive.title}</strong> on <strong>${drive.driveDate}</strong> (${drive.startTime} - ${drive.endTime}) at <strong>${drive.venue}</strong>.
+                    ${drive.bloodGroups ? `<br><span style="font-size:0.78rem;color:#94a3b8;">Target groups: ${drive.bloodGroups}</span>` : ''}
+                  </div>
+                  <div>
+                    ${rsvpContent}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    } catch (e) {
+      console.debug('Drive invitations fetch notice:', e);
+    }
+
+    let logsHtml = driveHtml + `
       <div class="terminal-log-item verify">
         <div class="log-icon-wrap">
           <i class="fa-solid fa-circle-check"></i>
@@ -489,6 +538,25 @@
 
     logsContainer.innerHTML = logsHtml;
   }
+
+  window.submitDriveRsvp = async function(driveId, status) {
+    try {
+      const res = await fetch(`/api/donor/drives/${driveId}/rsvp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status }),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        if (typeof showToast === 'function') {
+          showToast(status === 'ATTENDING' ? "RSVP confirmed: You're attending!" : "Response saved.", 'info');
+        }
+        renderSystemLogs();
+      }
+    } catch (e) {
+      console.error('RSVP error:', e);
+    }
+  };
 
   /**
    * 4. Donation History (Mini List & Full Table)

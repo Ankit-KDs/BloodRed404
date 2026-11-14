@@ -479,6 +479,39 @@ body.bento-dashboard-body::after {
   line-height: 1.35;
 }
 
+.btn-drive-rsvp {
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-drive-rsvp.attend {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.btn-drive-rsvp.attend:hover {
+  background: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.btn-drive-rsvp.notnow {
+  color: #94a3b8;
+}
+
+.btn-drive-rsvp.notnow:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
 /* ==================== MINI DONATION HISTORY & ELIGIBILITY STRIP ==================== */
 .mini-donations-card {
   display: flex;

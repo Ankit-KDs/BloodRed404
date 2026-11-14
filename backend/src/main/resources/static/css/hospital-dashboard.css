@@ -1217,7 +1217,8 @@ a:hover {
   margin-top: auto;
 }
 
-.btn-request-shortcut {
+.btn-request-shortcut,
+.btn-plan-drive-shortcut {
   background: none;
   border: 1px solid var(--hosp-border);
   color: var(--hosp-blue);
@@ -1233,7 +1234,8 @@ a:hover {
   min-height: 38px;
 }
 
-.btn-request-shortcut:hover {
+.btn-request-shortcut:hover,
+.btn-plan-drive-shortcut:hover {
   background: var(--hosp-blue-subtle);
   border-color: var(--hosp-blue);
 }
@@ -1925,4 +1927,320 @@ a:hover {
     height: 42px;
   }
 }
+
+/* ============================================================
+   12. DONATION DRIVES SECTION & MODAL STYLES
+   ============================================================ */
+.donation-drives-card {
+  margin-bottom: var(--sp-24);
+}
+
+.drives-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+}
+
+.drive-item-card {
+  background: var(--hosp-surface-raised, #172138);
+  border: 1px solid var(--hosp-border, #223153);
+  border-radius: var(--hosp-radius-card, 16px);
+  padding: var(--sp-16) var(--sp-20);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-16);
+  transition: border-color 0.15s ease;
+}
+
+.drive-item-card:hover {
+  border-color: rgba(110, 168, 255, 0.35);
+}
+
+.drive-item-card.completed {
+  opacity: 0.72;
+}
+
+.drive-item-card.cancelled {
+  opacity: 0.5;
+}
+
+.drive-info-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.drive-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin-bottom: 4px;
+}
+
+.drive-title-text {
+  font-family: var(--font-heading, inherit);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hosp-text, #ecebe8);
+}
+
+.drive-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--hosp-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.drive-status-badge.upcoming {
+  background: rgba(110, 168, 255, 0.15);
+  color: var(--hosp-blue, #6ea8ff);
+  border: 1px solid var(--hosp-blue-border, rgba(110, 168, 255, 0.35));
+}
+
+.drive-status-badge.completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--hosp-green, #22c55e);
+  border: 1px solid var(--hosp-green-border, rgba(34, 197, 94, 0.35));
+}
+
+.drive-status-badge.cancelled {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--hosp-text-dim, #71706c);
+  border: 1px solid var(--hosp-border, #223153);
+}
+
+.drive-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-12);
+  font-size: 13px;
+  color: var(--hosp-text-muted, #94a3b8);
+}
+
+.drive-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.drive-groups-chips {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.drive-group-chip {
+  background: var(--hosp-surface, #111a2e);
+  border: 1px solid var(--hosp-border, #223153);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hosp-text, #ecebe8);
+}
+
+.drive-rsvp-pill {
+  background: rgba(110, 168, 255, 0.1);
+  border: 1px solid var(--hosp-blue-border, rgba(110, 168, 255, 0.35));
+  color: var(--hosp-blue, #6ea8ff);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--hosp-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.drive-actions-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.drive-action-btn {
+  background: none;
+  border: 1px solid var(--hosp-border, #223153);
+  color: var(--hosp-text-muted, #94a3b8);
+  border-radius: var(--hosp-radius-btn, 8px);
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 34px;
+}
+
+.drive-action-btn:hover {
+  background: var(--hosp-surface, #111a2e);
+  color: var(--hosp-text, #ecebe8);
+}
+
+.drive-action-btn.complete:hover {
+  border-color: var(--hosp-green, #22c55e);
+  color: var(--hosp-green, #22c55e);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.drive-action-btn.cancel:hover {
+  border-color: var(--hosp-red, #e5383b);
+  color: var(--hosp-red, #e5383b);
+  background: rgba(229, 56, 59, 0.1);
+}
+
+/* Modal Overlay & Box */
+.hosp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 28, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-16);
+}
+
+.hosp-modal-box {
+  background: var(--hosp-surface, #111a2e);
+  border: 1px solid var(--hosp-border, #223153);
+  border-radius: var(--hosp-radius-card, 16px);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+  padding: var(--sp-24);
+  box-sizing: border-box;
+}
+
+.hosp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-20);
+  padding-bottom: var(--sp-12);
+  border-bottom: 1px solid var(--hosp-border, #223153);
+}
+
+.hosp-modal-title {
+  font-family: var(--font-heading, inherit);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--hosp-text, #ecebe8);
+}
+
+.hosp-modal-close {
+  background: none;
+  border: none;
+  color: var(--hosp-text-muted, #94a3b8);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.hosp-modal-close:hover {
+  color: var(--hosp-text, #ecebe8);
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-16);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--hosp-surface-raised, #172138);
+  border: 1px solid var(--hosp-border, #223153);
+  border-radius: var(--hosp-radius-input, 8px);
+  color: var(--hosp-text, #ecebe8);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--hosp-blue, #6ea8ff);
+}
+
+.form-textarea {
+  resize: vertical;
+}
+
+.drive-blood-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-8);
+  margin-top: 6px;
+}
+
+.drive-blood-check-item {
+  position: relative;
+}
+
+.drive-blood-check-item input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drive-blood-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: var(--hosp-surface-raised, #172138);
+  border: 1px solid var(--hosp-border, #223153);
+  border-radius: var(--hosp-radius-btn, 8px);
+  color: var(--hosp-text-muted, #94a3b8);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.drive-blood-check-item input[type="checkbox"]:checked + .drive-blood-label {
+  background: rgba(110, 168, 255, 0.16);
+  border-color: var(--hosp-blue, #6ea8ff);
+  color: var(--hosp-blue, #6ea8ff);
+}
+
+.hosp-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-12);
+  margin-top: var(--sp-24);
+  padding-top: var(--sp-16);
+  border-top: 1px solid var(--hosp-border, #223153);
+}
+
+@media (max-width: 640px) {
+  .drive-item-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .drive-actions-group {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .drive-blood-checkboxes {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 

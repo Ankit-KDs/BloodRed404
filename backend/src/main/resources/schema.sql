@@ -155,3 +155,37 @@ CREATE TABLE IF NOT EXISTS issue_reports (
     status VARCHAR(30) NOT NULL DEFAULT 'OPEN',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS donation_drives (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hospital_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL DEFAULT 'Blood donation drive',
+    blood_groups VARCHAR(150) NOT NULL,
+    drive_date DATE NOT NULL,
+    start_time VARCHAR(20) NOT NULL,
+    end_time VARCHAR(20) NOT NULL,
+    venue VARCHAR(255) NOT NULL,
+    target_units INT DEFAULT NULL,
+    radius INT NOT NULL DEFAULT 10,
+    notes TEXT DEFAULT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'upcoming',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS donation_drive_rsvps (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    drive_id INT NOT NULL,
+    donor_id VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ATTENDING',
+    responded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_drive_donor (drive_id, donor_id)
+);
+
+CREATE TABLE IF NOT EXISTS donation_drive_invitations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    drive_id INT NOT NULL,
+    donor_id VARCHAR(50) NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_inv_drive_donor (drive_id, donor_id)
+);
+

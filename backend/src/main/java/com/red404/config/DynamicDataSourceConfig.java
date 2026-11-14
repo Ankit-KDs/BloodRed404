@@ -152,6 +152,9 @@ public class DynamicDataSourceConfig {
             log.warn("Notice during schema.sql initialization: {}", e.getMessage());
         }
         ensureDonorColumns(ds);
+        try {
+            new com.red404.dao.DonationDriveDao().ensureTablesExist();
+        } catch (Exception ignored) {}
     }
 
     private void ensureDonorColumns(DataSource ds) {

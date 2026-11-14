@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHospitalProfile();
   initHospitalLogout();
   initDashboard();
+  initDonationDrives();
   initDispatchRadar();
   initInventory();
   initDonorCheckin();
@@ -284,6 +285,41 @@ function initHospitalLogout() {
    ============================================================ */
 const ALL_BLOOD_GROUPS = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
 
+/**
+ * RED404 Core Shared Blood Compatibility Engine.
+ * Recipient group -> donor groups that can donate to it:
+ * O- : O-
+ * O+ : O+, O-
+ * A- : A-, O-
+ * A+ : A+, A-, O+, O-
+ * B- : B-, O-
+ * B+ : B+, B-, O+, O-
+ * AB- : AB-, A-, B-, O-
+ * AB+ : AB+, AB-, A+, A-, B+, B-, O+, O-
+ */
+const BloodCompatibility = {
+  map: {
+    'O-': ['O-'],
+    'O+': ['O+', 'O-'],
+    'A-': ['A-', 'O-'],
+    'A+': ['A+', 'A-', 'O+', 'O-'],
+    'B-': ['B-', 'O-'],
+    'B+': ['B+', 'B-', 'O+', 'O-'],
+    'AB-': ['AB-', 'A-', 'B-', 'O-'],
+    'AB+': ['AB+', 'AB-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-']
+  },
+  getCompatibleDonors(recipientGroup) {
+    if (!recipientGroup) return [];
+    return this.map[recipientGroup.trim().toUpperCase()] || [];
+  },
+  isCompatible(donorGroup, recipientGroup) {
+    if (!donorGroup || !recipientGroup) return false;
+    const compatible = this.getCompatibleDonors(recipientGroup);
+    return compatible.includes(donorGroup.trim().toUpperCase());
+  }
+};
+window.BloodCompatibility = BloodCompatibility;
+
 // Central threshold config object (configuration, not data)
 const STOCK_THRESHOLDS = {
   'O-':  { critical: 4, low: 8 },
@@ -470,6 +506,9 @@ async function loadDashboardData() {
 
   // Process and Render Activity Feed
   renderActivityFeed(historyRequests);
+
+  // Load and Render Upcoming Donation Drives
+  loadDonationDrives();
 }
 
 function renderDashboardStock(inventoryMap, activeCount) {
@@ -597,8 +636,8 @@ function renderDashboardStock(inventoryMap, activeCount) {
                 <div class="stock-bar-fill ${item.state}" style="width: ${percent}%;"></div>
               </div>
               <div class="stock-item-actions">
-                <button type="button" class="btn-request-shortcut" data-type="${item.type}">
-                  <span>Request</span>
+                <button type="button" class="btn-plan-drive-shortcut" data-type="${item.type}">
+                  <span>Plan donation drive</span>
                 </button>
               </div>
             </div>
@@ -639,11 +678,11 @@ function renderDashboardStock(inventoryMap, activeCount) {
       if (stockNotSetSection) stockNotSetSection.style.display = 'none';
     }
 
-    // Wire Request shortcut buttons
-    document.querySelectorAll('.btn-request-shortcut').forEach(btn => {
+    // Wire Plan donation drive shortcut buttons (replacing old SOS prefill)
+    document.querySelectorAll('.btn-plan-drive-shortcut').forEach(btn => {
       btn.addEventListener('click', () => {
         const type = btn.getAttribute('data-type');
-        selectSosBloodType(type);
+        openPlanDriveModal(type);
       });
     });
   }
@@ -1300,3 +1339,268 @@ function initDonorCheckin() {
     });
   }
 }
+
+/* ============================================================
+   11. DONATION DRIVES ENGINE (COMMUNITY DRIVES & RSVPS)
+   ============================================================ */
+function initDonationDrives() {
+  const modal = document.getElementById('modalPlanDrive');
+  const btnOpen = document.getElementById('btnOpenPlanDriveModal');
+  const btnClose = document.getElementById('btnClosePlanDriveModal');
+  const btnCancel = document.getElementById('btnCancelPlanDrive');
+  const form = document.getElementById('formPlanDonationDrive');
+  const bgGrid = document.getElementById('driveBloodGroupsGrid');
+
+  // Render 8 blood group check items into modal
+  if (bgGrid) {
+    bgGrid.innerHTML = ALL_BLOOD_GROUPS.map(bg => `
+      <div class="drive-blood-check-item">
+        <input type="checkbox" id="dbg_${bg.replace('+', 'pos').replace('-', 'neg')}" value="${bg}" class="drive-bg-cb" />
+        <label for="dbg_${bg.replace('+', 'pos').replace('-', 'neg')}" class="drive-blood-label">${bg}</label>
+      </div>
+    `).join('');
+  }
+
+  if (btnOpen) {
+    btnOpen.addEventListener('click', () => openPlanDriveModal());
+  }
+  if (btnClose) {
+    btnClose.addEventListener('click', closePlanDriveModal);
+  }
+  if (btnCancel) {
+    btnCancel.addEventListener('click', closePlanDriveModal);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closePlanDriveModal();
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const titleInput = document.getElementById('driveTitle');
+      const dateInput = document.getElementById('driveDate');
+      const startInput = document.getElementById('driveStartTime');
+      const endInput = document.getElementById('driveEndTime');
+      const venueInput = document.getElementById('driveVenue');
+      const targetInput = document.getElementById('driveTargetUnits');
+      const radiusSelect = document.getElementById('driveRadius');
+      const notesInput = document.getElementById('driveNotes');
+      const submitBtn = document.getElementById('btnSubmitPlanDrive');
+
+      const checkedGroups = Array.from(document.querySelectorAll('.drive-bg-cb:checked')).map(cb => cb.value);
+      const bloodGroups = checkedGroups.length > 0 ? checkedGroups.join(',') : 'All';
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Scheduling...';
+      }
+
+      try {
+        const payload = {
+          title: titleInput ? titleInput.value.trim() : 'Blood donation drive',
+          bloodGroups: bloodGroups,
+          driveDate: dateInput ? dateInput.value : '',
+          startTime: startInput ? startInput.value : '09:00',
+          endTime: endInput ? endInput.value : '17:00',
+          venue: venueInput ? venueInput.value.trim() : '',
+          targetUnits: targetInput && targetInput.value ? parseInt(targetInput.value, 10) : null,
+          radius: radiusSelect ? parseInt(radiusSelect.value, 10) : 10,
+          notes: notesInput ? notesInput.value.trim() : ''
+        };
+
+        const res = await fetch('/api/hospital/drives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          closePlanDriveModal();
+          if (typeof showToast === 'function') {
+            showToast('Donation drive scheduled! Non-urgent invitations sent to nearby eligible donors.', 'success');
+          } else {
+            alert('Donation drive scheduled successfully!');
+          }
+          loadDonationDrives();
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.message || 'Failed to schedule donation drive.');
+        }
+      } catch (err) {
+        console.error('Create drive error:', err);
+        alert('Network error while scheduling drive.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Donation Drive';
+        }
+      }
+    });
+  }
+}
+
+function openPlanDriveModal(prefillType) {
+  const modal = document.getElementById('modalPlanDrive');
+  if (!modal) return;
+
+  const dateInput = document.getElementById('driveDate');
+  if (dateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    // Default to tomorrow
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    dateInput.value = tomorrow;
+  }
+
+  // Pre-fill venue if empty
+  const venueInput = document.getElementById('driveVenue');
+  if (venueInput && !venueInput.value) {
+    const hospName = document.getElementById('top-hospital-name')?.textContent || '';
+    venueInput.value = hospName && hospName !== 'Hospital' ? `${hospName} Blood Bank` : 'Hospital Blood Bank';
+  }
+
+  // Pre-fill blood groups
+  document.querySelectorAll('.drive-bg-cb').forEach(cb => {
+    if (prefillType) {
+      cb.checked = (cb.value === prefillType);
+    } else {
+      cb.checked = true; // Select all by default when clicking "+ Plan drive"
+    }
+  });
+
+  modal.style.display = 'flex';
+}
+
+function closePlanDriveModal() {
+  const modal = document.getElementById('modalPlanDrive');
+  if (modal) modal.style.display = 'none';
+}
+
+async function loadDonationDrives() {
+  const container = document.getElementById('drivesListContainer');
+  const emptyBox = document.getElementById('drivesEmptyBox');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/hospital/drives', { credentials: 'include' });
+    if (!res.ok) throw new Error('Drives fetch failed');
+    const json = await res.json();
+    const drives = json.data || [];
+
+    // Filter out cancelled or show all with clear status
+    if (!drives || drives.length === 0) {
+      container.innerHTML = '';
+      if (emptyBox) emptyBox.style.display = 'block';
+      return;
+    }
+
+    if (emptyBox) emptyBox.style.display = 'none';
+    container.innerHTML = drives.map(d => {
+      const status = (d.status || 'upcoming').toLowerCase();
+      const isUpcoming = status === 'upcoming';
+      const groupsList = (d.bloodGroups || 'All').split('[,;/ ]+');
+      const attending = d.attendingCount || 0;
+
+      return `
+        <div class="drive-item-card ${status}" data-id="${d.id}">
+          <div class="drive-info-main">
+            <div class="drive-title-row">
+              <span class="drive-title-text">${d.title || 'Blood donation drive'}</span>
+              <span class="drive-status-badge ${status}">${status}</span>
+            </div>
+            <div class="drive-meta-row">
+              <span class="drive-meta-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>${d.driveDate} • ${d.startTime} - ${d.endTime}</span>
+              </span>
+              <span class="drive-meta-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <span>${d.venue} (${d.radius} km radius)</span>
+              </span>
+              <span class="drive-meta-item">
+                <span style="font-weight: 600;">Groups:</span>
+                <span class="drive-groups-chips">
+                  ${(d.bloodGroups || 'All').split(',').map(g => `<span class="drive-group-chip">${g.trim()}</span>`).join('')}
+                </span>
+              </span>
+              ${d.targetUnits ? `<span class="drive-meta-item">Target: <strong>${d.targetUnits} units</strong></span>` : ''}
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
+            <div class="drive-rsvp-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span><strong>${attending}</strong> ${attending === 1 ? 'donor' : 'donors'} attending</span>
+            </div>
+
+            ${isUpcoming ? `
+              <div class="drive-actions-group">
+                <button type="button" class="drive-action-btn complete" data-id="${d.id}" title="Mark completed (does not change stock)">Mark completed</button>
+                <button type="button" class="drive-action-btn cancel" data-id="${d.id}">Cancel</button>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Wire Cancel & Complete actions
+    container.querySelectorAll('.drive-action-btn.cancel').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const confirmed = (typeof showAppConfirm === 'function')
+          ? await showAppConfirm({
+              title: 'Cancel Donation Drive',
+              message: 'Are you sure you want to cancel this planned donation drive? Donors who RSVPed will be notified of cancellation.',
+              confirmText: 'Yes, Cancel Drive',
+              cancelText: 'Keep Drive',
+              type: 'danger'
+            })
+          : window.confirm('Cancel this donation drive?');
+
+        if (confirmed) {
+          try {
+            await fetch(`/api/hospital/drives/${id}/cancel`, { method: 'POST', credentials: 'include' });
+            loadDonationDrives();
+          } catch (e) {
+            console.error('Cancel drive error:', e);
+          }
+        }
+      });
+    });
+
+    container.querySelectorAll('.drive-action-btn.complete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const confirmed = (typeof showAppConfirm === 'function')
+          ? await showAppConfirm({
+              title: 'Mark Donation Drive Completed',
+              message: 'Mark this donation drive as completed? Note: Stock is NOT automatically changed; please record actual blood bags received via the Inventory page.',
+              confirmText: 'Mark Completed',
+              cancelText: 'Back',
+              type: 'info'
+            })
+          : window.confirm('Mark this drive as completed? (Note: Stock is not auto-changed)');
+
+        if (confirmed) {
+          try {
+            await fetch(`/api/hospital/drives/${id}/complete`, { method: 'POST', credentials: 'include' });
+            loadDonationDrives();
+          } catch (e) {
+            console.error('Complete drive error:', e);
+          }
+        }
+      });
+    });
+
+  } catch (err) {
+    console.debug('Error loading donation drives:', err);
+    if (emptyBox) emptyBox.style.display = 'block';
+  }
+}
+

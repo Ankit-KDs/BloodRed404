@@ -192,6 +192,7 @@
             <div>
               <h2 class="card-title">Send SOS</h2>
               <p class="card-subtitle">Broadcast emergency blood request to verified nearby donors</p>
+              <p class="card-subtitle-note" style="margin-top: 4px; font-size: 12.5px; color: var(--hosp-text-dim, #71706c);">For a patient emergency. To restock, plan a donation drive.</p>
             </div>
           </div>
 
@@ -397,6 +398,30 @@
             <div class="stock-notset-header">Unrecorded groups</div>
             <div class="stock-notset-row" id="stockNotSetRow"></div>
           </div>
+        </div>
+      </section>
+
+      <!-- 6B. Donation Drives Section -->
+      <section class="hosp-card donation-drives-card" id="sectionDonationDrives">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Donation drives</h2>
+            <p class="card-subtitle">Community blood drives and non-urgent donor mobilization</p>
+          </div>
+          <button type="button" class="btn-secondary" id="btnOpenPlanDriveModal" style="font-size: 13px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Plan donation drive</span>
+          </button>
+        </div>
+
+        <!-- Drives List Container -->
+        <div id="drivesListContainer" class="drives-list-container">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="drivesEmptyBox" class="dashed-empty-box compact" style="display: none;">
+          <p>No donation drives planned. Plan one when stock runs low.</p>
         </div>
       </section>
 
@@ -775,6 +800,76 @@
     </section>
 
   </main>
+
+  <!-- ==================== PLAN DONATION DRIVE MODAL ==================== -->
+  <div class="hosp-modal-overlay" id="modalPlanDrive" style="display: none;">
+    <div class="hosp-modal-box" onclick="event.stopPropagation()">
+      <div class="hosp-modal-header">
+        <h3 class="hosp-modal-title">Plan Donation Drive</h3>
+        <button type="button" class="hosp-modal-close" id="btnClosePlanDriveModal" aria-label="Close modal">&times;</button>
+      </div>
+      <form id="formPlanDonationDrive" class="hosp-modal-form">
+        <div class="form-row">
+          <label for="driveTitle" class="form-label">Drive title</label>
+          <input type="text" id="driveTitle" class="form-input" value="Blood donation drive" required />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Blood groups needed (select all that apply)</label>
+          <div class="drive-blood-checkboxes" id="driveBloodGroupsGrid">
+            <!-- 8 blood group toggle buttons -->
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="driveDate" class="form-label">Date</label>
+            <input type="date" id="driveDate" class="form-input" required />
+          </div>
+          <div class="form-row">
+            <label for="driveRadius" class="form-label">Invitation radius</label>
+            <select id="driveRadius" class="form-select">
+              <option value="5">5 km</option>
+              <option value="10" selected>10 km</option>
+              <option value="20">20 km</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="driveStartTime" class="form-label">Start time</label>
+            <input type="time" id="driveStartTime" class="form-input" value="09:00" required />
+          </div>
+          <div class="form-row">
+            <label for="driveEndTime" class="form-label">End time</label>
+            <input type="time" id="driveEndTime" class="form-input" value="17:00" required />
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="driveVenue" class="form-label">Venue</label>
+            <input type="text" id="driveVenue" class="form-input" placeholder="Hospital Blood Bank / Auditorium" required />
+          </div>
+          <div class="form-row">
+            <label for="driveTargetUnits" class="form-label">Target units (optional)</label>
+            <input type="number" id="driveTargetUnits" class="form-input" min="1" placeholder="e.g. 50" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="driveNotes" class="form-label">Notes (optional)</label>
+          <textarea id="driveNotes" class="form-textarea" rows="2" placeholder="Special requirements, refreshments, or instructions for donors..."></textarea>
+        </div>
+
+        <div class="hosp-modal-actions">
+          <button type="button" class="btn-secondary" id="btnCancelPlanDrive">Cancel</button>
+          <button type="submit" class="btn-primary-action" id="btnSubmitPlanDrive">Create Donation Drive</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- ==================== FLAT MINIMAL FOOTER ==================== -->
   <footer class="hosp-footer">
