@@ -26,6 +26,12 @@ public class DonorDao {
 
     private static final Logger log = LoggerFactory.getLogger(DonorDao.class);
 
+    /**
+     * Location freshness threshold for emergency donor search matching.
+     * Only donors whose location was synced within the last 24 hours are considered current.
+     */
+    public static final int FRESHNESS_HOURS = 24;
+
     public boolean emailOrPhoneExists(String email, String phone) throws SQLException {
         String cleanEmail = email != null ? email.trim().toLowerCase() : "";
         String cleanPhone = phone != null ? phone.trim() : "";
@@ -210,6 +216,17 @@ public class DonorDao {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, available ? "Available" : "Unavailable");
             ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean updateLocation(int donorId, double latitude, double longitude) throws SQLException {
+        String sql = "UPDATE donors SET latitude = ?, longitude = ?, location_updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, latitude);
+            ps.setDouble(2, longitude);
+            ps.setInt(3, donorId);
             return ps.executeUpdate() > 0;
         }
     }
@@ -718,13 +735,17 @@ public class DonorDao {
         
         Map<String, Object> response = new HashMap<>();
         List<Map<String, Object>> matches = new ArrayList<>();
-        int unlocatedCount = 0;
+        int compatibleRegisteredCount = 0;
+        int ineligibleCount = 0;
+        int staleLocationCount = 0;
+        int outsideRadiusCount = 0;
 
         if (recipientBloodType == null || recipientBloodType.isBlank()) {
             response.put("donors", matches);
             response.put("unlocatedCount", 0);
             response.put("totalMatches", 0);
             response.put("availableCount", 0);
+            response.put("emptyReasonSummary", "Select a blood group and click Search Donors.");
             return response;
         }
 
@@ -735,12 +756,13 @@ public class DonorDao {
             response.put("unlocatedCount", 0);
             response.put("totalMatches", 0);
             response.put("availableCount", 0);
+            response.put("emptyReasonSummary", "No compatible blood groups configured for " + targetBlood + ".");
             return response;
         }
 
         Map<Integer, String> notificationStatuses = new com.red404.dao.BloodRequestNotificationDao().getDonorStatusesForHospital(hospitalId);
 
-        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR availability <> 'Unavailable')";
+        String sql = "SELECT * FROM donors";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -749,56 +771,80 @@ public class DonorDao {
                 Map<String, Object> donor = mapDonor(rs, false);
                 int donorId = ((Number) donor.get("id")).intValue();
 
-                // 1. Blood compatibility
+                // 1. Blood compatibility funnel step
                 String dBlood = str(donor.get("bloodType"));
                 if (!com.red404.util.BloodCompatibilityUtil.isCompatible(dBlood, targetBlood)) {
                     continue;
                 }
+                compatibleRegisteredCount++;
 
-                // 2. Medical eligibility
+                // 2. Medical eligibility funnel step
+                boolean isEligible = true;
                 // Availability
                 String avail = str(donor.get("availability"));
                 if (avail != null && (avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy"))) {
-                    continue;
+                    isEligible = false;
                 }
                 // Status
                 String st = str(donor.get("status"));
                 if (st != null && (st.equalsIgnoreCase("INACTIVE") || st.equalsIgnoreCase("Banned"))) {
-                    continue;
+                    isEligible = false;
                 }
                 // Weight (>= 45kg)
                 Object wObj = donor.get("weight");
                 if (wObj instanceof Number && ((Number) wObj).doubleValue() > 0 && ((Number) wObj).doubleValue() < 45.0) {
-                    continue;
+                    isEligible = false;
                 }
                 // Last donation gap (90 days minimum)
                 Date lastDon = rs.getDate("last_donation");
                 if (lastDon != null) {
                     long diffDays = (System.currentTimeMillis() - lastDon.getTime()) / (1000L * 60 * 60 * 24);
                     if (diffDays < 90) {
-                        continue;
+                        isEligible = false;
                     }
                 }
+                if (!isEligible) {
+                    ineligibleCount++;
+                    continue;
+                }
 
-                // 3. Stored location check
+                // 3. Stored location & Freshness check funnel step
                 Object latObj = donor.get("latitude");
                 Object lngObj = donor.get("longitude");
                 if (latObj == null || lngObj == null || !(latObj instanceof Number) || !(lngObj instanceof Number)) {
-                    unlocatedCount++;
+                    staleLocationCount++;
                     continue;
                 }
                 double donorLat = ((Number) latObj).doubleValue();
                 double donorLng = ((Number) lngObj).doubleValue();
-                if (donorLat == 0.0 && donorLng == 0.0) {
-                    unlocatedCount++;
+                if ((donorLat == 0.0 && donorLng == 0.0) || donorLat < -90.0 || donorLat > 90.0 || donorLng < -180.0 || donorLng > 180.0) {
+                    staleLocationCount++;
                     continue;
                 }
 
-                // 4. Distance calculation & radius filter
+                // Freshness verification within FRESHNESS_HOURS (24 hours)
+                java.sql.Timestamp locUpdated = null;
+                try {
+                    locUpdated = rs.getTimestamp("location_updated_at");
+                } catch (Exception ignored) {}
+
+                if (locUpdated == null) {
+                    staleLocationCount++;
+                    continue;
+                } else {
+                    long ageHours = (System.currentTimeMillis() - locUpdated.getTime()) / (1000L * 3600L);
+                    if (ageHours >= FRESHNESS_HOURS) {
+                        staleLocationCount++;
+                        continue;
+                    }
+                }
+
+                // 4. Distance calculation & radius filter funnel step
                 double distance = 0.0;
                 if (hospLat != null && hospLng != null && hospLat != 0.0 && hospLng != 0.0) {
                     distance = DistanceCalculator.calculateDistance(hospLat, hospLng, donorLat, donorLng);
                     if (distance > radiusKm) {
+                        outsideRadiusCount++;
                         continue;
                     }
                 }
@@ -814,7 +860,7 @@ public class DonorDao {
                 donor.put("status", nStatus);
                 donor.put("requestStatus", nStatus);
 
-                // 6. SERVER PHONE PRIVACY (Part 5 & Part 3)
+                // 6. SERVER PHONE PRIVACY (Part 5 & Part 6)
                 // Strip phone number completely unless status is Accepted
                 if (!"Accepted".equalsIgnoreCase(nStatus)) {
                     donor.remove("phone");
@@ -857,8 +903,24 @@ public class DonorDao {
             }
         }
 
+        String emptySummary;
+        if (compatibleRegisteredCount == 0) {
+            emptySummary = "No registered donors found with compatible blood groups for " + targetBlood + ".";
+        } else {
+            emptySummary = "No matching donors within " + (int) radiusKm + " km. " +
+                           compatibleRegisteredCount + " compatible donor" + (compatibleRegisteredCount == 1 ? "" : "s") + " registered: " +
+                           ineligibleCount + " not eligible yet, " +
+                           staleLocationCount + " location older than " + FRESHNESS_HOURS + " h, " +
+                           outsideRadiusCount + " outside this radius.";
+        }
+
         response.put("donors", matches);
-        response.put("unlocatedCount", unlocatedCount);
+        response.put("unlocatedCount", staleLocationCount);
+        response.put("compatibleRegisteredCount", compatibleRegisteredCount);
+        response.put("ineligibleCount", ineligibleCount);
+        response.put("staleLocationCount", staleLocationCount);
+        response.put("outsideRadiusCount", outsideRadiusCount);
+        response.put("emptyReasonSummary", emptySummary);
         response.put("totalMatches", matches.size());
         response.put("availableCount", availableCount);
         response.put("recipientBloodType", targetBlood);
@@ -1248,6 +1310,12 @@ public class DonorDao {
         donor.put("pincode", rs.getString("pincode"));
         donor.put("latitude", rs.getObject("latitude"));
         donor.put("longitude", rs.getObject("longitude"));
+        try {
+            java.sql.Timestamp locUpdated = rs.getTimestamp("location_updated_at");
+            donor.put("locationUpdatedAt", locUpdated == null ? null : locUpdated.toString());
+        } catch (SQLException ignored) {
+            donor.put("locationUpdatedAt", null);
+        }
         Date lastDonation = rs.getDate("last_donation");
         donor.put("lastDonation", lastDonation == null ? null : lastDonation.toString());
         donor.put("lastDonationDate", lastDonation == null ? null : lastDonation.toString());

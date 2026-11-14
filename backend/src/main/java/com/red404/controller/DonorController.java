@@ -38,6 +38,8 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping({"/api/donors", "/api/donor"})
 public class DonorController {
 
+    public static final int FRESHNESS_HOURS = DonorDao.FRESHNESS_HOURS;
+
     private final DonorDao donorDao = new DonorDao();
     private final BloodRequestDao requestDao = new BloodRequestDao();
     private final SessionDao sessionDao = new SessionDao();
@@ -249,16 +251,26 @@ public class DonorController {
             @RequestParam(required = false) String bloodGroup,
             HttpServletRequest request) {
         try {
-            if (lat == null || lng == null) {
-                Map<String, Object> donor = requireDonor(request);
-                if (donor != null) {
-                    if (lat == null) lat = asDouble(donor.get("latitude"));
-                    if (lng == null) lng = asDouble(donor.get("longitude"));
-                    if (bloodGroup == null || bloodGroup.isBlank()) {
-                        bloodGroup = (String) donor.get("bloodType");
-                    }
+            Map<String, Object> donor = requireDonor(request);
+            Integer donorId = null;
+            if (donor != null && donor.get("id") != null) {
+                donorId = ((Number) donor.get("id")).intValue();
+                if (lat == null) lat = asDouble(donor.get("latitude"));
+                if (lng == null) lng = asDouble(donor.get("longitude"));
+                if (bloodGroup == null || bloodGroup.isBlank()) {
+                    bloodGroup = (String) donor.get("bloodType");
                 }
             }
+
+            // First: Look for actual requests sent or broadcasted to this specific donor
+            if (donorId != null) {
+                List<Map<String, Object>> notifs = new com.red404.dao.BloodRequestNotificationDao().getNotificationsForDonor(donorId, lat, lng);
+                if (!notifs.isEmpty()) {
+                    return ok("Active alerts loaded", notifs);
+                }
+            }
+
+            // Fallback: If no recipient notification records exist, return empty or matching active broadcasts
             List<Map<String, Object>> allRequests = requestDao.listActive();
             List<Map<String, Object>> result = new ArrayList<>();
 
@@ -270,7 +282,7 @@ public class DonorController {
                 int eta = 15;
                 String zone = "Zone 1 (0-5km)";
 
-                if (lat != null && lng != null && reqLat != null && reqLng != null) {
+                if (lat != null && lng != null && reqLat != null && reqLng != null && reqLat != 0.0 && reqLng != 0.0) {
                     dist = DistanceCalculator.calculateDistance(lat, lng, reqLat, reqLng);
                     eta = DistanceCalculator.getEstimatedTravelTime(dist, "DRIVING");
                     if (dist <= 5.0) {
@@ -282,7 +294,7 @@ public class DonorController {
                     }
                 }
 
-                req.put("distanceKm", dist);
+                req.put("distanceKm", Math.round(dist * 10.0) / 10.0);
                 req.put("etaMinutes", Math.max(eta, 5));
                 req.put("zone", zone);
 
@@ -297,7 +309,7 @@ public class DonorController {
                 // Filter by blood compatibility if bloodGroup specified
                 String reqBlood = (String) req.get("bloodType");
                 if (bloodGroup != null && !bloodGroup.isBlank()) {
-                    if (DistanceCalculator.isCompatibleBloodType(bloodGroup, reqBlood) || bloodGroup.equalsIgnoreCase(reqBlood)) {
+                    if (com.red404.util.BloodCompatibilityUtil.isCompatible(bloodGroup, reqBlood)) {
                         result.add(req);
                     }
                 } else {
@@ -306,7 +318,7 @@ public class DonorController {
             }
 
             // Sort by distance ascending
-            result.sort((a, b) -> Double.compare((Double) a.getOrDefault("distanceKm", 0.0), (Double) b.getOrDefault("distanceKm", 0.0)));
+            result.sort((a, b) -> Double.compare(((Number) a.getOrDefault("distanceKm", 0.0)).doubleValue(), ((Number) b.getOrDefault("distanceKm", 0.0)).doubleValue()));
 
             return ok("Active alerts loaded", result);
         } catch (Exception e) {
@@ -636,6 +648,55 @@ public class DonorController {
         }
     }
 
+    @PostMapping("/location")
+    public ResponseEntity<ApiResponse> updateLocation(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+        try {
+            if (body == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Location payload is required."));
+            }
+
+            Double lat = JsonUtil.asDouble(body, "latitude");
+            Double lng = JsonUtil.asDouble(body, "longitude");
+
+            if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Invalid coordinates. Latitude must be in [-90, 90] and longitude in [-180, 180]."));
+            }
+
+            Integer donorId = null;
+            Map<String, Object> sessionDonor = requireDonor(request);
+            if (sessionDonor != null && sessionDonor.get("id") != null) {
+                donorId = ((Number) sessionDonor.get("id")).intValue();
+            } else if (body.has("donorId")) {
+                donorId = JsonUtil.asInt(body, "donorId", 0);
+            }
+
+            if (donorId == null || donorId <= 0) {
+                return unauthorized();
+            }
+
+            donorDao.updateLocation(donorId, lat, lng);
+
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                Map<String, Object> updated = donorDao.findById(donorId);
+                if (updated != null) {
+                    session.setAttribute("user", updated);
+                }
+            }
+
+            Map<String, Object> respData = new HashMap<>();
+            respData.put("donorId", donorId);
+            respData.put("latitude", lat);
+            respData.put("longitude", lng);
+            respData.put("locationUpdatedAt", new java.sql.Timestamp(System.currentTimeMillis()).toString());
+
+            return ok("Donor location synchronized successfully", respData);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     // ======================== PUT ========================
 
     @PutMapping("/availability")
@@ -840,15 +901,24 @@ public class DonorController {
         try {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null) return unauthorized();
-            requestDao.updateStatus(requestId, status);
-            if ("Accepted".equalsIgnoreCase(status) && donor.get("id") != null) {
-                int donorId = ((Number) donor.get("id")).intValue();
-                new com.red404.dao.BloodRequestNotificationDao().acceptRequestByDonor(requestId, donorId);
+            int donorId = ((Number) donor.get("id")).intValue();
+
+            com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
+            if ("Accepted".equalsIgnoreCase(status)) {
+                boolean accepted = notifDao.acceptRequestByDonor(requestId, donorId);
+                if (!accepted) {
+                    return ResponseEntity.badRequest().body(new ApiResponse(false, "This request has expired or is no longer available to accept."));
+                }
+                requestDao.updateStatus(requestId, "Accepted");
+            } else if ("Declined".equalsIgnoreCase(status)) {
+                notifDao.updateDonorResponse(requestId, donorId, "DECLINED");
             }
+
             Map<String, Object> bloodRequest = requestDao.findById(requestId);
             if (bloodRequest == null) {
                 bloodRequest = new HashMap<>();
             }
+            bloodRequest.put("status", status);
             bloodRequest.put("distanceKm", 0);
             bloodRequest.put("etaMinutes", 0);
             return ok("Request " + status.toLowerCase(), bloodRequest);

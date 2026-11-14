@@ -304,6 +304,130 @@ async function initHospitalProfile() {
       });
     });
   }
+
+  // Allow clicking facility name to inspect profile and location
+  if (topName) {
+    topName.style.cursor = 'pointer';
+    topName.title = 'Click to view hospital profile & location';
+    topName.onclick = () => openHospitalProfileModal();
+  }
+
+  initProfileModalListeners();
+}
+
+/* ============================================================
+   3A. HOSPITAL PROFILE & LOCATION EDITING MODAL
+   ============================================================ */
+function initProfileModalListeners() {
+  const modal = document.getElementById('modalHospitalProfile');
+  const closeBtn = document.getElementById('btnCloseHospProfileModal');
+  const closeFooterBtn = document.getElementById('btnCloseHospProfile');
+  const editLocBtn = document.getElementById('btnEditHospLocation');
+
+  if (closeBtn) closeBtn.onclick = closeHospitalProfileModal;
+  if (closeFooterBtn) closeFooterBtn.onclick = closeHospitalProfileModal;
+  if (modal) {
+    modal.onclick = (e) => {
+      if (e.target === modal) closeHospitalProfileModal();
+    };
+  }
+
+  if (editLocBtn) {
+    editLocBtn.onclick = () => {
+      closeHospitalProfileModal();
+      openHospitalLocationPicker(() => {
+        openHospitalProfileModal();
+      });
+    };
+  }
+}
+
+function openHospitalProfileModal() {
+  const modal = document.getElementById('modalHospitalProfile');
+  if (!modal) return;
+
+  const prof = window.currentHospitalProfile || {};
+  const nameEl = document.getElementById('profHospName');
+  const addrEl = document.getElementById('profHospAddress');
+  const latEl = document.getElementById('profHospLat');
+  const lngEl = document.getElementById('profHospLng');
+
+  const hospName = prof.name || prof.hospitalName || prof.hospital_name || 'Hospital';
+  const address = prof.address || 'Address not registered yet';
+  const rawLat = prof.latitude ?? prof.lat;
+  const rawLng = prof.longitude ?? prof.lng;
+
+  if (nameEl) nameEl.textContent = hospName;
+  if (addrEl) addrEl.textContent = address;
+  if (latEl) latEl.textContent = (rawLat !== null && rawLat !== undefined && !isNaN(rawLat)) ? Number(rawLat).toFixed(6) : 'Not set';
+  if (lngEl) lngEl.textContent = (rawLng !== null && rawLng !== undefined && !isNaN(rawLng)) ? Number(rawLng).toFixed(6) : 'Not set';
+
+  modal.style.display = 'flex';
+}
+
+function closeHospitalProfileModal() {
+  const modal = document.getElementById('modalHospitalProfile');
+  if (modal) modal.style.display = 'none';
+}
+
+function openHospitalLocationPicker(onSuccessCallback) {
+  if (typeof LocationPicker === 'undefined') {
+    alert('Location picker component is loading, please try again in a moment.');
+    return;
+  }
+  const prof = window.currentHospitalProfile;
+  const currentLat = prof ? (prof.latitude ?? prof.lat) : null;
+  const currentLng = prof ? (prof.longitude ?? prof.lng) : null;
+  const currentAddr = prof ? (prof.address || '') : '';
+
+  LocationPicker.openModal({
+    initialLat: currentLat,
+    initialLng: currentLng,
+    initialAddress: currentAddr,
+    onConfirm: async function(data) {
+      try {
+        const res = await fetch('/api/hospital/location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            latitude: data.lat,
+            longitude: data.lng,
+            address: data.address
+          }),
+          credentials: 'include'
+        });
+        const json = await res.json();
+        if (res.ok && json.success) {
+          if (!window.currentHospitalProfile) window.currentHospitalProfile = {};
+          window.currentHospitalProfile.latitude = data.lat;
+          window.currentHospitalProfile.longitude = data.lng;
+          window.currentHospitalProfile.address = data.address;
+
+          if (typeof showToast === 'function') {
+            showToast('Hospital location updated successfully.', 'success');
+          }
+
+          // Trigger hospital-profile-loaded event
+          window.dispatchEvent(new CustomEvent('hospital-profile-loaded', { detail: window.currentHospitalProfile }));
+
+          // Refresh map in place
+          if (typeof window.invalidateRadarMap === 'function') {
+            window.invalidateRadarMap();
+          }
+
+          if (typeof onSuccessCallback === 'function') {
+            onSuccessCallback(data);
+          }
+        } else {
+          if (typeof showToast === 'function') {
+            showToast(json.error || 'Failed to update location.', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('Update hospital location error:', err);
+      }
+    }
+  });
 }
 
 /* ============================================================
@@ -445,7 +569,6 @@ function getRelativeTime(timestamp) {
    ============================================================ */
 function initDashboard() {
   loadDashboardData();
-  initInlineSosForm();
 
   document.getElementById('btnRetryActiveReq')?.addEventListener('click', loadDashboardData);
   document.getElementById('btnRetryStock')?.addEventListener('click', loadDashboardData);
@@ -669,9 +792,23 @@ function renderDashboardStock(inventoryMap, activeCount) {
     if (!hasRecordedStock) {
       statusLine.textContent = 'Your hospital is set up. Add your blood stock to start sending SOS requests.';
     } else {
-      const reqText = `${activeCount} ${activeCount === 1 ? 'request is' : 'requests are'} waiting for donors.`;
+      const reqText = (activeCount === 0)
+        ? 'No requests are waiting for donors.'
+        : `${activeCount} ${activeCount === 1 ? 'request is' : 'requests are'} waiting for donors.`;
       const critText = `${criticalLowCount} blood ${criticalLowCount === 1 ? 'group is' : 'groups are'} low.`;
       statusLine.textContent = `${reqText} ${critText}`;
+    }
+  }
+
+  // Update Find Donor tab badge from real active request count
+  const badgeActiveSos = document.getElementById('badgeActiveSosCount');
+  if (badgeActiveSos) {
+    if (activeCount > 0) {
+      badgeActiveSos.textContent = activeCount;
+      badgeActiveSos.style.display = 'inline-block';
+    } else {
+      badgeActiveSos.textContent = '0';
+      badgeActiveSos.style.display = 'none';
     }
   }
 
@@ -769,21 +906,6 @@ function renderDashboardStock(inventoryMap, activeCount) {
   }
 }
 
-function selectSosBloodType(type) {
-  if (!type) return;
-  const radio = document.querySelector(`input[name="inlineBloodType"][value="${type}"]`);
-  if (radio) {
-    radio.checked = true;
-    const btn = document.getElementById('btnDispatchSosInline');
-    const btnText = document.getElementById('btnSosText');
-    if (btn) btn.disabled = false;
-    if (btnText) btnText.textContent = 'Send SOS';
-  }
-  const form = document.getElementById('formInlineSos');
-  if (form) {
-    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-}
 
 function renderActiveRequests(requests) {
   const container = document.getElementById('activeReqList');
@@ -960,95 +1082,6 @@ function renderActivityFeed(history) {
   }).join('');
 }
 
-/* ============================================================
-   6. SEND SOS PANEL (DISABLED INITIALLY UNTIL BLOOD GROUP CHOSEN)
-   ============================================================ */
-function initInlineSosForm() {
-  const form = document.getElementById('formInlineSos');
-  const stepUp = document.getElementById('btnStepUp');
-  const stepDown = document.getElementById('btnStepDown');
-  const unitsInput = document.getElementById('inlineUnits');
-  const btn = document.getElementById('btnDispatchSosInline');
-  const btnText = document.getElementById('btnSosText');
-
-  // Radio button change listener: enables button
-  document.querySelectorAll('input[name="inlineBloodType"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (btn) btn.disabled = false;
-      if (btnText) btnText.textContent = 'Send SOS';
-    });
-  });
-
-  if (stepUp && unitsInput) {
-    stepUp.addEventListener('click', () => {
-      unitsInput.value = Math.min(15, parseInt(unitsInput.value || '1', 10) + 1);
-    });
-  }
-
-  if (stepDown && unitsInput) {
-    stepDown.addEventListener('click', () => {
-      unitsInput.value = Math.max(1, parseInt(unitsInput.value || '1', 10) - 1);
-    });
-  }
-
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const selectedRadio = document.querySelector('input[name="inlineBloodType"]:checked');
-      if (!selectedRadio) {
-        if (btn) btn.disabled = true;
-        if (btnText) btnText.textContent = 'Select a blood group to send';
-        return;
-      }
-
-      const bloodType = selectedRadio.value;
-      const units = parseInt(unitsInput?.value || '1', 10);
-      const radius = parseInt(document.getElementById('inlineRadius')?.value || '5', 10);
-      const urgency = document.getElementById('inlineUrgency')?.value || 'NORMAL';
-
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span>Sending SOS...</span>';
-      }
-
-      try {
-        const res = await fetch('/api/hospital/requests', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bloodType: bloodType,
-            unitsNeeded: units,
-            urgencyLevel: urgency,
-            notificationRadius: radius,
-            patientName: 'Emergency SOS'
-          }),
-          credentials: 'include'
-        });
-
-        if (res.ok) {
-          if (typeof showToast === 'function') {
-            showToast('Emergency SOS dispatched to nearby donors.', 'success');
-          }
-        }
-      } catch (err) {
-        console.error('SOS dispatch error:', err);
-      }
-
-      // Reset form selection
-      document.querySelectorAll('input[name="inlineBloodType"]').forEach(r => r.checked = false);
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-          <span id="btnSosText">Select a blood group to send</span>
-        `;
-      }
-
-      // Refresh Dashboard Data from DB
-      loadDashboardData();
-    });
-  }
-}
 
 /* ============================================================
    7. FIND DONORS / DISPATCH (REAL GOOGLE MAPS RADAR & NEARBY MATCHES)
@@ -1218,6 +1251,27 @@ function initDispatchRadar() {
     }
 
     if (leafletMap) {
+      hospitalCoords = coords;
+      if (hospitalMarker) {
+        hospitalMarker.setLatLng([coords.lat, coords.lng]);
+        const chmLabel = document.querySelector('.chm-label');
+        if (chmLabel) chmLabel.textContent = coords.name;
+      } else {
+        const hospIcon = L.divIcon({
+          className: 'custom-hospital-marker',
+          html: `
+            <div class="chm-pin">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v12M6 12h12"/></svg>
+            </div>
+            <div class="chm-label">${escapeHtml(coords.name)}</div>
+          `,
+          iconSize: [80, 50],
+          iconAnchor: [40, 40]
+        });
+        hospitalMarker = L.marker([coords.lat, coords.lng], { icon: hospIcon }).addTo(leafletMap);
+      }
+      leafletMap.setView([coords.lat, coords.lng], 12);
+      drawZoneCircles(coords.lat, coords.lng);
       leafletMap.invalidateSize();
       return;
     }
@@ -1264,6 +1318,16 @@ function initDispatchRadar() {
   });
   // Also attempt immediate init in case profile was resolved prior
   initMapIfReady();
+
+  // Wire "Set location now" button on the no-location prompt
+  const btnSetLoc = document.getElementById('btnSetLocationNow');
+  if (btnSetLoc) {
+    btnSetLoc.addEventListener('click', () => {
+      openHospitalLocationPicker(() => {
+        initMapIfReady();
+      });
+    });
+  }
 
   // Update circle emphasis when radius dropdown changes
   if (dispRadiusEl) {
@@ -1365,8 +1429,9 @@ function initDispatchRadar() {
       const payload = json.data || json;
       matchingDonors = Array.isArray(payload.donors) ? payload.donors : [];
       const unlocated = payload.unlocatedCount || 0;
+      const emptySummary = payload.emptyReasonSummary || '';
 
-      renderMatchingDonorsTable(matchingDonors, radius, bloodType, patientName, units, notes);
+      renderMatchingDonorsTable(matchingDonors, radius, bloodType, patientName, units, notes, emptySummary);
       updateMapDonorMarkers(matchingDonors, bloodType, patientName, units, notes, radius);
 
       if (unlocated > 0 && unlocatedNote) {
@@ -1603,14 +1668,21 @@ function initDispatchRadar() {
     }
   }
 
-  function renderMatchingDonorsTable(donors, radius, bloodType, patientName, units, notes) {
+  function renderMatchingDonorsTable(donors, radius, bloodType, patientName, units, notes, emptyReasonSummary) {
     if (!tbody) return;
 
     if (!donors || donors.length === 0) {
+      const summaryText = emptyReasonSummary || `No matching donors within ${radius} km. Try a larger radius.`;
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; padding: 32px 16px; color: var(--hosp-text-muted);">
-            No matching donors within ${radius} km. Try a larger radius.
+          <td colspan="6" style="text-align: center; padding: 32px 20px; color: var(--hosp-text-muted); line-height: 1.6;">
+            <div style="max-width: 540px; margin: 0 auto;">
+              <div style="font-weight: 600; color: #f1f2f6; margin-bottom: 6px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                Donor Search Result
+              </div>
+              <span class="search-empty-reason">${escapeHtml(summaryText)}</span>
+            </div>
           </td>
         </tr>
       `;

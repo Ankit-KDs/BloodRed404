@@ -11,22 +11,22 @@ public class BloodRequestNotificationDao {
 
     private static final Logger log = LoggerFactory.getLogger(BloodRequestNotificationDao.class);
 
+    public static final int EXPIRY_MINUTES = 60;
+
     public void ensureTableExists() {
-        String sql = """
-            CREATE TABLE IF NOT EXISTS blood_request_notifications (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                request_id INT NOT NULL,
-                donor_id INT NOT NULL,
-                hospital_id INT NOT NULL,
-                blood_type VARCHAR(10) NOT NULL,
-                units_requested INT DEFAULT 1,
-                patient_name VARCHAR(150),
-                notes TEXT,
-                status VARCHAR(20) DEFAULT 'NOTIFIED',
-                notified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                responded_at TIMESTAMP NULL
-            )
-            """;
+        String sql = "CREATE TABLE IF NOT EXISTS blood_request_notifications (" +
+                     "    id INT AUTO_INCREMENT PRIMARY KEY," +
+                     "    request_id INT NOT NULL," +
+                     "    donor_id INT NOT NULL," +
+                     "    hospital_id INT NOT NULL," +
+                     "    blood_type VARCHAR(10) NOT NULL," +
+                     "    units_requested INT DEFAULT 1," +
+                     "    patient_name VARCHAR(150)," +
+                     "    notes TEXT," +
+                     "    status VARCHAR(20) DEFAULT 'NOTIFIED'," +
+                     "    notified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                     "    responded_at TIMESTAMP NULL" +
+                     ")";
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement()) {
             st.execute(sql);
@@ -124,7 +124,9 @@ public class BloodRequestNotificationDao {
 
     public boolean acceptRequestByDonor(int requestId, int donorId) {
         ensureTableExists();
-        String updateSql = "UPDATE blood_request_notifications SET status = 'ACCEPTED', responded_at = CURRENT_TIMESTAMP WHERE request_id = ? AND donor_id = ?";
+        expireOldNotifications();
+        String updateSql = "UPDATE blood_request_notifications SET status = 'ACCEPTED', responded_at = CURRENT_TIMESTAMP " +
+                           "WHERE request_id = ? AND donor_id = ? AND UPPER(status) <> 'EXPIRED'";
         try (Connection conn = DBConnection.getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setInt(1, requestId);
@@ -186,6 +188,105 @@ public class BloodRequestNotificationDao {
             log.warn("Error getting accepted donor for request {}: {}", requestId, e.getMessage());
         }
         return null;
+    }
+
+    public void expireOldNotifications() {
+        Timestamp cutoff = new Timestamp(System.currentTimeMillis() - (EXPIRY_MINUTES * 60L * 1000L));
+        String sql = "UPDATE blood_request_notifications SET status = 'EXPIRED' WHERE UPPER(status) = 'NOTIFIED' AND notified_at < ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, cutoff);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            log.warn("Notice expiring old notifications: {}", e.getMessage());
+        }
+    }
+
+    public List<Map<String, Object>> getNotificationsForDonor(int donorId, Double donorLat, Double donorLng) {
+        ensureTableExists();
+        expireOldNotifications();
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT n.id as notif_id, n.request_id, n.status as notif_status, n.notified_at, n.responded_at, " +
+                     "n.units_requested, n.patient_name, n.notes as hosp_notes, n.blood_type as notif_blood_type, " +
+                     "br.hospital_id, br.hospital_name, br.hospital_address, br.latitude as hosp_lat, br.longitude as hosp_lng, " +
+                     "br.urgency_level, br.status as req_status, br.created_at as req_created_at, " +
+                     "h.address as h_address, h.name as h_name " +
+                     "FROM blood_request_notifications n " +
+                     "JOIN blood_requests br ON n.request_id = br.id " +
+                     "LEFT JOIN hospitals h ON br.hospital_id = h.id " +
+                     "WHERE n.donor_id = ? AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED') " +
+                     "ORDER BY n.id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new HashMap<>();
+                    int notifId = rs.getInt("notif_id");
+                    int reqId = rs.getInt("request_id");
+                    String status = rs.getString("notif_status");
+                    String bType = rs.getString("notif_blood_type");
+                    int units = rs.getInt("units_requested");
+                    String patientName = rs.getString("patient_name");
+                    String notes = rs.getString("hosp_notes");
+                    Timestamp notifiedAt = rs.getTimestamp("notified_at");
+
+                    String hospName = rs.getString("hospital_name");
+                    if (hospName == null || hospName.isBlank()) hospName = rs.getString("h_name");
+                    if (hospName == null || hospName.isBlank()) hospName = "Hospital";
+
+                    String hospAddr = rs.getString("hospital_address");
+                    if (hospAddr == null || hospAddr.isBlank()) hospAddr = rs.getString("h_address");
+                    if (hospAddr == null || hospAddr.isBlank()) hospAddr = "Hospital Address";
+
+                    Double hLat = rs.getObject("hosp_lat") != null ? rs.getDouble("hosp_lat") : null;
+                    Double hLng = rs.getObject("hosp_lng") != null ? rs.getDouble("hosp_lng") : null;
+
+                    double dist = 0.0;
+                    int eta = 15;
+                    String zone = "Zone 1 (0-5km)";
+                    if (donorLat != null && donorLng != null && hLat != null && hLng != null && hLat != 0.0 && hLng != 0.0) {
+                        dist = com.red404.util.DistanceCalculator.calculateDistance(donorLat, donorLng, hLat, hLng);
+                        eta = com.red404.util.DistanceCalculator.getEstimatedTravelTime(dist, "DRIVING");
+                        if (dist <= 5.0) {
+                            zone = "Zone 1 (0-5km)";
+                        } else if (dist <= 10.0) {
+                            zone = "Zone 2 (5-10km)";
+                        } else {
+                            zone = "Zone 3 (10-20km)";
+                        }
+                    }
+
+                    map.put("id", reqId);
+                    map.put("notifId", notifId);
+                    map.put("requestId", reqId);
+                    map.put("status", capitalize(status));
+                    map.put("bloodType", bType != null ? bType : "O-");
+                    map.put("unitsNeeded", units > 0 ? units : 1);
+                    map.put("units", units > 0 ? units : 1);
+                    map.put("patientName", patientName);
+                    map.put("notes", notes != null ? notes : "Emergency blood request");
+                    map.put("hospitalName", hospName);
+                    map.put("hospitalAddress", hospAddr);
+                    map.put("latitude", hLat);
+                    map.put("longitude", hLng);
+                    map.put("hospLat", hLat);
+                    map.put("hospLng", hLng);
+                    map.put("reqLat", hLat);
+                    map.put("reqLng", hLng);
+                    map.put("distanceKm", Math.round(dist * 10.0) / 10.0);
+                    map.put("etaMinutes", Math.max(eta, 5));
+                    map.put("zone", zone);
+                    map.put("notifiedAt", notifiedAt != null ? notifiedAt.toString() : null);
+                    map.put("urgencyLevel", rs.getString("urgency_level") != null ? rs.getString("urgency_level") : "HIGH");
+
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error getting notifications for donor {}: {}", donorId, e.getMessage());
+        }
+        return list;
     }
 
     private static String capitalize(String str) {

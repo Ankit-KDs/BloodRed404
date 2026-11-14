@@ -1,0 +1,128 @@
+/**
+ * RED404 - Donor Location Sync & Permission Prompt Styles
+ */
+
+.donor-loc-prompt-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(22, 24, 30, 0.95);
+  border: 1px solid rgba(255, 51, 75, 0.35);
+  border-left: 4px solid #ff334b;
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  z-index: 50;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.donor-loc-prompt-banner .dlp-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.donor-loc-prompt-banner .dlp-icon-wrap {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 8px;
+  background: rgba(255, 51, 75, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4d61;
+  font-size: 1.15rem;
+  border: 1px solid rgba(255, 51, 75, 0.25);
+}
+
+.donor-loc-prompt-banner .dlp-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.donor-loc-prompt-banner .dlp-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #f1f2f6;
+  letter-spacing: -0.01em;
+}
+
+.donor-loc-prompt-banner .dlp-sub {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8rem;
+  color: #8e95a5;
+  line-height: 1.35;
+}
+
+.donor-loc-prompt-banner .dlp-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.donor-loc-prompt-banner .dlp-btn-enable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #ff334b, #d91b35);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(255, 51, 75, 0.25);
+  white-space: nowrap;
+}
+
+.donor-loc-prompt-banner .dlp-btn-enable:hover {
+  background: linear-gradient(135deg, #ff4d61, #e6233d);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(255, 51, 75, 0.4);
+}
+
+.donor-loc-prompt-banner .dlp-btn-enable:active {
+  transform: translateY(0);
+}
+
+.donor-loc-prompt-banner .dlp-btn-enable:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .donor-loc-prompt-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .donor-loc-prompt-banner .dlp-actions {
+    width: 100%;
+  }
+
+  .donor-loc-prompt-banner .dlp-btn-enable {
+    width: 100%;
+    padding: 10px 14px;
+  }
+}
+

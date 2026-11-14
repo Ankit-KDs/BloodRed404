@@ -76,6 +76,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             "    pincode VARCHAR(10) NULL DEFAULT NULL," +
             "    latitude DOUBLE NULL DEFAULT NULL," +
             "    longitude DOUBLE NULL DEFAULT NULL," +
+            "    location_updated_at TIMESTAMP NULL DEFAULT NULL," +
             "    zone VARCHAR(80) NULL DEFAULT NULL," +
             "    allergies VARCHAR(255) NULL DEFAULT NULL," +
             "    conditions VARCHAR(255) NULL DEFAULT NULL," +
@@ -265,6 +266,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("pincode", "VARCHAR(10) NULL DEFAULT NULL");
         requiredColumns.put("latitude", "DOUBLE NULL DEFAULT NULL");
         requiredColumns.put("longitude", "DOUBLE NULL DEFAULT NULL");
+        requiredColumns.put("location_updated_at", "TIMESTAMP NULL DEFAULT NULL");
         requiredColumns.put("zone", "VARCHAR(80) NULL DEFAULT NULL");
         requiredColumns.put("sms_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("push_notif", "BOOLEAN DEFAULT TRUE");
@@ -288,7 +290,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         // Explicitly ensure every nullable column has DEFAULT NULL so MySQL strict mode never fails
         String[] colsToSetNullDefault = {
             "donor_id", "father_name", "dob", "gender", "weight", "last_donation", "address",
-            "city", "state", "pincode", "latitude", "longitude", "zone", "pulse",
+            "city", "state", "pincode", "latitude", "longitude", "location_updated_at", "zone", "pulse",
             "hemoglobin", "blood_pressure", "body_temp", "verified_facility", "verified_date",
             "allergies", "conditions", "medications", "surgeries", "donor_type", "qr_token"
         };

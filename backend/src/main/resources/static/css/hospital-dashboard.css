@@ -793,11 +793,35 @@ a:hover {
   transform: none;
 }
 
-/* Active Requests (Wider panel, lists all active requests from backend) */
+/* Active Requests (Full-width card, lists all active requests from backend) */
 .active-requests-card {
-  margin-bottom: 0;
+  margin-bottom: var(--sp-32);
   display: flex;
   flex-direction: column;
+}
+
+.active-requests-card .card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-16);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .active-requests-card .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-12);
+  }
+  .active-requests-card .card-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-8);
+  }
+  .active-requests-card .card-header-actions .btn-primary-action {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .active-req-container {

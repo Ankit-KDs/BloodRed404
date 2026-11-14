@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
   <link rel="stylesheet" href="css/command-nav.css?v=20261113_v40" />
   <link rel="stylesheet" href="css/donor-alerts.css?v=20261113_v40" />
+  <link rel="stylesheet" href="css/donor-location-prompt.css?v=20261114_v1" />
 
   <style>
     .hub-layout {
@@ -143,6 +144,25 @@
 
     <!-- CENTER MAIN FEED -->
     <main class="hub-main-feed">
+
+      <!-- NON-BLOCKING LOCATION PERMISSION PROMPT -->
+      <div id="donorLocationPrompt" class="donor-loc-prompt-banner" style="display:none;" role="region" aria-label="Location permission prompt">
+        <div class="dlp-left">
+          <div class="dlp-icon-wrap">
+            <i class="fa-solid fa-location-crosshairs"></i>
+          </div>
+          <div class="dlp-text-block">
+            <div class="dlp-title">Turn on location to receive nearby requests</div>
+            <div class="dlp-sub">Emergency hospital dispatches require your current location to match you accurately.</div>
+          </div>
+        </div>
+        <div class="dlp-actions">
+          <button type="button" id="btnEnableDonorLocation" class="dlp-btn-enable">
+            <i class="fa-solid fa-location-arrow"></i> Turn on location
+          </button>
+        </div>
+      </div>
+
       <div class="feed-header-row">
         <h2 class="feed-section-label">INCOMING EMERGENCY REQUESTS</h2>
         <div class="feed-live-badge">
@@ -265,6 +285,7 @@
   <script src="js/common.js?v=20261113_v40"></script>
   <script src="js/command-nav.js?v=20261113_v40"></script>
   <script src="js/dashboard-logic.js?v=20261113_v40"></script>
+  <script src="js/donor-location-sync.js?v=20261114_v1"></script>
   <script src="js/donor-alerts.js?v=20261113_v40"></script>
 </body>
 

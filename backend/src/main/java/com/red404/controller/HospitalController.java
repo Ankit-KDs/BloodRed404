@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// Hospital Controller endpoints
 @RestController
 @RequestMapping({"/api/hospitals", "/api/hospital"})
 public class HospitalController {
@@ -373,8 +374,17 @@ public class HospitalController {
             hospital.put("city", JsonUtil.text(body, "city"));
             hospital.put("state", JsonUtil.text(body, "state"));
             hospital.put("pincode", JsonUtil.text(body, "pincode"));
-            hospital.put("latitude", JsonUtil.asDouble(body, "latitude"));
-            hospital.put("longitude", JsonUtil.asDouble(body, "longitude"));
+            Double latitude = JsonUtil.asDouble(body, "latitude");
+            Double longitude = JsonUtil.asDouble(body, "longitude");
+
+            // Strict backend validation: hospital location coordinates are required and must be within valid range
+            if (latitude == null || longitude == null || latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Valid latitude (between -90 and 90) and longitude (between -180 and 180) are required for hospital location."));
+            }
+
+            hospital.put("latitude", latitude);
+            hospital.put("longitude", longitude);
             hospital.put("zone", JsonUtil.textOrNull(body, "zone"));
             hospital.put("operatingHours", JsonUtil.textOrNull(body, "operatingHours") == null ? "24x7" : JsonUtil.text(body, "operatingHours"));
             hospital.put("zoneRadius", JsonUtil.asInt(body, "zoneRadius", 10));
@@ -600,16 +610,61 @@ public class HospitalController {
                 if (name == null || name.isBlank()) name = JsonUtil.textOrNull(body, "name");
                 if (name != null && !name.isBlank()) {
                     hospitalDao.updateHospitalName(hospitalId, name.trim());
-                    HttpSession session = request.getSession(false);
-                    if (session != null) {
-                        Map<String, Object> updated = hospitalDao.findById(hospitalId);
-                        if (updated != null) {
-                            session.setAttribute("hospitalUser", updated);
-                        }
+                }
+
+                if (body.has("latitude") || body.has("longitude")) {
+                    Double lat = JsonUtil.asDouble(body, "latitude");
+                    Double lng = JsonUtil.asDouble(body, "longitude");
+                    if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
+                        return ResponseEntity.badRequest()
+                                .body(new ApiResponse(false, "Invalid coordinates. Latitude must be between -90 and 90, and longitude between -180 and 180."));
+                    }
+                    String address = JsonUtil.textOrNull(body, "address");
+                    hospitalDao.updateHospitalLocation(hospitalId, address, lat, lng);
+                }
+
+                HttpSession session = request.getSession(false);
+                if (session != null) {
+                    Map<String, Object> updated = hospitalDao.findById(hospitalId);
+                    if (updated != null) {
+                        session.setAttribute("hospitalUser", updated);
                     }
                 }
             }
             return ok("Profile updated successfully", hospitalDao.findById(hospitalId));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/location", "/update-location"})
+    public ResponseEntity<ApiResponse> updateLocation(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null && body != null && body.has("hospitalId")) {
+                hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
+            }
+            if (hospitalId == null) hospitalId = 1;
+
+            if (body == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Request body is required."));
+            }
+
+            Double lat = JsonUtil.asDouble(body, "latitude");
+            Double lng = JsonUtil.asDouble(body, "longitude");
+            if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Invalid coordinates. Latitude must be between -90 and 90, and longitude between -180 and 180."));
+            }
+            String address = JsonUtil.textOrNull(body, "address");
+            hospitalDao.updateHospitalLocation(hospitalId, address, lat, lng);
+
+            Map<String, Object> updated = hospitalDao.findById(hospitalId);
+            HttpSession session = request.getSession(false);
+            if (session != null && updated != null) {
+                session.setAttribute("hospitalUser", updated);
+            }
+            return ok("Hospital location updated successfully", updated);
         } catch (Exception e) {
             return serverError(e);
         }

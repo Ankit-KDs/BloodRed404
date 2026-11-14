@@ -149,6 +149,9 @@
         currentDonor.longitude = pos.coords.longitude;
         const accuracy = Math.round(pos.coords.accuracy || 8);
 
+        const banner = document.getElementById('donorLocationPrompt');
+        if (banner) banner.style.display = 'none';
+
         updateGPSDisplay(currentDonor.latitude, currentDonor.longitude, accuracy);
 
         // Pan map to real position
@@ -172,6 +175,10 @@
       (err) => {
         if (icon) icon.classList.remove('fa-spin');
         console.warn('Geolocation notice / permission denied:', err.message);
+        if (err.code === 1) {
+          const banner = document.getElementById('donorLocationPrompt');
+          if (banner) banner.style.display = 'flex';
+        }
         updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
         fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
       },
@@ -305,24 +312,18 @@
           etaMinutes: req.etaMinutes || Math.max(Math.round(distanceKm * 2.5), 6),
           zoneTag: zone.tag,
           zoneRange: zone.range,
-          address: req.address || req.city || 'Emergency Trauma Bay',
+          address: req.hospitalAddress || req.address || req.city || 'Emergency Trauma Bay',
           phone: req.phone || req.hospitalPhone || req.hospital_phone || '+91 108',
           units: req.unitsRequested || req.units || 1,
           patientName: req.patientName || 'Emergency Patient',
+          notes: req.notes || req.hosp_notes || '',
           status: req.status || 'Active',
           reqLat,
           reqLng
         };
       });
 
-      // Filter for compatible blood types if specified
-      const donorType = (currentDonor.bloodType || '').trim().toUpperCase();
-      if (donorType) {
-        activeRequests = activeRequests.filter(req => {
-          const reqType = (req.bloodType || '').trim().toUpperCase();
-          return reqType === donorType || reqType === 'ANY' || donorType === 'O-';
-        });
-      }
+      // All requests returned by /api/donor/alerts are already validated and filtered for this donor by the backend
 
       // Update global emergency radar dot indicator
       try {
@@ -375,6 +376,7 @@
                   <h3 class="sos-hosp-name">${escapeHtml(hospitalName.toUpperCase())}</h3>
                   <span class="sos-distance-pill">${distance}km</span>
                 </div>
+                <div class="sos-hosp-address" style="font-size: 0.78rem; color: #94a3b8; margin: 3px 0;"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(req.address || 'Hospital Location')}</div>
                 <span class="sos-zone-tag">${distance} km away • ${req.zoneTag}</span>
               </div>
               <div class="sos-blood-badge">
@@ -395,7 +397,8 @@
             </div>
 
             <div class="sos-urgency-meta">
-              <b>${escapeHtml(urgencyLabel)} SOS</b> • Needed within ${neededMinutes} mins • Trauma Bay
+              <b>${escapeHtml(urgencyLabel)} SOS</b> • Units: ${req.units || 1} • Needed within ${neededMinutes} mins • Status: <span style="color:#00e676;">${escapeHtml(req.status || 'Active')}</span>
+              ${req.notes ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:3px;">Note: ${escapeHtml(req.notes)}</div>` : ''}
             </div>
 
             <div class="sos-actions-row">

@@ -1,0 +1,327 @@
+/* ============================================================
+   RED404 - REUSABLE LOCATION PICKER COMPONENT STYLES
+   Dark theme compliant: 1440px desktop & 360px mobile responsive
+   ============================================================ */
+
+.loc-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: locFadeIn 0.2s ease-out;
+}
+
+@keyframes locFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.loc-picker-card {
+  background-color: rgb(24, 25, 30) !important;
+  background: rgb(24, 25, 30) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  color: #f3f4f6;
+  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+  z-index: 100000;
+}
+
+.loc-picker-inline {
+  background: #18191e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loc-picker-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.loc-picker-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.loc-picker-close {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.loc-picker-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.loc-picker-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.loc-picker-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.loc-picker-search-wrap {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.loc-picker-search-wrap svg {
+  position: absolute;
+  left: 12px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.loc-picker-search-input {
+  width: 100%;
+  height: 40px;
+  background: #21232a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0 12px 0 36px;
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.loc-picker-search-input:focus {
+  border-color: #3b82f6;
+}
+
+.loc-btn-gps {
+  background: #21232a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f3f4f6;
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.loc-btn-gps:hover {
+  background: #2b2e37;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.loc-btn-gps.loc-gps-active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.loc-map-frame {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111215;
+}
+
+.loc-map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.loc-map-hint {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  background: rgba(24, 25, 30, 0.88);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.loc-coords-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: #21232a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.loc-coord-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loc-coord-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.loc-coord-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.loc-address-field {
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.loc-address-val {
+  font-size: 12.5px;
+  color: #d1d5db;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.loc-picker-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.loc-btn-cancel {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #d1d5db;
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.loc-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.loc-btn-confirm {
+  background: #3b82f6;
+  border: none;
+  color: #ffffff;
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.loc-btn-confirm:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.loc-btn-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+/* Custom Marker Styling for Drag Pin */
+.loc-custom-pin {
+  width: 32px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+
+.loc-custom-pin:active {
+  cursor: grabbing;
+}
+
+/* Responsive adjustments */
+@media (max-width: 540px) {
+  .loc-picker-controls {
+    flex-direction: column;
+  }
+  .loc-coords-preview {
+    grid-template-columns: 1fr;
+  }
+  .loc-map-frame {
+    height: 230px;
+  }
+  .loc-picker-footer {
+    flex-direction: column-reverse;
+  }
+  .loc-picker-footer button {
+    width: 100%;
+    justify-content: center;
+  }
+}

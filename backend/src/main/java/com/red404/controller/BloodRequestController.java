@@ -109,7 +109,6 @@ public class BloodRequestController {
     @PostMapping("/{id}/accept")
     public ResponseEntity<ApiResponse> accept(@PathVariable int id, HttpServletRequest request) {
         try {
-            requestDao.updateStatus(id, "Accepted");
             int donorId = 0;
             HttpSession session = request.getSession(false);
             if (session != null && session.getAttribute("user") != null) {
@@ -122,8 +121,12 @@ public class BloodRequestController {
                 }
             }
             if (donorId > 0) {
-                new com.red404.dao.BloodRequestNotificationDao().acceptRequestByDonor(id, donorId);
+                boolean accepted = new com.red404.dao.BloodRequestNotificationDao().acceptRequestByDonor(id, donorId);
+                if (!accepted) {
+                    return ResponseEntity.badRequest().body(new ApiResponse(false, "This request has expired or is no longer available."));
+                }
             }
+            requestDao.updateStatus(id, "Accepted");
             Map<String, Object> req = requestDao.findById(id);
             if (session != null) {
                 session.setAttribute("activeMission", req);
@@ -135,9 +138,19 @@ public class BloodRequestController {
     }
 
     @PostMapping("/{id}/decline")
-    public ResponseEntity<ApiResponse> decline(@PathVariable int id) {
+    public ResponseEntity<ApiResponse> decline(@PathVariable int id, HttpServletRequest request) {
         try {
-            requestDao.updateStatus(id, "Declined");
+            HttpSession session = request.getSession(false);
+            if (session != null && session.getAttribute("user") != null) {
+                Object u = session.getAttribute("user");
+                if (u instanceof Map) {
+                    Object dId = ((Map<?, ?>) u).get("id");
+                    if (dId instanceof Number) {
+                        int donorId = ((Number) dId).intValue();
+                        new com.red404.dao.BloodRequestNotificationDao().updateDonorResponse(id, donorId, "DECLINED");
+                    }
+                }
+            }
             return ok("Request declined", null);
         } catch (Exception e) {
             return serverError(e);

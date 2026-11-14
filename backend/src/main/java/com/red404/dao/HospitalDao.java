@@ -157,6 +157,23 @@ public class HospitalDao {
         }
     }
 
+    public boolean updateHospitalLocation(int hospitalId, String address, Double latitude, Double longitude) throws SQLException {
+        String sql = (address != null && !address.isBlank())
+                ? "UPDATE hospitals SET address = ?, latitude = ?, longitude = ? WHERE id = ?"
+                : "UPDATE hospitals SET latitude = ?, longitude = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int idx = 1;
+            if (address != null && !address.isBlank()) {
+                ps.setString(idx++, address.trim());
+            }
+            setDouble(ps, idx++, latitude);
+            setDouble(ps, idx++, longitude);
+            ps.setInt(idx, hospitalId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public boolean updateHospitalInventory(int hospitalId, String bloodType, int change, Integer exactUnits) throws SQLException {
         if (bloodType == null || bloodType.isBlank()) return false;
         String bt = bloodType.trim().toUpperCase();
