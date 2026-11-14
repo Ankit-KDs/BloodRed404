@@ -911,13 +911,6 @@
       showToast('Connection error while deleting hospital account.', 'error');
     }
   };
-      } else {
-        showToast(data.message || 'Failed to delete hospital account.', 'error');
-      }
-    } catch (err) {
-      showToast('Connection error while deleting hospital account.', 'error');
-    }
-  };
 
   /* ==================== 5. TAB 3: FEEDBACK ==================== */
   async function loadFeedback() {
