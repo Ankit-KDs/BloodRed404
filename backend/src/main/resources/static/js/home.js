@@ -338,18 +338,19 @@ async function loadDynamicPlatformStats() {
 
     const data = json.data;
     const regDonors = data.registeredDonors ?? data.totalDonors ?? 0;
-    const activeDonors = data.activeDonors ?? regDonors;
-    const hospitals = data.partnerHospitals ?? data.hospitals ?? 0;
-    const lives = data.livesSaved ?? 0;
-    const zones = data.activeZones ?? (regDonors > 0 || hospitals > 0 ? 1 : 0);
-    const avgResp = data.avgResponseMin ?? 0;
-    const successRate = data.successRate ?? 0;
+    const activeDonors = data.activeDonors ?? 0;
+    const partnerHospitals = data.partnerHospitals ?? 0;
+    const lives = data.livesSaved ?? data.verifiedDonations ?? 0;
+    const zones = data.activeZones ?? (regDonors > 0 || partnerHospitals > 0 ? 1 : 0);
+    const hasRequestMetrics = data.hasRequestMetrics === true;
+    const avgResp = data.avgResponseMin;
+    const successRate = data.successRate;
 
     // Update Hero elements data-target
     const heroD = document.getElementById('heroActiveDonors');
     if (heroD) heroD.dataset.target = activeDonors;
     const heroH = document.getElementById('heroHospitals');
-    if (heroH) heroH.dataset.target = hospitals;
+    if (heroH) heroH.dataset.target = partnerHospitals;
     const heroL = document.getElementById('heroLivesSaved');
     if (heroL) heroL.dataset.target = lives;
     const heroZ = document.getElementById('heroZonesActive');
@@ -359,33 +360,60 @@ async function loadDynamicPlatformStats() {
     const sReg = document.getElementById('statRegDonors');
     if (sReg) sReg.dataset.target = regDonors;
     const sHosp = document.getElementById('statHospitals');
-    if (sHosp) sHosp.dataset.target = hospitals;
+    if (sHosp) sHosp.dataset.target = partnerHospitals;
     const sLives = document.getElementById('statLivesSaved');
     if (sLives) sLives.dataset.target = lives;
+
+    // Label: "Lives saved" = computed from verified donations (labeled "Donations")
+    const statLivesLabel = document.querySelector('#statLivesSaved + .stat-text') || document.getElementById('labelLivesSaved');
+    if (statLivesLabel) statLivesLabel.textContent = 'Donations';
+
     const sResp = document.getElementById('statAvgResponse');
-    if (sResp) sResp.dataset.target = avgResp;
+    const bResp = document.getElementById('barAvgResponse');
+    if (sResp) {
+      if (hasRequestMetrics && avgResp !== null && avgResp !== undefined && avgResp > 0) {
+        sResp.dataset.target = avgResp;
+        if (bResp) bResp.style.width = Math.min(100, Math.max(10, 100 - avgResp * 5)) + '%';
+      } else {
+        sResp.dataset.target = 'none';
+        sResp.textContent = 'No data yet';
+        sResp.style.fontSize = '18px';
+        if (bResp) bResp.style.width = '0%';
+      }
+    }
+
+    const sRate = document.getElementById('statSuccessRate');
+    const bRate = document.getElementById('barSuccessRate');
+    if (sRate) {
+      if (hasRequestMetrics && successRate !== null && successRate !== undefined) {
+        sRate.dataset.target = successRate;
+        if (bRate) bRate.style.width = Math.min(100, successRate) + '%';
+      } else {
+        sRate.dataset.target = 'none';
+        sRate.textContent = 'No data yet';
+        sRate.style.fontSize = '18px';
+        if (bRate) bRate.style.width = '0%';
+      }
+    }
+
     const sZones = document.getElementById('statActiveZones');
     if (sZones) sZones.dataset.target = zones;
-    const sRate = document.getElementById('statSuccessRate');
-    if (sRate) sRate.dataset.target = successRate;
 
     // Update Progress Bars based on real metrics
     const bReg = document.getElementById('barRegDonors');
     if (bReg) bReg.style.width = Math.min(100, Math.max(0, regDonors * 10)) + '%';
     const bHosp = document.getElementById('barHospitals');
-    if (bHosp) bHosp.style.width = Math.min(100, Math.max(0, hospitals * 20)) + '%';
+    if (bHosp) bHosp.style.width = Math.min(100, Math.max(0, partnerHospitals * 20)) + '%';
     const bLives = document.getElementById('barLivesSaved');
     if (bLives) bLives.style.width = Math.min(100, Math.max(0, lives * 10)) + '%';
-    const bResp = document.getElementById('barAvgResponse');
-    if (bResp) bResp.style.width = avgResp > 0 ? Math.min(100, Math.max(10, 100 - avgResp * 5)) + '%' : '0%';
     const bZones = document.getElementById('barActiveZones');
     if (bZones) bZones.style.width = Math.min(100, Math.max(0, zones * 25)) + '%';
-    const bRate = document.getElementById('barSuccessRate');
-    if (bRate) bRate.style.width = successRate > 0 ? Math.min(100, successRate) + '%' : '0%';
 
     // Animate counters with real database figures
     document.querySelectorAll('.hero-stats-bar .stat-num, .stats-section .stat-count').forEach(el => {
-      animateHeroCounter(el);
+      if (el.dataset.target !== 'none' && !isNaN(Number(el.dataset.target))) {
+        animateHeroCounter(el);
+      }
     });
   } catch (err) {
     console.warn('Could not load dynamic platform stats:', err);
@@ -459,8 +487,15 @@ function updateBloodStock(groupId, newUnitCount, newDonorCount) {
   if (newUnitCount !== undefined && newUnitCount !== null) {
     applyValueWithFlash(unitEl, newUnitCount);
   }
-  if (newDonorCount !== undefined && newDonorCount !== null) {
-    applyValueWithFlash(donorEl, newDonorCount);
+  if (donorEl) {
+    const bottomRow = donorEl.closest('.smc-bottom');
+    if (newDonorCount !== undefined && newDonorCount !== null && Number(newDonorCount) > 0) {
+      if (bottomRow) bottomRow.style.display = 'flex';
+      applyValueWithFlash(donorEl, newDonorCount);
+    } else {
+      // Rule: if a count is not available hide that line; remove empty icons
+      if (bottomRow) bottomRow.style.display = 'none';
+    }
   }
 }
 
@@ -472,6 +507,23 @@ window.updateBloodStock = updateBloodStock;
  */
 function updateAllBloodStock(stockData) {
   if (!stockData || typeof stockData !== 'object') return;
+
+  const gatedMsg = document.getElementById('nationalStockGatedMsg');
+  const stockGrid = document.querySelector('.national-stock-grid');
+
+  if (stockData.available === false || stockData.hasSufficientHospitals === false) {
+    if (gatedMsg) {
+      gatedMsg.style.display = 'block';
+      const textP = gatedMsg.querySelector('p') || gatedMsg.querySelector('span');
+      if (textP && stockData.message) textP.textContent = stockData.message;
+    }
+    if (stockGrid) stockGrid.style.display = 'none';
+    return;
+  }
+
+  if (gatedMsg) gatedMsg.style.display = 'none';
+  if (stockGrid) stockGrid.style.display = 'grid';
+
   const payload = stockData.data || stockData;
   const groups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 

@@ -260,6 +260,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("weight", "DOUBLE NULL DEFAULT NULL");
         requiredColumns.put("last_donation", "DATE NULL DEFAULT NULL");
         requiredColumns.put("availability", "VARCHAR(40) DEFAULT 'Available'");
+        requiredColumns.put("paused_until", "DATE NULL DEFAULT NULL");
         requiredColumns.put("address", "VARCHAR(255) NULL DEFAULT NULL");
         requiredColumns.put("city", "VARCHAR(80) NULL DEFAULT NULL");
         requiredColumns.put("state", "VARCHAR(80) NULL DEFAULT NULL");
@@ -439,6 +440,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("verification_status", "VARCHAR(30) DEFAULT 'Verified'");
         requiredColumns.put("updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        requiredColumns.put("deleted_at", "TIMESTAMP NULL DEFAULT NULL");
 
         ensureColumns(conn, "hospitals", requiredColumns);
     }

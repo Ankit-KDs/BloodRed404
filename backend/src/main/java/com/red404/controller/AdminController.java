@@ -785,37 +785,16 @@ public class AdminController {
             health.put("databaseVersion", prodVersion);
             health.put("isMySQL", prodName != null && prodName.toLowerCase().contains("mysql"));
 
-            // 1. Total Donors
-            int totalDonors = 0;
-            try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM donors")) {
-                if (rs.next()) totalDonors = rs.getInt(1);
-            } catch (Exception ignored) {}
-            health.put("totalDonors", totalDonors);
-
-            // 2. Total Hospitals
-            int totalHospitals = 0;
-            try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM hospitals")) {
-                if (rs.next()) totalHospitals = rs.getInt(1);
-            } catch (Exception ignored) {}
-            health.put("totalHospitals", totalHospitals);
-
-            // 3. Total SOS Handled
-            int totalSos = 0;
-            try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM blood_requests")) {
-                if (rs.next()) totalSos = rs.getInt(1);
-            } catch (Exception ignored) {}
-            health.put("totalSosHandled", totalSos);
-
-            // 4. Total Completed Rescues
-            int totalDonations = 0;
-            try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM donations WHERE status = 'COMPLETED'")) {
-                if (rs.next()) totalDonations = rs.getInt(1);
-            } catch (Exception ignored) {}
-            health.put("totalDonations", totalDonations);
+            // Use authoritative single source of truth for platform metrics
+            Map<String, Object> platformStats = com.red404.service.PlatformMetricsService.getInstance().getPlatformStats();
+            health.put("totalDonors", platformStats.get("registeredDonors"));
+            health.put("activeDonors", platformStats.get("activeDonors"));
+            health.put("totalHospitals", platformStats.get("totalHospitals"));
+            health.put("partnerHospitals", platformStats.get("partnerHospitals"));
+            health.put("totalSosHandled", platformStats.get("totalRequests"));
+            health.put("completedSos", platformStats.get("completedRequests"));
+            health.put("totalDonations", platformStats.get("verifiedDonations"));
+            health.put("livesSaved", platformStats.get("livesSaved"));
 
             // 5. Active Sessions
             int activeSessions = 0;

@@ -2,6 +2,7 @@ package com.red404.controller;
 
 import com.red404.dao.DonorDao;
 import com.red404.model.ApiResponse;
+import com.red404.service.PlatformMetricsService;
 import com.red404.util.DBConnection;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,7 @@ public class SystemController {
     @GetMapping({"", "/", "/stats", "/platform-stats"})
     public ResponseEntity<ApiResponse> getStats() {
         try {
-            Map<String, Object> stats = donorDao.getPlatformStats();
+            Map<String, Object> stats = PlatformMetricsService.getInstance().getPlatformStats();
             return ResponseEntity.ok(new ApiResponse(true, "Platform stats loaded", stats));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
@@ -39,7 +40,7 @@ public class SystemController {
     @GetMapping({"/national-blood-stock", "/blood-stock", "/inventory-overview"})
     public ResponseEntity<ApiResponse> getNationalBloodStock() {
         try {
-            Map<String, Object> stock = donorDao.getNationalBloodStock();
+            Map<String, Object> stock = PlatformMetricsService.getInstance().getPublicNationalBloodStock();
             return ResponseEntity.ok(new ApiResponse(true, "National blood stock loaded", stock));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
@@ -100,7 +101,7 @@ public class SystemController {
 
         // Immediately send initial state
         try {
-            Map<String, Object> initial = donorDao.getNationalBloodStock();
+            Map<String, Object> initial = PlatformMetricsService.getInstance().getPublicNationalBloodStock();
             emitter.send(SseEmitter.event().name("stock-update").data(initial));
         } catch (Exception ignored) {}
 
@@ -108,10 +109,11 @@ public class SystemController {
     }
 
     public static void broadcastStockUpdate(Map<String, Object> stockData) {
-        if (stockData == null) return;
+        PlatformMetricsService.getInstance().invalidateCache();
+        Map<String, Object> payload = stockData != null ? stockData : PlatformMetricsService.getInstance().getPublicNationalBloodStock();
         for (SseEmitter emitter : emitters) {
             try {
-                emitter.send(SseEmitter.event().name("stock-update").data(stockData));
+                emitter.send(SseEmitter.event().name("stock-update").data(payload));
             } catch (Exception e) {
                 emitters.remove(emitter);
             }
