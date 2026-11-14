@@ -2321,9 +2321,29 @@ function initDonorCheckin() {
       bgEl.textContent = d.bloodType || 'O+';
       bgEl.className = 'chip-status available';
     }
+
+    // Blood group verification tag (Part 5 & Part 6)
+    const verTag = document.getElementById('dlcBloodGroupVerificationTag');
+    if (verTag) {
+      const isVerified = d.bloodGroupStatus === 'hospital_verified';
+      if (isVerified) {
+        verTag.textContent = 'Verified';
+        verTag.style.color = '#22c55e';
+        verTag.style.background = 'rgba(34, 197, 94, 0.15)';
+        verTag.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        verTag.title = d.bloodGroupVerifiedByHospitalName ? `Verified by ${d.bloodGroupVerifiedByHospitalName}` : 'Verified by hospital';
+      } else {
+        verTag.textContent = 'unverified';
+        verTag.style.color = '#facc15';
+        verTag.style.background = 'rgba(234, 179, 8, 0.15)';
+        verTag.style.borderColor = 'rgba(234, 179, 8, 0.3)';
+        verTag.title = 'Self-declared blood group (unverified)';
+      }
+    }
+
     if (ageEl) ageEl.textContent = (d.age || 25) + ' yrs';
     if (wtEl) wtEl.textContent = (d.weight ? d.weight + ' kg' : 'Not recorded');
-    if (lastEl) lastEl.textContent = d.lastDonationDaysAgo || 'Never';
+    if (lastEl) lastEl.textContent = d.lastDonationDaysAgo || (d.lastDonationDate || 'Never');
 
     if (eligEl) {
       eligEl.textContent = d.isEligible ? 'Eligible' : (d.eligibilityReason || 'Not eligible yet');
@@ -2335,6 +2355,27 @@ function initDonorCheckin() {
       healthEl.style.color = (d.healthStatus && d.healthStatus.toLowerCase().includes('unavail')) ? '#ef4444' : '#22c55e';
     }
 
+    // Render Eligibility Capsule in Loaded Donor Card (Part 4 & Part 6)
+    const capPct = document.getElementById('dlcCapsulePct');
+    const capBar = document.getElementById('dlcCapsuleBar');
+    const capNotice = document.getElementById('dlcCapsuleNotice');
+    const elig = d.eligibility || {};
+    const pct = elig.progress_pct !== undefined ? elig.progress_pct : (d.progress_pct !== undefined ? d.progress_pct : (d.isEligible ? 100 : 0));
+    if (capPct) capPct.textContent = pct + '%';
+    if (capBar) {
+      capBar.style.width = pct + '%';
+      capBar.style.background = d.isEligible ? 'var(--hosp-green, #22c55e)' : '#f59e0b';
+    }
+    if (capNotice) {
+      if (d.isEligible) {
+        capNotice.textContent = 'You can donate. The hospital does a final check before donating.';
+      } else if (!d.lastDonationDate || d.lastDonationDate === 'Never') {
+        capNotice.textContent = 'No donation yet. Ready for intake.';
+      } else {
+        capNotice.textContent = `Next donation possible on ${elig.next_eligible_date || d.nextEligibleDate || 'soon'} (${elig.days_until_eligible || d.daysUntilEligible || 0} days left).`;
+      }
+    }
+
     donorCard.style.display = 'block';
 
     // Unlock Clinical Vitals Panel
@@ -2344,6 +2385,25 @@ function initDonorCheckin() {
     }
     if (vitalsDisabledHint) vitalsDisabledHint.style.display = 'none';
     if (btnDeferDonation) btnDeferDonation.disabled = false;
+
+    // Prefill confirmed blood group and staff user
+    const confirmedBg = document.getElementById('vitConfirmedBloodGroup');
+    if (confirmedBg && d.bloodType) {
+      confirmedBg.value = d.bloodType;
+    }
+    const boxReason = document.getElementById('boxBloodGroupReason');
+    const inputReason = document.getElementById('vitBloodGroupReason');
+    if (confirmedBg) {
+      confirmedBg.onchange = () => {
+        const changed = confirmedBg.value !== (d.bloodType || '');
+        if (boxReason) boxReason.style.display = changed ? 'block' : 'none';
+        if (inputReason) inputReason.required = changed;
+      };
+    }
+    const staffInput = document.getElementById('vitStaffName');
+    if (staffInput && !staffInput.value) {
+      staffInput.value = (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Attending Staff';
+    }
 
     // Prefill weight from donor record (editable)
     if (vitWeight && d.weight) {
@@ -2456,13 +2516,102 @@ function initDonorCheckin() {
     }
   }
 
-  // Defer donor button
+  // Camera QR Scanner Modal Handling (Part 6)
+  const btnScanQrCamera = document.getElementById('btnScanQrCamera');
+  const cameraModal = document.getElementById('checkinCameraModal');
+  const btnCloseCamera = document.getElementById('btnCloseCameraModal');
+  const btnCancelScan = document.getElementById('btnCancelScan');
+  const videoEl = document.getElementById('cameraPreviewVideo');
+  const cameraMsg = document.getElementById('cameraScannerMsg');
+  let cameraStream = null;
+  let scanAnimationId = null;
+
+  function stopCamera() {
+    if (scanAnimationId) {
+      cancelAnimationFrame(scanAnimationId);
+      scanAnimationId = null;
+    }
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    if (cameraModal) cameraModal.style.display = 'none';
+  }
+
+  if (btnCloseCamera) btnCloseCamera.addEventListener('click', stopCamera);
+  if (btnCancelScan) btnCancelScan.addEventListener('click', stopCamera);
+
+  if (btnScanQrCamera) {
+    btnScanQrCamera.addEventListener('click', async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Camera is not supported on this browser or device. Please use manual entry.');
+        return;
+      }
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        if (videoEl) {
+          videoEl.srcObject = cameraStream;
+          await videoEl.play();
+        }
+        if (cameraModal) cameraModal.style.display = 'flex';
+        if (cameraMsg) cameraMsg.textContent = 'Align the donor\'s QR code within the frame...';
+
+        if ('BarcodeDetector' in window) {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const detectLoop = async () => {
+            if (!cameraStream) return;
+            try {
+              const barcodes = await detector.detect(videoEl);
+              if (barcodes && barcodes.length > 0) {
+                let rawVal = barcodes[0].rawValue || '';
+                if (rawVal.startsWith('RED404:')) rawVal = rawVal.substring('RED404:'.length).trim();
+                if (inputId) inputId.value = rawVal;
+                stopCamera();
+                performDonorLookup();
+                return;
+              }
+            } catch (_) {}
+            scanAnimationId = requestAnimationFrame(detectLoop);
+          };
+          scanAnimationId = requestAnimationFrame(detectLoop);
+        } else {
+          if (cameraMsg) cameraMsg.textContent = 'Camera active. Point at QR code (or type token into lookup box).';
+        }
+      } catch (err) {
+        alert('Unable to access camera: ' + (err.message || 'Permission denied'));
+        stopCamera();
+      }
+    });
+  }
+
+  // Defer donor modal handling (Part 6)
+  const deferModal = document.getElementById('deferralReasonModal');
+  const deferReasonInput = document.getElementById('deferralReasonInput');
+  const btnConfirmDeferral = document.getElementById('btnConfirmDeferral');
+  const btnCancelDeferral = document.getElementById('btnCancelDeferral');
+
   if (btnDeferDonation) {
-    btnDeferDonation.addEventListener('click', async () => {
+    btnDeferDonation.addEventListener('click', () => {
       if (!currentLoadedDonor) return;
-      const reason = window.prompt(`Enter mandatory clinical reason for deferring donor ${currentLoadedDonor.name}:`);
-      if (!reason || !reason.trim()) {
-        alert('A valid reason is required to document a donor deferral.');
+      if (deferReasonInput) deferReasonInput.value = '';
+      if (deferModal) deferModal.style.display = 'flex';
+    });
+  }
+
+  if (btnCancelDeferral) {
+    btnCancelDeferral.addEventListener('click', () => {
+      if (deferModal) deferModal.style.display = 'none';
+    });
+  }
+
+  if (btnConfirmDeferral) {
+    btnConfirmDeferral.addEventListener('click', async () => {
+      if (!currentLoadedDonor) return;
+      const reason = deferReasonInput ? deferReasonInput.value.trim() : '';
+      if (!reason || reason.length < 3) {
+        alert('A valid clinical reason is required to document a donor deferral.');
         return;
       }
 
@@ -2471,44 +2620,65 @@ function initDonorCheckin() {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
+        const staffNameInput = document.getElementById('vitStaffName');
+        const staffName = (staffNameInput && staffNameInput.value.trim()) || (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Attending Staff';
+
         const res = await fetch('/api/hospital/donors/defer', {
           method: 'POST',
           headers,
           body: JSON.stringify({
             donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
-            reason: reason.trim(),
-            staffUser: (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Hospital Staff'
+            reason: reason,
+            staffUser: staffName
           }),
           credentials: 'include'
         });
 
+        if (deferModal) deferModal.style.display = 'none';
+
         if (res.ok) {
-          alert(`Donor ${currentLoadedDonor.name} has been documented as deferred.`);
+          alert(`Donor ${currentLoadedDonor.name} has been documented as deferred. The QR token has been closed.`);
           resetCheckinForm(false);
         } else {
           const err = await res.json().catch(() => ({}));
           alert('Failed to document deferral: ' + (err.message || 'Server error'));
         }
       } catch (e) {
+        if (deferModal) deferModal.style.display = 'none';
         alert('Network error while documenting deferral.');
       }
     });
   }
 
-  // Approve donation submit
+  // Approve donation submit (Part 5 & Part 6)
   if (vitalsForm) {
     vitalsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentLoadedDonor) return;
 
-      // Ask donation volume (350 mL / 450 mL)
-      const volumeInput = window.prompt('Confirm blood collection volume in mL (Enter 350 or 450):', '450');
-      if (!volumeInput) return; // user cancelled
-      const volumeMl = parseInt(volumeInput.trim());
-      if (volumeMl !== 350 && volumeMl !== 450) {
-        alert('Please enter a valid collection volume: either 350 or 450 mL.');
-        return;
+      const confirmedBgEl = document.getElementById('vitConfirmedBloodGroup');
+      const confirmedBg = confirmedBgEl ? confirmedBgEl.value : (currentLoadedDonor.bloodType || 'O+');
+
+      const bgReasonEl = document.getElementById('vitBloodGroupReason');
+      const bgReason = bgReasonEl ? bgReasonEl.value.trim() : '';
+
+      // Part 5.2: reason required if hospital staff changed donor's blood group
+      if (currentLoadedDonor.bloodType && confirmedBg !== currentLoadedDonor.bloodType) {
+        if (!bgReason || bgReason.length < 3) {
+          alert('Reason is required when modifying a donor\'s blood group during check-in.');
+          if (bgReasonEl) bgReasonEl.focus();
+          return;
+        }
       }
+
+      const volumeSelect = document.getElementById('vitVolumeMl');
+      const volumeMl = volumeSelect ? parseInt(volumeSelect.value) : 450;
+
+      const staffInput = document.getElementById('vitStaffName');
+      const staffUser = (staffInput && staffInput.value.trim()) || (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Attending Staff';
+
+      const notesInput = document.getElementById('vitNotes');
+      const notes = notesInput ? notesInput.value.trim() : '';
 
       if (btnRecordDonation) {
         btnRecordDonation.disabled = true;
@@ -2522,7 +2692,8 @@ function initDonorCheckin() {
           systolic: parseFloat(vitBpSystolic.value),
           diastolic: parseFloat(vitBpDiastolic.value),
           pulse: parseFloat(vitPulse.value),
-          temperature: parseFloat(vitTemp.value)
+          temperature: parseFloat(vitTemp.value),
+          notes: notes
         };
 
         const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
@@ -2531,10 +2702,11 @@ function initDonorCheckin() {
 
         const payload = {
           donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
-          bloodType: currentLoadedDonor.bloodType || 'O+',
+          bloodType: confirmedBg,
           volumeMl: volumeMl,
+          reason: bgReason,
           vitals: vitalsData,
-          staffUser: (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Hospital Staff'
+          staffUser: staffUser
         };
 
         const res = await fetch('/api/hospital/donors/checkin', {
@@ -2554,9 +2726,12 @@ function initDonorCheckin() {
           return;
         }
 
-        // Update local inventory display immediately if inventory table loaded
+        // Update local inventory display immediately
         if (typeof initInventory === 'function') {
           try { initInventory(); } catch (_) {}
+        }
+        if (typeof loadHospitalInventory === 'function') {
+          try { loadHospitalInventory(); } catch (_) {}
         }
 
         // Show success card and hide vitals form
@@ -2567,10 +2742,10 @@ function initDonorCheckin() {
         if (successCard) {
           successCard.style.display = 'block';
           if (successTitle) {
-            successTitle.textContent = `Donation Verified & Approved (${currentLoadedDonor.bloodType}, ${volumeMl} mL)`;
+            successTitle.textContent = `Donation Verified & Approved (${confirmedBg}, ${volumeMl} mL)`;
           }
           if (successMsg) {
-            successMsg.textContent = `Donor ${currentLoadedDonor.name} (${currentLoadedDonor.donorId}) recorded successfully. +1 unit added to live stock.`;
+            successMsg.textContent = `Donor ${currentLoadedDonor.name} (${currentLoadedDonor.donorId}) recorded successfully. +1 unit added to live stock. QR token closed.`;
           }
         }
       } catch (err) {

@@ -187,14 +187,53 @@ public class DonorDao {
     public Map<String, Object> findByIdOrDonorId(String identifier) throws SQLException {
         if (identifier == null || identifier.isBlank()) return null;
         String clean = identifier.trim();
-        String sql = "SELECT * FROM donors WHERE UPPER(TRIM(donor_id)) = UPPER(?) OR CAST(id AS CHAR) = ? LIMIT 1";
+        if (clean.startsWith("RED404:")) clean = clean.substring("RED404:".length()).trim();
+        String sql = "SELECT * FROM donors WHERE UPPER(TRIM(donor_id)) = UPPER(?) OR CAST(id AS CHAR) = ? OR UPPER(TRIM(qr_token)) = UPPER(?) LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, clean);
             ps.setString(2, clean);
+            ps.setString(3, clean);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapDonor(rs, true) : null;
             }
+        }
+    }
+
+    public String generateOrGetQrToken(int donorId) throws SQLException {
+        ensureDonorColumnsExist();
+        String sql = "SELECT qr_token, qr_token_created_at FROM donors WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String existing = rs.getString("qr_token");
+                    Timestamp createdAt = rs.getTimestamp("qr_token_created_at");
+                    if (existing != null && !existing.isBlank() && createdAt != null) {
+                        long ageHours = (System.currentTimeMillis() - createdAt.getTime()) / (1000 * 60 * 60);
+                        if (ageHours < 24) {
+                            return existing;
+                        }
+                    }
+                }
+            }
+        }
+        String newToken = "SEC-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE donors SET qr_token = ?, qr_token_created_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+            ps.setString(1, newToken);
+            ps.setInt(2, donorId);
+            ps.executeUpdate();
+        }
+        return newToken;
+    }
+
+    public boolean invalidateQrToken(int donorId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE donors SET qr_token = NULL, qr_token_created_at = NULL WHERE id = ?")) {
+            ps.setInt(1, donorId);
+            return ps.executeUpdate() > 0;
         }
     }
 
@@ -385,6 +424,31 @@ public class DonorDao {
         }
     }
 
+    public boolean updateBloodGroupSelfDeclared(int donorId, String newGroup) throws SQLException {
+        ensureDonorColumnsExist();
+        String sql = "UPDATE donors SET blood_type = ?, blood_group_status = 'self_declared', blood_group_edit_count = COALESCE(blood_group_edit_count, 0) + 1 WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newGroup);
+            ps.setInt(2, donorId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean updateBloodGroupHospitalVerified(int donorId, String newGroup, Integer hospitalId, String hospitalName) throws SQLException {
+        ensureDonorColumnsExist();
+        String sql = "UPDATE donors SET blood_type = ?, blood_group_status = 'hospital_verified', blood_group_verified_by_hospital_id = ?, blood_group_verified_by_hospital_name = ?, blood_group_verified_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newGroup);
+            if (hospitalId != null && hospitalId > 0) ps.setInt(2, hospitalId);
+            else ps.setNull(2, Types.INTEGER);
+            ps.setString(3, hospitalName);
+            ps.setInt(4, donorId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     private void ensureDonorColumnsExist() {
         try (Connection conn = DBConnection.getConnection()) {
             ensureCol(conn, "donor_id", "VARCHAR(30) NULL DEFAULT NULL");
@@ -402,6 +466,11 @@ public class DonorDao {
             ensureCol(conn, "donor_type", "VARCHAR(80) NULL DEFAULT NULL");
             ensureCol(conn, "qr_token", "VARCHAR(100) NULL DEFAULT NULL");
             ensureCol(conn, "last_donation", "DATE NULL DEFAULT NULL");
+            ensureCol(conn, "blood_group_status", "VARCHAR(40) DEFAULT 'self_declared'");
+            ensureCol(conn, "blood_group_verified_by_hospital_id", "INT NULL DEFAULT NULL");
+            ensureCol(conn, "blood_group_verified_by_hospital_name", "VARCHAR(180) NULL DEFAULT NULL");
+            ensureCol(conn, "blood_group_verified_at", "TIMESTAMP NULL DEFAULT NULL");
+            ensureCol(conn, "blood_group_edit_count", "INT DEFAULT 0");
 
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name LIKE '%Rajesh%'");
@@ -1250,6 +1319,23 @@ public class DonorDao {
             donor.put("qrToken", rs.getString("qr_token"));
             donor.put("qr_token", rs.getString("qr_token"));
         } catch (SQLException ignored) {}
+        try {
+            String bgStatus = rs.getString("blood_group_status");
+            donor.put("bloodGroupStatus", (bgStatus != null && !bgStatus.isBlank()) ? bgStatus : "self_declared");
+            donor.put("blood_group_status", donor.get("bloodGroupStatus"));
+            donor.put("bloodGroupVerifiedByHospitalId", rs.getObject("blood_group_verified_by_hospital_id"));
+            donor.put("bloodGroupVerifiedByHospitalName", rs.getString("blood_group_verified_by_hospital_name"));
+            java.sql.Timestamp bgVerAt = rs.getTimestamp("blood_group_verified_at");
+            donor.put("bloodGroupVerifiedAt", bgVerAt != null ? bgVerAt.toString() : null);
+            donor.put("bloodGroupEditCount", rs.getInt("blood_group_edit_count"));
+        } catch (SQLException ignored) {
+            donor.put("bloodGroupStatus", "self_declared");
+            donor.put("blood_group_status", "self_declared");
+            donor.put("bloodGroupVerifiedByHospitalId", null);
+            donor.put("bloodGroupVerifiedByHospitalName", null);
+            donor.put("bloodGroupVerifiedAt", null);
+            donor.put("bloodGroupEditCount", 0);
+        }
         return donor;
     }
 

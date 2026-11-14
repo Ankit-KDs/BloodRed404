@@ -34,6 +34,7 @@ public class HospitalController {
     private final BloodRequestDao requestDao = new BloodRequestDao();
     private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
     private final com.red404.dao.BloodRequestNotificationDao notificationDao = new com.red404.dao.BloodRequestNotificationDao();
+    private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
 
     // ======================== GET ========================
 
@@ -720,6 +721,14 @@ public class HospitalController {
             }
             details.put("healthStatus", healthStatus);
 
+            // Blood group verification status (Part 5)
+            String bgStatus = (String) donor.get("bloodGroupStatus");
+            details.put("bloodGroupStatus", bgStatus != null ? bgStatus : "self_declared");
+            details.put("blood_group_status", details.get("bloodGroupStatus"));
+            details.put("bloodGroupVerifiedByHospitalName", donor.get("bloodGroupVerifiedByHospitalName"));
+            details.put("bloodGroupVerifiedAt", donor.get("bloodGroupVerifiedAt"));
+            details.put("bloodGroupEditCount", donor.get("bloodGroupEditCount"));
+
             return ok("Donor details retrieved", details);
         } catch (Exception e) {
             return serverError(e);
@@ -754,6 +763,22 @@ public class HospitalController {
                 if (d != null) bloodType = (String) d.get("blood_type");
                 if (bloodType == null) bloodType = "O+";
             }
+            String normBloodType = com.red404.util.BloodCompatibilityUtil.normalizeBloodGroup(bloodType);
+            if (normBloodType != null) {
+                bloodType = normBloodType;
+            }
+
+            Map<String, Object> existingDonor = donorDao.findByIdOrDonorId(donorId);
+            String existingBg = existingDonor != null ? (String) existingDonor.get("blood_type") : null;
+            String editReason = JsonUtil.textOrNull(body, "reason");
+            if (editReason == null) editReason = JsonUtil.textOrNull(body, "bloodGroupReason");
+
+            // Part 5.2: reason is required for hospital edits if blood group changed
+            if (existingBg != null && !existingBg.equalsIgnoreCase(bloodType)) {
+                if (editReason == null || editReason.trim().length() < 3) {
+                    return ResponseEntity.badRequest().body(new ApiResponse(false, "Reason is required when modifying a donor's blood group during check-in."));
+                }
+            }
 
             int volumeMl = JsonUtil.asInt(body, "volumeMl", 450);
             if (volumeMl != 350 && volumeMl != 450) volumeMl = 450;
@@ -770,6 +795,18 @@ public class HospitalController {
             if (!recorded) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(new ApiResponse(false, "Failed to record donation in database."));
+            }
+
+            // Update donor blood group status to hospital_verified and log audit (Part 5)
+            if (existingDonor != null && existingDonor.get("id") != null) {
+                int donorIntId = ((Number) existingDonor.get("id")).intValue();
+                Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+                String hospName = (hosp != null && hosp.get("hospital_name") != null) ? (String) hosp.get("hospital_name") : "Verified Hospital";
+                donorDao.updateBloodGroupHospitalVerified(donorIntId, bloodType, hospitalId, hospName);
+                bloodGroupAuditDao.insertAudit(donorIntId, existingBg, bloodType, "hospital", hospitalId,
+                        editReason != null ? editReason.trim() : "Hospital check-in donation verification");
+                // Invalidate one-time QR token upon approved check-in (Part 6)
+                donorDao.invalidateQrToken(donorIntId);
             }
 
             // Increment inventory (+1 unit)
@@ -817,6 +854,10 @@ public class HospitalController {
             if (staffUser == null) staffUser = "Hospital Staff";
 
             donorDao.recordDonation(donorId, hospitalId, null, 0, 0, null, staffUser, "DEFERRED", reason);
+            Map<String, Object> defDonor = donorDao.findByIdOrDonorId(donorId);
+            if (defDonor != null && defDonor.get("id") != null) {
+                donorDao.invalidateQrToken(((Number) defDonor.get("id")).intValue());
+            }
             AdminController.addLog("DONATION_DEFERRED", "Donor " + donorId + " deferred at hospital ID " + hospitalId + ": " + reason);
 
             return ok("Donor has been deferred with documented reason.", Map.of("donorId", donorId, "reason", reason));

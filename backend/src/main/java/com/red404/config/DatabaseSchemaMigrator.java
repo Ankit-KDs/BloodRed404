@@ -208,6 +208,17 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             "    description TEXT NOT NULL," +
             "    status VARCHAR(30) NOT NULL DEFAULT 'OPEN'," +
             "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")",
+
+            "CREATE TABLE IF NOT EXISTS donor_blood_group_audits (" +
+            "    id INT AUTO_INCREMENT PRIMARY KEY," +
+            "    donor_id INT NOT NULL," +
+            "    old_group VARCHAR(10)," +
+            "    new_group VARCHAR(10) NOT NULL," +
+            "    changed_by_role VARCHAR(50) NOT NULL," +
+            "    changed_by_id INT NULL DEFAULT NULL," +
+            "    reason VARCHAR(255) NULL DEFAULT NULL," +
+            "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ")"
         };
 
@@ -283,7 +294,13 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("medications", "VARCHAR(255) NULL DEFAULT NULL");
         requiredColumns.put("surgeries", "VARCHAR(255) NULL DEFAULT NULL");
         requiredColumns.put("donor_type", "VARCHAR(80) NULL DEFAULT NULL");
+        requiredColumns.put("blood_group_status", "VARCHAR(40) DEFAULT 'self_declared'");
+        requiredColumns.put("blood_group_verified_by_hospital_id", "INT NULL DEFAULT NULL");
+        requiredColumns.put("blood_group_verified_by_hospital_name", "VARCHAR(180) NULL DEFAULT NULL");
+        requiredColumns.put("blood_group_verified_at", "TIMESTAMP NULL DEFAULT NULL");
+        requiredColumns.put("blood_group_edit_count", "INT DEFAULT 0");
         requiredColumns.put("qr_token", "VARCHAR(100) NULL DEFAULT NULL");
+        requiredColumns.put("qr_token_created_at", "TIMESTAMP NULL DEFAULT NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "donors", requiredColumns);

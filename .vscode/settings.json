@@ -15,5 +15,10 @@
             "path": "C:\\Program Files\\Java\\jdk-22"
         }
     ],
-    "maven.pomPath": "pom.xml"
+    "maven.pomPath": "pom.xml",
+    "maven.projects": [
+        "pom.xml",
+        "backend/pom.xml"
+    ],
+    "java.autobuild.enabled": true
 }

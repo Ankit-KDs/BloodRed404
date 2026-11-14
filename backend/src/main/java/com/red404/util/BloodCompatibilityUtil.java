@@ -21,6 +21,22 @@ import java.util.Map;
 public final class BloodCompatibilityUtil {
 
     private static final Map<String, List<String>> COMPATIBILITY_MAP = new HashMap<>();
+    public static final java.util.Set<String> CANONICAL_GROUPS = java.util.Set.of("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-");
+
+    public static String normalizeBloodGroup(String group) {
+        if (group == null) return null;
+        String clean = group.trim().toUpperCase()
+                .replace("POSITIVE", "+")
+                .replace("NEGATIVE", "-")
+                .replace("POS", "+")
+                .replace("NEG", "-")
+                .replaceAll("\\s+", "");
+        return CANONICAL_GROUPS.contains(clean) ? clean : null;
+    }
+
+    public static boolean isValidGroup(String group) {
+        return normalizeBloodGroup(group) != null;
+    }
 
     static {
         COMPATIBILITY_MAP.put("O-",  List.of("O-"));

@@ -45,6 +45,7 @@ public class DonorController {
     private final BloodRequestDao requestDao = new BloodRequestDao();
     private final SessionDao sessionDao = new SessionDao();
     private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
+    private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
 
     // ======================== GET ========================
 
@@ -108,6 +109,23 @@ public class DonorController {
             }
             DonorEligibilityService.attachEligibility(profile);
             return ok("Donor scan profile retrieved successfully", profile);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping({"/qr-token", "/qr-pass"})
+    public ResponseEntity<ApiResponse> getQrPass(HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null || donor.get("id") == null) return unauthorized();
+            int donorId = ((Number) donor.get("id")).intValue();
+            String token = donorDao.generateOrGetQrToken(donorId);
+            return ok("QR Pass Token generated", Map.of(
+                    "token", token,
+                    "qrPayload", "RED404:" + token,
+                    "ttlHours", 24
+            ));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -768,7 +786,33 @@ public class DonorController {
 
             if (body.has("bloodType") || body.has("blood_type")) {
                 String bgVal = JsonUtil.textOrNull(body, "bloodType") != null ? JsonUtil.text(body, "bloodType") : JsonUtil.textOrNull(body, "blood_type");
-                if (bgVal != null && !bgVal.isBlank()) fields.put("blood_type", bgVal);
+                if (bgVal != null && !bgVal.isBlank()) {
+                    String normBg = com.red404.util.BloodCompatibilityUtil.normalizeBloodGroup(bgVal);
+                    if (normBg == null) {
+                        return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid blood group: " + bgVal + ". Must be one of A+, A-, B+, B-, AB+, AB-, O+, O-."));
+                    }
+                    Map<String, Object> currentRecord = donorDao.findById(targetId);
+                    if (currentRecord != null) {
+                        String currentBg = (String) currentRecord.get("bloodType");
+                        String status = (String) currentRecord.get("bloodGroupStatus");
+                        if (status == null) status = "self_declared";
+                        int editCount = currentRecord.get("bloodGroupEditCount") instanceof Number ? ((Number) currentRecord.get("bloodGroupEditCount")).intValue() : 0;
+
+                        if (!normBg.equalsIgnoreCase(currentBg)) {
+                            if ("hospital_verified".equalsIgnoreCase(status)) {
+                                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false,
+                                        "Blood group has been verified by a hospital (" + currentRecord.get("bloodGroupVerifiedByHospitalName") + ") and cannot be edited directly. Please submit a correction request."));
+                            }
+                            if (editCount >= 1) {
+                                return ResponseEntity.badRequest().body(new ApiResponse(false,
+                                        "Blood group can only be self-edited once. Please request a correction from hospital staff during your next visit."));
+                            }
+                            fields.put("blood_type", normBg);
+                            fields.put("blood_group_edit_count", editCount + 1);
+                            bloodGroupAuditDao.insertAudit(targetId, currentBg, normBg, "donor", targetId, "Donor initial update");
+                        }
+                    }
+                }
             }
 
             if (body.has("gender")) {
@@ -879,6 +923,41 @@ public class DonorController {
             }
 
             return ok("Profile updated successfully in MySQL database", updated);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/request-blood-group-correction")
+    public ResponseEntity<ApiResponse> requestBloodGroupCorrection(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null || donor.get("id") == null) return unauthorized();
+            int donorId = ((Number) donor.get("id")).intValue();
+            String requestedGroup = JsonUtil.textOrNull(body, "requestedGroup");
+            if (requestedGroup == null) requestedGroup = JsonUtil.textOrNull(body, "bloodType");
+            String reason = JsonUtil.textOrNull(body, "reason");
+
+            if (requestedGroup == null || requestedGroup.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Requested blood group is required."));
+            }
+            String normGroup = com.red404.util.BloodCompatibilityUtil.normalizeBloodGroup(requestedGroup);
+            if (normGroup == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid blood group format: " + requestedGroup));
+            }
+            if (reason == null || reason.trim().length() < 3) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Please provide a valid reason for the correction request."));
+            }
+
+            Map<String, Object> currentRecord = donorDao.findById(donorId);
+            String currentBg = currentRecord != null ? (String) currentRecord.get("bloodType") : null;
+
+            bloodGroupAuditDao.insertAudit(donorId, currentBg, normGroup, "donor_correction_request", donorId, reason.trim());
+            return ok("Correction request submitted successfully. Hospital staff will review and verify your blood group during check-in.", Map.of(
+                    "donorId", donorId,
+                    "currentGroup", currentBg != null ? currentBg : "Unknown",
+                    "requestedGroup", normGroup
+            ));
         } catch (Exception e) {
             return serverError(e);
         }

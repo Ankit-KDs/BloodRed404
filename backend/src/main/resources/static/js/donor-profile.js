@@ -883,7 +883,7 @@
     const uniqueIdStr = smartDonorId;
     if (idEl) idEl.textContent = uniqueIdStr;
 
-    // 2. Token Management & QR Render (Directs to Hospital Read-Only Scan View: user-detail-form.html)
+    // 2. Token Management & QR Render (Part 6: Opaque token with zero PII)
     const storageKey = 'red404_qr_token_donor_' + (currentDonor.id || '1');
     let secureToken = currentDonor.qrToken || localStorage.getItem(storageKey);
     if (!secureToken) {
@@ -895,16 +895,15 @@
       tokenEl.textContent = `TOKEN: ${secureToken}`;
     }
 
-    // Link directly to user-detail-form.html in strict read-only A4 format
-    const scanUrl = `${window.location.origin}/user-detail-form.html?token=${encodeURIComponent(secureToken)}&donorId=${encodeURIComponent(currentDonor.id || 1)}&donor=${encodeURIComponent(uniqueIdStr)}`;
-
-    renderIntakeQRCode(scanUrl);
+    // Part 6.1: QR contains ONLY the opaque signed token, NO personal info (name, phone, blood group, DOB)
+    const qrPayload = `RED404:${secureToken}`;
+    renderIntakeQRCode(qrPayload);
 
     // Also bind quick inspection links in the UI
     const viewScanFormLink = document.getElementById('viewScanFormLink');
-    if (viewScanFormLink) viewScanFormLink.href = scanUrl;
+    if (viewScanFormLink) viewScanFormLink.href = `/user-detail-form.html?token=${encodeURIComponent(secureToken)}`;
     const btnOpenScanPage = document.getElementById('btnOpenScanPage');
-    if (btnOpenScanPage) btnOpenScanPage.href = scanUrl;
+    if (btnOpenScanPage) btnOpenScanPage.href = `/user-detail-form.html?token=${encodeURIComponent(secureToken)}`;
 
     // 3. Action Button Bindings
     setupDigitalIdActions(storageKey, uniqueIdStr);
@@ -1100,13 +1099,13 @@
           }).catch(() => {});
         } catch (_) {}
 
-        const scanUrl = `${window.location.origin}/user-detail-form.html?token=${encodeURIComponent(newToken)}&donorId=${encodeURIComponent(currentDonor.id || 1)}&donor=${encodeURIComponent(uniqueIdStr)}`;
-        renderIntakeQRCode(scanUrl);
+        const qrPayload = `RED404:${newToken}`;
+        renderIntakeQRCode(qrPayload);
 
         const viewScanFormLink = document.getElementById('viewScanFormLink');
-        if (viewScanFormLink) viewScanFormLink.href = scanUrl;
+        if (viewScanFormLink) viewScanFormLink.href = `/user-detail-form.html?token=${encodeURIComponent(newToken)}`;
         const btnOpenScanPage = document.getElementById('btnOpenScanPage');
-        if (btnOpenScanPage) btnOpenScanPage.href = scanUrl;
+        if (btnOpenScanPage) btnOpenScanPage.href = `/user-detail-form.html?token=${encodeURIComponent(newToken)}`;
 
         showToast('Security Token Revoked & Regenerated. New intake QR is active.', 'success');
       });
