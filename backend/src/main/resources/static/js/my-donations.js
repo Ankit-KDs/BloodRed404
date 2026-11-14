@@ -150,44 +150,40 @@
     if (tableWrapper) tableWrapper.style.display = 'block';
 
     tableBody.innerHTML = donationRecords.map((rec) => {
-      const compClass = (rec.type || '').toLowerCase().includes('platelet') ? 'platelets' : 'whole-blood';
-      const icon = (rec.type || '').toLowerCase().includes('platelet') ? 'fa-vial' : 'fa-droplet';
+      const bGroup = rec.bloodGroup || rec.bloodType || donorBloodGroup || 'O+';
+      const vol = rec.volume || '450 mL';
+      const ref = rec.refCode || rec.recordId || rec.certId || 'RED-00000';
+      const hosp = rec.hospital || 'Verified Partner Hospital';
+      const dDate = rec.date || 'Recent';
 
       return `
         <tr>
           <td>
-            <span class="ref-code">${rec.refCode || 'RED-00000'}</span>
-          </td>
-          <td>
-            <strong style="color: #ffffff;">${rec.date || 'N/A'}</strong>
+            <strong style="color: #ffffff;">${dDate}</strong>
           </td>
           <td>
             <div class="hosp-info-cell">
-              <span class="hosp-info-name">${rec.hospital || 'Clinical Blood Depot'}</span>
-              <span class="hosp-info-loc"><i class="fa-solid fa-location-dot" style="font-size:0.7rem;margin-right:4px;"></i>${rec.location || 'Meerut'}</span>
+              <span class="hosp-info-name">${hosp}</span>
+              ${rec.location ? `<span class="hosp-info-loc"><i class="fa-solid fa-location-dot" style="font-size:0.7rem;margin-right:4px;"></i>${rec.location}</span>` : ''}
             </div>
           </td>
           <td>
-            <span class="badge-component ${compClass}">
-              <i class="fa-solid ${icon}"></i>
-              ${rec.type || 'Whole Blood'}
+            <span class="badge-component whole-blood">
+              <i class="fa-solid fa-droplet"></i>
+              ${bGroup}
             </span>
           </td>
           <td>
-            <strong style="color: #ffffff;">${rec.volume || '450 mL'}</strong>
-            <div style="font-size: 0.74rem; color: #64748b;">(${rec.units || '1 Unit'})</div>
+            <strong style="color: #ffffff;">${vol}</strong>
           </td>
           <td>
-            <span class="badge-status-verified">
-              <i class="fa-solid fa-circle-check"></i>
-              VERIFIED
-            </span>
+            <span class="ref-code">${ref}</span>
           </td>
           <td style="text-align: right;">
-            <button class="btn-cert-download" onclick="window.openCertificate('${rec.certId || 'CERT-00'}', '${rec.refCode || 'RED-00'}', '${rec.date || ''}', '${rec.hospital || ''}', '${rec.type || ''}')">
-              <i class="fa-solid fa-award"></i>
-              <span>Certificate</span>
-            </button>
+            <a href="/api/donor/certificate?refCode=${encodeURIComponent(ref)}&hospital=${encodeURIComponent(hosp)}&date=${encodeURIComponent(dDate)}&bloodType=${encodeURIComponent(bGroup)}&volume=${encodeURIComponent(vol)}" target="_blank" class="btn-cert-download" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-download"></i>
+              <span>Download certificate</span>
+            </a>
           </td>
         </tr>
       `;

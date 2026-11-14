@@ -116,12 +116,24 @@
           if (d.latitude && d.longitude) {
             currentDonor.latitude = parseFloat(d.latitude);
             currentDonor.longitude = parseFloat(d.longitude);
+            currentDonor.hasLocation = true;
           }
           if (d.availability) {
             currentDonor.availability = d.availability;
           }
         }
       }
+
+      // Fetch authoritative medical eligibility
+      try {
+        const elRes = await fetch('/api/donor/eligibility');
+        if (elRes.ok) {
+          const elJson = await elRes.json();
+          if (elJson.success && elJson.data) {
+            currentDonor.eligibility = elJson.data;
+          }
+        }
+      } catch (_) {}
     } catch (err) {
       console.warn('Profile sync notice:', err);
     }
@@ -147,7 +159,9 @@
         if (icon) icon.classList.remove('fa-spin');
         currentDonor.latitude = pos.coords.latitude;
         currentDonor.longitude = pos.coords.longitude;
-        const accuracy = Math.round(pos.coords.accuracy || 8);
+        currentDonor.hasLocation = true;
+        currentDonor.accuracy = pos.coords.accuracy ? Math.round(pos.coords.accuracy) : null;
+        const accuracy = currentDonor.accuracy || 8;
 
         const banner = document.getElementById('donorLocationPrompt');
         if (banner) banner.style.display = 'none';
@@ -175,11 +189,13 @@
       (err) => {
         if (icon) icon.classList.remove('fa-spin');
         console.warn('Geolocation notice / permission denied:', err.message);
+        currentDonor.hasLocation = false;
+        currentDonor.accuracy = null;
         if (err.code === 1) {
           const banner = document.getElementById('donorLocationPrompt');
           if (banner) banner.style.display = 'flex';
         }
-        updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
+        updateGPSDisplay(currentDonor.latitude, currentDonor.longitude, null);
         fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
       },
       { enableHighAccuracy: true, timeout: 8000 }
@@ -194,15 +210,23 @@
     });
   }
 
-  function updateGPSDisplay(lat, lng, accuracy = 8) {
+  function updateGPSDisplay(lat, lng, accuracy) {
     if (!gpsCoordsText) return;
-    const latStr = Math.abs(lat).toFixed(4) + (lat >= 0 ? '° N' : '° S');
-    const lngStr = Math.abs(lng).toFixed(4) + (lng >= 0 ? '° E' : '° W');
-    gpsCoordsText.textContent = `CONNECTED (${latStr}, ${lngStr})`;
+    if (accuracy) {
+      const latStr = Math.abs(lat).toFixed(4) + (lat >= 0 ? '° N' : '° S');
+      const lngStr = Math.abs(lng).toFixed(4) + (lng >= 0 ? '° E' : '° W');
+      gpsCoordsText.textContent = `CONNECTED (${latStr}, ${lngStr})`;
+    } else {
+      gpsCoordsText.textContent = `LOCATION OFF`;
+    }
 
     const chipGps = document.getElementById('standbyGpsChip');
     if (chipGps) {
-      chipGps.innerHTML = `<i class="fas fa-crosshairs"></i> Live GPS: <b>Connected (±${accuracy}m Precise)</b>`;
+      if (accuracy) {
+        chipGps.innerHTML = `<i class="fas fa-crosshairs" style="color:#00e676"></i> Live GPS: <b>Connected (±${accuracy}m)</b>`;
+      } else {
+        chipGps.innerHTML = `<i class="fas fa-crosshairs" style="color:#f59e0b"></i> Live GPS: <b>Location off</b>`;
+      }
     }
   }
 
@@ -348,13 +372,17 @@
   // ======================== 6. DYNAMIC UI RENDERING ========================
   function renderEmergencyFeed() {
     const feedContainer = getFeedContainer();
+    const liveBadge = document.getElementById('feedLiveSosBadge');
     if (!feedContainer) return;
 
     // State 1: If response is empty, dynamically inject Standby UI
     if (activeRequests.length === 0) {
+      if (liveBadge) liveBadge.style.display = 'none';
       renderStandbyState();
       return;
     }
+
+    if (liveBadge) liveBadge.style.display = 'inline-flex';
 
     // State 2: Active requests exist — loop through records and render cards
     let html = '';
@@ -365,6 +393,46 @@
       const distance = req.distanceKm;
       const urgencyLabel = req.urgencyLevel.toUpperCase();
       const neededMinutes = req.neededWithinMinutes;
+      const reqStatus = (req.status || 'New').toUpperCase();
+
+      let actionsHtml = '';
+      if (reqStatus === 'ACCEPTED') {
+        actionsHtml = `
+          <div class="sos-actions-row">
+            <button type="button" class="btn-sos-directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
+              <i class="fas fa-location-arrow"></i>
+              <span>Directions</span>
+            </button>
+            <a href="tel:${escapeHtml(req.phone || '+91108')}" class="btn-sos-call" style="background:#059669; color:#fff; text-decoration:none; padding:8px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:13px;">
+              <i class="fas fa-phone"></i>
+              <span>Call Hospital (${escapeHtml(req.phone || 'Emergency')})</span>
+            </a>
+          </div>
+        `;
+      } else if (reqStatus === 'DECLINED') {
+        actionsHtml = `<div style="font-size:13px; color:#94a3b8; padding:8px; background:rgba(255,255,255,0.05); border-radius:6px;">You declined this request.</div>`;
+      } else if (reqStatus === 'EXPIRED') {
+        actionsHtml = `<div style="font-size:13px; color:#ef4444; padding:8px; background:rgba(239,68,68,0.1); border-radius:6px;">This emergency request has expired.</div>`;
+      } else if (reqStatus === 'FULFILLED') {
+        actionsHtml = `<div style="font-size:13px; color:#34d399; padding:8px; background:rgba(52,211,153,0.1); border-radius:6px;">This request has been fulfilled. Thank you!</div>`;
+      } else {
+        // New or Active
+        actionsHtml = `
+          <div class="sos-actions-row">
+            <button class="btn-sos-accept" onclick="window.acceptAndNavigate(${req.id})">
+              <span>Accept Alert & Navigate</span>
+              <i class="fas fa-arrow-right"></i>
+            </button>
+            <button type="button" class="btn-sos-directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
+              <i class="fas fa-location-arrow"></i>
+              <span>Directions</span>
+            </button>
+            <button class="btn-sos-decline" onclick="window.declineAlert(${req.id})">
+              Decline
+            </button>
+          </div>
+        `;
+      }
 
       if (isPrimary) {
         html += `
@@ -401,19 +469,7 @@
               ${req.notes ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:3px;">Note: ${escapeHtml(req.notes)}</div>` : ''}
             </div>
 
-            <div class="sos-actions-row">
-              <button class="btn-sos-accept" onclick="window.acceptAndNavigate(${req.id})">
-                <span>Accept Alert & Navigate</span>
-                <i class="fas fa-arrow-right"></i>
-              </button>
-              <button type="button" class="btn-sos-directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
-                <i class="fas fa-location-arrow"></i>
-                <span>Directions</span>
-              </button>
-              <button class="btn-sos-decline" onclick="window.declineAlert(${req.id})">
-                Decline
-              </button>
-            </div>
+            ${actionsHtml}
           </div>
         `;
       } else {
@@ -431,13 +487,7 @@
               <span class="sos-distance-pill">${distance}km</span>
               <span class="sos-zone-tag">${req.zoneTag}</span>
               <div class="ssc-blood-pill">${escapeHtml(req.bloodType)}</div>
-              <button type="button" class="btn-sos-mini-directions" title="Directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
-                <i class="fas fa-location-arrow"></i>
-                <span>Directions</span>
-              </button>
-              <button class="btn-sos-mini-accept" onclick="window.acceptAndNavigate(${req.id})">
-                ACCEPT →
-              </button>
+              ${actionsHtml}
             </div>
           </div>
         `;
@@ -450,12 +500,27 @@
   // ======================== 7. DYNAMIC STANDBY UI ========================
   function renderStandbyState() {
     const feedContainer = getFeedContainer();
+    const liveBadge = document.getElementById('feedLiveSosBadge');
+    if (liveBadge) liveBadge.style.display = 'none';
     if (!feedContainer) return;
+
+    let gpsText = 'Location off';
+    if (currentDonor.hasLocation && currentDonor.accuracy) {
+      gpsText = `Connected (±${currentDonor.accuracy}m)`;
+    } else if (currentDonor.hasLocation) {
+      gpsText = 'Connected';
+    }
+
+    let eligText = 'Waiting for hospital check';
+    if (currentDonor.eligibility) {
+      eligText = currentDonor.eligibility.eligible
+        ? 'You can donate. The hospital does a final check before donating.'
+        : `Next donation possible on ${currentDonor.eligibility.next_eligible_date || ''} (${currentDonor.eligibility.days_until_eligible || 0} days left)`;
+    }
 
     feedContainer.innerHTML = `
       <div class="standby-state-container" style="animation:fadeIn 0.3s ease;">
         <div class="standby-radar-disc">
-          <div class="standby-radar-sweep"></div>
           <div class="standby-shield-icon">
             <i class="fas fa-shield-alt"></i>
           </div>
@@ -476,11 +541,11 @@
           </div>
           <div class="standby-chip">
             <i class="fas fa-heartbeat" style="color:var(--green-neon)"></i>
-            <span>Medical Eligibility: <b>Fit to Donate</b></span>
+            <span>Medical Eligibility: <b>${escapeHtml(eligText)}</b></span>
           </div>
           <div class="standby-chip" id="standbyGpsChip">
             <i class="fas fa-crosshairs" style="color:#00e676"></i>
-            <span>Live GPS: <b>Connected (±8m Precise)</b></span>
+            <span>Live GPS: <b>${escapeHtml(gpsText)}</b></span>
           </div>
         </div>
       </div>
@@ -581,6 +646,10 @@
 
     const donorLatLng = [currentDonor.latitude, currentDonor.longitude];
     const radarBadge = document.getElementById('radarActiveBadge');
+    const scanner = document.getElementById('radarScannerSweep');
+    if (scanner) {
+      scanner.style.display = activeRequests.length > 0 ? 'block' : 'none';
+    }
 
     // Remove existing markers if any
     if (donorMarker) leafletMap.removeLayer(donorMarker);

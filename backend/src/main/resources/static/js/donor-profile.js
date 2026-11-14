@@ -1200,6 +1200,15 @@
       }
       if (facilityInput) facilityInput.value = currentDonor.verifiedFacility || '';
 
+      const langInput = document.getElementById('editDonorPreferredLanguage');
+      const notifSmsInput = document.getElementById('editDonorSmsNotif');
+      const notifEmailInput = document.getElementById('editDonorEmailNotif');
+      const notifPushInput = document.getElementById('editDonorPushNotif');
+      if (langInput) langInput.value = currentDonor.preferredLanguage || currentDonor.preferred_language || 'en';
+      if (notifSmsInput) notifSmsInput.checked = currentDonor.smsNotif !== false;
+      if (notifEmailInput) notifEmailInput.checked = currentDonor.emailNotif !== false;
+      if (notifPushInput) notifPushInput.checked = currentDonor.pushNotif !== false;
+
       editModal.style.display = 'flex';
       editModal.classList.add('active');
       editModal.setAttribute('aria-hidden', 'false');
@@ -1234,8 +1243,49 @@
       btnCancelModal.addEventListener('click', closeModal);
     }
 
-    // Backdrop click disabled: modal closes strictly on Save or Cancel buttons
-    // (User request: do not close when clicking outside)
+    const btnSyncGps = document.getElementById('btnSyncGpsInEditForm');
+    const noticeEl = document.getElementById('editLocationCoordsNotice');
+    if (btnSyncGps && !btnSyncGps.dataset.bound) {
+      btnSyncGps.dataset.bound = 'true';
+      btnSyncGps.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          if (noticeEl) noticeEl.textContent = 'Geolocation is not supported by your browser.';
+          return;
+        }
+        btnSyncGps.disabled = true;
+        btnSyncGps.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Detecting...';
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            btnSyncGps.disabled = false;
+            btnSyncGps.innerHTML = '<i class="fa-solid fa-check"></i> Location Detected';
+            currentDonor.latitude = pos.coords.latitude;
+            currentDonor.longitude = pos.coords.longitude;
+            if (noticeEl) {
+              noticeEl.textContent = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)} (±${Math.round(pos.coords.accuracy)}m)`;
+            }
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`);
+              if (res.ok) {
+                const geo = await res.json();
+                const addr = geo.address || {};
+                const cityInput = document.getElementById('editDonorCity');
+                const stateInput = document.getElementById('editDonorState');
+                const pinInput = document.getElementById('editDonorPincode');
+                if (cityInput && !cityInput.value) cityInput.value = addr.city || addr.town || addr.county || '';
+                if (stateInput && !stateInput.value) stateInput.value = addr.state || '';
+                if (pinInput && !pinInput.value) pinInput.value = addr.postcode || '';
+              }
+            } catch (_) {}
+          },
+          (err) => {
+            btnSyncGps.disabled = false;
+            btnSyncGps.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Detect Location';
+            if (noticeEl) noticeEl.textContent = 'Permission denied or location unavailable.';
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+      });
+    }
 
     // Form submit handler
     if (form && !form.dataset.bound) {
@@ -1286,6 +1336,12 @@
             bodyTemp: tempStr ? parseFloat(tempStr) : null,
             lastDonationDate: (document.getElementById('editDonorLastDonation')?.value || '').trim(),
             verifiedFacility: (document.getElementById('editDonorFacility')?.value || '').trim(),
+            preferredLanguage: document.getElementById('editDonorPreferredLanguage')?.value || 'en',
+            smsNotif: document.getElementById('editDonorSmsNotif')?.checked ?? true,
+            emailNotif: document.getElementById('editDonorEmailNotif')?.checked ?? true,
+            pushNotif: document.getElementById('editDonorPushNotif')?.checked ?? true,
+            latitude: currentDonor.latitude,
+            longitude: currentDonor.longitude,
             qrToken: newToken
           };
 

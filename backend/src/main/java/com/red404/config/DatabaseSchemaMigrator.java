@@ -301,6 +301,10 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("blood_group_edit_count", "INT DEFAULT 0");
         requiredColumns.put("qr_token", "VARCHAR(100) NULL DEFAULT NULL");
         requiredColumns.put("qr_token_created_at", "TIMESTAMP NULL DEFAULT NULL");
+        requiredColumns.put("preferred_language", "VARCHAR(10) DEFAULT 'en'");
+        requiredColumns.put("sms_notif", "BOOLEAN DEFAULT TRUE");
+        requiredColumns.put("email_notif", "BOOLEAN DEFAULT TRUE");
+        requiredColumns.put("push_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "donors", requiredColumns);

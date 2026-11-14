@@ -1797,6 +1797,7 @@
 </svg>
               </div>
               <div class="badge-title">FIRST SAVIOR</div>
+              <div class="badge-rule" style="font-size: 13px; color: #94a3b8; margin: 3px 0 6px;">First verified donation</div>
               <div class="badge-status">LOCKED</div>
             </div>
 
@@ -1858,6 +1859,7 @@
 </svg>
               </div>
               <div class="badge-title">GOLDEN HOUR HERO</div>
+              <div class="badge-rule" style="font-size: 13px; color: #94a3b8; margin: 3px 0 6px;">Donation within 60 min of alert</div>
               <div class="badge-status">LOCKED</div>
             </div>
 
@@ -1919,6 +1921,7 @@
 </svg>
               </div>
               <div class="badge-title">NIGHT OWL</div>
+              <div class="badge-rule" style="font-size: 13px; color: #94a3b8; margin: 3px 0 6px;">Donation between 9 PM and 6 AM</div>
               <div class="badge-status">LOCKED</div>
             </div>
 
@@ -1977,6 +1980,7 @@
 </svg>
               </div>
               <div class="badge-title">RARE VANGUARD</div>
+              <div class="badge-rule" style="font-size: 13px; color: #94a3b8; margin: 3px 0 6px;">Rare blood group (O- or AB-) donation</div>
               <div class="badge-status">LOCKED</div>
             </div>
 
@@ -2025,6 +2029,7 @@
 </svg>
               </div>
               <div class="badge-title">LIFE GIVER V</div>
+              <div class="badge-rule" style="font-size: 13px; color: #94a3b8; margin: 3px 0 6px;">5 verified donations</div>
               <div class="badge-status">LOCKED • Req. 5 Donations</div>
             </div>
 
@@ -2082,6 +2087,7 @@
 </svg>
               </div>
               <div class="badge-title">APEX GUARDIAN</div>
+              <div class="badge-rule" style="font-size: 13px; color: #94a3b8; margin: 3px 0 6px;">10 verified donations</div>
               <div class="badge-status">LOCKED • Req. 10 Donations</div>
             </div>
           </div>
@@ -2112,7 +2118,7 @@
               <div class="card-top-row">
                 <div class="card-top-left-title">
                   <i class="fa-solid fa-id-card-clip"></i>
-                  <span>Digital Blood Donor Identity Card</span>
+                  <span>RED404 Pass</span>
                 </div>
                 <button type="button" class="btn-edit-detail" id="btnEditDetail" title="Edit Donor Clinical Information">
                   <i class="fa-solid fa-pen-to-square"></i>
@@ -2257,6 +2263,36 @@
               <label for="editDonorPincode">PIN Code</label>
               <input type="text" id="editDonorPincode" name="d_user_postalcode" autocomplete="off" data-lpignore="true" placeholder="PIN code" />
             </div>
+            <div class="form-field-group">
+              <label for="editDonorPreferredLanguage">Preferred Language</label>
+              <select id="editDonorPreferredLanguage" name="preferredLanguage" style="width: 100%; height: 42px; padding: 8px 12px; font-size: 13px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                <option value="en">English</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+              </select>
+            </div>
+            <div class="form-field-group full-width" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+              <div>
+                <span style="font-size: 13px; font-weight: 600; color: #fff;">GPS Location</span>
+                <div style="font-size: 12px; color: #94a3b8;" id="editLocationCoordsNotice">Update saved coordinates using browser GPS</div>
+              </div>
+              <button type="button" id="btnSyncGpsInEditForm" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; background: #0284c7; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-location-crosshairs"></i> Detect Location
+              </button>
+            </div>
+            <div class="form-field-group full-width">
+              <label style="font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 6px; display: block;">Notification Preferences</label>
+              <div style="display: flex; gap: 20px; font-size: 13px; color: #cbd5e1;">
+                <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="checkbox" id="editDonorSmsNotif" name="smsNotif" checked /> SMS Alerts
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="checkbox" id="editDonorEmailNotif" name="emailNotif" checked /> Email Alerts
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="checkbox" id="editDonorPushNotif" name="pushNotif" checked /> Push Notifications
+                </label>
+              </div>
+            </div>
           </div>
 
           <!-- Section 3: Clinical Vitals & Screening -->
@@ -2282,8 +2318,8 @@
               <input type="number" id="editDonorTemp" name="bodyTemp" step="0.1" placeholder="Body temperature (°F)" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorLastDonation">Last Donation Date <small style="color: #94a3b8; font-weight: normal; font-size: 0.74rem;">(Leave blank if never donated)</small></label>
-              <input type="date" id="editDonorLastDonation" name="lastDonationDate" />
+              <label for="editDonorLastDonation">Last Donation Date <small style="color: #94a3b8; font-weight: normal; font-size: 0.74rem;">(Set automatically upon hospital check-in)</small></label>
+              <input type="date" id="editDonorLastDonation" name="lastDonationDate" disabled style="opacity: 0.6; cursor: not-allowed;" title="Last donation date is set by verified hospital check-in only." />
             </div>
             <div class="form-field-group">
               <label for="editDonorFacility">Verified Facility</label>

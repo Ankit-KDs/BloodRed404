@@ -1355,6 +1355,19 @@ public class DonorDao {
             donor.put("bloodGroupVerifiedAt", null);
             donor.put("bloodGroupEditCount", 0);
         }
+        try {
+            donor.put("preferredLanguage", rs.getString("preferred_language"));
+            donor.put("preferred_language", rs.getString("preferred_language"));
+            donor.put("smsNotif", rs.getObject("sms_notif") != null ? rs.getBoolean("sms_notif") : true);
+            donor.put("emailNotif", rs.getObject("email_notif") != null ? rs.getBoolean("email_notif") : true);
+            donor.put("pushNotif", rs.getObject("push_notif") != null ? rs.getBoolean("push_notif") : true);
+        } catch (SQLException ignored) {
+            donor.put("preferredLanguage", "en");
+            donor.put("preferred_language", "en");
+            donor.put("smsNotif", true);
+            donor.put("emailNotif", true);
+            donor.put("pushNotif", true);
+        }
         return donor;
     }
 

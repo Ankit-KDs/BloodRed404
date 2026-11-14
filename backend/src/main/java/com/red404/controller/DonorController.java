@@ -923,6 +923,31 @@ public class DonorController {
                 fields.put("verified_facility", (facility != null && !facility.isBlank()) ? facility.trim() : null);
             }
 
+            if (body.has("preferredLanguage") || body.has("preferred_language")) {
+                String lang = JsonUtil.textOrNull(body, "preferredLanguage") != null ? JsonUtil.text(body, "preferredLanguage") : JsonUtil.textOrNull(body, "preferred_language");
+                fields.put("preferred_language", (lang != null && !lang.isBlank()) ? lang.trim().toLowerCase() : "en");
+            }
+
+            if (body.has("smsNotif") || body.has("sms_notif")) {
+                fields.put("sms_notif", JsonUtil.asBoolean(body, body.has("smsNotif") ? "smsNotif" : "sms_notif", true));
+            }
+            if (body.has("emailNotif") || body.has("email_notif")) {
+                fields.put("email_notif", JsonUtil.asBoolean(body, body.has("emailNotif") ? "emailNotif" : "email_notif", true));
+            }
+            if (body.has("pushNotif") || body.has("push_notif")) {
+                fields.put("push_notif", JsonUtil.asBoolean(body, body.has("pushNotif") ? "pushNotif" : "push_notif", true));
+            }
+
+            if (body.has("latitude") && body.has("longitude")) {
+                Double lat = JsonUtil.asDouble(body, "latitude");
+                Double lng = JsonUtil.asDouble(body, "longitude");
+                if (lat != null && lng != null && lat >= -90.0 && lat <= 90.0 && lng >= -180.0 && lng <= 180.0) {
+                    fields.put("latitude", lat);
+                    fields.put("longitude", lng);
+                    fields.put("location_updated_at", new java.sql.Timestamp(System.currentTimeMillis()));
+                }
+            }
+
             // Clinical last_donation is written ONLY upon hospital check-in / verified donation completion.
             // Direct profile edits cannot arbitrarily modify last_donation.
 
@@ -936,6 +961,77 @@ public class DonorController {
             }
 
             return ok("Profile updated successfully in MySQL database", updated);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping({"/certificate", "/donations/certificate"})
+    public ResponseEntity<?> downloadCertificate(
+            @RequestParam(required = false) String certId,
+            @RequestParam(required = false) String refCode,
+            @RequestParam(required = false) String hospital,
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String bloodType,
+            @RequestParam(required = false) String volume,
+            HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            String donorName = donor != null && donor.get("name") != null ? (String) donor.get("name") : "Clinical Blood Donor";
+            String donorId = donor != null && donor.get("donorId") != null ? (String) donor.get("donorId") : "DNR-0811";
+            String blood = bloodType != null && !bloodType.isBlank() ? bloodType : (donor != null && donor.get("bloodType") != null ? (String) donor.get("bloodType") : "O+");
+            String hosp = hospital != null && !hospital.isBlank() ? hospital : "Verified Regional Trauma Center";
+            String dDate = date != null && !date.isBlank() ? date : java.time.LocalDate.now().toString();
+            String code = refCode != null && !refCode.isBlank() ? refCode : (certId != null && !certId.isBlank() ? certId : "RED-" + (System.currentTimeMillis() % 100000));
+            String vol = volume != null && !volume.isBlank() ? volume : "450 mL (1 Unit)";
+
+            String htmlCert = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>RED404 Clinical Rescue Certificate - " + code + "</title>"
+                    + "<style>"
+                    + "@page { size: landscape; margin: 0; }"
+                    + "body { font-family: 'Inter', -apple-system, sans-serif; background: #0f1012; color: #ecebe8; margin: 0; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }"
+                    + ".cert-frame { width: 900px; padding: 48px; border: 4px double #e5383b; background: #17181b; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: center; position: relative; }"
+                    + ".cert-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 160px; color: rgba(229, 56, 59, 0.04); font-weight: 900; z-index: 1; pointer-events: none; }"
+                    + ".cert-content { position: relative; z-index: 2; }"
+                    + ".cert-logo { font-size: 28px; font-weight: 800; color: #e5383b; letter-spacing: 2px; margin-bottom: 8px; }"
+                    + ".cert-title { font-size: 24px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 2px; margin: 12px 0 20px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 12px; }"
+                    + ".cert-presented { font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }"
+                    + ".cert-name { font-size: 34px; font-weight: 800; color: #fff; margin: 10px 0; text-decoration: underline; text-decoration-color: #e5383b; }"
+                    + ".cert-body { font-size: 14px; line-height: 1.8; color: #cbd5e1; max-width: 680px; margin: 16px auto; }"
+                    + ".cert-meta-grid { display: flex; justify-content: space-around; margin: 28px 0 20px; padding: 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); }"
+                    + ".cert-meta-item { text-align: center; }"
+                    + ".cert-meta-val { font-size: 17px; font-weight: 700; color: #fff; }"
+                    + ".cert-meta-lbl { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-top: 4px; }"
+                    + ".cert-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 36px; padding-top: 16px; border-top: 1px dashed rgba(255,255,255,0.15); }"
+                    + ".cert-sig { text-align: left; font-size: 12px; color: #94a3b8; }"
+                    + ".cert-sig-line { width: 180px; border-bottom: 1px solid #fff; margin-bottom: 6px; }"
+                    + "@media print { body { background: #fff; color: #000; padding: 0; } .cert-frame { border-color: #c00; background: #fff; box-shadow: none; width: 100%; border-radius: 0; } .cert-name, .cert-title, .cert-meta-val { color: #000; } .cert-body { color: #333; } }"
+                    + "</style></head><body>"
+                    + "<div class='cert-frame'>"
+                    + "<div class='cert-watermark'>RED404</div>"
+                    + "<div class='cert-content'>"
+                    + "<div class='cert-logo'>RED404 &bull; BLOOD RESCUE NETWORK</div>"
+                    + "<div class='cert-title'>Certificate of Verified Blood Donation</div>"
+                    + "<div class='cert-presented'>This certificate is proudly awarded to</div>"
+                    + "<div class='cert-name'>" + donorName + "</div>"
+                    + "<div class='cert-body'>In recognition of your voluntary and selfless clinical blood donation. Your contribution directly replenishes verified hospital reserves and saves human lives in emergency trauma situations.</div>"
+                    + "<div class='cert-meta-grid'>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + blood + "</div><div class='cert-meta-lbl'>Blood Group</div></div>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + vol + "</div><div class='cert-meta-lbl'>Donation Volume</div></div>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + dDate + "</div><div class='cert-meta-lbl'>Donation Date</div></div>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + code + "</div><div class='cert-meta-lbl'>Record / Cert ID</div></div>"
+                    + "</div>"
+                    + "<div class='cert-footer'>"
+                    + "<div class='cert-sig'><div class='cert-sig-line'></div>Verified Hospital Authority<br><strong>" + hosp + "</strong></div>"
+                    + "<div class='cert-sig' style='text-align:right;'><div class='cert-sig-line' style='margin-left:auto;'></div>RED404 Medical Registry Authority<br>Smart ID: <strong>" + donorId + "</strong></div>"
+                    + "</div>"
+                    + "</div></div>"
+                    + "<script>window.onload = function() { window.print(); };</script>"
+                    + "</body></html>";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_HTML);
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"RED404-Certificate-" + code + ".html\"");
+            return new ResponseEntity<>(htmlCert, headers, HttpStatus.OK);
         } catch (Exception e) {
             return serverError(e);
         }
