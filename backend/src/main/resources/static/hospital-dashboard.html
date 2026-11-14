@@ -60,7 +60,7 @@
       <!-- Right: Facility Name, Bell, Logout -->
       <div class="hosp-nav-actions">
         <div class="hosp-facility-name" id="top-hospital-name" title="Connected Hospital">
-          Apollo General Hospital
+          Hospital
         </div>
 
         <button type="button" class="hosp-nav-btn" id="navNotifBtn" aria-label="Emergency Notifications">
@@ -68,10 +68,10 @@
           <span class="notif-dot" id="navUnreadDot"></span>
         </button>
 
-        <a href="/api/auth/logout" class="hosp-logout-btn" id="btnLogoutLink" title="Sign out of hospital account">
+        <button type="button" class="hosp-logout-btn" id="btnLogoutLink" title="Sign out of hospital account">
           <span>Logout</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-        </a>
+        </button>
 
         <!-- Mobile Hamburger Toggle -->
         <button type="button" class="hosp-mobile-menu-btn" id="hospMobileMenuBtn" aria-label="Open mobile navigation menu" aria-expanded="false">
@@ -90,8 +90,8 @@
         <button type="button" class="mobile-tab-btn nav-tab-btn" data-tab="tab-records">My Requests</button>
         <button type="button" class="mobile-tab-btn nav-tab-btn" data-tab="tab-checkin">Check-in</button>
         <div class="mobile-drawer-divider"></div>
-        <div class="mobile-drawer-hosp-name" id="mobileHospName">Apollo General Hospital</div>
-        <a href="/api/auth/logout" class="mobile-drawer-logout">Logout Session</a>
+        <div class="mobile-drawer-hosp-name" id="mobileHospName">Hospital</div>
+        <button type="button" class="mobile-drawer-logout" id="mobileDrawerLogout">Logout Session</button>
       </nav>
     </div>
   </header>

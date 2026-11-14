@@ -149,7 +149,7 @@ public class AuthController {
         return ResponseEntity.ok(new ApiResponse(true, "Session active", data));
     }
 
-    @PostMapping("/logout")
+    @RequestMapping(value = "/logout", method = {RequestMethod.POST, RequestMethod.GET})
     public ResponseEntity<ApiResponse> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
@@ -157,6 +157,10 @@ public class AuthController {
                 Object user = session.getAttribute("user");
                 if (user instanceof Map<?, ?> donor && donor.get("id") != null) {
                     sessionDao.killSession(((Number) donor.get("id")).intValue(), "DONOR", session.getId());
+                }
+                Object hosp = session.getAttribute("hospitalUser");
+                if (hosp instanceof Map<?, ?> h && h.get("id") != null) {
+                    sessionDao.killSession(((Number) h.get("id")).intValue(), "HOSPITAL", session.getId());
                 }
             } catch (Exception ignored) {}
             session.invalidate();

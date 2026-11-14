@@ -310,6 +310,21 @@ public class HospitalController {
         return ok("Updated successfully", null);
     }
 
+    @RequestMapping(value = "/logout", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<ApiResponse> logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            try {
+                Object hosp = session.getAttribute("hospitalUser");
+                if (hosp instanceof Map<?, ?> h && h.get("id") != null) {
+                    new com.red404.dao.SessionDao().killSession(((Number) h.get("id")).intValue(), "HOSPITAL", session.getId());
+                }
+            } catch (Exception ignored) {}
+            session.invalidate();
+        }
+        return ok("Logged out successfully", null);
+    }
+
     // ======================== HELPERS ========================
 
     @SuppressWarnings("unchecked")

@@ -546,6 +546,7 @@ function showAppConfirm(opts = {}) {
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('active'));
+    setTimeout(() => overlay.classList.add('active'), 20);
 
     function cleanup(res) {
       overlay.classList.remove('active');
@@ -590,6 +591,7 @@ function showAppAlert(opts = {}) {
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('active'));
+    setTimeout(() => overlay.classList.add('active'), 20);
 
     function cleanup() {
       overlay.classList.remove('active');

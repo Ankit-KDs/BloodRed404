@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMedicineFlowBackground();
   initCommandNavigation();
   initHospitalProfile();
+  initHospitalLogout();
   initDashboard();
   initDispatchRadar();
   initInventory();
@@ -221,6 +222,61 @@ async function initHospitalProfile() {
   if (topName) topName.textContent = name;
   if (navName) navName.textContent = name;
   if (mobileName) mobileName.textContent = name;
+}
+
+/* ============================================================
+   3B. HOSPITAL LOGOUT CONFIRMATION & SESSION TERMINATION
+   ============================================================ */
+function initHospitalLogout() {
+  const desktopLogoutBtn = document.getElementById('btnLogoutLink');
+  const mobileLogoutBtn = document.getElementById('mobileDrawerLogout');
+
+  async function handleLogout(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    const confirmed = (typeof showAppConfirm === 'function')
+      ? await showAppConfirm({
+          title: 'Confirm Session Termination',
+          message: 'Are you sure you want to log out of your hospital account? Any active broadcasts and incoming dispatches will remain in the clinical ledger.',
+          confirmText: 'Confirm Logout',
+          cancelText: 'Cancel',
+          type: 'danger'
+        })
+      : window.confirm('Are you sure you want to log out of your hospital account?');
+
+    if (!confirmed) return;
+
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (err) {
+      console.debug('Auth logout fetch error:', err);
+    }
+
+    try {
+      await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' });
+    } catch (err) {}
+
+    // Clear local/session state
+    try {
+      sessionStorage.removeItem('red404_hospital_user');
+      sessionStorage.removeItem('red404_session');
+      localStorage.removeItem('red404_hospital_user');
+      localStorage.removeItem('red404_hospital_stock_units');
+      localStorage.removeItem('hospitalUser');
+    } catch (err) {}
+
+    window.location.href = 'hospital-login.html';
+  }
+
+  if (desktopLogoutBtn) {
+    desktopLogoutBtn.addEventListener('click', handleLogout);
+  }
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.addEventListener('click', handleLogout);
+  }
 }
 
 /* ============================================================
