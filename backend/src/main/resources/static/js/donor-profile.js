@@ -98,7 +98,7 @@
           localStorage.setItem('red404_registered_donors', JSON.stringify(dList));
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     initMobileNav();
     initGPSListener();
@@ -151,7 +151,7 @@
             const parsed = JSON.parse(s);
             userData = parsed.user || parsed;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       if (userData) {
@@ -237,7 +237,7 @@
           if (matched.qrToken || matched.qr_token) currentDonor.qrToken = matched.qrToken || matched.qr_token;
           if (matched.weight) currentDonor.weight = parseFloat(matched.weight);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // Check if hospital dashboard logged vitals locally in storage
       const localVitalsRaw = localStorage.getItem('hospitalDonorVitals_' + currentDonor.id) || sessionStorage.getItem('donorVitals');
@@ -252,7 +252,7 @@
           const facClean = cleanLiveVal(lv.verifiedFacility, ['city general hospital']);
           if (facClean) currentDonor.verifiedFacility = facClean;
           if (lv.verifiedDate) currentDonor.verifiedDate = lv.verifiedDate;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // 2. Fetch fresh dynamic profile from API (/api/donor/profile-data or /api/donor/profile)
@@ -273,7 +273,7 @@
           localStorage.removeItem('red404_user');
           localStorage.removeItem('red404_token');
           sessionStorage.clear();
-        } catch (_) {}
+        } catch (_) { }
         window.location.replace('donor-login.html');
         return;
       }
@@ -485,15 +485,15 @@
     const pulse = currentDonor.pulse;
     const temp = currentDonor.bodyTemp;
 
-    const hasData = (hb !== null && hb !== undefined) && 
-                    Boolean(bp) && 
-                    (weight !== null && weight !== undefined);
+    const hasData = (hb !== null && hb !== undefined) &&
+      Boolean(bp) &&
+      (weight !== null && weight !== undefined);
 
     // If details are empty: display waiting status
     if (!hasData) {
       if (evalBadge) {
         evalBadge.className = 'health-eval-badge badge-awaiting';
-        evalBadge.innerHTML = `<i class="fas fa-clock" style="margin-right:6px;"></i><span>Awaiting hospital health check</span>`;
+        evalBadge.innerHTML = `<i class="fas fa-clock" style="margin-right:6px;"></i><span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>`;
       }
       return;
     }
@@ -511,17 +511,17 @@
     if (evalBadge) {
       if (isFit) {
         evalBadge.className = 'health-eval-badge badge-fit';
-        evalBadge.innerHTML = `<span>Fit to donate</span>`;
+        evalBadge.innerHTML = `<span>HEALTH STATUS: FIT TO DONATE</span>`;
       } else {
         evalBadge.className = 'health-eval-badge badge-unfit';
-        evalBadge.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><span>Medical review required</span>`;
+        evalBadge.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><span>HEALTH STATUS: MEDICAL REVIEW REQUIRED</span>`;
       }
     }
   }
 
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
-      // ======================== 4. PRECISE TELEMETRY DATA LOGIC ========================
+  // ======================== 4. PRECISE TELEMETRY DATA LOGIC ========================
   function renderTelemetryData() {
     // Check elements
     const primary = document.getElementById('telemetryPrimary');
@@ -797,7 +797,7 @@
     if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined') return null;
     if (str.includes(' ')) str = str.substring(0, str.indexOf(' '));
     if (str.includes('T')) str = str.substring(0, str.indexOf('T'));
-    
+
     // YYYY-MM-DD or YYYY/MM/DD
     const ymdMatch = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
     if (ymdMatch) {
@@ -819,7 +819,7 @@
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         return `${dd}${mm}`;
       }
-    } catch (_) {}
+    } catch (_) { }
     return null;
   }
 
@@ -1096,8 +1096,8 @@
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: currentDonor.id, donorId: currentDonor.id, qrToken: newToken })
-          }).catch(() => {});
-        } catch (_) {}
+          }).catch(() => { });
+        } catch (_) { }
 
         const qrPayload = `RED404:${newToken}`;
         renderIntakeQRCode(qrPayload);
@@ -1182,12 +1182,12 @@
         pincodeInput.value = (currentDonor.pincode && currentDonor.pincode !== '250002') ? currentDonor.pincode : '';
       }
       if (allergiesInput) allergiesInput.value = currentDonor.allergies || '';
-      
+
       let condVal = currentDonor.conditions;
       if (Array.isArray(condVal)) condVal = condVal.join(', ');
       if (condVal === 'none' || condVal === 'null') condVal = '';
       if (condInput) condInput.value = condVal || '';
-      
+
       if (medsInput) medsInput.value = currentDonor.medications || '';
       if (surgInput) surgInput.value = currentDonor.surgeries || '';
       if (pulseInput) pulseInput.value = (currentDonor.pulse !== null && currentDonor.pulse !== undefined) ? currentDonor.pulse : '';
@@ -1275,7 +1275,7 @@
                 if (stateInput && !stateInput.value) stateInput.value = addr.state || '';
                 if (pinInput && !pinInput.value) pinInput.value = addr.postcode || '';
               }
-            } catch (_) {}
+            } catch (_) { }
           },
           (err) => {
             btnSyncGps.disabled = false;
@@ -1407,7 +1407,7 @@
             if (typeof Auth !== 'undefined' && Auth.saveSession) {
               Auth.saveSession(currentDonor);
             }
-          } catch (_) {}
+          } catch (_) { }
 
           // 4. Update registered donors cache if present
           try {
@@ -1418,12 +1418,12 @@
               Object.assign(donorsList[idx], currentDonor);
               localStorage.setItem('red404_registered_donors', JSON.stringify(donorsList));
             }
-          } catch (_) {}
+          } catch (_) { }
 
           // 5. Close modal & safely re-render profile card, QR and vitals
           try {
             closeModal();
-          } catch (_) {}
+          } catch (_) { }
 
           try {
             evaluateHealthAndEligibility();
@@ -1446,7 +1446,7 @@
             if (window.updateCommandNav) {
               window.updateCommandNav(currentDonor);
             }
-          } catch (_) {}
+          } catch (_) { }
 
           showToast('Donor profile successfully updated in MySQL database!', 'success');
         } catch (err) {
@@ -1590,4 +1590,4 @@
 
 
 
-  // Global logout modal is handled centrally by command-nav.js
+// Global logout modal is handled centrally by command-nav.js

@@ -133,7 +133,7 @@
             currentDonor.eligibility = elJson.data;
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     } catch (err) {
       console.warn('Profile sync notice:', err);
     }
@@ -184,7 +184,7 @@
             latitude: currentDonor.latitude,
             longitude: currentDonor.longitude
           })
-        }).catch(() => {});
+        }).catch(() => { });
       },
       (err) => {
         if (icon) icon.classList.remove('fa-spin');
@@ -263,7 +263,7 @@
     if (sidebarDonorStatus) {
       sidebarDonorStatus.innerHTML = `
         <span class="hes-dot" style="background:${isAvail ? 'var(--green-neon)' : 'var(--yellow-neon)'}; box-shadow:0 0 10px ${isAvail ? 'var(--green-neon)' : 'var(--yellow-neon)'}"></span>
-        <span>Donor Status: <b>${isAvail ? 'Available' : 'Busy'}</b></span>
+        <span>Donor Status: <b>${isAvail ? 'ACTIVE' : 'BUSY'}</b></span>
       `;
     }
   }
@@ -355,7 +355,7 @@
         if (typeof window.updateEmergencyIndicator === 'function') {
           window.updateEmergencyIndicator(activeRequests.length);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // Render dynamically into feed container and update map
       renderEmergencyFeed();
@@ -559,7 +559,7 @@
     activeLayerKey = layerKey;
     try {
       localStorage.setItem('red404_map_layer', layerKey);
-    } catch (_) {}
+    } catch (_) { }
 
     if (currentTileLayer) {
       leafletMap.removeLayer(currentTileLayer);
@@ -754,7 +754,7 @@
 
     try {
       await fetch(`/api/requests/${requestId}/accept`, { method: 'POST' });
-    } catch (_) {}
+    } catch (_) { }
 
     showToast('Alert accepted! Hospital dispatch and rescue team notified.', 'success');
     activeRequests = activeRequests.filter(r => String(r.id) !== String(requestId));
@@ -765,7 +765,7 @@
   window.declineAlert = async function (requestId) {
     try {
       await fetch(`/api/requests/${requestId}/decline`, { method: 'POST' });
-    } catch (_) {}
+    } catch (_) { }
     activeRequests = activeRequests.filter(r => String(r.id) !== String(requestId));
     renderEmergencyFeed();
     updateRadarVisualization();

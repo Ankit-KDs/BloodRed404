@@ -5,59 +5,114 @@
 
 /* ==================== CSS VARIABLES ==================== */
 :root {
-  /* Brand Colors */
-  --red-primary: #e63946;
-  --red-dark: #c1121f;
-  --red-light: #ff6b6b;
-  --red-glow: rgba(230, 57, 70, 0.35);
-  --red-glow-soft: rgba(230, 57, 70, 0.15);
-  --red-glow-strong: rgba(230, 57, 70, 0.55);
+  /* Hospital Portal Calm Design Tokens (One Design Family) */
+  --hosp-bg: #0f1012;
+  --hosp-surface: #17181b;
+  --hosp-surface-raised: #1e2024;
+  --hosp-surface-hover: #23262b;
+  --hosp-border: #2a2c31;
+  --hosp-border-subtle: #202227;
+  --hosp-border-focus: #6ea8ff;
 
-  /* Background Colors */
-  --bg-dark: #0a0a0f;
-  --bg-card: #111118;
-  --bg-card2: #16161f;
-  --bg-surface: #1c1c28;
-  --bg-surface2: #22222f;
-  --bg-surface3: #2a2a3a;
+  --hosp-text: #ecebe8;
+  --hosp-text-muted: #9b9a96;
+  --hosp-text-dim: #71706c;
+  --hosp-text-inverse: #0f1012;
 
-  /* Text Colors */
-  --text-primary: #f0f0f8;
-  --text-secondary: #9898b8;
-  --text-muted: #5a5a7a;
+  --hosp-red: #e5383b;         /* SOS / Critical / Primary Send SOS ONLY */
+  --hosp-red-hover: #f0484b;
+  --hosp-red-subtle: rgba(229, 56, 59, 0.12);
+  --hosp-red-border: rgba(229, 56, 59, 0.35);
+
+  --hosp-blue: #6ea8ff;        /* Links, Active Tab, Selected States ONLY */
+  --hosp-blue-hover: #8cb8ff;
+  --hosp-blue-subtle: rgba(110, 168, 255, 0.12);
+  --hosp-blue-border: rgba(110, 168, 255, 0.35);
+
+  --hosp-green: #3ecf8e;       /* Available / OK status */
+  --hosp-green-subtle: rgba(62, 207, 142, 0.12);
+  --hosp-green-border: rgba(62, 207, 142, 0.35);
+
+  --hosp-amber: #f5a524;       /* Low stock (< 5 units) */
+  --hosp-amber-subtle: rgba(245, 165, 36, 0.12);
+  --hosp-amber-border: rgba(245, 165, 36, 0.35);
+
+  /* Typography Families */
+  --font-heading: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Aliased System Colors */
+  --bg-dark: #0f1012;
+  --bg-core: #0f1012;
+  --bg-card: #17181b;
+  --bg-card2: #1e2024;
+  --bg-surface: #17181b;
+  --bg-surface2: #1e2024;
+  --bg-surface3: #23262b;
+  --bg-sidebar: #17181b;
+  --bg-panel: #17181b;
+
+  --text-primary: #ecebe8;
+  --text-secondary: #9b9a96;
+  --text-muted: #71706c;
   --text-white: #ffffff;
 
-  /* Border Colors */
-  --border-color: rgba(255, 255, 255, 0.07);
-  --border-light: rgba(255, 255, 255, 0.12);
-  --border-red: rgba(230, 57, 70, 0.4);
-  --border-red-soft: rgba(230, 57, 70, 0.2);
+  --border-color: #2a2c31;
+  --border-light: #202227;
+  --border-glass: #2a2c31;
+  --border-card: #2a2c31;
+  --border-red: #e5383b;
+  --border-red-soft: rgba(229, 56, 59, 0.25);
 
-  /* Shadows */
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45);
-  --shadow-red: 0 8px 32px rgba(230, 57, 70, 0.25);
-  --shadow-glow: 0 0 40px rgba(230, 57, 70, 0.2);
-  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --red-primary: #e5383b;
+  --red-dark: #c1121f;
+  --red-light: #f0484b;
+  --red-neon: #e5383b;
+  --red-glow: transparent;
+  --red-glow-soft: rgba(229, 56, 59, 0.08);
+  --red-glow-strong: rgba(229, 56, 59, 0.2);
+
+  --green-neon: #3ecf8e;
+  --green-glow: transparent;
+  --green-soft: rgba(62, 207, 142, 0.12);
+  --green-border: rgba(62, 207, 142, 0.35);
+
+  --amber-neon: #f5a524;
+  --yellow-neon: #f5a524;
+  --amber-soft: rgba(245, 165, 36, 0.12);
+  --yellow-soft: rgba(245, 165, 36, 0.12);
+  --amber-border: rgba(245, 165, 36, 0.35);
+
+  /* Shadows - No Glows */
+  --shadow-card: none;
+  --shadow-red: none;
+  --shadow-glow: none;
+  --shadow-sm: none;
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
 
   /* Border Radius */
   --radius-xs: 4px;
   --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --radius-2xl: 40px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
   --radius-full: 9999px;
 
   /* Transitions */
   --transition-fast: 0.15s ease;
-  --transition-base: 0.3s ease;
-  --transition-slow: 0.5s ease;
-  --transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  --transition-spring: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Typography */
-  --font-primary: 'Poppins', sans-serif;
-  --font-brand: 'Orbitron', sans-serif;
+  /* Typography Variables */
+  --font-primary: var(--font-body);
+  --font-brand: var(--font-heading);
+  --font-main: var(--font-body);
+  --font-tech: var(--font-heading);
+  --font-hud: var(--font-mono);
+  --font-sans: var(--font-body);
 
   /* Z-index scale */
   --z-base: 1;
@@ -131,9 +186,11 @@ h3,
 h4,
 h5,
 h6 {
+  font-family: var(--font-heading);
   font-weight: 700;
   line-height: 1.2;
   color: var(--text-primary);
+  letter-spacing: -0.3px;
 }
 
 h1 {
@@ -2690,3 +2747,247 @@ small,
 .history-table td {
   font-size: 13px !important;
 }
+
+/* ==================== PART 10: ONE DESIGN FAMILY (CALM HOSPITAL SYSTEM) ==================== */
+/* 1. Typography Fonts across all pages */
+body, p, span, div, a, input, select, textarea, button, td, th, li, label {
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6, .brand-name, .logo-text, .brand-text, .section-title, .hero-title, .bento-title, .hub-title, .stat-number, .donor-welcome-name {
+  font-family: var(--font-heading) !important;
+  letter-spacing: -0.3px;
+}
+
+code, kbd, samp, pre, .ref-code, .cert-id, .donor-id, .terminal-meta-time, .log-time, .duh-id, [data-mono], .live-data, .unit-label, .smc-middle span {
+  font-family: var(--font-mono) !important;
+}
+
+/* 2. Flat Top Bar (1px border, calm, no floating pill, no glass blur) */
+.navbar,
+.navbar.scrolled {
+  background: var(--hosp-bg, #0f1012) !important;
+  border-bottom: 1px solid var(--hosp-border, #2a2c31) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0.75rem 0 !important;
+}
+
+.command-nav-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+  top: 0 !important;
+  position: sticky !important;
+  background: var(--hosp-bg, #0f1012) !important;
+  border-bottom: 1px solid var(--hosp-border, #2a2c31) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.command-nav-pill {
+  border-radius: 0 !important;
+  background: var(--hosp-surface, #17181b) !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  max-width: var(--hosp-max-width, 1200px) !important;
+  margin: 0 auto !important;
+  padding: 10px 24px !important;
+}
+
+.command-nav-center {
+  background: var(--hosp-surface-raised, #1e2024) !important;
+  border: 1px solid var(--hosp-border, #2a2c31) !important;
+  border-radius: 8px !important;
+}
+
+.command-tab-link {
+  border-radius: 6px !important;
+  font-family: var(--font-body) !important;
+  color: var(--hosp-text-muted, #9b9a96) !important;
+}
+
+.command-tab-link.active {
+  background: var(--hosp-surface, #17181b) !important;
+  border: 1px solid var(--hosp-border, #2a2c31) !important;
+  color: var(--hosp-text, #ecebe8) !important;
+  box-shadow: none !important;
+}
+
+.command-tab-link.active i {
+  color: var(--hosp-blue, #6ea8ff) !important;
+  filter: none !important;
+}
+
+.brand-icon-drop {
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  background: var(--hosp-red, #e5383b) !important;
+}
+
+/* 3. Calm Surfaces: No glow or glass effects across all cards & panels */
+.bento-card,
+.dashboard-card,
+.profile-card,
+.hub-card,
+.stat-card,
+.stock-mini-card,
+.national-stock-card,
+.glass-card,
+.auth-card,
+.service-tab-content,
+.step-card,
+.faq-item {
+  background: var(--hosp-surface, #17181b) !important;
+  border: 1px solid var(--hosp-border, #2a2c31) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.bento-dashboard-body,
+body.donor-profile-body,
+body {
+  background-color: var(--hosp-bg, #0f1012) !important;
+  color: var(--hosp-text, #ecebe8) !important;
+}
+
+/* Remove decorative radial gradient glows & radar sweeps */
+body.bento-dashboard-body::before,
+body.bento-dashboard-body::after,
+.hero-section::before,
+.hero-visual::before,
+.radar-sweep-beam,
+.radar-ring-sweep,
+.idle-radar-pulse,
+.pulse-ring {
+  display: none !important;
+}
+
+* {
+  text-shadow: none !important;
+}
+
+/* 4. Brand red #e5383b only for emergencies and primary actions */
+.btn-emergency,
+.sos-pulse-card,
+.badge-emergency,
+.badge-critical,
+.btn-primary-action {
+  background: var(--hosp-red, #e5383b) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 5. Signature Drop-Shaped Blood Group Badge across all screens */
+.blood-drop-badge,
+.blood-group-badge,
+.blood-chip,
+.user-blood-badge,
+.smc-top .blood-group-badge,
+.badge-component.whole-blood {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  width: 34px !important;
+  height: 40px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--hosp-text, #ecebe8) !important;
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  flex-shrink: 0 !important;
+}
+
+.blood-drop-badge::before,
+.blood-group-badge::before,
+.blood-chip::before,
+.user-blood-badge::before,
+.smc-top .blood-group-badge::before,
+.badge-component.whole-blood::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='%231e2024' stroke='%232a2c31' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
+  background-size: contain !important;
+  z-index: 0 !important;
+}
+
+.blood-drop-badge.critical::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(229,56,59,0.12)' stroke='%23e5383b' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
+  background-size: contain !important;
+}
+
+.blood-drop-badge.low::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(245,165,36,0.12)' stroke='%23f5a524' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
+  background-size: contain !important;
+}
+
+.blood-drop-badge.ok::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(62,207,142,0.12)' stroke='%233ecf8e' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
+  background-size: contain !important;
+}
+
+.blood-drop-badge > *,
+.blood-group-badge > *,
+.blood-chip > *,
+.user-blood-badge > *,
+.smc-top .blood-group-badge > *,
+.badge-component.whole-blood > * {
+  position: relative !important;
+  z-index: 1 !important;
+  padding-top: 3px !important;
+}
+
+.badge-component.whole-blood i {
+  display: none !important;
+}
+
+/* 6. Subtle blood-drop background flow (3-5% opacity, hero only, off with prefers-reduced-motion) */
+.floating-drops {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100vh !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  overflow: hidden !important;
+  opacity: 0.04 !important;
+}
+
+.floating-drop {
+  opacity: 0.04 !important;
+  filter: none !important;
+}
+
+.particles-container {
+  display: none !important;
+}
+
+/* Hide floating drops outside hero section */
+body:not(:has(.hero-section)) .floating-drops {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-drops,
+  .floating-drop,
+  .particles-container,
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .floating-drops,
+  .floating-drop {
+    display: none !important;
+  }
+}
+

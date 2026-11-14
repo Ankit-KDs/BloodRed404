@@ -30,7 +30,7 @@
         try {
           const session = JSON.parse(raw);
           user = session.user || session;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       if (!user && typeof Auth !== 'undefined' && Auth.getSession) {
@@ -43,7 +43,7 @@
           try {
             const session = JSON.parse(rawSession);
             user = session.user || session;
-          } catch (_) {}
+          } catch (_) { }
         }
       }
 
@@ -84,7 +84,7 @@
               const u = parsedDnr.user || parsedDnr;
               if (u && (u.donorId || u.donor_id)) sid = u.donorId || u.donor_id;
             }
-          } catch (_) {}
+          } catch (_) { }
         }
         if (!sid) {
           try {
@@ -93,7 +93,7 @@
             if (m && (m.donorId || m.donor_id)) {
               sid = m.donorId || m.donor_id;
             }
-          } catch (_) {}
+          } catch (_) { }
         }
         // Deterministic fallback ONLY if absolutely no valid ID exists anywhere
         if (!sid || !sid.startsWith('DNR-')) {
@@ -146,7 +146,7 @@
           if (match && (match.createdAt || match.created_at)) {
             regDateRaw = match.createdAt || match.created_at;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Check persistent registration date storage key
@@ -229,7 +229,7 @@
               localStorage.removeItem('red404_token');
               localStorage.removeItem('red404_donorToken');
               sessionStorage.clear();
-            } catch (_) {}
+            } catch (_) { }
             window.location.replace('donor-login.html');
             return null;
           }
@@ -264,16 +264,16 @@
             }
             try {
               localStorage.setItem('red404_donor_session', JSON.stringify({ user: d }));
-            } catch (_) {}
+            } catch (_) { }
           } else if (json && json.success === false) {
             try {
               localStorage.clear();
               sessionStorage.clear();
-            } catch (_) {}
+            } catch (_) { }
             window.location.replace('donor-login.html');
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     // Dynamically detect user's current GPS location & state/district
@@ -418,7 +418,7 @@
       if (typeof window.updateEmergencyIndicator === 'function') {
         window.updateEmergencyIndicator(alertCount);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (!summaryContainer) return;
 
@@ -790,7 +790,7 @@
     }
   }
 
-  window.submitDriveRsvp = async function(driveId, status) {
+  window.submitDriveRsvp = async function (driveId, status) {
     try {
       const res = await fetch(`/api/donor/drives/${driveId}/rsvp`, {
         method: 'POST',
@@ -942,13 +942,13 @@
       strip.className = 'mini-eligibility-strip eligible';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: Eligible to donate</span>
+        <span>Status: ELIGIBLE TO DONATE • Recovery Complete</span>
       `;
     } else {
       strip.className = 'mini-eligibility-strip cooldown';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ${elig.reason || `Eligible in ${daysLeft} days`}</span>
+        <span>Status: ${elig.reason || `ELIGIBLE IN ${daysLeft} DAYS`}</span>
       `;
     }
   }
