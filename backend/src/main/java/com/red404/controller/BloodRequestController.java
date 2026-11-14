@@ -31,6 +31,7 @@ import jakarta.servlet.http.HttpSession;
 public class BloodRequestController {
 
     private final BloodRequestDao requestDao = new BloodRequestDao();
+    private final com.red404.dao.HospitalDao hospitalDao = new com.red404.dao.HospitalDao();
 
     // ======================== GET ========================
 

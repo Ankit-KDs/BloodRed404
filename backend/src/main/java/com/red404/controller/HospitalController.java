@@ -601,47 +601,6 @@ public class HospitalController {
         }
     }
 
-    @RequestMapping(value = {"/profile", "/settings"}, method = {RequestMethod.PUT, RequestMethod.POST})
-    public ResponseEntity<ApiResponse> updateProfile(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
-        try {
-            Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null && body != null && body.has("hospitalId")) {
-                hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
-            }
-            if (hospitalId == null) hospitalId = 1;
-
-            if (body != null) {
-                String name = JsonUtil.textOrNull(body, "hospitalName");
-                if (name == null || name.isBlank()) name = JsonUtil.textOrNull(body, "name");
-                if (name != null && !name.isBlank()) {
-                    hospitalDao.updateHospitalName(hospitalId, name.trim());
-                }
-
-                if (body.has("latitude") || body.has("longitude")) {
-                    Double lat = JsonUtil.asDouble(body, "latitude");
-                    Double lng = JsonUtil.asDouble(body, "longitude");
-                    if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
-                        return ResponseEntity.badRequest()
-                                .body(new ApiResponse(false, "Invalid coordinates. Latitude must be between -90 and 90, and longitude between -180 and 180."));
-                    }
-                    String address = JsonUtil.textOrNull(body, "address");
-                    hospitalDao.updateHospitalLocation(hospitalId, address, lat, lng);
-                }
-
-                HttpSession session = request.getSession(false);
-                if (session != null) {
-                    Map<String, Object> updated = hospitalDao.findById(hospitalId);
-                    if (updated != null) {
-                        session.setAttribute("hospitalUser", updated);
-                    }
-                }
-            }
-            return ok("Profile updated successfully", hospitalDao.findById(hospitalId));
-        } catch (Exception e) {
-            return serverError(e);
-        }
-    }
-
     @PostMapping({"/location", "/update-location"})
     public ResponseEntity<ApiResponse> updateLocation(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
         try {
@@ -886,7 +845,7 @@ public class HospitalController {
 
     // ======================== PROFILE UPDATE & PASSWORD ========================
 
-    @RequestMapping(value = "/profile", method = {RequestMethod.PUT, RequestMethod.POST})
+    @RequestMapping(value = {"/profile", "/settings"}, method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<ApiResponse> updateProfile(
             @RequestBody JsonNode body,
             HttpServletRequest request) {
@@ -996,7 +955,7 @@ public class HospitalController {
             }
 
             String hashed = com.red404.util.PasswordUtil.hashPassword(newPassword);
-            try (java.sql.Connection conn = com.red404.config.DBConnection.getConnection();
+            try (java.sql.Connection conn = com.red404.util.DBConnection.getConnection();
                  java.sql.PreparedStatement ps = conn.prepareStatement("UPDATE hospitals SET password = ? WHERE id = ?")) {
                 ps.setString(1, hashed);
                 ps.setInt(2, hospitalId);
