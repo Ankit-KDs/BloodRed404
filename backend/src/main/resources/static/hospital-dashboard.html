@@ -310,6 +310,11 @@
 
       </div>
 
+      <!-- 
+        DATA FLOW:
+        Search donors -> results (table + map). Send / Broadcast -> donor receives request with hospital location -> donor taps directions (live GPS -> hospital) -> donor accepts -> hospital sees status Accepted and the phone number. Donation drive -> non-urgent invitation -> donor RSVP -> hospital sees RSVP count. Stock changes only via Inventory.
+      -->
+
       <!-- 5. Needs Attention Section (Real data only) -->
       <section class="hosp-card needs-attention-card" id="sectionNeedsAttention">
         <div class="card-header">

@@ -1,5 +1,10 @@
 package com.red404.controller;
 
+/*
+ * DATA FLOW:
+ * Search donors -> results (table + map). Send / Broadcast -> donor receives request with hospital location -> donor taps directions (live GPS -> hospital) -> donor accepts -> hospital sees status Accepted and the phone number. Donation drive -> non-urgent invitation -> donor RSVP -> hospital sees RSVP count. Stock changes only via Inventory.
+ */
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.red404.dao.BloodRequestDao;
 import com.red404.dao.DonorDao;

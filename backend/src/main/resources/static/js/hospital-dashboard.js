@@ -2,6 +2,9 @@
    RED404 — HOSPITAL PORTAL JAVASCRIPT (PRODUCTION COMMAND CENTER)
    Strictly scoped to hospital portal pages.
    NO FAKE DATA: Every number, status, and entry comes from real backend APIs.
+
+   DATA FLOW:
+   Search donors -> results (table + map). Send / Broadcast -> donor receives request with hospital location -> donor taps directions (live GPS -> hospital) -> donor accepts -> hospital sees status Accepted and the phone number. Donation drive -> non-urgent invitation -> donor RSVP -> hospital sees RSVP count. Stock changes only via Inventory.
    ============================================================ */
 
 'use strict';
