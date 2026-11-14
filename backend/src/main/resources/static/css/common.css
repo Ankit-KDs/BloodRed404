@@ -2643,3 +2643,50 @@ body.has-mini-footer > main {
     color: black;
   }
 }
+
+/* ==================== PART 9: ACCESSIBILITY & VISUAL FIXES ==================== */
+/* 1. Unslashed zero everywhere */
+*, *::before, *::after {
+  font-feature-settings: "zero" 0 !important;
+  font-variant-numeric: normal !important;
+}
+
+/* 2. Minimum 13px font size across all small text, chips, timestamps, badges, table cells, form labels */
+small,
+.badge-rule,
+.badge-status,
+.card-meta-tag,
+.action-badge,
+.chb-tag,
+.rph-sub,
+.rph-badge,
+.rsc-zone1-lbl,
+.rsc-zone2-lbl,
+.rsc-zone3-lbl,
+.hsp-lbl,
+.hsp-val,
+.mhi-date,
+.mhi-unit-pill,
+.ref-code,
+.sos-urgency-meta,
+.terminal-meta-time,
+.log-time,
+.log-type-tag,
+.donor-vitals-val,
+.compact-donor-badge,
+.scan-to-see-details-label,
+.capsule-status-tag,
+.stat-meta-label,
+.footer-copy,
+.hero-stat-lbl,
+.ticker-sub,
+.drive-date-pill,
+.faq-ans,
+.form-hint,
+.form-label,
+.table-cell-meta,
+.history-meta,
+.history-table th,
+.history-table td {
+  font-size: 13px !important;
+}

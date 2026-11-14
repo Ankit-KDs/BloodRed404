@@ -152,13 +152,13 @@
       strip.className = 'mini-eligibility-strip eligible';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE • Recovery Complete</span>
+        <span>Status: Eligible to donate</span>
       `;
     } else {
       strip.className = 'mini-eligibility-strip cooldown';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ${elig.reason || `ELIGIBLE IN ${remaining} DAYS`}</span>
+        <span>Status: ${elig.reason || `Eligible in ${remaining} days`}</span>
       `;
     }
   }

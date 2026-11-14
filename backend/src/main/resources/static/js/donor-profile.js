@@ -493,7 +493,7 @@
     if (!hasData) {
       if (evalBadge) {
         evalBadge.className = 'health-eval-badge badge-awaiting';
-        evalBadge.innerHTML = `<i class="fas fa-clock" style="margin-right:6px;"></i><span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>`;
+        evalBadge.innerHTML = `<i class="fas fa-clock" style="margin-right:6px;"></i><span>Awaiting hospital health check</span>`;
       }
       return;
     }
@@ -511,10 +511,10 @@
     if (evalBadge) {
       if (isFit) {
         evalBadge.className = 'health-eval-badge badge-fit';
-        evalBadge.innerHTML = `<span>HEALTH STATUS: FIT TO DONATE</span>`;
+        evalBadge.innerHTML = `<span>Fit to donate</span>`;
       } else {
         evalBadge.className = 'health-eval-badge badge-unfit';
-        evalBadge.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><span>HEALTH STATUS: MEDICAL REVIEW REQUIRED</span>`;
+        evalBadge.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><span>Medical review required</span>`;
       }
     }
   }

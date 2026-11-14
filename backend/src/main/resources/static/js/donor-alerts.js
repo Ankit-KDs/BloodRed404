@@ -263,7 +263,7 @@
     if (sidebarDonorStatus) {
       sidebarDonorStatus.innerHTML = `
         <span class="hes-dot" style="background:${isAvail ? 'var(--green-neon)' : 'var(--yellow-neon)'}; box-shadow:0 0 10px ${isAvail ? 'var(--green-neon)' : 'var(--yellow-neon)'}"></span>
-        <span>Donor Status: <b>${isAvail ? 'ACTIVE' : 'BUSY'}</b></span>
+        <span>Donor Status: <b>${isAvail ? 'Available' : 'Busy'}</b></span>
       `;
     }
   }

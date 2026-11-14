@@ -65,11 +65,11 @@
       const elig = user.eligibility;
       if (elig.eligible) {
         badge.className = 'status-eligibility-btn eligible-ready';
-        textEl.textContent = 'Status: ELIGIBLE TO DONATE';
+        textEl.textContent = 'Status: Eligible to donate';
       } else {
         const daysLeft = elig.days_until_eligible || 0;
         badge.className = 'status-eligibility-btn recovering';
-        textEl.textContent = `Status: RECOVERY PERIOD • ${daysLeft} ${daysLeft === 1 ? 'Day' : 'Days'} Left`;
+        textEl.textContent = `Status: Recovery period • ${daysLeft} ${daysLeft === 1 ? 'Day' : 'Days'} Left`;
       }
       return;
     }
@@ -78,14 +78,14 @@
     const availability = (user && user.availability) || 'Available';
     if (availability.toLowerCase() === 'unavailable') {
       badge.className = 'status-eligibility-btn unavailable';
-      textEl.textContent = 'Status: TEMPORARILY UNAVAILABLE • Status Inactive';
+      textEl.textContent = 'Status: Temporarily unavailable • Inactive';
       return;
     }
 
     // 0 verified donations -> 100% Eligible immediately
     if (!donationRecords || donationRecords.length === 0) {
       badge.className = 'status-eligibility-btn eligible-ready';
-      textEl.textContent = 'Status: ELIGIBLE TO DONATE';
+      textEl.textContent = 'Status: Eligible to donate';
       return;
     }
 
@@ -101,14 +101,14 @@
         if (diffDays >= 0 && diffDays < recoveryDays) {
           const daysLeft = recoveryDays - diffDays;
           badge.className = 'status-eligibility-btn recovering';
-          textEl.textContent = `Status: RECOVERY PERIOD • ${daysLeft} Days Left`;
+          textEl.textContent = `Status: Recovery period • ${daysLeft} Days Left`;
           return;
         }
       }
     }
 
     badge.className = 'status-eligibility-btn eligible-ready';
-    textEl.textContent = 'Status: ELIGIBLE TO DONATE';
+    textEl.textContent = 'Status: Eligible to donate';
   }
 
   function renderImpactStats() {
