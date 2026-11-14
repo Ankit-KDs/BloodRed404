@@ -127,6 +127,43 @@
       updateCommandNav(currentUser);
     }
 
+    // Auto-inject Language Toggle (EN | हिन्दी) into navbar (Part 8)
+    const navRight = document.querySelector('.command-nav-right');
+    if (navRight && !document.getElementById('donorNavLangToggle')) {
+      const langDiv = document.createElement('div');
+      langDiv.className = 'nav-lang-toggle';
+      langDiv.id = 'donorNavLangToggle';
+      langDiv.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; margin-right: 8px;';
+      langDiv.innerHTML = `
+        <button type="button" class="lang-toggle-btn" data-lang="en" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px;">EN</button>
+        <span style="opacity: 0.4; color: #fff;">|</span>
+        <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px;">हिन्दी</button>
+      `;
+      navRight.insertBefore(langDiv, navRight.firstChild);
+
+      langDiv.querySelectorAll('.lang-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const l = btn.getAttribute('data-lang');
+          if (window.RED404_I18N) window.RED404_I18N.setLanguage(l);
+        });
+      });
+      if (window.RED404_I18N) {
+        const cur = window.RED404_I18N.getLanguage();
+        langDiv.querySelectorAll('.lang-toggle-btn').forEach(b => {
+          if (b.getAttribute('data-lang') === cur) {
+            b.classList.add('active');
+            b.style.color = '#38bdf8';
+            b.style.fontWeight = '700';
+          } else {
+            b.classList.remove('active');
+            b.style.color = '#94a3b8';
+            b.style.fontWeight = '500';
+          }
+        });
+      }
+    }
+
     // Purge and redirect helper if session revoked or account deleted
     function purgeAllSessionAndRedirect(reason) {
       if (window._isPurgingSession) return;
