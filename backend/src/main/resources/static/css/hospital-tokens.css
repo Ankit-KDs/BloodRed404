@@ -1,0 +1,65 @@
+/* ============================================================
+   RED404 — HOSPITAL PORTAL DESIGN TOKENS
+   Calm, serious, restrained healthcare command center.
+   Strictly scoped to hospital portal pages.
+   ============================================================ */
+
+:root {
+  /* Surfaces & Backgrounds */
+  --hosp-bg: #0f1012;
+  --hosp-surface: #17181b;
+  --hosp-surface-raised: #1e2024;
+  --hosp-surface-hover: #23262b;
+  --hosp-border: #2a2c31;
+  --hosp-border-subtle: #202227;
+  --hosp-border-focus: #6ea8ff;
+
+  /* Typography Colors */
+  --hosp-text: #ecebe8;
+  --hosp-text-muted: #9b9a96;
+  --hosp-text-dim: #71706c;
+  --hosp-text-inverse: #0f1012;
+
+  /* Accents & Status (Max 4 visible colors per screen) */
+  --hosp-red: #e5383b;         /* SOS / Critical / Primary Send SOS ONLY */
+  --hosp-red-hover: #f0484b;
+  --hosp-red-subtle: rgba(229, 56, 59, 0.12);
+  --hosp-red-border: rgba(229, 56, 59, 0.35);
+
+  --hosp-blue: #6ea8ff;        /* Links, Active Tab, Selected States ONLY */
+  --hosp-blue-hover: #8cb8ff;
+  --hosp-blue-subtle: rgba(110, 168, 255, 0.12);
+  --hosp-blue-border: rgba(110, 168, 255, 0.35);
+
+  --hosp-green: #3ecf8e;       /* Available / OK status */
+  --hosp-green-subtle: rgba(62, 207, 142, 0.12);
+  --hosp-green-border: rgba(62, 207, 142, 0.35);
+
+  --hosp-amber: #f5a524;       /* Low stock (< 5 units) */
+  --hosp-amber-subtle: rgba(245, 165, 36, 0.12);
+  --hosp-amber-border: rgba(245, 165, 36, 0.35);
+
+  /* Typography Families */
+  --font-heading: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Strict Spacing Scale: 4, 8, 12, 16, 24, 32, 48 */
+  --sp-4: 4px;
+  --sp-8: 8px;
+  --sp-12: 12px;
+  --sp-16: 16px;
+  --sp-24: 24px;
+  --sp-32: 32px;
+  --sp-48: 48px;
+
+  /* Radii */
+  --hosp-radius-card: 10px;
+  --hosp-radius-input: 10px;
+  --hosp-radius-btn: 8px;
+  --hosp-radius-full: 9999px;
+
+  /* Layout */
+  --hosp-max-width: 1200px;
+}
+

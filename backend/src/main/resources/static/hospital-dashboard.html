@@ -6,109 +6,93 @@
   <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hospital Command Center — RED404</title>
+  <title>Hospital Portal — RED404</title>
 
-  <!-- Google Fonts & Font Awesome 6 -->
+  <!-- Google Fonts: Bricolage Grotesque, Instrument Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/common.css?v=20261114_v3" />
-  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_v3" />
+  <!-- Hospital Stylesheet -->
+  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_r1" />
 </head>
 <body class="hospital-body">
 
-  <!-- ==================== MEDICINE FLOW ANIMATED BACKGROUND ==================== -->
-  <canvas id="medicineFlowCanvas"></canvas>
+  <!-- ==================== MEDICINE FLOW HERO BACKGROUND ==================== -->
+  <canvas id="medicineFlowCanvas" aria-hidden="true"></canvas>
 
-  <!-- ==================== FLOATING GLASS COMMAND PILL NAVBAR ==================== -->
-  <header class="command-nav-wrapper">
-    <div class="command-nav-pill">
+  <!-- ==================== FLAT TOP NAVBAR (1PX BORDER) ==================== -->
+  <header class="hosp-navbar">
+    <div class="hosp-nav-container">
       
-      <!-- LEFT: BRAND & HOSPITAL PORTAL CHIP -->
-      <div class="command-nav-left">
-        <a href="hospital-dashboard.html" class="command-brand" title="RED404 Emergency Medical Network">
-          <div class="brand-icon-drop">
-            <i class="fa-solid fa-droplet"></i>
-          </div>
-          <span class="brand-text">RED<span>404</span></span>
-        </a>
-        <div class="hosp-portal-chip">
-          <span class="pulse-dot"></span>
-          <span>Hospital Portal</span>
-        </div>
-      </div>
+      <!-- Left: Logo & Portal Tag -->
+      <a href="hospital-dashboard.html" class="hosp-brand" aria-label="RED404 Hospital Portal Home">
+        <span class="brand-drop-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 38" class="drop-svg" focusable="false">
+            <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-name">RED<span class="brand-num">404</span></span>
+        <span class="hosp-brand-tag">Hospital</span>
+      </a>
 
-      <!-- CENTER: HORIZONTAL COMMAND TABS -->
-      <nav class="command-nav-center" aria-label="Portal Navigation">
-        <button type="button" class="nav-tab-btn active" data-tab="tab-dashboard">
-          <i class="fa-solid fa-gauge-high"></i>
+      <!-- Center: Navigation Tabs as Plain Text with Blue Underline -->
+      <nav class="hosp-nav-tabs" id="hospNavTabs" aria-label="Portal Navigation">
+        <button type="button" class="hosp-tab-link nav-tab-btn active" data-tab="tab-dashboard">
           <span>Dashboard</span>
         </button>
-        <button type="button" class="nav-tab-btn" data-tab="tab-dispatch">
-          <i class="fa-solid fa-truck-medical"></i>
-          <span>Dispatch</span>
-          <span class="tab-badge-count" id="badgeActiveSosCount">0</span>
+        <button type="button" class="hosp-tab-link nav-tab-btn" data-tab="tab-dispatch">
+          <span>Find Donor</span>
+          <span class="tab-badge" id="badgeActiveSosCount">1</span>
         </button>
-        <button type="button" class="nav-tab-btn" data-tab="tab-inventory">
-          <i class="fa-solid fa-boxes-stacked"></i>
+        <button type="button" class="hosp-tab-link nav-tab-btn" data-tab="tab-inventory">
           <span>Inventory</span>
         </button>
-        <button type="button" class="nav-tab-btn" data-tab="tab-checkin">
-          <i class="fa-solid fa-user-check"></i>
-          <span>Check-in</span>
+        <button type="button" class="hosp-tab-link nav-tab-btn" data-tab="tab-records">
+          <span>My Requests</span>
         </button>
-        <button type="button" class="nav-tab-btn" data-tab="tab-records">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-          <span>Records</span>
+        <button type="button" class="hosp-tab-link nav-tab-btn" data-tab="tab-checkin">
+          <span>Check-in</span>
         </button>
       </nav>
 
-      <!-- RIGHT: HOSPITAL CHIP, NOTIFICATIONS, AVATAR -->
-      <div class="command-nav-right">
-        
-        <!-- Logged-in Hospital Name Chip -->
-        <div class="nav-hosp-chip" title="Connected Medical Enclave">
-          <i class="fa-solid fa-hospital"></i>
-          <span class="hosp-name-text" id="top-hospital-name">-</span>
+      <!-- Right: Facility Name, Bell, Logout -->
+      <div class="hosp-nav-actions">
+        <div class="hosp-facility-name" id="top-hospital-name" title="Connected Hospital">
+          Apollo General Hospital
         </div>
 
-        <!-- Notification Bell -->
-        <button type="button" class="nav-icon-btn" id="navNotifBtn" title="Emergency Broadcasts" aria-label="Notifications">
-          <i class="fa-solid fa-bell"></i>
-          <span class="nav-unread-dot" id="navUnreadDot"></span>
+        <button type="button" class="hosp-nav-btn" id="navNotifBtn" aria-label="Emergency Notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="notif-dot" id="navUnreadDot"></span>
         </button>
 
-        <!-- User Profile Avatar with Dropdown -->
-        <div class="hosp-avatar-wrap">
-          <button type="button" class="hosp-avatar-btn" id="hospAvatarBtn" title="Facility Menu">
-            <span id="hospAvatarInitials">HP</span>
-          </button>
-          
-          <div class="hosp-dropdown-menu" id="hospDropdownMenu">
-            <div class="dropdown-hosp-header">
-              <div class="dropdown-hosp-name" id="dropdownHospName">-</div>
-              <div class="dropdown-hosp-role">Emergency Response Facility</div>
-            </div>
-            <button type="button" class="dropdown-item" data-tab="tab-profile">
-              <i class="fa-solid fa-id-card"></i>
-              <span>Facility Profile</span>
-            </button>
-            <button type="button" class="dropdown-item" data-tab="tab-profile" data-subtab="staff">
-              <i class="fa-solid fa-users-gear"></i>
-              <span>Staff Management</span>
-            </button>
-            <a href="/api/auth/logout" class="dropdown-item danger" id="btnLogoutLink">
-              <i class="fa-solid fa-arrow-right-from-bracket"></i>
-              <span>Logout Session</span>
-            </a>
-          </div>
-        </div>
+        <a href="/api/auth/logout" class="hosp-logout-btn" id="btnLogoutLink" title="Sign out of hospital account">
+          <span>Logout</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </a>
 
+        <!-- Mobile Hamburger Toggle -->
+        <button type="button" class="hosp-mobile-menu-btn" id="hospMobileMenuBtn" aria-label="Open mobile navigation menu" aria-expanded="false">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
       </div>
 
+    </div>
+
+    <!-- Mobile Drawer for Small Screens -->
+    <div class="hosp-mobile-drawer" id="hospMobileDrawer">
+      <nav class="mobile-drawer-links" aria-label="Mobile Navigation">
+        <button type="button" class="mobile-tab-btn nav-tab-btn active" data-tab="tab-dashboard">Dashboard</button>
+        <button type="button" class="mobile-tab-btn nav-tab-btn" data-tab="tab-dispatch">Find Donor</button>
+        <button type="button" class="mobile-tab-btn nav-tab-btn" data-tab="tab-inventory">Inventory</button>
+        <button type="button" class="mobile-tab-btn nav-tab-btn" data-tab="tab-records">My Requests</button>
+        <button type="button" class="mobile-tab-btn nav-tab-btn" data-tab="tab-checkin">Check-in</button>
+        <div class="mobile-drawer-divider"></div>
+        <div class="mobile-drawer-hosp-name" id="mobileHospName">Apollo General Hospital</div>
+        <a href="/api/auth/logout" class="mobile-drawer-logout">Logout Session</a>
+      </nav>
     </div>
   </header>
 
@@ -117,411 +101,376 @@
 
     <!-- ============================================================
          TAB 1: DASHBOARD
+         Dominant Element: Send SOS Panel beside Latest Request Timeline
     ============================================================ -->
-    <section class="portal-tab-content active" id="tab-dashboard">
+    <section class="portal-tab-content active" id="tab-dashboard" role="tabpanel">
 
-      <!-- Shortened Welcome Strip with Verified Tag -->
-      <div class="hosp-welcome-strip">
-        <div class="welcome-info-col">
-          <h1>Welcome, <span id="nav-hospital-name">-</span></h1>
-          <p>Emergency Dispatch Operations &amp; Real-Time Blood Logistics Hub.</p>
+      <!-- Compact Restrained Header -->
+      <header class="dash-welcome-header">
+        <div class="welcome-heading-row">
+          <h1 class="welcome-title">Welcome, <span id="nav-hospital-name">Apollo General Hospital</span></h1>
+          <span class="hospital-verified-pill">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span>Verified hospital</span>
+          </span>
         </div>
-        <div class="welcome-facility-tag">
-          <i class="fa-solid fa-circle-check"></i>
-          <span>Verified Healthcare Facility Enclave</span>
-        </div>
-      </div>
+        <p class="welcome-status-line" id="hosp-status-line">
+          1 request waiting for donors, 5 blood groups running low.
+        </p>
+      </header>
 
-      <!-- 4 Primary KPI Stat Cards -->
-      <div class="kpi-stats-grid">
-        <div class="kpi-card">
-          <div class="kpi-icon-box">
-            <i class="fa-solid fa-vials"></i>
-          </div>
-          <div class="kpi-meta">
-            <div class="kpi-label">Total Units on Hand</div>
-            <div class="kpi-value" id="kpiTotalUnits">-</div>
-            <div class="kpi-subtext">Across All 8 Blood Groups</div>
-          </div>
+      <!-- Row of 4 Plain Stat Numbers (No glowing boxes) -->
+      <div class="stats-summary-row" role="region" aria-label="Hospital status overview">
+        <div class="stat-box" id="stat-total-units">
+          <div class="stat-value" id="kpiTotalUnits">62</div>
+          <div class="stat-label">Total units in stock</div>
         </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon-box amber">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
-          <div class="kpi-meta">
-            <div class="kpi-label">Critical Deficit Groups</div>
-            <div class="kpi-value" id="kpiCriticalGroups">-</div>
-            <div class="kpi-subtext">Below 5 Units Threshold</div>
-          </div>
+        <div class="stat-box" id="stat-low-groups">
+          <div class="stat-value status-low" id="kpiCriticalGroups">5</div>
+          <div class="stat-label">Low blood groups (&lt; 5 units)</div>
         </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon-box red">
-            <i class="fa-solid fa-truck-medical"></i>
-          </div>
-          <div class="kpi-meta">
-            <div class="kpi-label">Active SOS Requests</div>
-            <div class="kpi-value" id="kpiActiveRequests">-</div>
-            <div class="kpi-subtext">Real-Time Spatial Broadcasts</div>
-          </div>
+        <div class="stat-box" id="stat-active-reqs">
+          <div class="stat-value status-sos" id="kpiActiveRequests">1</div>
+          <div class="stat-label">Active SOS requests</div>
         </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon-box green">
-            <i class="fa-solid fa-user-check"></i>
-          </div>
-          <div class="kpi-meta">
-            <div class="kpi-label">Donors Checked In Today</div>
-            <div class="kpi-value" id="kpiCheckedInToday">-</div>
-            <div class="kpi-subtext">Verified Pre-Screened Donors</div>
-          </div>
+        <div class="stat-box" id="stat-donors-responded">
+          <div class="stat-value" id="kpiCheckedInToday">4</div>
+          <div class="stat-label">Donors responded today</div>
         </div>
       </div>
 
-      <!-- Core 2-Column Split: Inline SOS Builder & Live Request Timeline -->
-      <div class="dash-core-grid">
+      <!-- DOMINANT BLOCK: Send SOS Panel beside Latest Request Timeline -->
+      <div class="dash-dominant-split">
 
-        <!-- Card: Inline Send SOS Request -->
-        <article class="bento-card inline-sos-card">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge red">
-                <i class="fa-solid fa-bolt"></i>
-              </div>
-              <div>
-                <h2 class="bento-card-title">Broadcast Emergency SOS</h2>
-                <div class="bento-card-subtitle">Deploy hyper-local alerts to verified nearby donors</div>
-              </div>
+        <!-- Dominant Block 1: Send SOS Panel -->
+        <article class="hosp-card dominant-sos-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Send SOS</h2>
+              <p class="card-subtitle">Broadcast emergency blood request to verified nearby donors</p>
             </div>
-            <span class="corner-badge red">SOS ALERT</span>
           </div>
 
           <form id="formInlineSos">
-            <!-- Blood Group Chips (4x2 Grid) -->
-            <label class="ctrl-item-label">Select Blood Group *</label>
-            <div class="sos-blood-chips">
-              <input type="radio" name="inlineBloodType" id="bt-o-neg" value="O-" class="blood-chip-radio" checked />
-              <label for="bt-o-neg" class="blood-chip-label">O-</label>
+            <!-- Blood Group Radio Badges (Drop-shaped) -->
+            <fieldset class="sos-fieldset">
+              <legend class="form-legend">Select blood group</legend>
+              <div class="sos-blood-grid" role="radiogroup" aria-label="Blood Group Selection">
+                
+                <input type="radio" name="inlineBloodType" id="bt-o-neg" value="O-" class="blood-chip-radio" checked />
+                <label for="bt-o-neg" class="blood-chip-label" title="O Negative">
+                  <span class="blood-drop-badge critical">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">O-</span>
+                  </span>
+                </label>
 
-              <input type="radio" name="inlineBloodType" id="bt-o-pos" value="O+" class="blood-chip-radio" />
-              <label for="bt-o-pos" class="blood-chip-label">O+</label>
+                <input type="radio" name="inlineBloodType" id="bt-o-pos" value="O+" class="blood-chip-radio" />
+                <label for="bt-o-pos" class="blood-chip-label" title="O Positive">
+                  <span class="blood-drop-badge">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">O+</span>
+                  </span>
+                </label>
 
-              <input type="radio" name="inlineBloodType" id="bt-a-neg" value="A-" class="blood-chip-radio" />
-              <label for="bt-a-neg" class="blood-chip-label">A-</label>
+                <input type="radio" name="inlineBloodType" id="bt-a-neg" value="A-" class="blood-chip-radio" />
+                <label for="bt-a-neg" class="blood-chip-label" title="A Negative">
+                  <span class="blood-drop-badge critical">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">A-</span>
+                  </span>
+                </label>
 
-              <input type="radio" name="inlineBloodType" id="bt-a-pos" value="A+" class="blood-chip-radio" />
-              <label for="bt-a-pos" class="blood-chip-label">A+</label>
+                <input type="radio" name="inlineBloodType" id="bt-a-pos" value="A+" class="blood-chip-radio" />
+                <label for="bt-a-pos" class="blood-chip-label" title="A Positive">
+                  <span class="blood-drop-badge">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">A+</span>
+                  </span>
+                </label>
 
-              <input type="radio" name="inlineBloodType" id="bt-b-neg" value="B-" class="blood-chip-radio" />
-              <label for="bt-b-neg" class="blood-chip-label">B-</label>
+                <input type="radio" name="inlineBloodType" id="bt-b-neg" value="B-" class="blood-chip-radio" />
+                <label for="bt-b-neg" class="blood-chip-label" title="B Negative">
+                  <span class="blood-drop-badge critical">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">B-</span>
+                  </span>
+                </label>
 
-              <input type="radio" name="inlineBloodType" id="bt-b-pos" value="B+" class="blood-chip-radio" />
-              <label for="bt-b-pos" class="blood-chip-label">B+</label>
+                <input type="radio" name="inlineBloodType" id="bt-b-pos" value="B+" class="blood-chip-radio" />
+                <label for="bt-b-pos" class="blood-chip-label" title="B Positive">
+                  <span class="blood-drop-badge">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">B+</span>
+                  </span>
+                </label>
 
-              <input type="radio" name="inlineBloodType" id="bt-ab-neg" value="AB-" class="blood-chip-radio" />
-              <label for="bt-ab-neg" class="blood-chip-label">AB-</label>
+                <input type="radio" name="inlineBloodType" id="bt-ab-neg" value="AB-" class="blood-chip-radio" />
+                <label for="bt-ab-neg" class="blood-chip-label" title="AB Negative">
+                  <span class="blood-drop-badge critical">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">AB-</span>
+                  </span>
+                </label>
 
-              <input type="radio" name="inlineBloodType" id="bt-ab-pos" value="AB+" class="blood-chip-radio" />
-              <label for="bt-ab-pos" class="blood-chip-label">AB+</label>
-            </div>
+                <input type="radio" name="inlineBloodType" id="bt-ab-pos" value="AB+" class="blood-chip-radio" />
+                <label for="bt-ab-pos" class="blood-chip-label" title="AB Positive">
+                  <span class="blood-drop-badge">
+                    <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                    <span class="drop-text">AB+</span>
+                  </span>
+                </label>
 
-            <!-- Units Stepper, Radius, Urgency -->
-            <div class="sos-controls-row">
-              <div>
-                <label class="ctrl-item-label">Units Needed</label>
-                <div class="units-stepper">
-                  <button type="button" class="step-btn" id="btnStepDown"><i class="fa-solid fa-minus"></i></button>
-                  <input type="number" id="inlineUnits" class="step-input" value="1" min="1" max="15" readonly />
-                  <button type="button" class="step-btn" id="btnStepUp"><i class="fa-solid fa-plus"></i></button>
+              </div>
+            </fieldset>
+
+            <!-- Parameters Grid: Units, Radius, Urgency -->
+            <div class="sos-params-grid">
+              <div class="param-control">
+                <label class="form-label" for="inlineUnits">Units needed</label>
+                <div class="stepper-widget">
+                  <button type="button" class="stepper-btn" id="btnStepDown" aria-label="Decrease units">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 8a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1z"/></svg>
+                  </button>
+                  <input type="number" id="inlineUnits" class="stepper-input" value="1" min="1" max="15" readonly />
+                  <button type="button" class="stepper-btn" id="btnStepUp" aria-label="Increase units">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 2a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2H9v4a1 1 0 1 1-2 0V9H3a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z"/></svg>
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <label class="ctrl-item-label" for="inlineRadius">Zone Radius</label>
-                <select id="inlineRadius" class="sos-select">
-                  <option value="5">5 km (Zone 1)</option>
-                  <option value="10" selected>10 km (Zone 2)</option>
-                  <option value="20">20 km (Zone 3)</option>
+              <div class="param-control">
+                <label class="form-label" for="inlineRadius">Radius</label>
+                <select id="inlineRadius" class="form-select">
+                  <option value="5">5 km (Immediate)</option>
+                  <option value="10" selected>10 km (Standard)</option>
+                  <option value="20">20 km (Extended)</option>
                 </select>
               </div>
 
-              <div>
-                <label class="ctrl-item-label" for="inlineUrgency">Urgency</label>
-                <select id="inlineUrgency" class="sos-select">
-                  <option value="CRITICAL" selected>Critical (&lt;30m)</option>
-                  <option value="HIGH">High (&lt;2h)</option>
+              <div class="param-control">
+                <label class="form-label" for="inlineUrgency">Urgency</label>
+                <select id="inlineUrgency" class="form-select">
+                  <option value="CRITICAL" selected>Critical (&lt; 30 min)</option>
+                  <option value="HIGH">High (&lt; 2 hrs)</option>
                   <option value="STANDARD">Standard</option>
                 </select>
               </div>
             </div>
 
-            <button type="submit" class="btn-dispatch-sos" id="btnDispatchSosInline">
-              <i class="fa-solid fa-tower-broadcast"></i>
-              <span>Dispatch SOS to Nearby Donors</span>
+            <!-- Primary Red Send SOS Button -->
+            <button type="submit" class="btn-send-sos" id="btnDispatchSosInline">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Send SOS</span>
             </button>
           </form>
         </article>
 
-        <!-- Card: Live Request Timeline -->
-        <article class="bento-card live-timeline-card">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge blue">
-                <i class="fa-solid fa-route"></i>
-              </div>
-              <div>
-                <h2 class="bento-card-title">Live Dispatch Tracking</h2>
-                <div class="bento-card-subtitle">Real-time response progression &amp; donor arrival</div>
-              </div>
-            </div>
-            <span class="corner-badge blue">ACTIVE DISPATCH</span>
-          </div>
-
-          <!-- Dynamic Request Meta -->
-          <div class="request-meta-header">
-            <div class="req-badge-group">
-              <span class="req-blood-type" id="liveReqBloodType">O-</span>
-              <span class="req-qty"><span id="liveReqUnits">1</span> Unit(s) Needed</span>
-            </div>
-            <div class="req-eta-tag" id="liveReqEta">ETA: ~14 Mins</div>
-          </div>
-
-          <!-- 5-Stage Visual Timeline Flow -->
-          <div class="timeline-track">
-            <div class="timeline-step completed" id="step-sent">
-              <div class="step-node"><i class="fa-solid fa-paper-plane"></i></div>
-              <span class="step-title">Sent</span>
-            </div>
-            <div class="timeline-step completed" id="step-notified">
-              <div class="step-node"><i class="fa-solid fa-tower-cell"></i></div>
-              <span class="step-title">Notified</span>
-            </div>
-            <div class="timeline-step active" id="step-accepted">
-              <div class="step-node"><i class="fa-solid fa-hand-holding-hand"></i></div>
-              <span class="step-title">Accepted</span>
-            </div>
-            <div class="timeline-step" id="step-onway">
-              <div class="step-node"><i class="fa-solid fa-motorcycle"></i></div>
-              <span class="step-title">On the way</span>
-            </div>
-            <div class="timeline-step" id="step-arrived">
-              <div class="step-node"><i class="fa-solid fa-hospital-user"></i></div>
-              <span class="step-title">Arrived</span>
-            </div>
-          </div>
-
-          <div class="live-req-footer">
-            <span>Donor: <strong id="liveDonorName" style="color: #fff;">Rohit S.</strong> (DNR-8012-A404)</span>
-            <span>Distance: <strong id="liveDonorDistance" style="color: var(--hosp-blue-light);">3.8 km away</strong></span>
-          </div>
-        </article>
-
-      </div>
-
-      <!-- Elevated Blood Stock Alerts with Level Bars -->
-      <article class="bento-card stock-alerts-bento">
-        <div class="bento-card-header">
-          <div class="bento-title-group">
-            <div class="bento-icon-badge amber">
-              <i class="fa-solid fa-vials"></i>
-            </div>
+        <!-- Dominant Block 2: Latest Request Timeline Card -->
+        <article class="hosp-card latest-request-card">
+          <div class="card-header">
             <div>
-              <h2 class="bento-card-title">Hospital Blood Stock Reserves</h2>
-              <div class="bento-card-subtitle">Real-time units with level bars &amp; deficit warnings (&lt; 5 Units)</div>
+              <h2 class="card-title">Latest request</h2>
+              <p class="card-subtitle">Real-time donor arrival &amp; status</p>
             </div>
           </div>
-          <span class="corner-badge green">SUPPLY CONTROL</span>
-        </div>
 
-        <div class="stock-grid-elevated" id="dashboardStockGrid">
-          <!-- Dynamically populated 8 blood groups via JS -->
-        </div>
-      </article>
-
-      <!-- Bottom Split: System Feed & Today's Check-ins -->
-      <div class="dash-bottom-grid">
-        
-        <!-- System Notifications & Activity Feed -->
-        <article class="bento-card">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge blue">
-                <i class="fa-solid fa-bell"></i>
+          <div id="latestRequestContent">
+            <!-- Active Request Summary -->
+            <div class="active-req-meta">
+              <div class="req-drop-wrap">
+                <span class="blood-drop-badge critical" id="liveReqDropBadge">
+                  <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
+                  <span class="drop-text" id="liveReqBloodType">O-</span>
+                </span>
+                <div>
+                  <div class="req-units-text"><strong id="liveReqUnits">1</strong> unit requested</div>
+                  <div class="req-time-mono" id="liveReqTime">Dispatched 4 min ago</div>
+                </div>
               </div>
-              <div>
-                <h2 class="bento-card-title">System Activity Stack</h2>
-                <div class="bento-card-subtitle">Telemetry, donor responses, and automated dispatch logs</div>
+              <span class="req-status-chip" id="liveReqEta">ETA ~14 min</span>
+            </div>
+
+            <!-- 5-Stage Progression Timeline -->
+            <div class="request-timeline" aria-label="Request delivery progression">
+              <div class="timeline-step completed" id="step-sent">
+                <div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                <span class="step-label">Sent</span>
+              </div>
+              <div class="timeline-step completed" id="step-notified">
+                <div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                <span class="step-label">Notified</span>
+              </div>
+              <div class="timeline-step active" id="step-accepted">
+                <div class="step-dot">3</div>
+                <span class="step-label">Accepted</span>
+              </div>
+              <div class="timeline-step" id="step-onway">
+                <div class="step-dot">4</div>
+                <span class="step-label">On the way</span>
+              </div>
+              <div class="timeline-step" id="step-arrived">
+                <div class="step-dot">5</div>
+                <span class="step-label">Arrived</span>
               </div>
             </div>
-          </div>
-          <div class="system-logs-feed" id="systemLogsFeed">
-            <!-- Dynamic feed items -->
-          </div>
-        </article>
 
-        <!-- Today's Checked-in Donors -->
-        <article class="bento-card">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge green">
-                <i class="fa-solid fa-user-check"></i>
-              </div>
-              <div>
-                <h2 class="bento-card-title">Today's Check-ins</h2>
-                <div class="bento-card-subtitle">Screened donors, volume recorded, and medical verification</div>
-              </div>
+            <!-- Donor Line -->
+            <div class="latest-req-donor-line">
+              <span>Donor: <strong id="liveDonorName">Rohit S.</strong> (<span class="mono-id">DNR-8012</span>)</span>
+              <span>Distance: <strong id="liveDonorDistance">3.8 km away</strong></span>
             </div>
           </div>
-          <div class="checkins-mini-list" id="todayCheckinsList">
-            <!-- Dynamic check-in rows -->
+
+          <!-- Empty State When No Active Request -->
+          <div id="latestRequestEmpty" class="req-empty-state" style="display:none;">
+            <p>No active request. Send an SOS when you need blood.</p>
           </div>
         </article>
 
       </div>
+
+      <!-- BLOOD STOCK SECTION (LOW GROUPS SORTED FIRST) -->
+      <section class="hosp-card stock-section" aria-labelledby="stockSectionTitle">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title" id="stockSectionTitle">Blood stock</h2>
+            <p class="card-subtitle">Groups under 5 units are marked Low.</p>
+          </div>
+        </div>
+
+        <!-- 8 Blood Stock Cards (Low items first, drop badges, thin bars, +/- controls) -->
+        <div class="stock-list" id="dashboardStockGrid">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </section>
 
     </section>
 
     <!-- ============================================================
-         TAB 2: DISPATCH (EXTENDED FIND DONOR + MY REQUESTS)
+         TAB 2: FIND DONOR (DISPATCH SEARCH & RADAR)
     ============================================================ -->
-    <section class="portal-tab-content" id="tab-dispatch">
+    <section class="portal-tab-content" id="tab-dispatch" role="tabpanel">
       
-      <div class="dispatch-layout-grid">
+      <header class="dash-welcome-header">
+        <h1 class="welcome-title">Find Donors</h1>
+        <p class="welcome-status-line">Search eligible donors within spatial zones and dispatch direct alerts.</p>
+      </header>
+
+      <div class="dash-dominant-split">
         
-        <!-- Left: SOS Dispatch Builder Form -->
-        <article class="bento-card">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge red">
-                <i class="fa-solid fa-satellite-dish"></i>
-              </div>
-              <div>
-                <h2 class="bento-card-title">SOS Dispatch Hub</h2>
-                <div class="bento-card-subtitle">Broadcast spatial requests to eligible donors</div>
-              </div>
+        <!-- Left: Search & Dispatch Form -->
+        <article class="hosp-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Search &amp; Dispatch</h2>
+              <p class="card-subtitle">Locate active donors nearby</p>
             </div>
           </div>
 
           <form id="formFullDispatch">
-            <div style="margin-bottom: 0.9rem;">
-              <label class="ctrl-item-label" for="dispPatientName">Patient Reference / Ward</label>
-              <input type="text" id="dispPatientName" class="donor-id-input" placeholder="e.g. Trauma Bay 3" />
+            <div style="margin-bottom: var(--sp-16);">
+              <label class="form-label" for="dispPatientName">Patient Reference / Ward</label>
+              <input type="text" id="dispPatientName" class="form-input" placeholder="e.g. Ward 4 / Emergency" />
             </div>
 
-            <div style="margin-bottom: 0.9rem;">
-              <label class="ctrl-item-label">Required Blood Group *</label>
-              <div class="sos-blood-chips">
+            <fieldset class="sos-fieldset">
+              <legend class="form-legend">Required blood group *</legend>
+              <div class="sos-blood-grid">
                 <input type="radio" name="dispBloodGroup" id="dbg-o-neg" value="O-" class="blood-chip-radio" checked />
-                <label for="dbg-o-neg" class="blood-chip-label">O-</label>
-                <input type="radio" name="dispBloodGroup" id="dbg-o-pos" value="O+" class="blood-chip-radio" />
-                <label for="dbg-o-pos" class="blood-chip-label">O+</label>
-                <input type="radio" name="dispBloodGroup" id="dbg-a-neg" value="A-" class="blood-chip-radio" />
-                <label for="dbg-a-neg" class="blood-chip-label">A-</label>
-                <input type="radio" name="dispBloodGroup" id="dbg-a-pos" value="A+" class="blood-chip-radio" />
-                <label for="dbg-a-pos" class="blood-chip-label">A+</label>
-                <input type="radio" name="dispBloodGroup" id="dbg-b-neg" value="B-" class="blood-chip-radio" />
-                <label for="dbg-b-neg" class="blood-chip-label">B-</label>
-                <input type="radio" name="dispBloodGroup" id="dbg-b-pos" value="B+" class="blood-chip-radio" />
-                <label for="dbg-b-pos" class="blood-chip-label">B+</label>
-                <input type="radio" name="dispBloodGroup" id="dbg-ab-neg" value="AB-" class="blood-chip-radio" />
-                <label for="dbg-ab-neg" class="blood-chip-label">AB-</label>
-                <input type="radio" name="dispBloodGroup" id="dbg-ab-pos" value="AB+" class="blood-chip-radio" />
-                <label for="dbg-ab-pos" class="blood-chip-label">AB+</label>
-              </div>
-            </div>
+                <label for="dbg-o-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">O-</span></span></label>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.9rem;">
+                <input type="radio" name="dispBloodGroup" id="dbg-o-pos" value="O+" class="blood-chip-radio" />
+                <label for="dbg-o-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">O+</span></span></label>
+
+                <input type="radio" name="dispBloodGroup" id="dbg-a-neg" value="A-" class="blood-chip-radio" />
+                <label for="dbg-a-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">A-</span></span></label>
+
+                <input type="radio" name="dispBloodGroup" id="dbg-a-pos" value="A+" class="blood-chip-radio" />
+                <label for="dbg-a-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">A+</span></span></label>
+
+                <input type="radio" name="dispBloodGroup" id="dbg-b-neg" value="B-" class="blood-chip-radio" />
+                <label for="dbg-b-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">B-</span></span></label>
+
+                <input type="radio" name="dispBloodGroup" id="dbg-b-pos" value="B+" class="blood-chip-radio" />
+                <label for="dbg-b-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">B+</span></span></label>
+
+                <input type="radio" name="dispBloodGroup" id="dbg-ab-neg" value="AB-" class="blood-chip-radio" />
+                <label for="dbg-ab-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">AB-</span></span></label>
+
+                <input type="radio" name="dispBloodGroup" id="dbg-ab-pos" value="AB+" class="blood-chip-radio" />
+                <label for="dbg-ab-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">AB+</span></span></label>
+              </div>
+            </fieldset>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
               <div>
-                <label class="ctrl-item-label" for="dispUnits">Units (Bags)</label>
-                <input type="number" id="dispUnits" class="donor-id-input" value="1" min="1" max="15" />
+                <label class="form-label" for="dispUnits">Units</label>
+                <input type="number" id="dispUnits" class="form-input" value="1" min="1" max="15" />
               </div>
               <div>
-                <label class="ctrl-item-label" for="dispUrgency">Priority Level</label>
-                <select id="dispUrgency" class="sos-select">
-                  <option value="CRITICAL">🔴 Critical (&lt; 30 min)</option>
-                  <option value="HIGH" selected>🟠 High (&lt; 2 hrs)</option>
-                  <option value="STANDARD">🔵 Scheduled</option>
+                <label class="form-label" for="dispRadius">Radius</label>
+                <select id="dispRadius" class="form-select">
+                  <option value="5">5 km</option>
+                  <option value="10" selected>10 km</option>
+                  <option value="20">20 km</option>
                 </select>
               </div>
             </div>
 
-            <div style="margin-bottom: 0.9rem;">
-              <label class="ctrl-item-label" for="dispRadius">Spatial Notification Radius</label>
-              <select id="dispRadius" class="sos-select">
-                <option value="5">Zone 1 — 5 km (Immediate)</option>
-                <option value="10" selected>Zone 2 — 10 km (Standard City)</option>
-                <option value="20">Zone 3 — 20 km (Extended Metro)</option>
-              </select>
+            <div style="margin-bottom: var(--sp-24);">
+              <label class="form-label" for="dispNotes">Notes</label>
+              <input type="text" id="dispNotes" class="form-input" placeholder="e.g. Please report to Blood Bank Gate 2" />
             </div>
 
-            <div style="margin-bottom: 1.15rem;">
-              <label class="ctrl-item-label" for="dispNotes">Clinical Notes</label>
-              <textarea id="dispNotes" class="donor-id-input" rows="2" placeholder="e.g. Rare matching requested, please report to Blood Bank Gate 2"></textarea>
-            </div>
-
-            <button type="submit" class="btn-dispatch-sos">
-              <i class="fa-solid fa-satellite-dish"></i>
-              <span>Emit Emergency Broadcast</span>
+            <button type="submit" class="btn-send-sos">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Send SOS</span>
             </button>
           </form>
         </article>
 
-        <!-- Right: 3-Zone Live Radar Map & Controls -->
-        <article class="bento-card radar-map-card">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge blue">
-                <i class="fa-solid fa-radar"></i>
-              </div>
-              <div>
-                <h2 class="bento-card-title">Live Spatial Radar</h2>
-                <div class="bento-card-subtitle">Hospital Center • Zone 1 (5km), Zone 2 (10km), Zone 3 (20km)</div>
-              </div>
-            </div>
-            <div class="radar-controls-overlay">
-              <button type="button" class="radar-btn-pill active" id="btnToggleDonors"><i class="fa-solid fa-users"></i> Donors</button>
-              <button type="button" class="radar-btn-pill" id="btnToggleTraffic"><i class="fa-solid fa-car"></i> Traffic</button>
+        <!-- Right: Spatial Radar Map -->
+        <article class="hosp-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Spatial Radar</h2>
+              <p class="card-subtitle">Hospital Center: Zone 1 (5km), Zone 2 (10km), Zone 3 (20km)</p>
             </div>
           </div>
 
-          <div class="radar-canvas-wrap">
+          <div class="radar-container">
             <canvas id="radarCanvas"></canvas>
-            <div class="radar-legend">
-              <div class="leg-item"><span class="leg-dot hosp"></span> Hospital</div>
-              <div class="leg-item"><span class="leg-dot zone1"></span> Zone 1 (5km)</div>
-              <div class="leg-item"><span class="leg-dot zone2"></span> Zone 2 (10km)</div>
-              <div class="leg-item"><span class="leg-dot zone3"></span> Zone 3 (20km)</div>
+            <div class="radar-legend-bar">
+              <span class="legend-item"><span class="leg-dot hosp"></span> Hospital</span>
+              <span class="legend-item"><span class="leg-dot z1"></span> 5 km</span>
+              <span class="legend-item"><span class="leg-dot z2"></span> 10 km</span>
+              <span class="legend-item"><span class="leg-dot z3"></span> 20 km</span>
             </div>
           </div>
         </article>
 
       </div>
 
-      <!-- Live Donor Responses Table (Folds My Requests) -->
-      <article class="bento-card">
-        <div class="bento-card-header">
-          <div class="bento-title-group">
-            <div class="bento-icon-badge blue">
-              <i class="fa-solid fa-list-check"></i>
-            </div>
-            <div>
-              <h2 class="bento-card-title">Live Response Registry &amp; Dispatch Stack</h2>
-              <div class="bento-card-subtitle">Real-time donor milestones, distance, ETA, and fulfillment actions</div>
-            </div>
+      <!-- Responding Donors List / Table -->
+      <article class="hosp-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Matching Donors</h2>
+            <p class="card-subtitle">Eligible donors available within notification radius</p>
           </div>
         </div>
 
-        <div class="data-table-wrap">
-          <table class="command-table">
+        <div class="table-wrap">
+          <table class="hosp-table">
             <thead>
               <tr>
                 <th>Donor Name</th>
                 <th>Blood Group</th>
                 <th>Distance</th>
                 <th>Estimated ETA</th>
-                <th>Current Status</th>
-                <th>Action Controls</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="dispatchResponsesTableBody">
@@ -534,53 +483,69 @@
     </section>
 
     <!-- ============================================================
-         TAB 3: INVENTORY (EXTENDED WITH PER-BAG TRACKING)
+         TAB 3: INVENTORY (STOCK OVERVIEW & PER-BAG AUDIT)
     ============================================================ -->
-    <section class="portal-tab-content" id="tab-inventory">
+    <section class="portal-tab-content" id="tab-inventory" role="tabpanel">
       
-      <article class="bento-card">
-        <div class="bento-card-header">
-          <div class="bento-title-group">
-            <div class="bento-icon-badge green">
-              <i class="fa-solid fa-boxes-stacked"></i>
-            </div>
-            <div>
-              <h2 class="bento-card-title">Clinical Blood Stock &amp; Component Inventory</h2>
-              <div class="bento-card-subtitle">Per-bag expiration tracking, reserved counts, and component breakdown</div>
-            </div>
-          </div>
-          <span class="corner-badge green">SUPPLY CONTROL</span>
-        </div>
+      <header class="dash-welcome-header">
+        <h1 class="welcome-title">Blood Inventory</h1>
+        <p class="welcome-status-line">Current reserves by blood group. Low groups appear first.</p>
+      </header>
 
-        <!-- Component Filters -->
-        <div class="inventory-filter-bar">
-          <div class="component-filter-tabs">
-            <button type="button" class="comp-btn active" data-comp="ALL">All Components</button>
-            <button type="button" class="comp-btn" data-comp="WHOLE">Whole Blood</button>
-            <button type="button" class="comp-btn" data-comp="RBC">Packed RBC</button>
-            <button type="button" class="comp-btn" data-comp="PLASMA">Fresh Frozen Plasma</button>
-            <button type="button" class="comp-btn" data-comp="PLATELETS">Platelets</button>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 0.65rem;">
-            <label style="font-size: 0.78rem; color: var(--hosp-text-secondary); font-weight: 600;">Deficit Threshold:</label>
-            <input type="number" id="inputCriticalThreshold" value="5" min="1" max="20" style="width: 55px; padding: 0.25rem 0.5rem; background: #0c1527; border: 1px solid var(--hosp-border); border-radius: 4px; color: #fff; text-align: center;" />
-            <button type="button" class="btn-tbl-action" id="btnSaveThreshold">Save</button>
+      <!-- Stock Table with Low Items First -->
+      <article class="hosp-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Stock overview</h2>
+            <p class="card-subtitle">Groups under 5 units require restocking</p>
           </div>
         </div>
 
-        <!-- Per-Bag Table with Expiry Highlighting -->
-        <div class="data-table-wrap">
-          <table class="command-table">
+        <div class="table-wrap">
+          <table class="hosp-table">
             <thead>
               <tr>
-                <th>Unit Bag ID</th>
-                <th>Blood Type</th>
+                <th>Blood Group</th>
+                <th>Units on Hand</th>
+                <th>Status</th>
+                <th>Reserves Level</th>
+                <th>Adjust Stock</th>
+              </tr>
+            </thead>
+            <tbody id="inventorySummaryTableBody">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <!-- Per-Bag Component Inventory -->
+      <article class="hosp-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Stored Blood Bags</h2>
+            <p class="card-subtitle">Expiration tracking and component storage</p>
+          </div>
+          <div style="display: flex; gap: var(--sp-8);">
+            <button type="button" class="btn-secondary comp-btn active" data-comp="ALL">All</button>
+            <button type="button" class="btn-secondary comp-btn" data-comp="WHOLE">Whole Blood</button>
+            <button type="button" class="btn-secondary comp-btn" data-comp="RBC">Packed RBC</button>
+            <button type="button" class="btn-secondary comp-btn" data-comp="PLASMA">Plasma</button>
+            <button type="button" class="btn-secondary comp-btn" data-comp="PLATELETS">Platelets</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="hosp-table">
+            <thead>
+              <tr>
+                <th>Bag ID</th>
+                <th>Blood Group</th>
                 <th>Component</th>
-                <th>Collected Date</th>
-                <th>Expiry Date</th>
-                <th>Reserved Status</th>
-                <th>Storage Location</th>
+                <th>Collected</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Location</th>
               </tr>
             </thead>
             <tbody id="inventoryBagTableBody">
@@ -593,173 +558,41 @@
     </section>
 
     <!-- ============================================================
-         TAB 4: DONOR CHECK-IN ENGINE
+         TAB 4: MY REQUESTS (DISPATCH LOGS)
     ============================================================ -->
-    <section class="portal-tab-content" id="tab-checkin">
+    <section class="portal-tab-content" id="tab-records" role="tabpanel">
       
-      <div class="checkin-layout-grid">
-        
-        <!-- Left: QR Scan & Donor Lookup Card -->
-        <article class="bento-card donor-scan-box">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge blue">
-                <i class="fa-solid fa-qrcode"></i>
-              </div>
-              <div>
-                <h2 class="bento-card-title">Donor Check-In</h2>
-                <div class="bento-card-subtitle">Scan QR or enter alphanumeric Smart ID</div>
-              </div>
-            </div>
+      <header class="dash-welcome-header">
+        <h1 class="welcome-title">My Requests</h1>
+        <p class="welcome-status-line">Emergency requests dispatched and donor fulfillment logs.</p>
+      </header>
+
+      <article class="hosp-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Request history</h2>
+            <p class="card-subtitle">Recent emergency broadcasts and timelines</p>
           </div>
-
-          <div class="qr-scanner-placeholder" id="qrScannerDropzone">
-            <i class="fa-solid fa-camera" style="font-size: 2rem;"></i>
-            <span style="font-size: 0.82rem; font-weight: 600;">Scan Donor Digital Pass</span>
-            <span style="font-size: 0.7rem; color: var(--hosp-text-muted);">or click to simulate QR sensor</span>
-          </div>
-
-          <div class="donor-id-input-group">
-            <input type="text" id="checkinSmartIdInput" class="donor-id-input" placeholder="e.g. DNR-8012-A404" />
-            <button type="button" class="btn-tbl-action" id="btnLookupDonor" style="padding: 0 1rem;">
-              <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-          </div>
-
-          <!-- Loaded Donor Card Details -->
-          <div class="donor-loaded-card" id="donorLoadedCard" style="display: none;">
-            <div class="dlc-top">
-              <div>
-                <div class="dlc-name" id="dlcName">-</div>
-                <div class="dlc-id" id="dlcSmartId">-</div>
-              </div>
-              <span class="corner-badge blue" id="dlcBloodGroup">-</span>
-            </div>
-            <div class="dlc-grid">
-              <div>Age: <strong id="dlcAge" style="color: #fff;">-</strong></div>
-              <div>Weight: <strong id="dlcWeight" style="color: #fff;">-</strong></div>
-              <div>Last Donation: <strong id="dlcLastDonation" style="color: #fff;">-</strong></div>
-              <div>Eligibility: <strong id="dlcEligibility" style="color: #10b981;">100% Regenerated</strong></div>
-            </div>
-          </div>
-        </article>
-
-        <!-- Right: Clinical Vitals & Verdict Intake Form -->
-        <article class="bento-card">
-          <div class="bento-card-header">
-            <div class="bento-title-group">
-              <div class="bento-icon-badge green">
-                <i class="fa-solid fa-stethoscope"></i>
-              </div>
-              <div>
-                <h2 class="bento-card-title">Pre-Donation Clinical Vitals</h2>
-                <div class="bento-card-subtitle">Live auto-verdict calculates clinical donor fitness</div>
-              </div>
-            </div>
-          </div>
-
-          <form id="formDonorVitals">
-            <div class="vitals-form-grid">
-              <div>
-                <label class="ctrl-item-label" for="vitHb">Hemoglobin (g/dL) *</label>
-                <input type="number" id="vitHb" class="donor-id-input" step="0.1" placeholder="Min 12.5" required />
-              </div>
-              <div>
-                <label class="ctrl-item-label" for="vitBp">Blood Pressure (mmHg) *</label>
-                <input type="text" id="vitBp" class="donor-id-input" placeholder="120/80" required />
-              </div>
-              <div>
-                <label class="ctrl-item-label" for="vitPulse">Pulse Rate (bpm) *</label>
-                <input type="number" id="vitPulse" class="donor-id-input" placeholder="60 - 100" required />
-              </div>
-              <div>
-                <label class="ctrl-item-label" for="vitTemp">Body Temperature (°F) *</label>
-                <input type="number" id="vitTemp" class="donor-id-input" step="0.1" value="98.6" required />
-              </div>
-              <div>
-                <label class="ctrl-item-label" for="vitWeight">Weight (kg) *</label>
-                <input type="number" id="vitWeight" class="donor-id-input" placeholder="Min 50kg" required />
-              </div>
-              <div>
-                <label class="ctrl-item-label" for="vitComponent">Component</label>
-                <select id="vitComponent" class="sos-select">
-                  <option value="WHOLE">Whole Blood (350 mL)</option>
-                  <option value="WHOLE_450">Whole Blood (450 mL)</option>
-                  <option value="PLASMA">Plasma (Apheresis)</option>
-                  <option value="PLATELETS">Platelets</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Automatic Verdict Banner -->
-            <div class="verdict-banner fit" id="verdictBanner">
-              <div style="display: flex; align-items: center; gap: 0.65rem;">
-                <i class="fa-solid fa-circle-check" style="font-size: 1.25rem;"></i>
-                <div>
-                  <strong id="verdictTitle">CLINICALLY FIT TO DONATE</strong>
-                  <div style="font-size: 0.76rem;" id="verdictReason">All vital markers within clinical thresholds.</div>
-                </div>
-              </div>
-              <span style="font-size: 0.8rem; font-weight: 800;">VERDICT PASSED</span>
-            </div>
-
-            <button type="submit" class="btn-primary-blue" id="btnRecordDonation">
-              <i class="fa-solid fa-floppy-disk"></i>
-              <span>Record &amp; Approve Donation</span>
-            </button>
-          </form>
-        </article>
-
-      </div>
-
-    </section>
-
-    <!-- ============================================================
-         TAB 5: RECORDS AUDIT CENTER
-    ============================================================ -->
-    <section class="portal-tab-content" id="tab-records">
-      
-      <article class="bento-card">
-        <div class="bento-card-header">
-          <div class="bento-title-group">
-            <div class="bento-icon-badge blue">
-              <i class="fa-solid fa-file-invoice"></i>
-            </div>
-            <div>
-              <h2 class="bento-card-title">Hospital Records &amp; Clinical Audit</h2>
-              <div class="bento-card-subtitle">Permanent ledger of verified donations, dispatches, and inventory updates</div>
-            </div>
-          </div>
-          <button type="button" class="btn-export-csv" id="btnExportRecordsCsv">
-            <i class="fa-solid fa-file-csv"></i>
+          <button type="button" class="btn-secondary" id="btnExportRecordsCsv">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             <span>Export CSV</span>
           </button>
         </div>
 
-        <div class="records-filter-row">
-          <div class="component-filter-tabs">
-            <button type="button" class="comp-btn active" data-rec="DONATIONS">Donations</button>
-            <button type="button" class="comp-btn" data-rec="DISPATCHES">Dispatch Logs</button>
-            <button type="button" class="comp-btn" data-rec="STOCK_HISTORY">Stock Ledger</button>
-          </div>
-
-          <input type="text" id="recordsSearchInput" class="records-search-input" placeholder="Search by ID, donor or blood group..." />
-        </div>
-
-        <div class="data-table-wrap">
-          <table class="command-table">
+        <div class="table-wrap">
+          <table class="hosp-table">
             <thead>
               <tr>
-                <th>Record ID</th>
-                <th>Timestamp</th>
-                <th>Transaction Event</th>
+                <th>Request Time</th>
                 <th>Blood Group</th>
                 <th>Units</th>
-                <th>Clinical Verification</th>
+                <th>Radius / Distance</th>
+                <th>Status</th>
+                <th>Response Time</th>
               </tr>
             </thead>
             <tbody id="recordsTableBody">
-              <!-- Dynamically populated records -->
+              <!-- Dynamically populated request rows -->
             </tbody>
           </table>
         </div>
@@ -768,108 +601,95 @@
     </section>
 
     <!-- ============================================================
-         TAB 6: HOSPITAL PROFILE & STAFF
+         TAB 5: CHECK-IN ENGINE
     ============================================================ -->
-    <section class="portal-tab-content" id="tab-profile">
+    <section class="portal-tab-content" id="tab-checkin" role="tabpanel">
       
-      <div class="profile-bento-grid">
+      <header class="dash-welcome-header">
+        <h1 class="welcome-title">Donor Check-in</h1>
+        <p class="welcome-status-line">Scan donor pass and verify pre-donation clinical vitals.</p>
+      </header>
+
+      <div class="dash-dominant-split">
         
-        <!-- Left: Hospital Identity QR Pass -->
-        <article class="bento-card qr-identity-pass">
-          <div class="corner-badge blue" style="margin-bottom: 0.75rem;">ACCREDITED FACILITY</div>
-          <h2 class="bento-card-title" id="profFacilityName">-</h2>
-          <div style="font-size: 0.78rem; color: var(--hosp-text-muted);" id="profRegNo">Reg No: -</div>
-
-          <div class="qr-box-center" id="hospitalQrCode">
-            <!-- QR code generated here -->
+        <!-- Left: Smart ID / QR Lookup -->
+        <article class="hosp-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Donor Lookup</h2>
+              <p class="card-subtitle">Scan pass or enter Smart ID</p>
+            </div>
           </div>
 
-          <div style="font-size: 0.75rem; color: var(--hosp-text-secondary); margin-bottom: 1rem;">
-            Official Digital Hospital Access Pass • Emergency Blood Node
+          <div style="margin-bottom: var(--sp-16);">
+            <div style="display: flex; gap: var(--sp-8);">
+              <input type="text" id="checkinSmartIdInput" class="form-input" placeholder="e.g. DNR-8012" />
+              <button type="button" class="btn-secondary" id="btnLookupDonor">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Lookup</span>
+              </button>
+            </div>
           </div>
 
-          <button type="button" class="btn-tbl-action" id="btnEditFacilityDetails" style="width: 100%;">
-            <i class="fa-solid fa-pen-to-square"></i>
-            <span>Edit Facility Information</span>
-          </button>
+          <!-- Loaded Donor Card Details -->
+          <div id="donorLoadedCard" style="display: none; background: var(--hosp-surface-raised); border: 1px solid var(--hosp-border); border-radius: var(--hosp-radius-card); padding: var(--sp-16);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-12);">
+              <div>
+                <strong id="dlcName" style="font-size: 16px;">Rohit Sharma</strong>
+                <div class="mono-id" id="dlcSmartId" style="color: var(--hosp-text-muted); font-size: 13px;">DNR-8012</div>
+              </div>
+              <span class="chip-status available" id="dlcBloodGroup">O-</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-8); font-size: 13px; color: var(--hosp-text-muted);">
+              <div>Age: <strong style="color: #fff;" id="dlcAge">28 yrs</strong></div>
+              <div>Weight: <strong style="color: #fff;" id="dlcWeight">68 kg</strong></div>
+              <div>Last Donation: <strong style="color: #fff;" id="dlcLastDonation">94 days ago</strong></div>
+              <div>Status: <strong style="color: var(--hosp-green);" id="dlcEligibility">Eligible</strong></div>
+            </div>
+          </div>
         </article>
 
-        <!-- Right: Facility Details, Staff Roster & Preferences -->
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-          
-          <article class="bento-card">
-            <div class="bento-card-header">
-              <div class="bento-title-group">
-                <div class="bento-icon-badge blue">
-                  <i class="fa-solid fa-building-shield"></i>
-                </div>
-                <div>
-                  <h3 class="bento-card-title">Facility Details &amp; Licenses</h3>
-                  <div class="bento-card-subtitle">Verified institutional credentials</div>
-                </div>
+        <!-- Right: Pre-Donation Clinical Vitals -->
+        <article class="hosp-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Clinical Vitals</h2>
+              <p class="card-subtitle">Verify donor vitals before transfusion</p>
+            </div>
+          </div>
+
+          <form id="formDonorVitals">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
+              <div>
+                <label class="form-label" for="vitHb">Hemoglobin (g/dL) *</label>
+                <input type="number" id="vitHb" class="form-input" step="0.1" value="13.2" required />
+              </div>
+              <div>
+                <label class="form-label" for="vitBp">Blood Pressure (mmHg) *</label>
+                <input type="text" id="vitBp" class="form-input" value="120/80" required />
+              </div>
+              <div>
+                <label class="form-label" for="vitPulse">Pulse Rate (bpm) *</label>
+                <input type="number" id="vitPulse" class="form-input" value="74" required />
+              </div>
+              <div>
+                <label class="form-label" for="vitTemp">Temperature (°F) *</label>
+                <input type="number" id="vitTemp" class="form-input" step="0.1" value="98.6" required />
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; font-size: 0.84rem;">
-              <div>
-                <span style="color: var(--hosp-text-muted); font-size: 0.72rem; text-transform: uppercase;">License Number</span>
-                <div style="font-weight: 700; color: #fff;" id="profLicense">-</div>
-              </div>
-              <div>
-                <span style="color: var(--hosp-text-muted); font-size: 0.72rem; text-transform: uppercase;">Facility Type</span>
-                <div style="font-weight: 700; color: #fff;" id="profType">-</div>
-              </div>
-              <div>
-                <span style="color: var(--hosp-text-muted); font-size: 0.72rem; text-transform: uppercase;">Total Beds</span>
-                <div style="font-weight: 700; color: #fff;" id="profBeds">-</div>
-              </div>
-              <div>
-                <span style="color: var(--hosp-text-muted); font-size: 0.72rem; text-transform: uppercase;">Official Contact</span>
-                <div style="font-weight: 700; color: #fff;" id="profPhone">-</div>
-              </div>
-              <div>
-                <span style="color: var(--hosp-text-muted); font-size: 0.72rem; text-transform: uppercase;">Emergency Dispatch Email</span>
-                <div style="font-weight: 700; color: #fff;" id="profEmail">-</div>
-              </div>
-              <div>
-                <span style="color: var(--hosp-text-muted); font-size: 0.72rem; text-transform: uppercase;">Operating Zone</span>
-                <div style="font-weight: 700; color: #fff;" id="profCity">-</div>
-              </div>
-            </div>
-          </article>
-
-          <!-- Staff Management Roster -->
-          <article class="bento-card">
-            <div class="bento-card-header">
-              <div class="bento-title-group">
-                <div class="bento-icon-badge green">
-                  <i class="fa-solid fa-users-gear"></i>
-                </div>
-                <div>
-                  <h3 class="bento-card-title">Staff Access &amp; Personnel Roles</h3>
-                  <div class="bento-card-subtitle">Blood Bank officers and intake nurses</div>
-                </div>
-              </div>
+            <!-- Auto-verdict pill -->
+            <div id="verdictBanner" style="margin-bottom: var(--sp-16); padding: var(--sp-12); background: var(--hosp-green-subtle); border: 1px solid var(--hosp-green-border); border-radius: var(--hosp-radius-card); display: flex; align-items: center; gap: var(--sp-8); color: var(--hosp-green); font-size: 13.5px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span id="verdictTitle"><strong>Clinically Fit</strong> — All vitals within normal range.</span>
             </div>
 
-            <div class="data-table-wrap">
-              <table class="command-table">
-                <thead>
-                  <tr>
-                    <th>Staff Name</th>
-                    <th>Role Designation</th>
-                    <th>Access Level</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="staffRosterTableBody">
-                  <!-- Dynamic staff list -->
-                </tbody>
-              </table>
-            </div>
-          </article>
-
-        </div>
+            <button type="submit" class="btn-secondary" id="btnRecordDonation" style="width: 100%; justify-content: center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Approve Donation</span>
+            </button>
+          </form>
+        </article>
 
       </div>
 
@@ -877,31 +697,29 @@
 
   </main>
 
-  <!-- ==================== SLEEK MINIMALIST MINI-FOOTER ==================== -->
-  <footer class="app-mini-footer">
-    <div class="mini-footer-container">
-      <div class="mf-left">
-        <span class="mf-status-dot"></span>
-        <span class="mf-status-text">System: Online</span>
-        <span class="mf-divider">&bull;</span>
-        <span class="mf-copy">&copy; 2026 RED404</span>
+  <!-- ==================== FLAT MINIMAL FOOTER ==================== -->
+  <footer class="hosp-footer">
+    <div class="hosp-footer-container">
+      <div class="footer-status-pill">
+        <span class="dot-online" aria-hidden="true"></span>
+        <span>System online</span>
       </div>
-      <nav class="mf-center" aria-label="Quick Links">
-        <a href="javascript:void(0)" class="mf-link" id="mfHelpLink">Help &amp; Support</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" id="mfReportLink">Report Issue</a>
-        <span class="mf-link-sep">&bull;</span>
-        <a href="javascript:void(0)" class="mf-link" id="mfPrivacyLink">Privacy &amp; Policy</a>
-      </nav>
-      <div class="mf-right">
-        <span class="mf-version">v1.2.0 Command Enclave</span>
+
+      <div class="footer-nav-links">
+        <span>&copy; 2026 RED404</span>
+        <a href="javascript:void(0)" id="mfHelpLink">Help &amp; Support</a>
+        <a href="javascript:void(0)" id="mfReportLink">Report Issue</a>
+        <a href="javascript:void(0)" id="mfPrivacyLink">Privacy &amp; Policy</a>
+      </div>
+
+      <div class="footer-ver">
+        <span>v2.4-hospital</span>
       </div>
     </div>
   </footer>
 
   <!-- Scripts -->
-  <script src="js/common.js?v=20261114_v3"></script>
-  <script src="js/qrcode.min.js"></script>
-  <script src="js/hospital-dashboard.js?v=20261114_v3"></script>
+  <script src="js/common.js?v=20261114_r1"></script>
+  <script src="js/hospital-dashboard.js?v=20261114_r1"></script>
 </body>
 </html>
