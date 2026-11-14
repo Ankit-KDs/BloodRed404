@@ -175,9 +175,6 @@ public class HospitalDao {
 
     public Map<String, Integer> getHospitalInventory(int hospitalId) throws SQLException {
         Map<String, Integer> map = new java.util.LinkedHashMap<>();
-        for (String bt : new String[]{"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"}) {
-            map.put(bt, 0);
-        }
         String sql = "SELECT blood_type, units FROM hospital_inventory WHERE hospital_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

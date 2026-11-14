@@ -101,49 +101,93 @@
 
     <!-- ============================================================
          TAB 1: DASHBOARD
-         Dominant Element: Send SOS Panel beside Latest Request Timeline
+         Dominant Order: Welcome -> Stats -> [Start Here] -> Active Requests & Send SOS -> Needs Attention -> Blood Stock -> Activity Feed
     ============================================================ -->
     <section class="portal-tab-content active" id="tab-dashboard" role="tabpanel">
 
-      <!-- Compact Restrained Header -->
+      <!-- 1. Compact Restrained Header -->
       <header class="dash-welcome-header">
         <div class="welcome-heading-row">
-          <h1 class="welcome-title">Welcome, <span id="nav-hospital-name">Apollo General Hospital</span></h1>
+          <h1 class="welcome-title">Welcome, <span id="nav-hospital-name">Hospital</span></h1>
           <span class="hospital-verified-pill">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             <span>Verified hospital</span>
           </span>
         </div>
         <p class="welcome-status-line" id="hosp-status-line">
-          1 request waiting for donors, 5 blood groups running low.
+          Loading clinical ledger...
         </p>
       </header>
 
-      <!-- Row of 4 Plain Stat Numbers (No glowing boxes) -->
-      <div class="stats-summary-row" role="region" aria-label="Hospital status overview">
+      <!-- 2. Stats Row (Inner padding 16-20px, real values only) -->
+      <div class="stats-summary-row" role="region" aria-label="Hospital status overview" id="dashStatsRow">
         <div class="stat-box" id="stat-total-units">
-          <div class="stat-value" id="kpiTotalUnits">62</div>
-          <div class="stat-label">Total units in stock</div>
+          <div class="stat-value" id="kpiTotalUnits">0</div>
+          <div class="stat-label">Units in stock</div>
         </div>
-        <div class="stat-box" id="stat-low-groups">
-          <div class="stat-value status-low" id="kpiCriticalGroups">5</div>
-          <div class="stat-label">Low blood groups (&lt; 5 units)</div>
+        <div class="stat-box" id="stat-low-groups" style="display: none;">
+          <div class="stat-value" id="kpiCriticalGroups">0</div>
+          <div class="stat-label">Groups low or critical</div>
         </div>
         <div class="stat-box" id="stat-active-reqs">
-          <div class="stat-value status-sos" id="kpiActiveRequests">1</div>
-          <div class="stat-label">Active SOS requests</div>
-        </div>
-        <div class="stat-box" id="stat-donors-responded">
-          <div class="stat-value" id="kpiCheckedInToday">4</div>
-          <div class="stat-label">Donors responded today</div>
+          <div class="stat-value" id="kpiActiveRequests">0</div>
+          <div class="stat-label">Active requests</div>
         </div>
       </div>
 
-      <!-- DOMINANT BLOCK: Send SOS Panel beside Latest Request Timeline -->
+      <!-- 3. Start Here Card (Only while no stock exists) -->
+      <div id="cardStartHere" class="start-here-card" style="display: none;">
+        <div class="start-here-content">
+          <div class="start-here-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div>
+            <h3 class="start-here-title">Start here: record your blood stock</h3>
+            <p class="start-here-desc">Your hospital account is verified. Enter your on-hand units in the inventory ledger so the system can monitor deficit thresholds and route emergency requests accurately.</p>
+          </div>
+        </div>
+        <button type="button" class="btn-primary-action" id="btnStartHereAddStock" onclick="switchTab('tab-inventory')">
+          <span>Add stock</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </div>
+
+      <!-- 4. Row: Active Requests (Wider) and Send SOS (Side-by-Side) -->
       <div class="dash-dominant-split">
 
-        <!-- Dominant Block 1: Send SOS Panel -->
-        <article class="hosp-card dominant-sos-card">
+        <!-- Active Requests Panel (Wider, lists all active requests from backend) -->
+        <article class="hosp-card active-requests-card" id="cardActiveRequests">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Active requests</h2>
+              <p class="card-subtitle">Live broadcast requests and real-time donor fulfillment</p>
+            </div>
+            <a href="javascript:void(0)" class="card-header-link" onclick="switchTab('tab-records')">See all requests</a>
+          </div>
+
+          <!-- Loading State -->
+          <div id="activeReqLoading" class="state-loading-box" style="display: none;">
+            <div class="skeleton-line" style="width: 50%; height: 18px; margin-bottom: 12px;"></div>
+            <div class="skeleton-line" style="width: 100%; height: 60px;"></div>
+          </div>
+
+          <!-- Error State -->
+          <div id="activeReqError" class="state-box error-box" style="display: none;">
+            <p id="activeReqErrorMsg">Unable to retrieve active requests from server.</p>
+            <button type="button" class="btn-secondary" id="btnRetryActiveReq" style="margin-top: 8px;">Retry</button>
+          </div>
+
+          <!-- Active Requests Container -->
+          <div id="activeReqList" class="active-req-container"></div>
+
+          <!-- Empty State (Dashed Box) -->
+          <div id="activeReqEmpty" class="dashed-empty-box" style="display: none;">
+            <p>No active requests. When you send an SOS, donor responses and arrival status will show up here.</p>
+          </div>
+        </article>
+
+        <!-- Send SOS Panel -->
+        <article class="hosp-card dominant-sos-card" id="cardSendSos">
           <div class="card-header">
             <div>
               <h2 class="card-title">Send SOS</h2>
@@ -152,12 +196,12 @@
           </div>
 
           <form id="formInlineSos">
-            <!-- Blood Group Radio Badges (Drop-shaped) -->
+            <!-- Blood Group Radio Badges (Drop-shaped, none selected initially) -->
             <fieldset class="sos-fieldset">
               <legend class="form-legend">Select blood group</legend>
               <div class="sos-blood-grid" role="radiogroup" aria-label="Blood Group Selection">
                 
-                <input type="radio" name="inlineBloodType" id="bt-o-neg" value="O-" class="blood-chip-radio" checked />
+                <input type="radio" name="inlineBloodType" id="bt-o-neg" value="O-" class="blood-chip-radio" />
                 <label for="bt-o-neg" class="blood-chip-label" title="O Negative">
                   <span class="blood-drop-badge critical">
                     <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
@@ -224,124 +268,159 @@
               </div>
             </fieldset>
 
-            <!-- Parameters Grid: Units, Radius, Urgency -->
+            <!-- Parameters Grid: Units, Radius, Urgency (24px gap, 8px label spacing) -->
             <div class="sos-params-grid">
               <div class="param-control">
                 <label class="form-label" for="inlineUnits">Units needed</label>
                 <div class="stepper-widget">
-                  <button type="button" class="stepper-btn" id="btnStepDown" aria-label="Decrease units">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 8a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1z"/></svg>
-                  </button>
+                  <button type="button" class="stepper-btn" id="btnStepDown" aria-label="Decrease units">&minus;</button>
                   <input type="number" id="inlineUnits" class="stepper-input" value="1" min="1" max="15" readonly />
-                  <button type="button" class="stepper-btn" id="btnStepUp" aria-label="Increase units">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 2a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2H9v4a1 1 0 1 1-2 0V9H3a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z"/></svg>
-                  </button>
+                  <button type="button" class="stepper-btn" id="btnStepUp" aria-label="Increase units">+</button>
                 </div>
               </div>
 
               <div class="param-control">
                 <label class="form-label" for="inlineRadius">Radius</label>
                 <select id="inlineRadius" class="form-select">
-                  <option value="5">5 km (Immediate)</option>
-                  <option value="10" selected>10 km (Standard)</option>
-                  <option value="20">20 km (Extended)</option>
+                  <option value="5" selected>5 km</option>
+                  <option value="10">10 km</option>
+                  <option value="20">20 km</option>
                 </select>
               </div>
 
               <div class="param-control">
                 <label class="form-label" for="inlineUrgency">Urgency</label>
                 <select id="inlineUrgency" class="form-select">
-                  <option value="CRITICAL" selected>Critical (&lt; 30 min)</option>
+                  <option value="NORMAL" selected>Normal</option>
                   <option value="HIGH">High (&lt; 2 hrs)</option>
-                  <option value="STANDARD">Standard</option>
+                  <option value="CRITICAL">Critical (&lt; 30 min)</option>
                 </select>
               </div>
             </div>
 
-            <!-- Primary Red Send SOS Button -->
-            <button type="submit" class="btn-send-sos" id="btnDispatchSosInline">
+            <!-- Primary Send SOS Button (Disabled until blood group is selected) -->
+            <button type="submit" class="btn-send-sos" id="btnDispatchSosInline" disabled>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              <span>Send SOS</span>
+              <span id="btnSosText">Select a blood group to send</span>
             </button>
           </form>
         </article>
 
-        <!-- Dominant Block 2: Latest Request Timeline Card -->
-        <article class="hosp-card latest-request-card">
-          <div class="card-header">
-            <div>
-              <h2 class="card-title">Latest request</h2>
-              <p class="card-subtitle">Real-time donor arrival &amp; status</p>
-            </div>
-          </div>
-
-          <div id="latestRequestContent">
-            <!-- Active Request Summary -->
-            <div class="active-req-meta">
-              <div class="req-drop-wrap">
-                <span class="blood-drop-badge critical" id="liveReqDropBadge">
-                  <svg viewBox="0 0 32 38" class="drop-svg" aria-hidden="true"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg>
-                  <span class="drop-text" id="liveReqBloodType">O-</span>
-                </span>
-                <div>
-                  <div class="req-units-text"><strong id="liveReqUnits">1</strong> unit requested</div>
-                  <div class="req-time-mono" id="liveReqTime">Dispatched 4 min ago</div>
-                </div>
-              </div>
-              <span class="req-status-chip" id="liveReqEta">ETA ~14 min</span>
-            </div>
-
-            <!-- 5-Stage Progression Timeline -->
-            <div class="request-timeline" aria-label="Request delivery progression">
-              <div class="timeline-step completed" id="step-sent">
-                <div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                <span class="step-label">Sent</span>
-              </div>
-              <div class="timeline-step completed" id="step-notified">
-                <div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-                <span class="step-label">Notified</span>
-              </div>
-              <div class="timeline-step active" id="step-accepted">
-                <div class="step-dot">3</div>
-                <span class="step-label">Accepted</span>
-              </div>
-              <div class="timeline-step" id="step-onway">
-                <div class="step-dot">4</div>
-                <span class="step-label">On the way</span>
-              </div>
-              <div class="timeline-step" id="step-arrived">
-                <div class="step-dot">5</div>
-                <span class="step-label">Arrived</span>
-              </div>
-            </div>
-
-            <!-- Donor Line -->
-            <div class="latest-req-donor-line">
-              <span>Donor: <strong id="liveDonorName">Rohit S.</strong> (<span class="mono-id">DNR-8012</span>)</span>
-              <span>Distance: <strong id="liveDonorDistance">3.8 km away</strong></span>
-            </div>
-          </div>
-
-          <!-- Empty State When No Active Request -->
-          <div id="latestRequestEmpty" class="req-empty-state" style="display:none;">
-            <p>No active request. Send an SOS when you need blood.</p>
-          </div>
-        </article>
-
       </div>
 
-      <!-- BLOOD STOCK SECTION (LOW GROUPS SORTED FIRST) -->
-      <section class="hosp-card stock-section" aria-labelledby="stockSectionTitle">
+      <!-- 5. Needs Attention Section (Real data only) -->
+      <section class="hosp-card needs-attention-card" id="sectionNeedsAttention">
         <div class="card-header">
           <div>
-            <h2 class="card-title" id="stockSectionTitle">Blood stock</h2>
-            <p class="card-subtitle">Groups under 5 units are marked Low.</p>
+            <h2 class="card-title">Needs attention</h2>
+            <p class="card-subtitle">Time-sensitive inventory reserves and scheduled donor arrivals</p>
           </div>
         </div>
 
-        <!-- 8 Blood Stock Cards (Low items first, drop badges, thin bars, +/- controls) -->
-        <div class="stock-list" id="dashboardStockGrid">
-          <!-- Dynamically populated via JS -->
+        <div class="needs-attention-grid">
+          <!-- Col 1: Expiring in 3 days or less -->
+          <div class="na-column">
+            <div class="na-col-header">
+              <h3 class="na-col-title">Expiring in 3 days or less</h3>
+              <a href="javascript:void(0)" class="na-col-link" onclick="switchTab('tab-inventory')">See all bags</a>
+            </div>
+            <div id="naExpiringList" class="na-list-container">
+              <div class="dashed-empty-box compact">
+                <p>Nothing expiring soon. Bags expiring within 3 days will be listed here.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Col 2: Today's check-ins -->
+          <div class="na-column">
+            <div class="na-col-header">
+              <h3 class="na-col-title">Today's check-ins</h3>
+              <a href="javascript:void(0)" class="na-col-link" onclick="switchTab('tab-checkin')">Open check-in</a>
+            </div>
+            <div id="naCheckinList" class="na-list-container">
+              <div class="dashed-empty-box compact">
+                <p>No check-ins today. Donors on their way or arrived will show up here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Blood Stock Section (View-only on dashboard, real data only) -->
+      <section class="hosp-card stock-section" aria-labelledby="stockSectionTitle" id="sectionBloodStock">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title" id="stockSectionTitle">Blood stock</h2>
+            <p class="card-subtitle" id="stockSubtitle">Current on-hand inventory levels</p>
+          </div>
+          <a href="javascript:void(0)" class="card-header-link" onclick="switchTab('tab-inventory')">Edit stock</a>
+        </div>
+
+        <!-- Loading State -->
+        <div id="stockLoading" class="state-loading-box" style="display: none;">
+          <div class="skeleton-line" style="width: 100%; height: 70px;"></div>
+        </div>
+
+        <!-- Error State -->
+        <div id="stockError" class="state-box error-box" style="display: none;">
+          <p id="stockErrorMsg">Unable to retrieve inventory data from server.</p>
+          <button type="button" class="btn-secondary" id="btnRetryStock" style="margin-top: 8px;">Retry</button>
+        </div>
+
+        <!-- Empty Stock State (When no stock recorded yet) -->
+        <div id="stockEmptyState" class="stock-empty-wrapper" style="display: none;">
+          <div class="stock-empty-banner">
+            <span>No stock recorded yet</span>
+            <button type="button" class="btn-secondary" onclick="switchTab('tab-inventory')">Add stock</button>
+          </div>
+          <div class="stock-not-set-grid" id="stockNotSetGrid">
+            <!-- 8 groups as "Not set" cards -->
+          </div>
+        </div>
+
+        <!-- Populated Stock Section -->
+        <div id="stockPopulatedSection" style="display: none;">
+          <!-- Critical & Low Priority Cards -->
+          <div class="stock-priority-section" id="stockPrioritySection" style="display: none;">
+            <div class="stock-priority-header">Groups requiring attention</div>
+            <div class="stock-list" id="stockCriticalGrid"></div>
+          </div>
+
+          <!-- OK Normal Groups Single Row -->
+          <div class="stock-ok-section" id="stockOkSection" style="display: none;">
+            <div class="stock-ok-header">Sufficient reserves</div>
+            <div class="stock-ok-row" id="stockOkRow"></div>
+          </div>
+
+          <!-- Unrecorded Groups Row -->
+          <div class="stock-notset-section" id="stockNotSetSection" style="display: none;">
+            <div class="stock-notset-header">Unrecorded groups</div>
+            <div class="stock-notset-row" id="stockNotSetRow"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Activity Feed Section (New, Real data only) -->
+      <section class="hosp-card activity-feed-card" id="sectionActivityFeed">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Recent activity</h2>
+            <p class="card-subtitle">Chronological ledger of emergency requests and dispatches</p>
+          </div>
+          <a href="javascript:void(0)" class="card-header-link" onclick="switchTab('tab-records')">See all</a>
+        </div>
+
+        <!-- Loading State -->
+        <div id="activityLoading" class="state-loading-box" style="display: none;">
+          <div class="skeleton-line" style="width: 100%; height: 40px;"></div>
+        </div>
+
+        <!-- Activity Feed List -->
+        <div id="activityFeedList" class="activity-feed-container"></div>
+
+        <!-- Empty State -->
+        <div id="activityFeedEmpty" class="dashed-empty-box compact" style="display: none;">
+          <p>No activity yet. Requests, donor responses and stock changes will be listed here.</p>
         </div>
       </section>
 
