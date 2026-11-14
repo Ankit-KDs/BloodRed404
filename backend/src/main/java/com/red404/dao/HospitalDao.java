@@ -56,8 +56,8 @@ public class HospitalDao {
             ps.setString(18, str(hospital.get("city")));
             ps.setString(19, str(hospital.get("state")));
             ps.setString(20, str(hospital.get("pincode")));
-            setDouble(ps, 21, (Double) hospital.get("latitude"));
-            setDouble(ps, 22, (Double) hospital.get("longitude"));
+            setDouble(ps, 21, numDouble(hospital.get("latitude")));
+            setDouble(ps, 22, numDouble(hospital.get("longitude")));
             ps.setString(23, (String) hospital.get("zone"));
             ps.setString(24, str(hospital.getOrDefault("operatingHours", "24x7")));
             ps.setInt(25, num(hospital.get("zoneRadius"), 10));
@@ -361,6 +361,14 @@ public class HospitalDao {
 
     private static int num(Object value, int fallback) {
         return value instanceof Number ? ((Number) value).intValue() : fallback;
+    }
+
+    private static Double numDouble(Object value) {
+        if (value instanceof Number) return ((Number) value).doubleValue();
+        if (value instanceof String s && !s.isBlank()) {
+            try { return Double.parseDouble(s.trim()); } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     private static boolean bool(Object value, boolean fallback) {

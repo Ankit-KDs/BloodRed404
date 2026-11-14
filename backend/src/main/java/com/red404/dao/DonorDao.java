@@ -282,31 +282,35 @@ public class DonorDao {
             ps.setString(idx++, emptyToNull(str(fields.get("state"))));
             ps.setString(idx++, emptyToNull(str(fields.get("pincode"))));
 
-            if (fields.get("weight") == null || str(fields.get("weight")).isBlank()) {
+            Double weightVal = numDouble(fields.get("weight"));
+            if (weightVal == null) {
                 ps.setNull(idx++, Types.DOUBLE);
             } else {
-                ps.setDouble(idx++, ((Number) fields.get("weight")).doubleValue());
+                ps.setDouble(idx++, weightVal);
             }
 
-            if (fields.get("pulse") == null || str(fields.get("pulse")).isBlank()) {
+            Integer pulseVal = numInt(fields.get("pulse"));
+            if (pulseVal == null) {
                 ps.setNull(idx++, Types.INTEGER);
             } else {
-                ps.setInt(idx++, ((Number) fields.get("pulse")).intValue());
+                ps.setInt(idx++, pulseVal);
             }
 
-            if (fields.get("hemoglobin") == null || str(fields.get("hemoglobin")).isBlank()) {
+            Double hbVal = numDouble(fields.get("hemoglobin"));
+            if (hbVal == null) {
                 ps.setNull(idx++, Types.DOUBLE);
             } else {
-                ps.setDouble(idx++, ((Number) fields.get("hemoglobin")).doubleValue());
+                ps.setDouble(idx++, hbVal);
             }
 
             ps.setString(idx++, emptyToNull(str(fields.get("blood_pressure") != null ? fields.get("blood_pressure") : fields.get("bloodPressure"))));
 
-            if ((fields.get("body_temp") == null && fields.get("bodyTemp") == null) || str(fields.get("body_temp") != null ? fields.get("body_temp") : fields.get("bodyTemp")).isBlank()) {
+            Object btObj = fields.get("body_temp") != null ? fields.get("body_temp") : fields.get("bodyTemp");
+            Double btVal = numDouble(btObj);
+            if (btVal == null) {
                 ps.setNull(idx++, Types.DOUBLE);
             } else {
-                Object bt = fields.get("body_temp") != null ? fields.get("body_temp") : fields.get("bodyTemp");
-                ps.setDouble(idx++, ((Number) bt).doubleValue());
+                ps.setDouble(idx++, btVal);
             }
 
             ps.setString(idx++, emptyToNull(str(fields.get("allergies"))));
@@ -1440,6 +1444,22 @@ public class DonorDao {
                 ps.setNull(index, Types.INTEGER);
             }
         }
+    }
+
+    private static Double numDouble(Object value) {
+        if (value instanceof Number n) return n.doubleValue();
+        if (value instanceof String s && !s.isBlank()) {
+            try { return Double.parseDouble(s.trim()); } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    private static Integer numInt(Object value) {
+        if (value instanceof Number n) return n.intValue();
+        if (value instanceof String s && !s.isBlank()) {
+            try { return Integer.parseInt(s.trim()); } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     private static String str(Object value) {
