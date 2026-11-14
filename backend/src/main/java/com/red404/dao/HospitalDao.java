@@ -208,6 +208,7 @@ public class HospitalDao {
         hospital.put("id", rs.getInt("id"));
         hospital.put("name", rs.getString("hospital_name"));
         hospital.put("hospitalName", rs.getString("hospital_name"));
+        hospital.put("hospital_name", rs.getString("hospital_name"));
         hospital.put("email", rs.getString("hospital_email"));
         hospital.put("hospitalEmail", rs.getString("hospital_email"));
         hospital.put("phone", rs.getString("hospital_phone"));

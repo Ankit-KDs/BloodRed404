@@ -14,8 +14,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
+  <!-- Leaflet CSS for Google Maps Radar Integration -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <!-- Hospital Stylesheet -->
-  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_r1" />
+  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_r2" />
 </head>
 <body class="hospital-body">
 
@@ -532,23 +535,35 @@
           </form>
         </article>
 
-        <!-- Right: Spatial Radar Map -->
+        <!-- Right: Spatial Radar Map (Real Google Map) -->
         <article class="hosp-card">
-          <div class="card-header">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-8);">
             <div>
               <h2 class="card-title">Spatial Radar</h2>
               <p class="card-subtitle">Hospital Center: Zone 1 (5km), Zone 2 (10km), Zone 3 (20km)</p>
             </div>
+            <!-- Map Layer Switcher (Google Dark, Roads, Satellite) -->
+            <div class="radar-layer-bar" id="radarLayerBar" role="group" aria-label="Map Layer Selection">
+              <button type="button" class="rlb-btn active" data-layer="google-dark" title="Google Maps - Tactical Night Mode">Google Dark</button>
+              <button type="button" class="rlb-btn" data-layer="google-roads" title="Google Maps - Standard Roads">Roads</button>
+              <button type="button" class="rlb-btn" data-layer="google-hybrid" title="Google Maps - Satellite Imagery">Satellite</button>
+            </div>
           </div>
 
-          <div class="radar-container">
-            <canvas id="radarCanvas"></canvas>
-            <div class="radar-legend-bar">
-              <span class="legend-item"><span class="leg-dot hosp"></span> Hospital</span>
-              <span class="legend-item"><span class="leg-dot z1"></span> 5 km</span>
-              <span class="legend-item"><span class="leg-dot z2"></span> 10 km</span>
-              <span class="legend-item"><span class="leg-dot z3"></span> 20 km</span>
+          <div class="radar-container" style="position: relative; width: 100%; min-height: 290px; padding: 0; overflow: hidden; background-color: var(--hosp-surface);">
+            <div id="hospitalRadarMap" class="dark-map" style="width: 100%; height: 290px; border-radius: var(--hosp-radius-card);"></div>
+            <div id="hospNoLocationPrompt" class="hosp-map-no-location" style="display: none; padding: 48px 20px; text-align: center; width: 100%;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--hosp-amber); margin-bottom: 8px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <div style="font-weight: 600; color: var(--hosp-amber); margin-bottom: 4px;">Set your hospital location in Profile</div>
+              <div style="font-size: 13px; color: var(--hosp-text-muted);">Coordinates are required to calculate donor distances and render spatial radar.</div>
             </div>
+          </div>
+
+          <div class="radar-legend-bar" style="margin-top: var(--sp-12);">
+            <span class="legend-item"><span class="leg-dot hosp"></span> Hospital</span>
+            <span class="legend-item"><span class="leg-dot z1"></span> 5 km</span>
+            <span class="legend-item"><span class="leg-dot z2"></span> 10 km</span>
+            <span class="legend-item"><span class="leg-dot z3"></span> 20 km</span>
           </div>
 
           <!-- Bottom: Broadcast to all matching donors -->
@@ -904,7 +919,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/common.js?v=20261114_r1"></script>
-  <script src="js/hospital-dashboard.js?v=20261114_r1"></script>
+  <script src="js/common.js?v=20261114_r2"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/hospital-dashboard.js?v=20261114_r2"></script>
 </body>
 </html>

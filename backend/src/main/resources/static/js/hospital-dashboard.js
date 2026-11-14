@@ -161,8 +161,10 @@ function initCommandNavigation() {
       history.replaceState(null, null, `#${hash}`);
     }
 
-    if (tabId === 'tab-dispatch' && window.drawRadarFrame) {
-      setTimeout(window.drawRadarFrame, 100);
+    if (tabId === 'tab-dispatch') {
+      if (typeof window.invalidateRadarMap === 'function') {
+        setTimeout(window.invalidateRadarMap, 150);
+      }
     }
   }
 
@@ -248,6 +250,11 @@ async function initHospitalProfile() {
       }
     } catch (e) {}
   }
+
+  window.currentHospitalProfile = profile;
+  try {
+    window.dispatchEvent(new CustomEvent('hospital-profile-loaded', { detail: profile }));
+  } catch (_) {}
 
   const rawName = profile ? (profile.name || profile.hospitalName || profile.hospital_name) : '';
   const realName = (rawName && typeof rawName === 'string' && rawName.trim() && rawName.trim().toLowerCase() !== 'hospital')
@@ -1023,10 +1030,7 @@ function initInlineSosForm() {
 }
 
 /* ============================================================
-   7. FIND DONORS / DISPATCH (RADAR MAP & REAL NEARBY DONORS)
-   ============================================================ */
-/* ============================================================
-   7. FIND DONORS / DISPATCH (SEARCH FIRST, REAL MATCHES & RADAR)
+   7. FIND DONORS / DISPATCH (REAL GOOGLE MAPS RADAR & NEARBY MATCHES)
    ============================================================ */
 function initDispatchRadar() {
   const form = document.getElementById('formFullDispatch');
@@ -1035,12 +1039,219 @@ function initDispatchRadar() {
   const tbody = document.getElementById('dispatchResponsesTableBody');
   const unlocatedNote = document.getElementById('unlocatedDonorsNote');
   const bloodRadios = document.querySelectorAll('input[name="dispBloodGroup"]');
-  const canvas = document.getElementById('radarCanvas');
-  const ctx = canvas ? canvas.getContext('2d') : null;
+  const dispRadiusEl = document.getElementById('dispRadius');
 
-  let radarAngle = 0;
   let matchingDonors = [];
   let isSearching = false;
+
+  // Real Google Maps / Leaflet State
+  let leafletMap = null;
+  let currentTileLayer = null;
+  let activeLayerKey = 'google-dark';
+  let hospitalMarker = null;
+  let donorMarkers = {};
+  let zoneCircles = [];
+  let hospitalCoords = null;
+
+  const MAP_LAYERS = {
+    'google-dark': {
+      name: 'Google Dark',
+      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: true
+    },
+    'google-roads': {
+      name: 'Google Roads',
+      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: false
+    },
+    'google-hybrid': {
+      name: 'Google Satellite',
+      url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 20,
+      darkFilter: false
+    }
+  };
+
+  function setRadarMapLayer(layerKey) {
+    if (!leafletMap) return;
+    const cfg = MAP_LAYERS[layerKey] || MAP_LAYERS['google-dark'];
+    activeLayerKey = layerKey;
+    try {
+      localStorage.setItem('red404_hosp_map_layer', layerKey);
+    } catch (_) {}
+
+    if (currentTileLayer) {
+      leafletMap.removeLayer(currentTileLayer);
+    }
+
+    currentTileLayer = L.tileLayer(cfg.url, {
+      maxZoom: cfg.maxZoom,
+      subdomains: cfg.subdomains,
+      attribution: ''
+    }).addTo(leafletMap);
+
+    const mapContainer = document.getElementById('hospitalRadarMap');
+    if (mapContainer) {
+      if (cfg.darkFilter) {
+        mapContainer.classList.add('dark-map');
+      } else {
+        mapContainer.classList.remove('dark-map');
+      }
+    }
+
+    document.querySelectorAll('.radar-layer-bar .rlb-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-layer') === layerKey);
+    });
+  }
+
+  // Wire layer buttons
+  document.querySelectorAll('.radar-layer-bar .rlb-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const layer = btn.getAttribute('data-layer');
+      if (layer) setRadarMapLayer(layer);
+    });
+  });
+
+  function resolveHospitalCoords() {
+    const prof = window.currentHospitalProfile;
+    if (prof) {
+      const rawLat = prof.latitude ?? prof.lat;
+      const rawLng = prof.longitude ?? prof.lng;
+      if (rawLat !== null && rawLat !== undefined && rawLng !== null && rawLng !== undefined) {
+        const lat = parseFloat(rawLat);
+        const lng = parseFloat(rawLng);
+        if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+          return {
+            lat: lat,
+            lng: lng,
+            name: prof.name || prof.hospitalName || prof.hospital_name || 'Hospital'
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function drawZoneCircles(lat, lng) {
+    if (!leafletMap) return;
+    zoneCircles.forEach(c => leafletMap.removeLayer(c));
+    zoneCircles = [];
+
+    const selectedRadiusKm = dispRadiusEl ? parseFloat(dispRadiusEl.value) || 10 : 10;
+
+    // 5 km zone (red)
+    const z1 = L.circle([lat, lng], {
+      radius: 5000,
+      color: '#e5383b',
+      weight: selectedRadiusKm === 5 ? 2.8 : 1.4,
+      dashArray: selectedRadiusKm === 5 ? null : '4, 4',
+      fillColor: '#e5383b',
+      fillOpacity: selectedRadiusKm === 5 ? 0.08 : 0.03
+    }).addTo(leafletMap);
+
+    // 10 km zone (amber)
+    const z2 = L.circle([lat, lng], {
+      radius: 10000,
+      color: '#f59e0b',
+      weight: selectedRadiusKm === 10 ? 2.8 : 1.4,
+      dashArray: selectedRadiusKm === 10 ? null : '4, 4',
+      fillColor: '#f59e0b',
+      fillOpacity: selectedRadiusKm === 10 ? 0.07 : 0.02
+    }).addTo(leafletMap);
+
+    // 20 km zone (grey)
+    const z3 = L.circle([lat, lng], {
+      radius: 20000,
+      color: '#71706c',
+      weight: selectedRadiusKm === 20 ? 2.8 : 1.4,
+      dashArray: selectedRadiusKm === 20 ? null : '4, 4',
+      fillColor: '#71706c',
+      fillOpacity: selectedRadiusKm === 20 ? 0.06 : 0.015
+    }).addTo(leafletMap);
+
+    zoneCircles = [z1, z2, z3];
+  }
+
+  function initMapIfReady() {
+    const coords = resolveHospitalCoords();
+    const mapEl = document.getElementById('hospitalRadarMap');
+    const promptEl = document.getElementById('hospNoLocationPrompt');
+
+    if (!coords) {
+      if (mapEl) mapEl.style.display = 'none';
+      if (promptEl) promptEl.style.display = 'flex';
+      return;
+    }
+
+    if (mapEl) mapEl.style.display = 'block';
+    if (promptEl) promptEl.style.display = 'none';
+
+    if (typeof L === 'undefined') {
+      setTimeout(initMapIfReady, 200);
+      return;
+    }
+
+    if (leafletMap) {
+      leafletMap.invalidateSize();
+      return;
+    }
+
+    hospitalCoords = coords;
+
+    leafletMap = L.map('hospitalRadarMap', {
+      center: [coords.lat, coords.lng],
+      zoom: 12,
+      zoomControl: true,
+      attributionControl: false
+    });
+
+    const savedLayer = localStorage.getItem('red404_hosp_map_layer') || 'google-dark';
+    setRadarMapLayer(savedLayer);
+
+    // Place Hospital marker at center
+    const hospIcon = L.divIcon({
+      className: 'custom-hospital-marker',
+      html: `
+        <div class="chm-pin">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v12M6 12h12"/></svg>
+        </div>
+        <div class="chm-label">${escapeHtml(coords.name)}</div>
+      `,
+      iconSize: [80, 50],
+      iconAnchor: [40, 40]
+    });
+    hospitalMarker = L.marker([coords.lat, coords.lng], { icon: hospIcon }).addTo(leafletMap);
+
+    drawZoneCircles(coords.lat, coords.lng);
+  }
+
+  window.invalidateRadarMap = function() {
+    initMapIfReady();
+    if (leafletMap) {
+      leafletMap.invalidateSize();
+    }
+  };
+
+  // Listen for hospital profile loading to trigger map init
+  window.addEventListener('hospital-profile-loaded', () => {
+    initMapIfReady();
+  });
+  // Also attempt immediate init in case profile was resolved prior
+  initMapIfReady();
+
+  // Update circle emphasis when radius dropdown changes
+  if (dispRadiusEl) {
+    dispRadiusEl.addEventListener('change', () => {
+      if (hospitalCoords && leafletMap) {
+        drawZoneCircles(hospitalCoords.lat, hospitalCoords.lng);
+      }
+    });
+  }
 
   // 1. Enable 'Search donors' button ONLY when a blood group is selected
   bloodRadios.forEach(r => {
@@ -1051,7 +1262,6 @@ function initDispatchRadar() {
     });
   });
 
-  // Verify initial state: button is disabled if no radio selected
   if (btnSearch) {
     const selected = document.querySelector('input[name="dispBloodGroup"]:checked');
     btnSearch.disabled = !selected;
@@ -1091,7 +1301,7 @@ function initDispatchRadar() {
         return;
       }
       const bloodType = bloodRadio.value.trim();
-      const radius = document.getElementById('dispRadius')?.value || '10';
+      const radius = dispRadiusEl?.value || '10';
       const patientName = document.getElementById('dispPatientName')?.value.trim() || '';
       const units = document.getElementById('dispUnits')?.value || '1';
       const notes = document.getElementById('dispNotes')?.value.trim() || '';
@@ -1136,6 +1346,7 @@ function initDispatchRadar() {
       const unlocated = payload.unlocatedCount || 0;
 
       renderMatchingDonorsTable(matchingDonors, radius, bloodType, patientName, units, notes);
+      updateMapDonorMarkers(matchingDonors, bloodType, patientName, units, notes, radius);
 
       if (unlocated > 0 && unlocatedNote) {
         unlocatedNote.style.display = 'block';
@@ -1168,6 +1379,193 @@ function initDispatchRadar() {
       }
     } finally {
       isSearching = false;
+    }
+  }
+
+  function updateMapDonorMarkers(donors, bloodType, patientName, units, notes, radius) {
+    if (!leafletMap || !hospitalCoords) return;
+
+    // Clear existing donor markers
+    Object.values(donorMarkers).forEach(m => leafletMap.removeLayer(m));
+    donorMarkers = {};
+
+    if (!donors || donors.length === 0) {
+      leafletMap.setView([hospitalCoords.lat, hospitalCoords.lng], 12);
+      return;
+    }
+
+    const boundsLatLngs = [[hospitalCoords.lat, hospitalCoords.lng]];
+
+    donors.forEach(d => {
+      const rawLat = d.latitude ?? d.lat;
+      const rawLng = d.longitude ?? d.lng;
+      if (rawLat === null || rawLat === undefined || rawLng === null || rawLng === undefined) {
+        return; // Skip donors with unshared locations
+      }
+      const dLat = parseFloat(rawLat);
+      const dLng = parseFloat(rawLng);
+      if (isNaN(dLat) || isNaN(dLng) || (dLat === 0 && dLng === 0)) {
+        return;
+      }
+
+      boundsLatLngs.push([dLat, dLng]);
+
+      const name = d.name || d.fullName || 'Donor';
+      const dBlood = d.bloodType || d.blood_type || bloodType;
+      const isExact = (dBlood.toUpperCase().trim() === bloodType.toUpperCase().trim());
+      const dist = typeof d.distance === 'number' ? `${d.distance.toFixed(1)} km` : (d.distanceFormatted || '-');
+      const status = (d.status || d.requestStatus || 'Available').trim();
+      const isAvailable = (status.toLowerCase() === 'available');
+
+      const markerPinClass = isAvailable ? (isExact ? 'exact' : 'compatible') : 'notified';
+
+      const donorIcon = L.divIcon({
+        className: 'custom-donor-marker',
+        html: `
+          <div class="cdm-pin ${markerPinClass}">${escapeHtml(dBlood)}</div>
+          <div class="cdm-badge">${escapeHtml(name)} (${dist})</div>
+        `,
+        iconSize: [90, 45],
+        iconAnchor: [45, 20]
+      });
+
+      const marker = L.marker([dLat, dLng], { icon: donorIcon }).addTo(leafletMap);
+
+      const popupHtml = `
+        <div class="hosp-popup-content" data-donor-id="${d.id}">
+          <div class="hpc-header">
+            <span class="hpc-name">${escapeHtml(name)}</span>
+            <span class="hpc-blood ${isExact ? 'exact' : 'compatible'}">${escapeHtml(dBlood)} ${isExact ? '• Exact' : '• Compatible'}</span>
+          </div>
+          <div class="hpc-meta">
+            <div>Distance: <strong style="color:var(--hosp-text);">${dist}</strong></div>
+            <div>${d.lastSeen ? `Last seen: ${escapeHtml(d.lastSeen)}` : 'Active recently in area'}</div>
+            <div class="popup-status-row">Status: <strong class="popup-status-text" style="color:${isAvailable ? 'var(--hosp-green)' : 'var(--hosp-blue)'};">${status}</strong></div>
+          </div>
+          <div class="hpc-footer">
+            <span style="font-size:11px; color:var(--hosp-text-muted);">ID: #${d.id}</span>
+            <button type="button" class="hpc-btn-send" data-donor-id="${d.id}" ${!isAvailable ? 'disabled' : ''}>
+              ${isAvailable ? 'Send' : 'Sent'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      marker.bindPopup(popupHtml, { className: 'hosp-map-popup', maxWidth: 260 });
+
+      // Click on pin: highlight corresponding row in table
+      marker.on('click', () => {
+        highlightTableRow(d.id);
+      });
+
+      // Pin popup button: Send request
+      marker.on('popupopen', (e) => {
+        const popupEl = e.popup.getElement();
+        if (!popupEl) return;
+        const sendBtn = popupEl.querySelector('.hpc-btn-send');
+        if (sendBtn && !sendBtn.disabled) {
+          sendBtn.addEventListener('click', async () => {
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            await triggerSingleSend(d.id, bloodType, units, patientName, notes, radius);
+          });
+        }
+      });
+
+      donorMarkers[d.id] = marker;
+    });
+
+    if (boundsLatLngs.length > 1) {
+      leafletMap.fitBounds(L.latLngBounds(boundsLatLngs), { padding: [40, 40], maxZoom: 14 });
+    }
+  }
+
+  function highlightTableRow(donorId) {
+    if (!tbody) return;
+    tbody.querySelectorAll('tr').forEach(r => r.classList.remove('active-map-target'));
+    const targetRow = tbody.querySelector(`tr[data-donor-id="${donorId}"]`);
+    if (targetRow) {
+      targetRow.classList.add('active-map-target');
+      targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function highlightMapMarker(donorId) {
+    const marker = donorMarkers[donorId];
+    if (marker && leafletMap) {
+      const latLng = marker.getLatLng();
+      leafletMap.setView(latLng, Math.max(leafletMap.getZoom(), 14), { animate: true });
+      marker.openPopup();
+    }
+  }
+
+  async function triggerSingleSend(donorId, bloodType, units, patientName, notes, radius) {
+    const targetDonor = matchingDonors.find(x => x.id === donorId);
+    if (!targetDonor) return;
+
+    try {
+      const res = await fetch('/api/hospital/requests/send-single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          donorId: donorId,
+          bloodType: bloodType,
+          unitsNeeded: parseInt(units, 10) || 1,
+          patientName: patientName,
+          notes: notes,
+          radius: parseFloat(radius) || 10
+        })
+      });
+      const resJson = await res.json();
+      if (res.ok && resJson.success !== false) {
+        targetDonor.status = 'Notified';
+        targetDonor.requestStatus = 'Notified';
+
+        // Update table row visually
+        const row = tbody.querySelector(`tr[data-donor-id="${donorId}"]`);
+        if (row) {
+          const statusCell = row.querySelector('.donor-status-cell');
+          const actionCell = row.querySelector('.donor-action-cell');
+          if (statusCell) statusCell.innerHTML = `<span class="chip-status pending">Notified</span>`;
+          if (actionCell) actionCell.innerHTML = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+        }
+
+        // Update marker popup visually
+        const marker = donorMarkers[donorId];
+        if (marker) {
+          const popup = marker.getPopup();
+          if (popup && marker.isPopupOpen()) {
+            const popupEl = popup.getElement();
+            if (popupEl) {
+              const stText = popupEl.querySelector('.popup-status-text');
+              const sBtn = popupEl.querySelector('.hpc-btn-send');
+              if (stText) {
+                stText.textContent = 'Notified';
+                stText.style.color = 'var(--hosp-blue)';
+              }
+              if (sBtn) {
+                sBtn.textContent = 'Sent';
+                sBtn.disabled = true;
+              }
+            }
+          }
+        }
+
+        const remAvailable = matchingDonors.filter(d => !d.status || d.status.toLowerCase() === 'available').length;
+        updateBroadcastButtonCount(remAvailable);
+
+        if (typeof showToast === 'function') {
+          showToast('Emergency request dispatched to donor!', 'success');
+        }
+      } else {
+        throw new Error(resJson.message || 'Dispatch failed');
+      }
+    } catch (err) {
+      console.error('Send single donor error:', err);
+      if (typeof showToast === 'function') {
+        showToast('Failed to dispatch request: ' + err.message, 'error');
+      }
     }
   }
 
@@ -1208,8 +1606,8 @@ function initDispatchRadar() {
         : `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
 
       return `
-        <tr data-donor-id="${d.id}">
-          <td><strong>${name}</strong></td>
+        <tr data-donor-id="${d.id}" style="cursor: pointer;">
+          <td><strong>${escapeHtml(name)}</strong></td>
           <td>${getDropBadgeSvg(blood, '')}</td>
           <td><span class="mono-data">${dist}</span></td>
           <td><span class="mono-data">${eta}</span></td>
@@ -1219,63 +1617,33 @@ function initDispatchRadar() {
       `;
     }).join('');
 
-    // Wire individual "Send" buttons
+    // Clicking table row highlights marker on the map and opens info bubble
+    tbody.querySelectorAll('tr[data-donor-id]').forEach(row => {
+      row.addEventListener('click', (e) => {
+        // If clicking inside the action button, let the button handler run
+        if (e.target.closest('.btn-send-donor') || e.target.closest('button')) return;
+        const donorId = parseInt(row.dataset.donorId, 10);
+        if (!donorId) return;
+
+        tbody.querySelectorAll('tr').forEach(r => r.classList.remove('active-map-target'));
+        row.classList.add('active-map-target');
+
+        highlightMapMarker(donorId);
+      });
+    });
+
+    // Wire individual "Send" buttons in table
     tbody.querySelectorAll('.btn-send-donor').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const donorId = parseInt(btn.dataset.donorId, 10);
         if (!donorId) return;
 
         btn.disabled = true;
         btn.textContent = 'Sending...';
 
-        try {
-          const res = await fetch('/api/hospital/requests/send-single', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              donorId: donorId,
-              bloodType: bloodType,
-              unitsNeeded: parseInt(units, 10) || 1,
-              patientName: patientName,
-              notes: notes,
-              radius: parseFloat(radius) || 10
-            })
-          });
-          const resJson = await res.json();
-          if (res.ok && resJson.success !== false) {
-            // Update donor state in local array
-            const targetDonor = matchingDonors.find(x => x.id === donorId);
-            if (targetDonor) {
-              targetDonor.status = 'Notified';
-              targetDonor.requestStatus = 'Notified';
-            }
-            // Update row visually
-            const row = tbody.querySelector(`tr[data-donor-id="${donorId}"]`);
-            if (row) {
-              const statusCell = row.querySelector('.donor-status-cell');
-              const actionCell = row.querySelector('.donor-action-cell');
-              if (statusCell) statusCell.innerHTML = `<span class="chip-status pending">Notified</span>`;
-              if (actionCell) actionCell.innerHTML = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
-            }
-            const remAvailable = matchingDonors.filter(d => !d.status || d.status.toLowerCase() === 'available').length;
-            updateBroadcastButtonCount(remAvailable);
-
-            if (typeof showToast === 'function') {
-              showToast('Emergency request dispatched to donor!', 'success');
-            }
-          } else {
-            throw new Error(resJson.message || 'Dispatch failed');
-          }
-        } catch (err) {
-          console.error('Send single donor error:', err);
-          btn.disabled = false;
-          btn.textContent = 'Send';
-          if (typeof showToast === 'function') {
-            showToast('Failed to dispatch request: ' + err.message, 'error');
-          }
-        }
+        await triggerSingleSend(donorId, bloodType, units, patientName, notes, radius);
       });
     });
   }
@@ -1308,7 +1676,7 @@ function initDispatchRadar() {
 
       const bloodRadio = document.querySelector('input[name="dispBloodGroup"]:checked');
       const bloodType = bloodRadio ? bloodRadio.value.trim() : 'O-';
-      const radius = document.getElementById('dispRadius')?.value || '10';
+      const radius = dispRadiusEl?.value || '10';
       const patientName = document.getElementById('dispPatientName')?.value.trim() || '';
       const units = document.getElementById('dispUnits')?.value || '1';
       const notes = document.getElementById('dispNotes')?.value.trim() || '';
@@ -1330,16 +1698,37 @@ function initDispatchRadar() {
         });
         const resJson = await res.json();
         if (res.ok && resJson.success !== false) {
-          // Mark all available as Notified
+          // Mark all available as Notified in table & map
           availableDonors.forEach(d => {
             d.status = 'Notified';
             d.requestStatus = 'Notified';
+
             const row = tbody.querySelector(`tr[data-donor-id="${d.id}"]`);
             if (row) {
               const statusCell = row.querySelector('.donor-status-cell');
               const actionCell = row.querySelector('.donor-action-cell');
               if (statusCell) statusCell.innerHTML = `<span class="chip-status pending">Notified</span>`;
               if (actionCell) actionCell.innerHTML = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+            }
+
+            const marker = donorMarkers[d.id];
+            if (marker) {
+              const popup = marker.getPopup();
+              if (popup && marker.isPopupOpen()) {
+                const popupEl = popup.getElement();
+                if (popupEl) {
+                  const stText = popupEl.querySelector('.popup-status-text');
+                  const sBtn = popupEl.querySelector('.hpc-btn-send');
+                  if (stText) {
+                    stText.textContent = 'Notified';
+                    stText.style.color = 'var(--hosp-blue)';
+                  }
+                  if (sBtn) {
+                    sBtn.textContent = 'Sent';
+                    sBtn.disabled = true;
+                  }
+                }
+              }
             }
           });
           updateBroadcastButtonCount(0);
@@ -1359,98 +1748,6 @@ function initDispatchRadar() {
       }
     });
   }
-
-  // 5. Canvas Radar (no donors drawn before search, draws searched matching donors)
-  function drawRadar() {
-    if (!canvas || !ctx) return;
-    const w = (canvas.width = canvas.parentElement.clientWidth || 400);
-    const h = (canvas.height = 280);
-    const cx = w / 2;
-    const cy = h / 2;
-    const maxR = Math.min(cx, cy) - 20;
-
-    ctx.clearRect(0, 0, w, h);
-
-    const zones = [
-      { r: maxR * 0.33, label: '5 km' },
-      { r: maxR * 0.66, label: '10 km' },
-      { r: maxR * 0.98, label: '20 km' }
-    ];
-
-    zones.forEach(z => {
-      ctx.beginPath();
-      ctx.arc(cx, cy, z.r, 0, Math.PI * 2);
-      ctx.strokeStyle = '#2a2c31';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.fillStyle = '#71706c';
-      ctx.font = '13px JetBrains Mono, monospace';
-      ctx.fillText(z.label, cx + 6, cy - z.r + 14);
-    });
-
-    // Crosshairs
-    ctx.strokeStyle = '#202227';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - maxR);
-    ctx.lineTo(cx, cy + maxR);
-    ctx.moveTo(cx - maxR, cy);
-    ctx.lineTo(cx + maxR, cy);
-    ctx.stroke();
-
-    // Sweeping Beam
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(radarAngle);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, maxR, -0.25, 0);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(110, 168, 255, 0.08)';
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(110, 168, 255, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(maxR, 0);
-    ctx.stroke();
-    ctx.restore();
-
-    // Center Marker (Hospital)
-    ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#6ea8ff';
-    ctx.fill();
-
-    // Plot real donors ONLY after search
-    if (matchingDonors && matchingDonors.length > 0) {
-      matchingDonors.forEach((p, idx) => {
-        const distRatio = Math.min(1.0, (p.distance || 5) / 20);
-        const angle = (idx * 1.35) % (Math.PI * 2);
-        const pr = Math.max(15, distRatio * maxR);
-        const px = cx + Math.cos(angle) * pr;
-        const py = cy + Math.sin(angle) * pr;
-
-        ctx.beginPath();
-        ctx.arc(px, py, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#3ecf8e';
-        ctx.fill();
-
-        ctx.fillStyle = '#ecebe8';
-        ctx.font = '12px Instrument Sans, sans-serif';
-        const pBlood = p.bloodType || p.blood_type || '';
-        ctx.fillText(`${p.name || 'Donor'} (${pBlood})`, px + 6, py + 3);
-      });
-    }
-
-    radarAngle += 0.015;
-    requestAnimationFrame(drawRadar);
-  }
-
-  window.drawRadarFrame = drawRadar;
-  drawRadar();
 }
 
 /* ============================================================

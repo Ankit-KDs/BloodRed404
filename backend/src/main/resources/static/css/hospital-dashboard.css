@@ -1522,15 +1522,262 @@ a:hover {
   background-color: var(--hosp-surface-raised);
   border: 1px solid var(--hosp-border);
   border-radius: var(--hosp-radius-card);
-  padding: var(--sp-16);
+  padding: 0;
   position: relative;
+  overflow: hidden;
+}
+
+#hospitalRadarMap {
+  width: 100%;
+  height: 290px;
+  background-color: var(--hosp-surface);
+  border-radius: var(--hosp-radius-card);
+  z-index: 1;
+}
+
+#hospitalRadarMap.dark-map .leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(115%) saturate(0.85);
+}
+
+.radar-layer-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--hosp-surface);
+  border: 1px solid var(--hosp-border);
+  border-radius: var(--hosp-radius-sm);
+  padding: 2px 3px;
+}
+
+.rlb-btn {
+  background: none;
+  border: none;
+  color: var(--hosp-text-muted);
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rlb-btn:hover {
+  color: var(--hosp-text);
+  background: var(--hosp-surface-raised);
+}
+
+.rlb-btn.active {
+  background: var(--hosp-blue-soft, rgba(110, 168, 255, 0.15));
+  color: var(--hosp-blue, #6ea8ff);
+  font-weight: 600;
+}
+
+.hosp-map-no-location {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom Leaflet Markers */
+.custom-hospital-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chm-pin {
+  width: 28px;
+  height: 28px;
+  background: var(--hosp-blue, #3b82f6);
+  border: 2px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.chm-pin svg {
+  transform: rotate(45deg);
+  color: #ffffff;
+}
+
+.chm-label {
+  margin-top: 4px;
+  background: rgba(14, 23, 42, 0.92);
+  border: 1px solid var(--hosp-border);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.custom-donor-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.cdm-pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease;
+}
+
+.custom-donor-marker:hover .cdm-pin,
+.custom-donor-marker.highlighted .cdm-pin {
+  transform: scale(1.28);
+}
+
+.cdm-pin.exact {
+  background: var(--hosp-red, #e5383b);
+}
+
+.cdm-pin.compatible {
+  background: var(--hosp-green, #10b981);
+}
+
+.cdm-pin.notified {
+  background: var(--hosp-blue, #6ea8ff);
+}
+
+.cdm-badge {
+  margin-top: 3px;
+  background: rgba(14, 23, 42, 0.92);
+  border: 1px solid var(--hosp-border);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+/* Custom Leaflet Popup for Hospital Map */
+.hosp-map-popup .leaflet-popup-content-wrapper {
+  background: var(--hosp-surface-raised, #17191e) !important;
+  color: var(--hosp-text, #ecebe8) !important;
+  border: 1px solid var(--hosp-border, #262930) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  padding: 0 !important;
+}
+
+.hosp-map-popup .leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+}
+
+.hosp-map-popup .leaflet-popup-tip {
+  background: var(--hosp-surface-raised, #17191e) !important;
+  border: 1px solid var(--hosp-border, #262930) !important;
+}
+
+.hosp-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 190px;
+}
+
+.hpc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hpc-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--hosp-text);
+}
+
+.hpc-blood {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.hpc-blood.exact {
+  background: var(--hosp-red-subtle);
+  color: var(--hosp-red);
+  border: 1px solid var(--hosp-red-border);
+}
+
+.hpc-blood.compatible {
+  background: var(--hosp-green-subtle);
+  color: var(--hosp-green);
+  border: 1px solid var(--hosp-green-border);
+}
+
+.hpc-meta {
+  font-size: 12px;
+  color: var(--hosp-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hpc-footer {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hosp-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hpc-btn-send {
+  background: var(--hosp-surface);
+  border: 1px solid var(--hosp-border);
+  color: var(--hosp-text);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hpc-btn-send:hover:not(:disabled) {
+  border-color: var(--hosp-blue);
+  color: var(--hosp-blue);
+}
+
+.hpc-btn-send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#dispatchResponsesTableBody tr.active-map-target {
+  background: rgba(110, 168, 255, 0.12) !important;
+  border-left: 2px solid var(--hosp-blue) !important;
 }
 
 #radarCanvas {
-  width: 100%;
-  max-width: 440px;
-  height: 280px;
-  display: block;
+  display: none;
 }
 
 .radar-legend-bar {
