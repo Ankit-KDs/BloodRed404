@@ -174,6 +174,80 @@ public class HospitalDao {
         }
     }
 
+    public boolean updateHospitalProfile(int hospitalId, Map<String, Object> updates) throws SQLException {
+        if (updates == null || updates.isEmpty()) return false;
+        StringBuilder sql = new StringBuilder("UPDATE hospitals SET ");
+        List<Object> values = new ArrayList<>();
+        boolean first = true;
+
+        String[] allowed = {
+            "hospital_name", "hospital_type", "registration_no", "blood_bank_license",
+            "address", "city", "state", "pincode", "hospital_phone", "emergency_contact",
+            "admin_name", "admin_designation", "operating_hours", "verification_status"
+        };
+        for (String col : allowed) {
+            String camel = toCamel(col);
+            if (updates.containsKey(col) || updates.containsKey(camel)) {
+                Object val = updates.containsKey(col) ? updates.get(col) : updates.get(camel);
+                if (!first) sql.append(", ");
+                sql.append(col).append(" = ?");
+                values.add(val != null ? String.valueOf(val).trim() : null);
+                first = false;
+            }
+        }
+        if (updates.containsKey("latitude") || updates.containsKey("lat")) {
+            Object val = updates.containsKey("latitude") ? updates.get("latitude") : updates.get("lat");
+            if (!first) sql.append(", ");
+            sql.append("latitude = ?");
+            values.add(val instanceof Number ? ((Number) val).doubleValue() : (val != null ? Double.valueOf(val.toString()) : null));
+            first = false;
+        }
+        if (updates.containsKey("longitude") || updates.containsKey("lng")) {
+            Object val = updates.containsKey("longitude") ? updates.get("longitude") : updates.get("lng");
+            if (!first) sql.append(", ");
+            sql.append("longitude = ?");
+            values.add(val instanceof Number ? ((Number) val).doubleValue() : (val != null ? Double.valueOf(val.toString()) : null));
+            first = false;
+        }
+
+        if (first) return false;
+        sql.append(" WHERE id = ?");
+        values.add(hospitalId);
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < values.size(); i++) {
+                Object v = values.get(i);
+                if (v == null) {
+                    ps.setNull(i + 1, Types.VARCHAR);
+                } else if (v instanceof Double d) {
+                    ps.setDouble(i + 1, d);
+                } else if (v instanceof Integer n) {
+                    ps.setInt(i + 1, n);
+                } else {
+                    ps.setString(i + 1, v.toString());
+                }
+            }
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    private static String toCamel(String snake) {
+        StringBuilder sb = new StringBuilder();
+        boolean upper = false;
+        for (char c : snake.toCharArray()) {
+            if (c == '_') {
+                upper = true;
+            } else if (upper) {
+                sb.append(Character.toUpperCase(c));
+                upper = false;
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     public boolean updateHospitalInventory(int hospitalId, String bloodType, int change, Integer exactUnits) throws SQLException {
         if (bloodType == null || bloodType.isBlank()) return false;
         String bt = bloodType.trim().toUpperCase();
@@ -250,12 +324,24 @@ public class HospitalDao {
         hospital.put("address", rs.getString("address"));
         hospital.put("landmark", rs.getString("landmark"));
         hospital.put("pincode", rs.getString("pincode"));
-        hospital.put("latitude", rs.getObject("latitude"));
-        hospital.put("longitude", rs.getObject("longitude"));
+        Object rawLat = rs.getObject("latitude");
+        Object rawLng = rs.getObject("longitude");
+        Double latVal = (rawLat instanceof Number) ? ((Number) rawLat).doubleValue() : null;
+        Double lngVal = (rawLng instanceof Number) ? ((Number) rawLng).doubleValue() : null;
+        hospital.put("latitude", latVal);
+        hospital.put("longitude", lngVal);
+        hospital.put("lat", latVal);
+        hospital.put("lng", lngVal);
         hospital.put("operatingHours", rs.getString("operating_hours"));
         hospital.put("smsNotif", rs.getBoolean("sms_notif"));
         hospital.put("pushNotif", rs.getBoolean("push_notif"));
         hospital.put("emailNotif", rs.getBoolean("email_notif"));
+        String vStatus = "Verified";
+        try {
+            String dbStatus = rs.getString("verification_status");
+            if (dbStatus != null && !dbStatus.isBlank()) vStatus = dbStatus;
+        } catch (Exception ignored) {}
+        hospital.put("verificationStatus", vStatus);
         java.sql.Timestamp ts = rs.getTimestamp("created_at");
         hospital.put("createdAt", ts != null ? ts.toString() : null);
         return hospital;

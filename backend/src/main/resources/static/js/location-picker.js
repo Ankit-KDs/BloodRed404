@@ -89,9 +89,10 @@
   }
 
   function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  window.escapeHtml = escapeHtml;
 
   function initPickerLogic(rootEl, options) {
     let map = null;
@@ -254,12 +255,29 @@
     }
 
     // Search events
-    searchInput?.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        searchAddress(this.value);
+    if (searchInput) {
+      if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
+        try {
+          const autocomplete = new window.google.maps.places.Autocomplete(searchInput);
+          autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (place && place.geometry && place.geometry.location) {
+              const lat = place.geometry.location.lat();
+              const lng = place.geometry.location.lng();
+              placePin(lat, lng, true);
+              updateState(lat, lng, place.formatted_address || place.name, true);
+            }
+          });
+        } catch (_) {}
       }
-    });
+
+      searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          searchAddress(this.value);
+        }
+      });
+    }
 
     // Browser GPS
     gpsBtn?.addEventListener('click', function() {

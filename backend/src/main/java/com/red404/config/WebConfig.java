@@ -1,9 +1,20 @@
 package com.red404.config;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.io.IOException;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -19,6 +30,29 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         // Default welcome page
         registry.addViewController("/").setViewName("forward:/index.html");
+    }
+
+    @Bean
+    public FilterRegistrationBean<Filter> noCacheSecurityFilter() {
+        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new Filter() {
+            @Override
+            public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+                    throws IOException, ServletException {
+                if (req instanceof HttpServletRequest httpReq && res instanceof HttpServletResponse httpRes) {
+                    String uri = httpReq.getRequestURI();
+                    if (uri.startsWith("/api/") || uri.endsWith(".html") || uri.endsWith("/")) {
+                        httpRes.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
+                        httpRes.setHeader("Pragma", "no-cache");
+                        httpRes.setDateHeader("Expires", 0);
+                    }
+                }
+                chain.doFilter(req, res);
+            }
+        });
+        registration.addUrlPatterns("/*");
+        registration.setOrder(1);
+        return registration;
     }
 }
 

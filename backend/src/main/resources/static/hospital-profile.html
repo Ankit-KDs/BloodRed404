@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hospital Profile & Accreditation — RED404</title>
+
+  <!-- Google Fonts & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Leaflet & Location Picker CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/location-picker.css?v=20261114_r2" />
+  <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_r2" />
+
+  <style>
+    .profile-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 20px 80px;
+    }
+    .profile-header-card {
+      background: var(--hosp-surface);
+      border: 1px solid var(--hosp-border);
+      border-radius: var(--hosp-radius-card);
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .profile-title-block h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .profile-subtitle {
+      color: var(--hosp-text-muted);
+      font-size: 13.5px;
+      margin: 0;
+    }
+    .sensitive-notice-banner {
+      display: none;
+      background: rgba(234, 179, 8, 0.12);
+      border: 1px solid rgba(234, 179, 8, 0.35);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #fef08a;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .profile-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 768px) {
+      .profile-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+    .field-readonly {
+      background: rgba(255, 255, 255, 0.03) !important;
+      color: var(--hosp-text-muted) !important;
+      cursor: not-allowed;
+    }
+    .field-error-hint {
+      color: #f87171;
+      font-size: 11.5px;
+      margin-top: 4px;
+      display: none;
+    }
+    .toast-pill {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--hosp-green);
+      color: var(--hosp-green);
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 99999;
+      display: none;
+    }
+  </style>
+</head>
+<body class="hospital-body">
+
+  <!-- ==================== TOP NAVBAR ==================== -->
+  <header class="hosp-navbar">
+    <div class="hosp-nav-container">
+      <a href="hospital-dashboard.html" class="hosp-brand" aria-label="RED404 Hospital Portal Home">
+        <span class="brand-drop-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 38" class="drop-svg" focusable="false">
+            <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-name">RED<span class="brand-num">404</span></span>
+        <span class="hosp-brand-tag">Hospital</span>
+      </a>
+
+      <div class="hosp-nav-actions">
+        <a href="hospital-dashboard.html" class="btn-secondary" style="font-size: 13px; padding: 6px 14px; text-decoration: none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>Back to Dashboard</span>
+        </a>
+
+        <!-- Avatar Menu -->
+        <div class="hosp-avatar-wrap" id="hospAvatarWrap" style="position: relative;">
+          <button type="button" class="hosp-avatar-btn" id="hospAvatarBtn" aria-label="Hospital Account Menu" aria-haspopup="true" aria-expanded="false" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1.5px solid var(--hosp-border, #334155); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;">
+            <span id="hospAvatarInitials">HP</span>
+          </button>
+          <div class="hosp-dropdown-menu" id="hospDropdownMenu" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 220px; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.5); padding: 12px; z-index: 9999;">
+            <div style="padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 8px;">
+              <div id="dropdownHospName" style="font-weight: 600; color: #fff; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Hospital</div>
+              <div style="margin-top: 4px;">
+                <span id="dropdownHospStatusChip" class="chip-status" style="font-size: 11px; padding: 2px 8px; border-radius: 12px;">Pending</span>
+              </div>
+            </div>
+            <a href="hospital-dashboard.html" class="hosp-dropdown-item" style="display: flex; align-items: center; gap: 8px; padding: 8px; color: #cbd5e1; text-decoration: none; font-size: 13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <span>Dashboard</span>
+            </a>
+            <button type="button" id="btnLogoutLink" class="hosp-dropdown-item" style="width: 100%; text-align: left; background: none; border: none; display: flex; align-items: center; gap: 8px; padding: 8px; color: #f87171; font-size: 13px; cursor: pointer;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span>Log out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="profile-container">
+
+    <!-- Top Card: Title, Status Chip, Edit/View Toggle -->
+    <div class="profile-header-card">
+      <div class="profile-title-block">
+        <h1 id="headerHospitalName">
+          <span>Loading Profile...</span>
+          <span class="chip-status" id="headerStatusChip" style="font-size: 12px; padding: 3px 10px;">Pending</span>
+        </h1>
+        <p class="profile-subtitle">
+          Manage clinical registry data, contact details, operating hours, and geocoded location.
+          <span id="lastUpdatedLabel" style="display: block; margin-top: 4px; color: var(--hosp-text-muted); font-size: 12px;">Last updated: -</span>
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="button" class="btn-secondary" id="btnToggleMode" style="font-size: 13px; padding: 8px 16px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <span id="btnToggleModeText">Edit Profile</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sensitive Fields Notice Banner -->
+    <div class="sensitive-notice-banner" id="sensitiveNoticeBanner" role="alert">
+      <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i>
+      <strong>Notice:</strong> Modifying sensitive registry credentials (Hospital Name, Registration / License Number) on a Verified facility will automatically set the accreditation status to <strong>"Needs re-verification"</strong> pending state medical director review.
+    </div>
+
+    <!-- Profile Form -->
+    <form id="formHospitalProfile">
+
+      <!-- Section 1: Facility Registry Info -->
+      <article class="hosp-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Facility Information</h2>
+            <p class="card-subtitle">Official registration and blood bank accreditation details</p>
+          </div>
+        </div>
+
+        <div class="profile-grid-2">
+          <div class="form-row">
+            <label class="form-label" for="profHospitalName">Hospital / Facility Name *</label>
+            <input type="text" id="profHospitalName" class="form-input" disabled required />
+            <div class="field-error-hint" id="errProfHospitalName">Hospital name is required.</div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profHospitalType">Facility Type *</label>
+            <select id="profHospitalType" class="form-input" disabled required>
+              <option value="Government Hospital">Government Hospital</option>
+              <option value="Private Hospital">Private Hospital</option>
+              <option value="Blood Bank">Blood Bank</option>
+              <option value="Trauma Center">Trauma Center</option>
+              <option value="Community Health Center">Community Health Center</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profRegNo">Registration / License Number *</label>
+            <input type="text" id="profRegNo" class="form-input" disabled required />
+            <div class="field-error-hint" id="errProfRegNo">Registration or license number is required.</div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profOperatingHours">Operating Hours *</label>
+            <input type="text" id="profOperatingHours" class="form-input" placeholder="e.g. 24x7 or 8:00 AM - 8:00 PM" disabled required />
+          </div>
+        </div>
+      </article>
+
+      <!-- Section 2: Address & Geocoded Location -->
+      <article class="hosp-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Address & Physical Coordinates</h2>
+            <p class="card-subtitle">Used for donor proximity routing and emergency dispatch radius</p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="profAddress">Street Address *</label>
+          <input type="text" id="profAddress" class="form-input" disabled required />
+        </div>
+
+        <div class="profile-grid-2">
+          <div class="form-row">
+            <label class="form-label" for="profCity">City *</label>
+            <input type="text" id="profCity" class="form-input" disabled required />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profState">State *</label>
+            <input type="text" id="profState" class="form-input" disabled required />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profPincode">PIN Code *</label>
+            <input type="text" id="profPincode" class="form-input" disabled required />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Geocoded Location (Latitude, Longitude)</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="profCoords" class="form-input field-readonly" readonly value="Not set" />
+              <button type="button" class="btn-secondary" id="btnProfPickLocation" style="white-space: nowrap; font-size: 12.5px; padding: 0 12px;" disabled>
+                <i class="fa-solid fa-map-pin"></i> Edit Pin
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Section 3: Contact & Administration -->
+      <article class="hosp-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Contact & Clinical Administration</h2>
+            <p class="card-subtitle">Direct contacts for emergency blood dispatch and verification</p>
+          </div>
+        </div>
+
+        <div class="profile-grid-2">
+          <div class="form-row">
+            <label class="form-label" for="profEmail">Registered Email (Read-only)</label>
+            <input type="email" id="profEmail" class="form-input field-readonly" readonly />
+            <small style="color: var(--hosp-text-muted); font-size: 11.5px; display: block; margin-top: 3px;">Account login identifier; cannot be changed directly.</small>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profPhone">Hospital Landline / Reception Phone *</label>
+            <input type="text" id="profPhone" class="form-input" disabled required />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profEmergencyContact">24x7 Emergency Contact *</label>
+            <input type="text" id="profEmergencyContact" class="form-input" disabled required />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profAdminName">Contact Person Name</label>
+            <input type="text" id="profAdminName" class="form-input" placeholder="e.g. Dr. Rajesh Sharma" disabled />
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="profAdminDesignation">Contact Person Designation</label>
+            <input type="text" id="profAdminDesignation" class="form-input" placeholder="e.g. Head of Blood Transfusion" disabled />
+          </div>
+        </div>
+      </article>
+
+      <!-- Save & Cancel Bar (Shown only in Edit Mode) -->
+      <div id="editActionBar" style="display: none; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+        <button type="button" class="btn-secondary" id="btnCancelEdit" style="padding: 10px 20px;">Cancel</button>
+        <button type="submit" class="btn-primary" id="btnSaveProfile" style="padding: 10px 24px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Save Changes</span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Section 4: Security & Password Change -->
+    <article class="hosp-card" style="margin-top: 24px;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Security & Credentials</h2>
+          <p class="card-subtitle">Update hospital account login password</p>
+        </div>
+      </div>
+
+      <form id="formChangePassword" style="max-width: 500px;">
+        <div class="form-row">
+          <label class="form-label" for="pwCurrent">Current Password *</label>
+          <input type="password" id="pwCurrent" class="form-input" required />
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="pwNew">New Password (min 6 characters) *</label>
+          <input type="password" id="pwNew" class="form-input" minlength="6" required />
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="pwConfirm">Confirm New Password *</label>
+          <input type="password" id="pwConfirm" class="form-input" minlength="6" required />
+        </div>
+        <button type="submit" class="btn-secondary" id="btnSubmitPassword" style="margin-top: 8px;">
+          <span>Update Password</span>
+        </button>
+      </form>
+    </article>
+
+  </main>
+
+  <!-- Location Picker Modal Container -->
+  <div id="locationPickerMount"></div>
+
+  <!-- Toast Pill -->
+  <div class="toast-pill" id="profileToast">Changes saved successfully!</div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/common.js?v=20261114_r2"></script>
+  <script src="js/location-picker.js?v=20261114_r2"></script>
+  <script>
+    let isEditMode = false;
+    let originalProfile = null;
+    let isDirty = false;
+    let pendingLat = null;
+    let pendingLng = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initAuthGuard();
+      await loadProfile();
+      setupAvatarDropdown();
+      setupModeToggle();
+      setupFormSubmit();
+      setupPasswordChange();
+      setupDirtyTracking();
+    });
+
+    // Guard against bfcache back-navigation after logout
+    function initAuthGuard() {
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) {
+          window.location.reload();
+        }
+      });
+    }
+
+    async function loadProfile() {
+      try {
+        const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+        const headers = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/hospital/profile', { headers, credentials: 'include' });
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.location.replace('/hospital-login.html');
+            return;
+          }
+          throw new Error('Failed to load profile');
+        }
+
+        const data = await res.json();
+        originalProfile = data.data || data;
+        renderProfile(originalProfile);
+      } catch (err) {
+        console.error('Profile load error:', err);
+      }
+    }
+
+    function renderProfile(p) {
+      if (!p) return;
+
+      const name = p.name || p.hospitalName || p.hospital_name || '';
+      const reg = p.registrationNo || p.registration_no || p.bloodBankLicense || p.blood_bank_license || '';
+      const type = p.hospitalType || p.hospital_type || 'Government Hospital';
+      const hours = p.operatingHours || p.operating_hours || '24x7';
+      const address = p.address || '';
+      const city = p.city || '';
+      const state = p.state || '';
+      const pincode = p.pincode || '';
+      const email = p.email || p.hospitalEmail || p.hospital_email || '';
+      const phone = p.phone || p.hospitalPhone || p.hospital_phone || '';
+      const emergency = p.emergencyContact || p.emergency_contact || '';
+      const adminName = p.adminName || p.admin_name || '';
+      const adminDesig = p.adminDesignation || p.admin_designation || '';
+      const vStatus = p.verificationStatus || p.verification_status || 'Pending';
+      const updatedAt = p.updatedAt || p.updated_at || p.createdAt || p.created_at || 'Just now';
+
+      pendingLat = p.latitude != null ? p.latitude : (p.lat != null ? p.lat : null);
+      pendingLng = p.longitude != null ? p.longitude : (p.lng != null ? p.lng : null);
+
+      document.getElementById('headerHospitalName').innerHTML = `
+        <span>${window.escapeHtml ? window.escapeHtml(name || 'Hospital') : name}</span>
+        <span class="chip-status ${vStatus.toLowerCase().includes('verif') ? 'available' : (vStatus.toLowerCase().includes('reject') ? 'critical' : 'warning')}" id="headerStatusChip" style="font-size: 12px; padding: 3px 10px;">${vStatus}</span>
+      `;
+      document.getElementById('dropdownHospName').textContent = name || 'Connected Hospital';
+      const dropChip = document.getElementById('dropdownHospStatusChip');
+      if (dropChip) {
+        dropChip.textContent = vStatus;
+        dropChip.className = 'chip-status ' + (vStatus.toLowerCase().includes('verif') ? 'available' : (vStatus.toLowerCase().includes('reject') ? 'critical' : 'warning'));
+      }
+
+      document.getElementById('lastUpdatedLabel').textContent = `Last updated: ${updatedAt}`;
+
+      // Set initials in avatar
+      const initials = getInitials(name || 'Hospital');
+      document.getElementById('hospAvatarInitials').textContent = initials;
+
+      // Inputs
+      document.getElementById('profHospitalName').value = name;
+      document.getElementById('profHospitalType').value = type;
+      document.getElementById('profRegNo').value = reg;
+      document.getElementById('profOperatingHours').value = hours;
+      document.getElementById('profAddress').value = address;
+      document.getElementById('profCity').value = city;
+      document.getElementById('profState').value = state;
+      document.getElementById('profPincode').value = pincode;
+      document.getElementById('profEmail').value = email;
+      document.getElementById('profPhone').value = phone;
+      document.getElementById('profEmergencyContact').value = emergency;
+      document.getElementById('profAdminName').value = adminName;
+      document.getElementById('profAdminDesignation').value = adminDesig;
+
+      updateCoordsDisplay(pendingLat, pendingLng);
+
+      // Warning banner for sensitive fields if verified
+      const isVerified = vStatus.toLowerCase().includes('verif');
+      const notice = document.getElementById('sensitiveNoticeBanner');
+      if (notice) notice.style.display = (isEditMode && isVerified) ? 'block' : 'none';
+
+      isDirty = false;
+    }
+
+    function updateCoordsDisplay(lat, lng) {
+      const el = document.getElementById('profCoords');
+      if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
+        el.value = `${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}`;
+      } else {
+        el.value = 'Not set (Pin required)';
+      }
+    }
+
+    function getInitials(str) {
+      if (!str) return 'HP';
+      const parts = str.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function setupModeToggle() {
+      const toggleBtn = document.getElementById('btnToggleMode');
+      const toggleText = document.getElementById('btnToggleModeText');
+      const cancelBtn = document.getElementById('btnCancelEdit');
+      const actionRow = document.getElementById('editActionBar');
+      const pickLocBtn = document.getElementById('btnProfPickLocation');
+
+      const inputs = [
+        'profHospitalName', 'profHospitalType', 'profRegNo', 'profOperatingHours',
+        'profAddress', 'profCity', 'profState', 'profPincode', 'profPhone',
+        'profEmergencyContact', 'profAdminName', 'profAdminDesignation'
+      ];
+
+      function setMode(edit) {
+        isEditMode = edit;
+        inputs.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.disabled = !edit;
+        });
+        if (pickLocBtn) pickLocBtn.disabled = !edit;
+        if (actionRow) actionRow.style.display = edit ? 'flex' : 'none';
+        if (toggleText) toggleText.textContent = edit ? 'Viewing Mode' : 'Edit Profile';
+
+        const vStatus = originalProfile ? (originalProfile.verificationStatus || originalProfile.verification_status || '') : '';
+        const notice = document.getElementById('sensitiveNoticeBanner');
+        if (notice) notice.style.display = (edit && vStatus.toLowerCase().includes('verif')) ? 'block' : 'none';
+      }
+
+      toggleBtn.addEventListener('click', () => {
+        if (isEditMode && isDirty) {
+          if (!confirm('You have unsaved changes. Discard them?')) return;
+          renderProfile(originalProfile);
+        }
+        setMode(!isEditMode);
+      });
+
+      cancelBtn.addEventListener('click', () => {
+        if (isDirty && !confirm('Discard unsaved profile changes?')) return;
+        renderProfile(originalProfile);
+        setMode(false);
+      });
+
+      if (pickLocBtn) {
+        pickLocBtn.addEventListener('click', () => {
+          if (typeof openLocationPicker === 'function') {
+            openLocationPicker({
+              initialLat: pendingLat != null ? pendingLat : 28.5672,
+              initialLng: pendingLng != null ? pendingLng : 77.2100,
+              initialAddress: document.getElementById('profAddress').value || '',
+              onSave: (loc) => {
+                pendingLat = loc.lat;
+                pendingLng = loc.lng;
+                if (loc.address && !document.getElementById('profAddress').value) {
+                  document.getElementById('profAddress').value = loc.address;
+                }
+                updateCoordsDisplay(pendingLat, pendingLng);
+                isDirty = true;
+              }
+            });
+          } else {
+            alert('Location picker component loading...');
+          }
+        });
+      }
+    }
+
+    function setupFormSubmit() {
+      const form = document.getElementById('formHospitalProfile');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('profHospitalName').value.trim();
+        const regNo = document.getElementById('profRegNo').value.trim();
+
+        if (!name) {
+          document.getElementById('errProfHospitalName').style.display = 'block';
+          return;
+        } else {
+          document.getElementById('errProfHospitalName').style.display = 'none';
+        }
+
+        if (!regNo) {
+          document.getElementById('errProfRegNo').style.display = 'block';
+          return;
+        } else {
+          document.getElementById('errProfRegNo').style.display = 'none';
+        }
+
+        const payload = {
+          hospitalName: name,
+          hospitalType: document.getElementById('profHospitalType').value,
+          registrationNo: regNo,
+          bloodBankLicense: regNo,
+          operatingHours: document.getElementById('profOperatingHours').value.trim(),
+          address: document.getElementById('profAddress').value.trim(),
+          city: document.getElementById('profCity').value.trim(),
+          state: document.getElementById('profState').value.trim(),
+          pincode: document.getElementById('profPincode').value.trim(),
+          hospitalPhone: document.getElementById('profPhone').value.trim(),
+          emergencyContact: document.getElementById('profEmergencyContact').value.trim(),
+          adminName: document.getElementById('profAdminName').value.trim(),
+          adminDesignation: document.getElementById('profAdminDesignation').value.trim(),
+          latitude: pendingLat,
+          longitude: pendingLng
+        };
+
+        const saveBtn = document.getElementById('btnSaveProfile');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span>Saving...</span>';
+
+        try {
+          const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+
+          const res = await fetch('/api/hospital/profile', {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(payload),
+            credentials: 'include'
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert('Failed to save profile: ' + (err.message || 'Server error'));
+            return;
+          }
+
+          const resp = await res.json();
+          originalProfile = resp.data || resp;
+          renderProfile(originalProfile);
+
+          // Exit edit mode
+          document.getElementById('btnToggleMode').click();
+
+          showToast('Hospital profile saved successfully!');
+        } catch (err) {
+          alert('Network error while saving profile: ' + err.message);
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Save Changes</span>
+          `;
+        }
+      });
+    }
+
+    function setupPasswordChange() {
+      const pwForm = document.getElementById('formChangePassword');
+      pwForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cur = document.getElementById('pwCurrent').value;
+        const nw = document.getElementById('pwNew').value;
+        const conf = document.getElementById('pwConfirm').value;
+
+        if (nw !== conf) {
+          alert('New passwords do not match.');
+          return;
+        }
+
+        const btn = document.getElementById('btnSubmitPassword');
+        btn.disabled = true;
+        btn.innerHTML = '<span>Updating...</span>';
+
+        try {
+          const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+
+          const res = await fetch('/api/hospital/change-password', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ currentPassword: cur, newPassword: nw }),
+            credentials: 'include'
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert('Password change failed: ' + (err.message || 'Incorrect current password'));
+            return;
+          }
+
+          alert('Password changed successfully.');
+          pwForm.reset();
+        } catch (e) {
+          alert('Network error while changing password.');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<span>Update Password</span>';
+        }
+      });
+    }
+
+    function setupDirtyTracking() {
+      const form = document.getElementById('formHospitalProfile');
+      form.addEventListener('input', () => { isDirty = true; });
+      window.addEventListener('beforeunload', (e) => {
+        if (isEditMode && isDirty) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+    }
+
+    function setupAvatarDropdown() {
+      const btn = document.getElementById('hospAvatarBtn');
+      const menu = document.getElementById('hospDropdownMenu');
+      if (!btn || !menu) return;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = menu.style.display === 'block';
+        menu.style.display = open ? 'none' : 'block';
+        btn.setAttribute('aria-expanded', !open);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== btn) {
+          menu.style.display = 'none';
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menu.style.display === 'block') {
+          menu.style.display = 'none';
+          btn.setAttribute('aria-expanded', 'false');
+          btn.focus();
+        }
+      });
+
+      const logoutBtn = document.getElementById('btnLogoutLink');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+          try {
+            await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' });
+          } catch (_) {}
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (_) {}
+          window.location.replace('/hospital-login.html');
+        });
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('profileToast');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+  </script>
+</body>
+</html>

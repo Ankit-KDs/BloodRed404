@@ -737,6 +737,7 @@ public class DonorDao {
         List<Map<String, Object>> matches = new ArrayList<>();
         int compatibleRegisteredCount = 0;
         int ineligibleCount = 0;
+        int withoutLocationCount = 0;
         int staleLocationCount = 0;
         int outsideRadiusCount = 0;
 
@@ -812,13 +813,13 @@ public class DonorDao {
                 Object latObj = donor.get("latitude");
                 Object lngObj = donor.get("longitude");
                 if (latObj == null || lngObj == null || !(latObj instanceof Number) || !(lngObj instanceof Number)) {
-                    staleLocationCount++;
+                    withoutLocationCount++;
                     continue;
                 }
                 double donorLat = ((Number) latObj).doubleValue();
                 double donorLng = ((Number) lngObj).doubleValue();
                 if ((donorLat == 0.0 && donorLng == 0.0) || donorLat < -90.0 || donorLat > 90.0 || donorLng < -180.0 || donorLng > 180.0) {
-                    staleLocationCount++;
+                    withoutLocationCount++;
                     continue;
                 }
 
@@ -860,8 +861,8 @@ public class DonorDao {
                 donor.put("status", nStatus);
                 donor.put("requestStatus", nStatus);
 
-                // 6. SERVER PHONE PRIVACY (Part 5 & Part 6)
-                // Strip phone number completely unless status is Accepted
+                // 6. SERVER PHONE PRIVACY
+                // Strip phone number completely in search results (privacy before donor accepts)
                 if (!"Accepted".equalsIgnoreCase(nStatus)) {
                     donor.remove("phone");
                     donor.remove("contact_number");
@@ -869,6 +870,8 @@ public class DonorDao {
                     donor.remove("adminPhone");
                     donor.remove("emergencyContact");
                     donor.remove("donorPhone");
+                    donor.put("phone", null);
+                    donor.put("donorPhone", null);
                 } else {
                     if (donor.get("phone") != null && donor.get("donorPhone") == null) {
                         donor.put("donorPhone", donor.get("phone"));
@@ -911,11 +914,13 @@ public class DonorDao {
                            compatibleRegisteredCount + " compatible donor" + (compatibleRegisteredCount == 1 ? "" : "s") + " registered: " +
                            ineligibleCount + " not eligible yet, " +
                            staleLocationCount + " location older than " + FRESHNESS_HOURS + " h, " +
-                           outsideRadiusCount + " outside this radius.";
+                           outsideRadiusCount + " outside this radius, " +
+                           withoutLocationCount + " without a saved location.";
         }
 
         response.put("donors", matches);
-        response.put("unlocatedCount", staleLocationCount);
+        response.put("unlocatedCount", withoutLocationCount);
+        response.put("withoutLocationCount", withoutLocationCount);
         response.put("compatibleRegisteredCount", compatibleRegisteredCount);
         response.put("ineligibleCount", ineligibleCount);
         response.put("staleLocationCount", staleLocationCount);
@@ -1203,7 +1208,12 @@ public class DonorDao {
     }
 
     public boolean recordDonation(String donorId, Integer hospitalId, String bloodType, int units, String status) throws SQLException {
-        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status) VALUES (?, ?, ?, ?, CURRENT_DATE, ?)";
+        return recordDonation(donorId, hospitalId, bloodType, units, 450, null, "Staff", status, null);
+    }
+
+    public boolean recordDonation(String donorId, Integer hospitalId, String bloodType, int units, int volumeMl, String vitalsJson, String staffUser, String status, String deferralReason) throws SQLException {
+        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
@@ -1214,9 +1224,13 @@ public class DonorDao {
             }
             ps.setString(3, bloodType != null && !bloodType.isBlank() ? bloodType : "O-");
             ps.setInt(4, units > 0 ? units : 1);
-            ps.setString(5, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+            ps.setInt(5, volumeMl > 0 ? volumeMl : 450);
+            ps.setString(6, vitalsJson);
+            ps.setString(7, staffUser != null ? staffUser : "Staff");
+            ps.setString(8, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+            ps.setString(9, deferralReason);
             int inserted = ps.executeUpdate();
-            if (inserted > 0) {
+            if (inserted > 0 && !"DEFERRED".equalsIgnoreCase(status)) {
                 try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE donor_id = ? OR CAST(id AS CHAR) = ?")) {
                     upd.setString(1, donorId);
                     upd.setString(2, donorId);
@@ -1225,10 +1239,33 @@ public class DonorDao {
             }
             return inserted > 0;
         } catch (SQLException e) {
-            if (isMissingTable(e)) {
-                return false;
+            String legacySql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status) VALUES (?, ?, ?, ?, CURRENT_DATE, ?)";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(legacySql)) {
+                ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
+                if (hospitalId == null || hospitalId <= 0) {
+                    ps.setNull(2, Types.INTEGER);
+                } else {
+                    ps.setInt(2, hospitalId);
+                }
+                ps.setString(3, bloodType != null && !bloodType.isBlank() ? bloodType : "O-");
+                ps.setInt(4, units > 0 ? units : 1);
+                ps.setString(5, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+                int inserted = ps.executeUpdate();
+                if (inserted > 0 && !"DEFERRED".equalsIgnoreCase(status)) {
+                    try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE donor_id = ? OR CAST(id AS CHAR) = ?")) {
+                        upd.setString(1, donorId);
+                        upd.setString(2, donorId);
+                        upd.executeUpdate();
+                    } catch (SQLException ignored) {}
+                }
+                return inserted > 0;
+            } catch (SQLException ex) {
+                if (isMissingTable(ex)) {
+                    return false;
+                }
+                throw ex;
             }
-            throw e;
         }
     }
 

@@ -71,14 +71,19 @@ public class HospitalController {
                     hospitalId = ((Number) hospital.get("id")).intValue();
                 }
             }
-            if (hospitalId == null) hospitalId = 1;
-            Map<String, Object> profile = hospitalDao.findById(hospitalId);
-            if (profile == null) {
+            if (hospitalId == null) {
                 List<Map<String, Object>> all = hospitalDao.listAll();
-                if (!all.isEmpty()) profile = all.get(0);
+                if (!all.isEmpty()) hospitalId = ((Number) all.get(0).get("id")).intValue();
             }
-            if (profile != null) {
-                return ok("Profile loaded", profile);
+            if (hospitalId != null) {
+                Map<String, Object> profile = hospitalDao.findById(hospitalId);
+                if (profile != null) {
+                    HttpSession session = request.getSession(false);
+                    if (session != null) {
+                        session.setAttribute("hospitalUser", profile);
+                    }
+                    return ok("Profile loaded", profile);
+                }
             }
             return unauthorized();
         } catch (Exception e) {
@@ -642,20 +647,36 @@ public class HospitalController {
         try {
             Integer hospitalId = getHospitalId(request);
             if (hospitalId == null && body != null && body.has("hospitalId")) {
-                hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
+                hospitalId = JsonUtil.asInt(body, "hospitalId", 0);
+                if (hospitalId == 0) hospitalId = null;
             }
-            if (hospitalId == null) hospitalId = 1;
+            if (hospitalId == null) {
+                List<Map<String, Object>> all = hospitalDao.listAll();
+                if (!all.isEmpty()) hospitalId = ((Number) all.get(0).get("id")).intValue();
+            }
+            if (hospitalId == null) {
+                return unauthorized();
+            }
 
             if (body == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Request body is required."));
             }
 
             Double lat = JsonUtil.asDouble(body, "latitude");
+            if (lat == null) lat = JsonUtil.asDouble(body, "lat");
             Double lng = JsonUtil.asDouble(body, "longitude");
-            if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
+            if (lng == null) lng = JsonUtil.asDouble(body, "lng");
+
+            if (lat == null || lng == null) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Latitude and longitude coordinates are required."));
+            }
+
+            if (lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Invalid coordinates. Latitude must be between -90 and 90, and longitude between -180 and 180."));
             }
+
             String address = JsonUtil.textOrNull(body, "address");
             hospitalDao.updateHospitalLocation(hospitalId, address, lat, lng);
 
@@ -665,6 +686,325 @@ public class HospitalController {
                 session.setAttribute("hospitalUser", updated);
             }
             return ok("Hospital location updated successfully", updated);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    // ======================== DONOR CHECK-IN ========================
+
+    @GetMapping({"/donors/checkin", "/donors/lookup"})
+    public ResponseEntity<ApiResponse> lookupDonorForCheckin(
+            @RequestParam(required = false) String smartId,
+            @RequestParam(required = false) String id,
+            HttpServletRequest request) {
+        try {
+            String queryId = smartId != null ? smartId.trim() : (id != null ? id.trim() : "");
+            if (queryId.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Please enter a valid Donor ID or Smart ID."));
+            }
+
+            Map<String, Object> donor = donorDao.findByIdOrDonorId(queryId);
+            if (donor == null || donor.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse(false, "Donor not found: No registered donor with ID " + queryId));
+            }
+
+            // Real backend data calculation
+            Map<String, Object> details = new HashMap<>();
+            String matchedDonorId = (String) donor.get("donor_id");
+            if (matchedDonorId == null || matchedDonorId.isBlank()) {
+                matchedDonorId = String.valueOf(donor.get("id"));
+            }
+            details.put("id", donor.get("id"));
+            details.put("donorId", matchedDonorId);
+            details.put("name", donor.get("name"));
+            details.put("bloodType", donor.get("blood_type"));
+
+            // Calculate age from dob
+            Object dobObj = donor.get("dob");
+            int age = 0;
+            if (dobObj != null) {
+                try {
+                    java.time.LocalDate dob = java.time.LocalDate.parse(dobObj.toString());
+                    age = java.time.Period.between(dob, java.time.LocalDate.now()).getYears();
+                } catch (Exception ignored) {}
+            }
+            details.put("age", age > 0 ? age : 25);
+
+            // Weight
+            Object wtObj = donor.get("weight");
+            double weight = wtObj instanceof Number ? ((Number) wtObj).doubleValue() : 60.0;
+            details.put("weight", weight);
+
+            // Last donation & eligibility calculation (90-day rule)
+            Object lastDonationObj = donor.get("last_donation");
+            if (lastDonationObj == null) {
+                details.put("lastDonation", "Never");
+                details.put("lastDonationDaysAgo", "Never (First-time donor)");
+                details.put("daysSinceDonation", -1);
+                details.put("isEligible", true);
+                details.put("eligibilityReason", "Eligible (First-time donor)");
+            } else {
+                try {
+                    java.time.LocalDate lastDate = java.time.LocalDate.parse(lastDonationObj.toString());
+                    long days = java.time.temporal.ChronoUnit.DAYS.between(lastDate, java.time.LocalDate.now());
+                    details.put("lastDonation", lastDate.toString());
+                    details.put("daysSinceDonation", days);
+                    if (days == 0) {
+                        details.put("lastDonationDaysAgo", "Donated today");
+                    } else {
+                        details.put("lastDonationDaysAgo", days + " days ago");
+                    }
+                    if (days < 90) {
+                        details.put("isEligible", false);
+                        details.put("eligibilityReason", "Last donated " + (days == 0 ? "today" : days + " days ago") + "; eligible in " + (90 - days) + " days");
+                    } else {
+                        details.put("isEligible", true);
+                        details.put("eligibilityReason", "Eligible (" + days + " days since last donation)");
+                    }
+                } catch (Exception e) {
+                    details.put("lastDonation", lastDonationObj.toString());
+                    details.put("lastDonationDaysAgo", "Unknown");
+                    details.put("isEligible", true);
+                    details.put("eligibilityReason", "Eligible");
+                }
+            }
+
+            // Health verification status
+            String availability = (String) donor.get("availability");
+            String healthStatus = "Verified / Active";
+            if ("unavailable".equalsIgnoreCase(availability)) {
+                healthStatus = "Unavailable";
+            }
+            details.put("healthStatus", healthStatus);
+
+            return ok("Donor details retrieved", details);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/donors/checkin", "/donors/approve-donation"})
+    public ResponseEntity<ApiResponse> approveDonationCheckin(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                return unauthorized();
+            }
+
+            if (body == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Request body is required."));
+            }
+
+            String donorId = JsonUtil.textOrNull(body, "donorId");
+            if (donorId == null || donorId.isBlank()) {
+                donorId = JsonUtil.textOrNull(body, "smartId");
+            }
+            if (donorId == null || donorId.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Donor ID is required."));
+            }
+
+            String bloodType = JsonUtil.textOrNull(body, "bloodType");
+            if (bloodType == null || bloodType.isBlank()) {
+                Map<String, Object> d = donorDao.findByIdOrDonorId(donorId);
+                if (d != null) bloodType = (String) d.get("blood_type");
+                if (bloodType == null) bloodType = "O+";
+            }
+
+            int volumeMl = JsonUtil.asInt(body, "volumeMl", 450);
+            if (volumeMl != 350 && volumeMl != 450) volumeMl = 450;
+
+            String vitalsJson = null;
+            if (body.has("vitals")) {
+                vitalsJson = body.get("vitals").toString();
+            }
+
+            String staffUser = JsonUtil.textOrNull(body, "staffUser");
+            if (staffUser == null) staffUser = "Hospital Staff";
+
+            boolean recorded = donorDao.recordDonation(donorId, hospitalId, bloodType, 1, volumeMl, vitalsJson, staffUser, "COMPLETED", null);
+            if (!recorded) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new ApiResponse(false, "Failed to record donation in database."));
+            }
+
+            // Increment inventory (+1 unit)
+            hospitalDao.updateHospitalInventory(hospitalId, bloodType, 1, null);
+
+            // Broadcast live stock update
+            try {
+                SystemController.broadcastStockUpdate(donorDao.getNationalBloodStock());
+            } catch (Exception ignored) {}
+
+            // Audit log
+            AdminController.addLog("DONATION_APPROVED", "Donation approved at hospital ID " + hospitalId +
+                    " for donor " + donorId + " (" + bloodType + ", " + volumeMl + " mL) by " + staffUser);
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("donorId", donorId);
+            resp.put("bloodType", bloodType);
+            resp.put("volumeMl", volumeMl);
+            resp.put("newInventory", hospitalDao.getHospitalInventory(hospitalId));
+
+            return ok("Donation verified, recorded, and inventory updated (+1 unit " + bloodType + ").", resp);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/donors/defer")
+    public ResponseEntity<ApiResponse> deferDonorCheckin(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+
+            String donorId = JsonUtil.textOrNull(body, "donorId");
+            String reason = JsonUtil.textOrNull(body, "reason");
+            if (donorId == null || donorId.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Donor ID is required."));
+            }
+            if (reason == null || reason.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Deferral reason is required."));
+            }
+
+            String staffUser = JsonUtil.textOrNull(body, "staffUser");
+            if (staffUser == null) staffUser = "Hospital Staff";
+
+            donorDao.recordDonation(donorId, hospitalId, null, 0, 0, null, staffUser, "DEFERRED", reason);
+            AdminController.addLog("DONATION_DEFERRED", "Donor " + donorId + " deferred at hospital ID " + hospitalId + ": " + reason);
+
+            return ok("Donor has been deferred with documented reason.", Map.of("donorId", donorId, "reason", reason));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    // ======================== PROFILE UPDATE & PASSWORD ========================
+
+    @RequestMapping(value = "/profile", method = {RequestMethod.PUT, RequestMethod.POST})
+    public ResponseEntity<ApiResponse> updateProfile(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+            if (body == null) return ResponseEntity.badRequest().body(new ApiResponse(false, "Request body is required."));
+
+            Map<String, Object> current = hospitalDao.findById(hospitalId);
+            if (current == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Hospital not found."));
+
+            Map<String, Object> updates = new HashMap<>();
+            String[] fields = {
+                "hospitalName", "hospitalType", "registrationNo", "bloodBankLicense",
+                "address", "city", "state", "pincode", "hospitalPhone", "emergencyContact",
+                "adminName", "adminDesignation", "operatingHours"
+            };
+            for (String f : fields) {
+                if (body.has(f)) {
+                    updates.put(f, JsonUtil.textOrNull(body, f));
+                }
+            }
+
+            if (body.has("latitude") || body.has("lat")) {
+                Double lat = JsonUtil.asDouble(body, "latitude");
+                if (lat == null) lat = JsonUtil.asDouble(body, "lat");
+                if (lat != null && lat >= -90.0 && lat <= 90.0) {
+                    updates.put("latitude", lat);
+                }
+            }
+            if (body.has("longitude") || body.has("lng")) {
+                Double lng = JsonUtil.asDouble(body, "longitude");
+                if (lng == null) lng = JsonUtil.asDouble(body, "lng");
+                if (lng != null && lng >= -180.0 && lng <= 180.0) {
+                    updates.put("longitude", lng);
+                }
+            }
+
+            // Sensitive fields check: name or registration number changed
+            String currentStatus = (String) current.get("verificationStatus");
+            if (currentStatus == null) currentStatus = (String) current.get("verification_status");
+            boolean isVerified = "Verified".equalsIgnoreCase(currentStatus);
+
+            String oldName = (String) current.get("name");
+            if (oldName == null) oldName = (String) current.get("hospital_name");
+            String newName = (String) updates.get("hospitalName");
+
+            String oldReg = (String) current.get("registrationNo");
+            if (oldReg == null) oldReg = (String) current.get("registration_no");
+            String newReg = (String) updates.get("registrationNo");
+
+            boolean sensitiveChanged = false;
+            if (newName != null && !newName.trim().equalsIgnoreCase(oldName != null ? oldName.trim() : "")) {
+                sensitiveChanged = true;
+            }
+            if (newReg != null && !newReg.trim().equalsIgnoreCase(oldReg != null ? oldReg.trim() : "")) {
+                sensitiveChanged = true;
+            }
+
+            if (isVerified && sensitiveChanged) {
+                updates.put("verification_status", "Needs re-verification");
+            }
+
+            boolean ok = hospitalDao.updateHospitalProfile(hospitalId, updates);
+            if (!ok && updates.isEmpty()) {
+                return ok("No changes to update", current);
+            }
+
+            Map<String, Object> updated = hospitalDao.findById(hospitalId);
+            HttpSession session = request.getSession(false);
+            if (session != null && updated != null) {
+                session.setAttribute("hospitalUser", updated);
+            }
+
+            // Audit log
+            AdminController.addLog("HOSPITAL_PROFILE_UPDATED",
+                    "Hospital ID " + hospitalId + " updated profile. Sensitive changed: " + sensitiveChanged +
+                    ". New status: " + (updated != null ? updated.get("verificationStatus") : ""));
+
+            return ok("Hospital profile updated successfully.", updated);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse> changePassword(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+            if (body == null) return ResponseEntity.badRequest().body(new ApiResponse(false, "Request body is required."));
+
+            String currentPassword = JsonUtil.textOrNull(body, "currentPassword");
+            String newPassword = JsonUtil.textOrNull(body, "newPassword");
+            if (currentPassword == null || newPassword == null || newPassword.length() < 6) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "New password must be at least 6 characters."));
+            }
+
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            if (hosp == null) return unauthorized();
+
+            String storedPw = (String) hosp.get("password");
+            if (!com.red404.util.PasswordUtil.checkPassword(currentPassword, storedPw)) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Current password does not match."));
+            }
+
+            String hashed = com.red404.util.PasswordUtil.hashPassword(newPassword);
+            try (java.sql.Connection conn = com.red404.config.DBConnection.getConnection();
+                 java.sql.PreparedStatement ps = conn.prepareStatement("UPDATE hospitals SET password = ? WHERE id = ?")) {
+                ps.setString(1, hashed);
+                ps.setInt(2, hospitalId);
+                ps.executeUpdate();
+            }
+
+            AdminController.addLog("HOSPITAL_PASSWORD_CHANGED", "Hospital ID " + hospitalId + " changed account password.");
+            return ok("Password changed successfully.", null);
         } catch (Exception e) {
             return serverError(e);
         }
@@ -706,6 +1046,21 @@ public class HospitalController {
         Map<String, Object> h = getHospitalFromSession(request);
         if (h != null && h.get("id") instanceof Number num) {
             return num.intValue();
+        }
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7).trim();
+            if (token.startsWith("SESSION-HOSPITAL-")) {
+                try {
+                    return Integer.parseInt(token.substring("SESSION-HOSPITAL-".length()));
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        String xHosp = request.getHeader("X-Hospital-Id");
+        if (xHosp != null && !xHosp.isBlank()) {
+            try {
+                return Integer.parseInt(xHosp.trim());
+            } catch (NumberFormatException ignored) {}
         }
         return null;
     }

@@ -9,6 +9,17 @@
 
 'use strict';
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
+
 document.addEventListener('DOMContentLoaded', () => {
   initMedicineFlowBackground();
   initCommandNavigation();
@@ -206,41 +217,28 @@ async function initHospitalProfile() {
 
   let profile = null;
 
+  // Purge any stale cached profile from localStorage / sessionStorage
   try {
-    const res = await fetch('/api/hospital/profile', { credentials: 'include' });
+    sessionStorage.removeItem('red404_hospital_user');
+    localStorage.removeItem('red404_hospital_user');
+    localStorage.removeItem('hospitalUser');
+    localStorage.removeItem('red404_hospitalProfile');
+  } catch (_) {}
+
+  try {
+    const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+    const headers = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch('/api/hospital/profile', { headers, credentials: 'include' });
     if (res.ok) {
       const data = await res.json();
       profile = data.data || data;
     }
   } catch (err) {
-    console.debug('Profile fetch fallback:', err);
+    console.debug('Profile fetch error:', err);
   }
 
-  if (!profile) {
-    try {
-      if (typeof Auth !== 'undefined' && typeof Auth.getSession === 'function') {
-        const u = Auth.getSession();
-        if (u) profile = u.hospital || u;
-      }
-      if (!profile && typeof Store !== 'undefined' && typeof Store.get === 'function') {
-        profile = Store.get('hospitalUser') || Store.get('hospitalProfile') || Store.get('hospital') || Store.get('session');
-        if (profile && profile.user) profile = profile.user.hospital || profile.user;
-      }
-      if (!profile) {
-        const stored = sessionStorage.getItem('red404_hospital_user') || 
-                       localStorage.getItem('red404_hospital_user') ||
-                       localStorage.getItem('hospitalUser') ||
-                       localStorage.getItem('red404_hospitalProfile') ||
-                       sessionStorage.getItem('hospitalUser');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          profile = (parsed && parsed.hospital) ? parsed.hospital : parsed;
-        }
-      }
-    } catch (e) {}
-  }
-
-  // Fallback to directory/list if profile still not resolved
+  // Fallback to directory/list only if fresh profile query did not resolve
   if (!profile || (!profile.name && !profile.hospitalName && !profile.hospital_name)) {
     try {
       const dirRes = await fetch('/api/hospital/list', { credentials: 'include' });
@@ -255,6 +253,7 @@ async function initHospitalProfile() {
   }
 
   window.currentHospitalProfile = profile;
+  window.hospitalProfileLoaded = true;
   try {
     window.dispatchEvent(new CustomEvent('hospital-profile-loaded', { detail: profile }));
   } catch (_) {}
@@ -263,6 +262,72 @@ async function initHospitalProfile() {
   const realName = (rawName && typeof rawName === 'string' && rawName.trim() && rawName.trim().toLowerCase() !== 'hospital')
     ? rawName.trim()
     : '';
+
+  // Avatar Initials Helper
+  function getInitials(name) {
+    if (!name) return 'HP';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  const avatarInitials = document.getElementById('hospAvatarInitials');
+  if (avatarInitials) avatarInitials.textContent = getInitials(realName || 'Hospital');
+
+  const dropdownHospName = document.getElementById('dropdownHospName');
+  if (dropdownHospName) dropdownHospName.textContent = realName || 'Connected Hospital';
+
+  const vStatus = profile ? (profile.verificationStatus || profile.verification_status || 'Pending') : 'Pending';
+  const dropChip = document.getElementById('dropdownHospStatusChip');
+  if (dropChip) {
+    dropChip.textContent = vStatus;
+    dropChip.className = 'chip-status ' + (vStatus.toLowerCase().includes('verif') ? 'available' : (vStatus.toLowerCase().includes('reject') ? 'critical' : 'warning'));
+  }
+
+  // Live Verification Badge in Welcome Header (Single Source of Truth)
+  const welcomePill = document.getElementById('hospVerifiedPill');
+  const welcomeText = document.getElementById('hospVerifiedPillText');
+  if (welcomeText) {
+    welcomeText.textContent = vStatus.toLowerCase().includes('verif') ? 'Verified hospital' : (vStatus + ' hospital');
+    if (welcomePill) {
+      welcomePill.style.background = vStatus.toLowerCase().includes('verif') ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)';
+      welcomePill.style.borderColor = vStatus.toLowerCase().includes('verif') ? 'rgba(34, 197, 94, 0.4)' : 'rgba(234, 179, 8, 0.4)';
+      welcomePill.style.color = vStatus.toLowerCase().includes('verif') ? '#22c55e' : '#eab308';
+    }
+  }
+
+  // Setup Avatar Menu Click, Keyboard & Outside Click Listeners
+  const avatarBtn = document.getElementById('hospAvatarBtn');
+  const dropdownMenu = document.getElementById('hospDropdownMenu');
+  if (avatarBtn && dropdownMenu) {
+    avatarBtn.onclick = (e) => {
+      e.stopPropagation();
+      const isExpanded = avatarBtn.getAttribute('aria-expanded') === 'true';
+      avatarBtn.setAttribute('aria-expanded', !isExpanded);
+      dropdownMenu.style.display = isExpanded ? 'none' : 'block';
+    };
+    document.addEventListener('click', (e) => {
+      if (!dropdownMenu.contains(e.target) && e.target !== avatarBtn) {
+        dropdownMenu.style.display = 'none';
+        avatarBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && dropdownMenu.style.display !== 'none') {
+        dropdownMenu.style.display = 'none';
+        avatarBtn.setAttribute('aria-expanded', 'false');
+        avatarBtn.focus();
+      }
+    });
+  }
+
+  const editLocBtn = document.getElementById('dropdownEditLocationBtn');
+  if (editLocBtn) {
+    editLocBtn.onclick = () => {
+      if (dropdownMenu) dropdownMenu.style.display = 'none';
+      if (typeof openHospitalLocationPicker === 'function') openHospitalLocationPicker();
+    };
+  }
 
   if (realName) {
     if (topName) topName.textContent = realName;
@@ -386,9 +451,13 @@ function openHospitalLocationPicker(onSuccessCallback) {
     initialAddress: currentAddr,
     onConfirm: async function(data) {
       try {
+        const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         const res = await fetch('/api/hospital/location', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify({
             latitude: data.lat,
             longitude: data.lng,
@@ -398,10 +467,14 @@ function openHospitalLocationPicker(onSuccessCallback) {
         });
         const json = await res.json();
         if (res.ok && json.success) {
-          if (!window.currentHospitalProfile) window.currentHospitalProfile = {};
+          const freshData = json.data || {};
+          window.currentHospitalProfile = Object.assign(window.currentHospitalProfile || {}, freshData);
           window.currentHospitalProfile.latitude = data.lat;
           window.currentHospitalProfile.longitude = data.lng;
+          window.currentHospitalProfile.lat = data.lat;
+          window.currentHospitalProfile.lng = data.lng;
           window.currentHospitalProfile.address = data.address;
+          window.hospitalProfileLoaded = true;
 
           if (typeof showToast === 'function') {
             showToast('Hospital location updated successfully.', 'success');
@@ -434,6 +507,7 @@ function openHospitalLocationPicker(onSuccessCallback) {
    3B. HOSPITAL LOGOUT CONFIRMATION & SESSION TERMINATION
    ============================================================ */
 function initHospitalLogout() {
+  if (window.Red404Security) window.Red404Security.init('HOSPITAL');
   const desktopLogoutBtn = document.getElementById('btnLogoutLink');
   const mobileLogoutBtn = document.getElementById('mobileDrawerLogout');
 
@@ -455,26 +529,19 @@ function initHospitalLogout() {
 
     if (!confirmed) return;
 
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    } catch (err) {
-      console.debug('Auth logout fetch error:', err);
+    if (window.Red404Security) {
+      await window.Red404Security.logout('HOSPITAL');
+    } else {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+        await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' });
+      } catch (_) {}
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (_) {}
+      window.location.replace('hospital-login.html');
     }
-
-    try {
-      await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' });
-    } catch (err) {}
-
-    // Clear local/session state
-    try {
-      sessionStorage.removeItem('red404_hospital_user');
-      sessionStorage.removeItem('red404_session');
-      localStorage.removeItem('red404_hospital_user');
-      localStorage.removeItem('red404_hospital_stock_units');
-      localStorage.removeItem('hospitalUser');
-    } catch (err) {}
-
-    window.location.href = 'hospital-login.html';
   }
 
   if (desktopLogoutBtn) {
@@ -1179,7 +1246,7 @@ function initDispatchRadar() {
       if (rawLat !== null && rawLat !== undefined && rawLng !== null && rawLng !== undefined) {
         const lat = parseFloat(rawLat);
         const lng = parseFloat(rawLng);
-        if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+        if (!isNaN(lat) && !isNaN(lng) && lat >= -90.0 && lat <= 90.0 && lng >= -180.0 && lng <= 180.0 && (lat !== 0 || lng !== 0)) {
           return {
             lat: lat,
             lng: lng,
@@ -1232,9 +1299,15 @@ function initDispatchRadar() {
   }
 
   function initMapIfReady() {
-    const coords = resolveHospitalCoords();
     const mapEl = document.getElementById('hospitalRadarMap');
     const promptEl = document.getElementById('hospNoLocationPrompt');
+
+    // If profile hasn't loaded yet from fresh API, wait for hospital-profile-loaded event
+    if (!window.hospitalProfileLoaded && !window.currentHospitalProfile) {
+      return;
+    }
+
+    const coords = resolveHospitalCoords();
 
     if (!coords) {
       if (mapEl) mapEl.style.display = 'none';
@@ -1449,8 +1522,9 @@ function initDispatchRadar() {
         tbody.innerHTML = `
           <tr>
             <td colspan="6" style="text-align: center; padding: 28px 16px; color: var(--hosp-red);">
-              <div>Failed to query matching donors. ${err.message || 'Network error'}</div>
-              <div style="margin-top: 12px;">
+              <div style="font-weight: 600; margin-bottom: 4px;">Unable to complete donor search right now.</div>
+              <div style="font-size: 13px; color: var(--hosp-text-muted);">Please check your network connection and retry.</div>
+              <div style="margin-top: 14px;">
                 <button type="button" class="btn-primary-action btn-retry-search" style="height: 32px; padding: 0 16px; font-size: 12.5px;">Retry Search</button>
               </div>
             </td>
@@ -1528,7 +1602,7 @@ function initDispatchRadar() {
       } else {
         popupActionHtml = `
           <button type="button" class="hpc-btn-send" data-donor-id="${d.id}" ${!isAvailable ? 'disabled' : ''}>
-            ${isAvailable ? 'Send' : 'Sent'}
+            ${isAvailable ? 'Send request' : (isAccepted ? 'Accepted' : 'Sent')}
           </button>`;
       }
 
@@ -1707,6 +1781,8 @@ function initDispatchRadar() {
         statusBadge = `<span class="chip-status danger">Declined</span>`;
       }
 
+      const isExact = Boolean(d.isExactMatch || (blood.toUpperCase().trim() === bloodType.toUpperCase().trim()));
+
       let actionBtn = '';
       if (statusKey === 'accepted' && (d.phone || d.donorPhone)) {
         actionBtn = `
@@ -1715,15 +1791,19 @@ function initDispatchRadar() {
             <span>Call donor</span>
           </a>`;
       } else if (isAvailable) {
-        actionBtn = `<button type="button" class="btn-primary-action btn-send-donor" data-donor-id="${d.id}" style="height: 32px; padding: 0 14px; font-size: 12.5px; border-radius: 6px;">Send</button>`;
+        actionBtn = `<button type="button" class="btn-primary-action btn-send-donor" data-donor-id="${d.id}" style="height: 32px; padding: 0 14px; font-size: 12.5px; border-radius: 6px;">Send request</button>`;
       } else {
-        actionBtn = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+        actionBtn = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">${statusKey === 'accepted' ? 'Accepted' : 'Sent'}</button>`;
       }
+
+      const matchPill = isExact
+        ? `<span class="blood-match-badge exact-match" style="display:inline-block; font-size:10.5px; padding:1px 6px; border-radius:4px; background:rgba(239,68,68,0.18); color:#f87171; border:1px solid rgba(239,68,68,0.3); font-weight:600; margin-left:6px;">Exact</span>`
+        : `<span class="blood-match-badge compatible-match" style="display:inline-block; font-size:10.5px; padding:1px 6px; border-radius:4px; background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-weight:600; margin-left:6px;">Compatible</span>`;
 
       return `
         <tr data-donor-id="${d.id}" style="cursor: pointer;">
           <td><strong>${escapeHtml(name)}</strong></td>
-          <td>${getDropBadgeSvg(blood, '')}</td>
+          <td><div style="display:inline-flex; align-items:center;">${getDropBadgeSvg(blood, '')} ${matchPill}</div></td>
           <td><span class="mono-data">${dist}</span></td>
           <td><span class="mono-data">${eta}</span></td>
           <td class="donor-status-cell">${statusBadge}</td>
@@ -2073,33 +2153,453 @@ function exportCsv() {
 }
 
 /* ============================================================
-   10. DONOR CHECK-IN ENGINE (REAL LOOKUP)
+   10. DONOR CHECK-IN ENGINE (REAL EXACT LOOKUP & SAFE VITALS)
    ============================================================ */
 function initDonorCheckin() {
   const lookupBtn = document.getElementById('btnLookupDonor');
   const inputId = document.getElementById('checkinSmartIdInput');
-  const vitalsForm = document.getElementById('formDonorVitals');
+  const emptyState = document.getElementById('checkinEmptyState');
+  const errorState = document.getElementById('checkinErrorState');
+  const errorMsg = document.getElementById('checkinErrorMsg');
+  const retryBtn = document.getElementById('btnRetryLookup');
+  const donorCard = document.getElementById('donorLoadedCard');
 
-  if (lookupBtn && inputId) {
-    lookupBtn.addEventListener('click', () => {
-      const id = inputId.value.trim();
-      if (!id) {
-        alert('Please enter a valid Donor ID or scan a Donor Smart Card.');
-        return;
+  const vitalsForm = document.getElementById('formDonorVitals');
+  const vitalsFieldset = document.getElementById('vitalsFieldset');
+  const vitalsDisabledHint = document.getElementById('vitalsDisabledHint');
+
+  const vitWeight = document.getElementById('vitWeight');
+  const vitHb = document.getElementById('vitHb');
+  const vitBpSystolic = document.getElementById('vitBpSystolic');
+  const vitBpDiastolic = document.getElementById('vitBpDiastolic');
+  const vitPulse = document.getElementById('vitPulse');
+  const vitTemp = document.getElementById('vitTemp');
+
+  const verdictBanner = document.getElementById('verdictBanner');
+  const verdictTitle = document.getElementById('verdictTitle');
+  const verdictIcon = document.getElementById('verdictIcon');
+  const verdictReasons = document.getElementById('verdictReasons');
+
+  const btnRecordDonation = document.getElementById('btnRecordDonation');
+  const btnDeferDonation = document.getElementById('btnDeferDonation');
+
+  const successCard = document.getElementById('donationSuccessCard');
+  const successTitle = document.getElementById('donationSuccessTitle');
+  const successMsg = document.getElementById('donationSuccessMsg');
+  const btnNextDonor = document.getElementById('btnNextDonor');
+
+  let currentLoadedDonor = null;
+
+  // Advisory Medical Validation Criteria (Configurable)
+  const MEDICAL_RANGES = {
+    weight: { min: 45.0, max: 200.0, label: 'Weight', unit: 'kg' },
+    hb: { min: 12.5, max: 20.0, label: 'Hemoglobin', unit: 'g/dL' },
+    systolic: { min: 100, max: 180, label: 'Systolic blood pressure', unit: 'mmHg' },
+    diastolic: { min: 50, max: 100, label: 'Diastolic blood pressure', unit: 'mmHg' },
+    pulse: { min: 50, max: 100, label: 'Pulse rate', unit: 'bpm' },
+    temp: { min: 95.0, max: 99.5, label: 'Temperature', unit: '°F' }
+  };
+
+  function resetCheckinForm(keepInput) {
+    currentLoadedDonor = null;
+    if (!keepInput && inputId) inputId.value = '';
+    if (donorCard) donorCard.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'block';
+    if (errorState) errorState.style.display = 'none';
+
+    if (vitalsForm) vitalsForm.reset();
+    if (vitalsFieldset) {
+      vitalsFieldset.disabled = true;
+      vitalsFieldset.style.opacity = '0.55';
+    }
+    if (vitalsDisabledHint) vitalsDisabledHint.style.display = 'block';
+
+    // Clear all inline errors
+    document.querySelectorAll('.vital-err').forEach(el => {
+      el.textContent = '';
+      el.style.display = 'none';
+    });
+
+    if (verdictBanner) verdictBanner.style.display = 'none';
+    if (btnRecordDonation) btnRecordDonation.disabled = true;
+    if (btnDeferDonation) btnDeferDonation.disabled = true;
+    if (successCard) successCard.style.display = 'none';
+  }
+
+  // Clear loaded donor when typing or clearing input
+  if (inputId) {
+    inputId.addEventListener('input', () => {
+      if (currentLoadedDonor) {
+        resetCheckinForm(true);
       }
-      const card = document.getElementById('donorLoadedCard');
-      if (card) card.style.display = 'block';
+      if (errorState) errorState.style.display = 'none';
+    });
+    inputId.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performDonorLookup();
+      }
     });
   }
 
+  if (lookupBtn) {
+    lookupBtn.addEventListener('click', performDonorLookup);
+  }
+  if (retryBtn) {
+    retryBtn.addEventListener('click', performDonorLookup);
+  }
+
+  async function performDonorLookup() {
+    if (!inputId) return;
+    const query = inputId.value.trim();
+    if (!query) {
+      alert('Please enter a valid Donor ID or Smart ID.');
+      inputId.focus();
+      return;
+    }
+
+    resetCheckinForm(true);
+    if (emptyState) emptyState.style.display = 'none';
+    if (errorState) errorState.style.display = 'none';
+    if (lookupBtn) {
+      lookupBtn.disabled = true;
+      lookupBtn.innerHTML = '<span>Looking up...</span>';
+    }
+
+    try {
+      const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+      const headers = { 'Accept': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/hospital/donors/checkin?smartId=${encodeURIComponent(query)}`, {
+        headers,
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.message || `Donor not found for ID "${window.escapeHtml ? window.escapeHtml(query) : query}".`;
+        if (errorMsg) errorMsg.textContent = msg;
+        if (errorState) errorState.style.display = 'block';
+        return;
+      }
+
+      const resData = await res.json();
+      const donor = resData.data || resData;
+
+      currentLoadedDonor = donor;
+      renderLoadedDonor(donor);
+    } catch (err) {
+      if (errorMsg) errorMsg.textContent = 'Network or server error while connecting to donor database. Please try again.';
+      if (errorState) errorState.style.display = 'block';
+    } finally {
+      if (lookupBtn) {
+        lookupBtn.disabled = false;
+        lookupBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Lookup</span>
+        `;
+      }
+    }
+  }
+
+  function renderLoadedDonor(d) {
+    if (!donorCard) return;
+
+    const nameEl = document.getElementById('dlcName');
+    const idEl = document.getElementById('dlcSmartId');
+    const bgEl = document.getElementById('dlcBloodGroup');
+    const ageEl = document.getElementById('dlcAge');
+    const wtEl = document.getElementById('dlcWeight');
+    const lastEl = document.getElementById('dlcLastDonation');
+    const eligEl = document.getElementById('dlcEligibility');
+    const healthEl = document.getElementById('dlcHealthStatus');
+
+    if (nameEl) nameEl.textContent = d.name || 'Verified Donor';
+    if (idEl) idEl.textContent = d.donorId || d.id || '';
+    if (bgEl) {
+      bgEl.textContent = d.bloodType || 'O+';
+      bgEl.className = 'chip-status available';
+    }
+    if (ageEl) ageEl.textContent = (d.age || 25) + ' yrs';
+    if (wtEl) wtEl.textContent = (d.weight ? d.weight + ' kg' : 'Not recorded');
+    if (lastEl) lastEl.textContent = d.lastDonationDaysAgo || 'Never';
+
+    if (eligEl) {
+      eligEl.textContent = d.isEligible ? 'Eligible' : (d.eligibilityReason || 'Not eligible yet');
+      eligEl.style.color = d.isEligible ? 'var(--hosp-green, #22c55e)' : 'var(--hosp-red, #ef4444)';
+    }
+
+    if (healthEl) {
+      healthEl.textContent = d.healthStatus || 'Verified / Active';
+      healthEl.style.color = (d.healthStatus && d.healthStatus.toLowerCase().includes('unavail')) ? '#ef4444' : '#22c55e';
+    }
+
+    donorCard.style.display = 'block';
+
+    // Unlock Clinical Vitals Panel
+    if (vitalsFieldset) {
+      vitalsFieldset.disabled = false;
+      vitalsFieldset.style.opacity = '1';
+    }
+    if (vitalsDisabledHint) vitalsDisabledHint.style.display = 'none';
+    if (btnDeferDonation) btnDeferDonation.disabled = false;
+
+    // Prefill weight from donor record (editable)
+    if (vitWeight && d.weight) {
+      vitWeight.value = d.weight;
+    }
+
+    // Trigger evaluation
+    evaluateVitals();
+  }
+
+  // Live input & blur evaluation on all vitals
+  [vitWeight, vitHb, vitBpSystolic, vitBpDiastolic, vitPulse, vitTemp].forEach(inp => {
+    if (inp) {
+      inp.addEventListener('input', evaluateVitals);
+      inp.addEventListener('blur', evaluateVitals);
+    }
+  });
+
+  function evaluateVitals() {
+    if (!currentLoadedDonor) return;
+
+    const wVal = parseFloat(vitWeight ? vitWeight.value : '');
+    const hbVal = parseFloat(vitHb ? vitHb.value : '');
+    const sysVal = parseFloat(vitBpSystolic ? vitBpSystolic.value : '');
+    const diaVal = parseFloat(vitBpDiastolic ? vitBpDiastolic.value : '');
+    const pulVal = parseFloat(vitPulse ? vitPulse.value : '');
+    const tmpVal = parseFloat(vitTemp ? vitTemp.value : '');
+
+    // Field-level inline errors
+    validateField(vitWeight, 'errVitWeight', wVal, 30, 250, 'Weight must be between 30 and 250 kg');
+    validateField(vitHb, 'errVitHb', hbVal, 5, 25, 'Hemoglobin must be between 5 and 25 g/dL');
+    validateField(vitBpSystolic, 'errVitBpSystolic', sysVal, 60, 260, 'Systolic must be between 60 and 260 mmHg');
+    validateField(vitBpDiastolic, 'errVitBpDiastolic', diaVal, 30, 160, 'Diastolic must be between 30 and 160 mmHg');
+    validateField(vitPulse, 'errVitPulse', pulVal, 30, 200, 'Pulse must be between 30 and 200 bpm');
+    validateField(vitTemp, 'errVitTemp', tmpVal, 94, 106, 'Temperature must be between 94 and 106 °F');
+
+    const allFilled = !isNaN(wVal) && !isNaN(hbVal) && !isNaN(sysVal) && !isNaN(diaVal) && !isNaN(pulVal) && !isNaN(tmpVal);
+
+    if (!allFilled) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      if (btnRecordDonation) btnRecordDonation.disabled = true;
+      return;
+    }
+
+    // Evaluate against Medical Ranges
+    const issues = [];
+    if (wVal < MEDICAL_RANGES.weight.min) {
+      issues.push(`Weight ${wVal} kg is below minimum safe threshold (${MEDICAL_RANGES.weight.min} kg).`);
+    }
+    if (hbVal < MEDICAL_RANGES.hb.min) {
+      issues.push(`Hemoglobin ${hbVal} g/dL is below required ${MEDICAL_RANGES.hb.min} g/dL.`);
+    }
+    if (sysVal < MEDICAL_RANGES.systolic.min || sysVal > MEDICAL_RANGES.systolic.max) {
+      issues.push(`Systolic BP ${sysVal} mmHg is outside safe range (${MEDICAL_RANGES.systolic.min}-${MEDICAL_RANGES.systolic.max} mmHg).`);
+    }
+    if (diaVal < MEDICAL_RANGES.diastolic.min || diaVal > MEDICAL_RANGES.diastolic.max) {
+      issues.push(`Diastolic BP ${diaVal} mmHg is outside safe range (${MEDICAL_RANGES.diastolic.min}-${MEDICAL_RANGES.diastolic.max} mmHg).`);
+    }
+    if (pulVal < MEDICAL_RANGES.pulse.min || pulVal > MEDICAL_RANGES.pulse.max) {
+      issues.push(`Pulse ${pulVal} bpm is outside normal range (${MEDICAL_RANGES.pulse.min}-${MEDICAL_RANGES.pulse.max} bpm).`);
+    }
+    if (tmpVal > MEDICAL_RANGES.temp.max) {
+      issues.push(`Temperature ${tmpVal} °F exceeds maximum allowed (${MEDICAL_RANGES.temp.max} °F).`);
+    }
+
+    const donorEligible = currentLoadedDonor.isEligible;
+    if (!donorEligible) {
+      issues.push(`Donor eligibility cooldown active: ${currentLoadedDonor.eligibilityReason || '90-day cooldown'}.`);
+    }
+
+    if (verdictBanner) {
+      verdictBanner.style.display = 'block';
+      if (issues.length === 0) {
+        verdictBanner.style.background = 'rgba(34, 197, 94, 0.12)';
+        verdictBanner.style.border = '1px solid rgba(34, 197, 94, 0.35)';
+        verdictBanner.style.color = '#22c55e';
+        if (verdictTitle) verdictTitle.textContent = 'Clinically Fit';
+        if (verdictIcon) {
+          verdictIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+        }
+        if (verdictReasons) verdictReasons.textContent = 'All clinical vitals and eligibility criteria within acceptable limits. Staff may confirm donation.';
+        if (btnRecordDonation) btnRecordDonation.disabled = false;
+      } else {
+        verdictBanner.style.background = 'rgba(239, 68, 68, 0.12)';
+        verdictBanner.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+        verdictBanner.style.color = '#fca5a5';
+        if (verdictTitle) verdictTitle.textContent = 'Not Fit / Advisory Deferral';
+        if (verdictIcon) {
+          verdictIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+        }
+        if (verdictReasons) {
+          verdictReasons.innerHTML = '<ul style="margin: 4px 0 0 16px; padding: 0;">' + issues.map(iss => `<li>${window.escapeHtml ? window.escapeHtml(iss) : iss}</li>`).join('') + '</ul>';
+        }
+        if (btnRecordDonation) btnRecordDonation.disabled = true;
+      }
+    }
+  }
+
+  function validateField(inputEl, errElId, val, min, max, errMsg) {
+    const errEl = document.getElementById(errElId);
+    if (!errEl || !inputEl || inputEl.value === '') {
+      if (errEl) errEl.style.display = 'none';
+      return;
+    }
+    if (isNaN(val) || val < min || val > max) {
+      errEl.textContent = errMsg;
+      errEl.style.display = 'block';
+    } else {
+      errEl.style.display = 'none';
+    }
+  }
+
+  // Defer donor button
+  if (btnDeferDonation) {
+    btnDeferDonation.addEventListener('click', async () => {
+      if (!currentLoadedDonor) return;
+      const reason = window.prompt(`Enter mandatory clinical reason for deferring donor ${currentLoadedDonor.name}:`);
+      if (!reason || !reason.trim()) {
+        alert('A valid reason is required to document a donor deferral.');
+        return;
+      }
+
+      try {
+        const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/hospital/donors/defer', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
+            reason: reason.trim(),
+            staffUser: (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Hospital Staff'
+          }),
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          alert(`Donor ${currentLoadedDonor.name} has been documented as deferred.`);
+          resetCheckinForm(false);
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert('Failed to document deferral: ' + (err.message || 'Server error'));
+        }
+      } catch (e) {
+        alert('Network error while documenting deferral.');
+      }
+    });
+  }
+
+  // Approve donation submit
   if (vitalsForm) {
-    vitalsForm.addEventListener('submit', (e) => {
+    vitalsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      alert('Donor donation verified and approved.');
-      vitalsForm.reset();
-      const card = document.getElementById('donorLoadedCard');
-      if (card) card.style.display = 'none';
-      if (inputId) inputId.value = '';
+      if (!currentLoadedDonor) return;
+
+      // Ask donation volume (350 mL / 450 mL)
+      const volumeInput = window.prompt('Confirm blood collection volume in mL (Enter 350 or 450):', '450');
+      if (!volumeInput) return; // user cancelled
+      const volumeMl = parseInt(volumeInput.trim());
+      if (volumeMl !== 350 && volumeMl !== 450) {
+        alert('Please enter a valid collection volume: either 350 or 450 mL.');
+        return;
+      }
+
+      if (btnRecordDonation) {
+        btnRecordDonation.disabled = true;
+        btnRecordDonation.innerHTML = '<span>Recording donation...</span>';
+      }
+
+      try {
+        const vitalsData = {
+          weight: parseFloat(vitWeight.value),
+          hemoglobin: parseFloat(vitHb.value),
+          systolic: parseFloat(vitBpSystolic.value),
+          diastolic: parseFloat(vitBpDiastolic.value),
+          pulse: parseFloat(vitPulse.value),
+          temperature: parseFloat(vitTemp.value)
+        };
+
+        const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const payload = {
+          donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
+          bloodType: currentLoadedDonor.bloodType || 'O+',
+          volumeMl: volumeMl,
+          vitals: vitalsData,
+          staffUser: (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Hospital Staff'
+        };
+
+        const res = await fetch('/api/hospital/donors/checkin', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert('Error approving donation: ' + (err.message || 'Server error'));
+          if (btnRecordDonation) {
+            btnRecordDonation.disabled = false;
+            btnRecordDonation.innerHTML = '<span>Approve donation</span>';
+          }
+          return;
+        }
+
+        // Update local inventory display immediately if inventory table loaded
+        if (typeof initInventory === 'function') {
+          try { initInventory(); } catch (_) {}
+        }
+
+        // Show success card and hide vitals form
+        if (vitalsFieldset) vitalsFieldset.disabled = true;
+        if (btnRecordDonation) btnRecordDonation.style.display = 'none';
+        if (btnDeferDonation) btnDeferDonation.style.display = 'none';
+
+        if (successCard) {
+          successCard.style.display = 'block';
+          if (successTitle) {
+            successTitle.textContent = `Donation Verified & Approved (${currentLoadedDonor.bloodType}, ${volumeMl} mL)`;
+          }
+          if (successMsg) {
+            successMsg.textContent = `Donor ${currentLoadedDonor.name} (${currentLoadedDonor.donorId}) recorded successfully. +1 unit added to live stock.`;
+          }
+        }
+      } catch (err) {
+        alert('Network error while saving donation record: ' + err.message);
+        if (btnRecordDonation) {
+          btnRecordDonation.disabled = false;
+          btnRecordDonation.innerHTML = '<span>Approve donation</span>';
+        }
+      }
+    });
+  }
+
+  // Next donor button
+  if (btnNextDonor) {
+    btnNextDonor.addEventListener('click', () => {
+      resetCheckinForm(false);
+      if (btnRecordDonation) {
+        btnRecordDonation.style.display = '';
+        btnRecordDonation.disabled = true;
+        btnRecordDonation.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Approve donation</span>
+        `;
+      }
+      if (btnDeferDonation) {
+        btnDeferDonation.style.display = '';
+        btnDeferDonation.disabled = true;
+      }
+      if (inputId) inputId.focus();
     });
   }
 }

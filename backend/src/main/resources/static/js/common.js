@@ -39,6 +39,99 @@ window.BloodCompatibility = {
   }
 };
 
+/* ==================== RED404 SESSION & BACK-BUTTON SECURITY ==================== */
+window.Red404Security = {
+  broadcastChannel: (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('red404_auth_channel') : null,
+
+  init(role) {
+    const self = this;
+    const loginUrl = self.getLoginUrl(role);
+
+    // 1. bfcache (back-forward cache) protection
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) {
+        self.verifySession(role).then(valid => {
+          if (!valid) {
+            window.location.replace(loginUrl);
+          }
+        });
+      }
+    });
+
+    // 2. Cross-tab logout listener via BroadcastChannel
+    if (self.broadcastChannel) {
+      self.broadcastChannel.onmessage = function (event) {
+        if (event.data && event.data.type === 'LOGOUT') {
+          self.clearAllStorage();
+          window.location.replace(loginUrl);
+        }
+      };
+    }
+
+    // 3. Storage event fallback for cross-tab sync
+    window.addEventListener('storage', function (event) {
+      if (event.key === 'red404_session_kill' || event.key === 'red404_logout_event') {
+        self.clearAllStorage();
+        window.location.replace(loginUrl);
+      }
+    });
+  },
+
+  async verifySession(role) {
+    try {
+      let endpoint = '/api/auth/session';
+      if (role === 'HOSPITAL') endpoint = '/api/hospital/profile';
+      else if (role === 'ADMIN') endpoint = '/api/admin/profile';
+      const res = await fetch(endpoint, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+      return res.ok;
+    } catch (_) {
+      return false;
+    }
+  },
+
+  getLoginUrl(role) {
+    if (role === 'HOSPITAL') return 'hospital-login.html';
+    if (role === 'ADMIN') return 'donor-login.html';
+    return 'donor-login.html';
+  },
+
+  clearAllStorage() {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (_) {}
+  },
+
+  async logout(role) {
+    const self = this;
+    const loginUrl = self.getLoginUrl(role);
+
+    // 1. Invalidate server session
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (_) {}
+    if (role === 'HOSPITAL') {
+      try { await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
+    } else if (role === 'ADMIN') {
+      try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
+    }
+
+    // 2. Notify other open tabs
+    if (self.broadcastChannel) {
+      try { self.broadcastChannel.postMessage({ type: 'LOGOUT', role: role, time: Date.now() }); } catch (_) {}
+    }
+    try {
+      localStorage.setItem('red404_logout_event', String(Date.now()));
+    } catch (_) {}
+
+    // 3. Clear all client storage
+    self.clearAllStorage();
+
+    // 4. Replace current page in history so back button cannot re-enter
+    window.location.replace(loginUrl);
+  }
+};
+
 /* ==================== NAVBAR ==================== */
 const navbar = document.getElementById('navbar');
 const hamburger = document.getElementById('hamburger');
@@ -203,6 +296,99 @@ window.BloodCompatibility = {
     if (!donorGroup || !recipientGroup) return false;
     const compatible = this.getCompatibleDonors(recipientGroup);
     return compatible.includes(donorGroup.trim().toUpperCase());
+  }
+};
+
+/* ==================== RED404 SESSION & BACK-BUTTON SECURITY ==================== */
+window.Red404Security = {
+  broadcastChannel: (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('red404_auth_channel') : null,
+
+  init(role) {
+    const self = this;
+    const loginUrl = self.getLoginUrl(role);
+
+    // 1. bfcache (back-forward cache) protection
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) {
+        self.verifySession(role).then(valid => {
+          if (!valid) {
+            window.location.replace(loginUrl);
+          }
+        });
+      }
+    });
+
+    // 2. Cross-tab logout listener via BroadcastChannel
+    if (self.broadcastChannel) {
+      self.broadcastChannel.onmessage = function (event) {
+        if (event.data && event.data.type === 'LOGOUT') {
+          self.clearAllStorage();
+          window.location.replace(loginUrl);
+        }
+      };
+    }
+
+    // 3. Storage event fallback for cross-tab sync
+    window.addEventListener('storage', function (event) {
+      if (event.key === 'red404_session_kill' || event.key === 'red404_logout_event') {
+        self.clearAllStorage();
+        window.location.replace(loginUrl);
+      }
+    });
+  },
+
+  async verifySession(role) {
+    try {
+      let endpoint = '/api/auth/session';
+      if (role === 'HOSPITAL') endpoint = '/api/hospital/profile';
+      else if (role === 'ADMIN') endpoint = '/api/admin/profile';
+      const res = await fetch(endpoint, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+      return res.ok;
+    } catch (_) {
+      return false;
+    }
+  },
+
+  getLoginUrl(role) {
+    if (role === 'HOSPITAL') return 'hospital-login.html';
+    if (role === 'ADMIN') return 'donor-login.html';
+    return 'donor-login.html';
+  },
+
+  clearAllStorage() {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (_) {}
+  },
+
+  async logout(role) {
+    const self = this;
+    const loginUrl = self.getLoginUrl(role);
+
+    // 1. Invalidate server session
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (_) {}
+    if (role === 'HOSPITAL') {
+      try { await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
+    } else if (role === 'ADMIN') {
+      try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
+    }
+
+    // 2. Notify other open tabs
+    if (self.broadcastChannel) {
+      try { self.broadcastChannel.postMessage({ type: 'LOGOUT', role: role, time: Date.now() }); } catch (_) {}
+    }
+    try {
+      localStorage.setItem('red404_logout_event', String(Date.now()));
+    } catch (_) {}
+
+    // 3. Clear all client storage
+    self.clearAllStorage();
+
+    // 4. Replace current page in history so back button cannot re-enter
+    window.location.replace(loginUrl);
   }
 };
 
@@ -1216,6 +1402,17 @@ function shakeInput(inputEl) {
   });
   setTimeout(() => inputEl.classList.remove('shake'), 600);
 }
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
 
 /* ==================== LOCAL STORAGE HELPERS ==================== */
 const Store = {

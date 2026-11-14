@@ -162,6 +162,11 @@ public class AuthController {
                 if (hosp instanceof Map<?, ?> h && h.get("id") != null) {
                     sessionDao.killSession(((Number) h.get("id")).intValue(), "HOSPITAL", session.getId());
                 }
+                Object admin = session.getAttribute("adminUser");
+                if (admin != null) {
+                    sessionDao.killSession(1, "ADMIN", session.getId());
+                }
+                AdminController.addLog("USER_LOGOUT", "User session explicitly terminated via logout.");
             } catch (Exception ignored) {}
             session.invalidate();
         }

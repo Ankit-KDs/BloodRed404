@@ -93,6 +93,7 @@
   window.updateCommandNav = updateCommandNav;
 
   function initCommandNav() {
+    if (window.Red404Security) window.Red404Security.init('DONOR');
     const avatarTrigger = document.getElementById('userProfileTrigger');
     const dropdown = document.getElementById('userProfileDropdown');
     const logoutBtn = document.getElementById('dropdownLogoutBtn');
@@ -310,18 +311,18 @@
           }
         });
 
-        confirmBtn.addEventListener('click', () => {
-          try {
-            if (typeof Auth !== 'undefined' && Auth.clearSession) {
-              Auth.clearSession();
-            }
-            localStorage.removeItem('red404_donor_session');
-            sessionStorage.removeItem('red404_donor_session');
-            localStorage.removeItem('red404_session');
-            localStorage.removeItem('donorUser');
-            localStorage.removeItem('red404_donorToken');
-          } catch (err) { }
-          window.location.href = 'donor-login.html';
+        confirmBtn.addEventListener('click', async () => {
+          closeModal();
+          if (window.Red404Security) {
+            await window.Red404Security.logout('DONOR');
+          } else {
+            try {
+              localStorage.clear();
+              sessionStorage.clear();
+              await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            } catch (_) {}
+            window.location.replace('donor-login.html');
+          }
         });
       }
 

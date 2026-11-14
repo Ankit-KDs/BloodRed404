@@ -25,6 +25,7 @@
 
   /* ==================== 1. AUTH GUARD ==================== */
   async function initAuthGuard() {
+    if (window.Red404Security) window.Red404Security.init('ADMIN');
     try {
       const res = await fetch('/api/admin/check-auth');
       if (!res.ok) {
@@ -587,8 +588,8 @@
             ${escapeHtml(h.stockOverview || '0 Units')}
           </span>
         </td>
-        <td style="font-size: 11px; color: var(--admin-text-muted); font-family: var(--admin-font-mono);">
-          ${formatTimestamp(h.lastSynced || h.createdAt)}
+        <td style="font-size: 11px; color: var(--admin-text-muted); font-family: var(--admin-font-mono);" title="${escapeHtml(String(h.lastSynced || h.createdAt))}">
+          ${formatRelativeTime(h.lastSynced || h.createdAt)}
         </td>
         <td>
           <div style="display: inline-flex; align-items: center; gap: 8px;">
@@ -694,8 +695,17 @@
     setSpan('modal-hosp-landmark', hosp.landmark || 'None Specified');
     const cityStatePin = `${hosp.city || '-'}${hosp.state ? ', ' + hosp.state : ''}${hosp.pincode ? ' - ' + hosp.pincode : ''}`;
     setSpan('modal-hosp-city-state-pin', cityStatePin);
-    const coordsStr = (hosp.latitude && hosp.longitude) ? `${hosp.latitude}, ${hosp.longitude}` : 'GPS Telemetry Pending';
-    setSpan('modal-hosp-coords', coordsStr);
+    
+    // GPS Coordinates with Pin icon or Location not set
+    const coordsEl = document.getElementById('modal-hosp-coords');
+    if (coordsEl) {
+      if (hosp.latitude != null && hosp.longitude != null && !isNaN(hosp.latitude) && !isNaN(hosp.longitude)) {
+        coordsEl.innerHTML = `<i class="fas fa-map-pin" style="color: #38bdf8;"></i> ${parseFloat(hosp.latitude).toFixed(6)}, ${parseFloat(hosp.longitude).toFixed(6)}`;
+      } else {
+        coordsEl.innerHTML = `<span style="color: var(--admin-text-muted);">Location not set</span>`;
+      }
+    }
+
     const hoursZone = `${hosp.operatingHours || '24x7'} • Radius: ${hosp.zoneRadius || 10} km (${hosp.zone || 'Standard Zone'})`;
     setSpan('modal-hosp-hours-zone', hoursZone);
 
@@ -728,6 +738,25 @@
       statusEl.innerHTML = `<span class="status-pill ${isVerified ? 'status-verified' : 'status-pending'}"><i class="fas fa-${isVerified ? 'circle-check' : 'clock'}"></i> ${escapeHtml(hosp.verificationStatus || 'Pending Verification')}</span>`;
     }
     setSpan('modal-hosp-created-at', formatTimestamp(hosp.createdAt));
+
+    // 6. Audit & Change History Logs
+    const historyEl = document.getElementById('modal-hosp-change-history');
+    if (historyEl) {
+      const logs = hosp.changeHistory || [];
+      if (logs.length === 0) {
+        historyEl.innerHTML = `<div style="color: var(--admin-text-muted);">No audit change logs recorded for this facility yet.</div>`;
+      } else {
+        historyEl.innerHTML = logs.map(l => `
+          <div style="padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; gap: 8px;">
+            <div>
+              <strong style="color: #38bdf8;">[${escapeHtml(l.action || 'LOG')}]</strong>
+              <span style="color: #cbd5e1;">${escapeHtml(l.details || '')}</span>
+            </div>
+            <span style="color: var(--admin-text-muted); font-size: 11px; white-space: nowrap;">${formatTimestamp(l.timestamp)}</span>
+          </div>
+        `).join('');
+      }
+    }
   }
 
   /* View Hospital Details Modal - Immediately fetches live DB data */
@@ -803,43 +832,85 @@
     const hid = currentProfileHospitalId;
     const hosp = allHospitals.find(h => h.id === hid);
     const hospName = hosp ? (hosp.name || hosp.hospitalName) : 'this facility';
-    closeHospitalProfileModal();
     await window.deleteHospitalAccount(hid, hospName);
   };
 
-  /* DELETE HOSPITAL ACCOUNT - double confirmation required */
+  /* UPDATE HOSPITAL VERIFICATION STATUS (Approve, Reject, Request re-verification, Suspend) */
+  window.updateHospitalStatusAction = async function(newStatus) {
+    if (!currentProfileHospitalId) return;
+    const hid = currentProfileHospitalId;
+
+    let reason = '';
+    if (newStatus !== 'Verified') {
+      const promptRes = window.prompt(`Enter reason or notes for setting status to "${newStatus}":`);
+      if (promptRes === null) return; // cancelled
+      reason = promptRes.trim();
+    }
+
+    try {
+      showToast(`Updating status to ${newStatus}...`, 'info', 1500);
+      const res = await fetch(`/api/admin/hospitals/${hid}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, reason: reason })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(`Hospital verification status updated to "${newStatus}"`, 'success', 3000);
+        await window.refreshCurrentHospitalProfile();
+        await loadHospitals();
+      } else {
+        showToast(data.message || 'Failed to update hospital status.', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error updating hospital status.', 'error');
+    }
+  };
+
+  /* DELETE HOSPITAL ACCOUNT - soft delete with typed hospital-name confirmation */
   window.deleteHospitalAccount = async function(hospId, hospName) {
     if (!hospId) return;
 
     // Step 1: Warning confirmation
     const confirmed = window.confirm(
-      `⚠️ PERMANENT DELETE\n\nYou are about to permanently delete the hospital account of:\n"${hospName}"\n\nThis action CANNOT be undone. All active sessions across all devices will be terminated, blood requests removed, and inventory erased.\n\nClick OK to continue to final confirmation, or Cancel to abort.`
+      `⚠️ DELETE HOSPITAL ACCOUNT\n\nYou are about to delete the hospital account of:\n"${hospName}"\n\nThis will soft-delete the facility, revoke access, and terminate active sessions.\n\nClick OK to continue to name confirmation, or Cancel to abort.`
     );
     if (!confirmed) {
-      showToast('Delete cancelled.', 'info', 2000);
+      showToast('Deletion cancelled.', 'info', 2000);
       return;
     }
 
-    // Step 2: Strict security typing confirmation
+    // Step 2: Strict security typing confirmation (exact hospital name)
     const typedConfirm = window.prompt(
-      `Final confirmation required.\n\nType  DELETE  (all caps) to permanently delete this hospital account.`
+      `Security Confirmation Required:\n\nType the EXACT hospital name to confirm deletion:\n"${hospName}"`
     );
-    if (!typedConfirm || typedConfirm.trim() !== 'DELETE') {
-      showToast('Delete aborted. You must type DELETE exactly to confirm.', 'error', 3000);
+    if (!typedConfirm || typedConfirm.trim().toLowerCase() !== hospName.trim().toLowerCase()) {
+      showToast(`Deletion aborted. You must type "${hospName}" exactly to confirm.`, 'error', 3500);
       return;
     }
 
     try {
-      showToast('Deleting hospital account and invalidating all active sessions...', 'info', 2500);
-      const res = await fetch(`/api/admin/hospitals/${hospId}/delete`, { method: 'DELETE' });
+      showToast('Deleting hospital account and terminating active sessions...', 'info', 2500);
+      const res = await fetch(`/api/admin/hospitals/${hospId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmName: typedConfirm.trim() })
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
-        showToast(`Hospital "${hospName}" account permanently deleted.`, 'success', 4000);
-        // Remove from local cache and re-render
+        showToast(`Hospital "${hospName}" has been deleted.`, 'success', 4000);
+        closeHospitalProfileModal();
         allHospitals = allHospitals.filter(item => item.id !== hospId);
         const badge = document.getElementById('hospital-count-badge');
         if (badge) badge.textContent = allHospitals.length;
         renderHospitalsTable(allHospitals);
+      } else {
+        showToast(data.message || 'Failed to delete hospital account.', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error while deleting hospital account.', 'error');
+    }
+  };
       } else {
         showToast(data.message || 'Failed to delete hospital account.', 'error');
       }
@@ -1171,15 +1242,19 @@
     const logoutBtn = document.getElementById('adminLogoutBtn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
-        try {
-          await fetch('/api/admin/logout', { method: 'POST' });
-        } catch (_) {}
-        sessionStorage.removeItem('red404_super_admin');
-        sessionStorage.removeItem('red404_admin_token');
-        showToast('Admin Session Terminated. Exiting Enclave...', 'info', 1200);
-        setTimeout(() => {
-          window.location.replace('donor-login.html');
-        }, 800);
+        showToast('Admin Session Terminated. Exiting Enclave...', 'info', 1000);
+        setTimeout(async () => {
+          if (window.Red404Security) {
+            await window.Red404Security.logout('ADMIN');
+          } else {
+            try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (_) {}
+            try {
+              localStorage.clear();
+              sessionStorage.clear();
+            } catch (_) {}
+            window.location.replace('donor-login.html');
+          }
+        }, 600);
       });
     }
   }
@@ -1206,6 +1281,40 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
+
+  function formatRelativeTime(ts) {
+    if (!ts) return 'N/A';
+    try {
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return String(ts);
+      const now = new Date();
+      const diffSec = Math.floor((now - d) / 1000);
+      if (diffSec < 60) return 'Just now';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHour = Math.floor(diffMin / 60);
+      if (diffHour < 24) return `${diffHour}h ago`;
+      const diffDays = Math.floor(diffHour / 24);
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (_) {
+      return String(ts);
+    }
+  }
+
+  // Refetch live hospital data on window focus and cadence
+  window.addEventListener('focus', () => {
+    const activeBtn = document.querySelector('.admin-tab-btn.active');
+    if (activeBtn && activeBtn.getAttribute('data-tab') === 'tab-hospitals') {
+      loadHospitals();
+    }
+  });
+  setInterval(() => {
+    const activeBtn = document.querySelector('.admin-tab-btn.active');
+    if (activeBtn && activeBtn.getAttribute('data-tab') === 'tab-hospitals' && document.visibilityState === 'visible') {
+      loadHospitals();
+    }
+  }, 25000);
 
   function formatTimestamp(ts) {
     if (!ts) return 'N/A';

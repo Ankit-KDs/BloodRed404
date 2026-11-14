@@ -436,6 +436,8 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("body_temp", "DOUBLE NULL DEFAULT 98.6");
         requiredColumns.put("verified_facility", "VARCHAR(180) NULL DEFAULT 'City General Hospital'");
         requiredColumns.put("verified_date", "DATE NULL");
+        requiredColumns.put("verification_status", "VARCHAR(30) DEFAULT 'Verified'");
+        requiredColumns.put("updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "hospitals", requiredColumns);
@@ -468,6 +470,10 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("hospital_id", "INT NULL");
         requiredColumns.put("blood_type", "VARCHAR(5) NULL");
         requiredColumns.put("units", "INT DEFAULT 1");
+        requiredColumns.put("volume_ml", "INT DEFAULT 450");
+        requiredColumns.put("vitals_json", "TEXT NULL");
+        requiredColumns.put("staff_user", "VARCHAR(100) NULL");
+        requiredColumns.put("deferral_reason", "VARCHAR(255) NULL");
         requiredColumns.put("donation_date", "DATE NULL");
         requiredColumns.put("status", "VARCHAR(20) DEFAULT 'COMPLETED'");
 

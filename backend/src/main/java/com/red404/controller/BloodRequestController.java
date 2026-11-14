@@ -76,6 +76,21 @@ public class BloodRequestController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Hospital login required to dispatch a request."));
             }
+
+            // Gate new blood requests: hospital must have status "Verified"
+            boolean requireVerified = Boolean.parseBoolean(System.getProperty("REQUIRE_VERIFIED_FOR_REQUESTS", "true"));
+            if (requireVerified) {
+                Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+                if (hosp != null) {
+                    String status = (String) hosp.get("verificationStatus");
+                    if (status == null) status = (String) hosp.get("verification_status");
+                    if (status != null && !status.isBlank() && !"Verified".equalsIgnoreCase(status)) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(new ApiResponse(false, "Hospital verification required to broadcast blood requests. Current status: '" + status + "'."));
+                    }
+                }
+            }
+
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
             if (bloodType == null) {
                 return ResponseEntity.badRequest()

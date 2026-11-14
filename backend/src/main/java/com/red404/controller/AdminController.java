@@ -365,8 +365,9 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         List<Map<String, Object>> hospitals = new ArrayList<>();
-        String sql = "SELECT id, hospital_name, city, state, hospital_type, blood_bank_license, " +
-                "hospital_email, hospital_phone, created_at FROM hospitals ORDER BY id DESC";
+        String sql = "SELECT id, hospital_name, city, state, address, hospital_type, blood_bank_license, " +
+                "hospital_email, hospital_phone, latitude, longitude, verification_status, created_at, updated_at " +
+                "FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' ORDER BY id DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -376,18 +377,39 @@ public class AdminController {
                 int hospId = rs.getInt("id");
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("id", hospId);
-                item.put("name", rs.getString("hospital_name"));
-                item.put("location", (rs.getString("city") != null ? rs.getString("city") : "") +
-                        (rs.getString("state") != null ? ", " + rs.getString("state") : ""));
+                String name = rs.getString("hospital_name");
+                item.put("name", name != null ? name : "Hospital #" + hospId);
+                item.put("hospitalName", item.get("name"));
+
+                String city = rs.getString("city");
+                String state = rs.getString("state");
+                String loc = (city != null ? city : "") + (state != null ? (city != null && !city.isBlank() ? ", " : "") + state : "");
+                item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
+                item.put("address", rs.getString("address"));
+                item.put("latitude", rs.getObject("latitude"));
+                item.put("longitude", rs.getObject("longitude"));
+
+                String vStatus = rs.getString("verification_status");
+                if (vStatus == null || vStatus.isBlank()) {
+                    String lic = rs.getString("blood_bank_license");
+                    vStatus = (lic != null && !lic.isBlank()) ? "Verified" : "Pending";
+                }
+                item.put("verificationStatus", vStatus);
+                item.put("status", vStatus);
+
                 String lic = rs.getString("blood_bank_license");
-                item.put("verificationStatus", (lic != null && !lic.isBlank()) ? "Verified" : "Pending");
                 item.put("license", lic != null ? lic : "N/A");
                 item.put("type", rs.getString("hospital_type"));
                 item.put("email", rs.getString("hospital_email"));
                 item.put("phone", rs.getString("hospital_phone"));
-                item.put("lastSynced", rs.getString("created_at"));
 
-                // Calculate stock overview from hospital_inventory
+                String updatedAt = rs.getString("updated_at");
+                String createdAt = rs.getString("created_at");
+                item.put("updatedAt", updatedAt);
+                item.put("createdAt", createdAt);
+                item.put("lastSynced", updatedAt != null && !updatedAt.isBlank() ? updatedAt : createdAt);
+
+                // Calculate live stock overview from hospital_inventory
                 StringBuilder stockOverview = new StringBuilder();
                 int totalUnits = 0;
                 try (PreparedStatement stockPs = conn.prepareStatement(
@@ -406,7 +428,7 @@ public class AdminController {
                 item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
                 hospitals.add(item);
             }
-            return ResponseEntity.ok(new ApiResponse(true, "Hospitals loaded", hospitals));
+            return ResponseEntity.ok(new ApiResponse(true, "Live hospitals loaded", hospitals));
         } catch (Exception e) {
             log.error("Error loading hospitals for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -434,7 +456,12 @@ public class AdminController {
                     item.put("beds", rs.getInt("beds"));
                     String lic = rs.getString("blood_bank_license");
                     item.put("bloodBankLicense", (lic != null && !lic.isBlank()) ? lic : "N/A");
-                    item.put("verificationStatus", (lic != null && !lic.isBlank()) ? "Verified" : "Pending");
+                    String vStatus = rs.getString("verification_status");
+                    if (vStatus == null || vStatus.isBlank()) {
+                        vStatus = (lic != null && !lic.isBlank()) ? "Verified" : "Pending";
+                    }
+                    item.put("verificationStatus", vStatus);
+                    item.put("status", vStatus);
                     item.put("hospitalEmail", rs.getString("hospital_email"));
                     item.put("email", rs.getString("hospital_email"));
                     item.put("hospitalPhone", rs.getString("hospital_phone"));
@@ -507,6 +534,27 @@ public class AdminController {
                     } catch (Exception ignored) {}
                     item.put("totalRequests", totalRequests);
 
+                    // Audit / Change History
+                    List<Map<String, Object>> changeHistory = new ArrayList<>();
+                    try (PreparedStatement logPs = conn.prepareStatement(
+                            "SELECT id, action, details, timestamp FROM system_logs " +
+                            "WHERE (details LIKE ? OR details LIKE ?) ORDER BY id DESC LIMIT 20")) {
+                        logPs.setString(1, "%hospital ID " + id + "%");
+                        String hName = rs.getString("hospital_name");
+                        logPs.setString(2, "%" + (hName != null ? hName : "HOSP_" + id) + "%");
+                        try (ResultSet lRs = logPs.executeQuery()) {
+                            while (lRs.next()) {
+                                Map<String, Object> logEntry = new LinkedHashMap<>();
+                                logEntry.put("id", lRs.getInt("id"));
+                                logEntry.put("action", lRs.getString("action"));
+                                logEntry.put("details", lRs.getString("details"));
+                                logEntry.put("timestamp", lRs.getString("timestamp"));
+                                changeHistory.add(logEntry);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    item.put("changeHistory", changeHistory);
+
                     return ResponseEntity.ok(new ApiResponse(true, "Fresh hospital details loaded", item));
                 } else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -521,19 +569,60 @@ public class AdminController {
     }
 
     // ==========================================
-    // 4b. PERMANENTLY DELETE HOSPITAL ACCOUNT
+    // 4b. UPDATE HOSPITAL VERIFICATION STATUS
+    // ==========================================
+    @RequestMapping(value = "/hospitals/{id}/status", method = {RequestMethod.PUT, RequestMethod.POST})
+    public ResponseEntity<ApiResponse> updateHospitalStatus(
+            @PathVariable int id,
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+        if (body == null || !body.has("status")) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Status is required."));
+        }
+        String newStatus = body.get("status").asText().trim();
+        String reason = body.has("reason") ? body.get("reason").asText().trim() : "";
+
+        String sql = "UPDATE hospitals SET verification_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newStatus);
+            ps.setInt(2, id);
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                addLog("HOSPITAL_STATUS_CHANGED", "Admin changed status for hospital ID " + id + " to '" + newStatus + "'" + (!reason.isBlank() ? " (Reason: " + reason + ")" : ""));
+                return ResponseEntity.ok(new ApiResponse(true, "Hospital status updated to " + newStatus, Map.of("id", id, "status", newStatus)));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Hospital not found."));
+            }
+        } catch (Exception e) {
+            log.error("Error updating status for hospital {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to update status: " + e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 4c. DELETE / SOFT-DELETE HOSPITAL ACCOUNT
     // ==========================================
     @DeleteMapping({"/hospitals/{id}", "/hospitals/{id}/delete"})
     public ResponseEntity<ApiResponse> deleteHospital(@PathVariable int id, HttpServletRequest request) {
-        return executeDeleteHospital(id, request);
+        return executeDeleteHospital(id, request, null);
     }
 
-    @PostMapping("/hospitals/{id}/delete")
-    public ResponseEntity<ApiResponse> deleteHospitalPost(@PathVariable int id, HttpServletRequest request) {
-        return executeDeleteHospital(id, request);
+    @PostMapping({"/hospitals/{id}/delete", "/hospitals/{id}/soft-delete"})
+    public ResponseEntity<ApiResponse> deleteHospitalPost(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
+        String confirmName = null;
+        if (body != null && body.has("confirmName")) {
+            confirmName = body.get("confirmName").asText();
+        }
+        return executeDeleteHospital(id, request, confirmName);
     }
 
-    private ResponseEntity<ApiResponse> executeDeleteHospital(int id, HttpServletRequest request) {
+    private ResponseEntity<ApiResponse> executeDeleteHospital(int id, HttpServletRequest request, String confirmName) {
         if (!isAdmin(request)) return unauthorized();
 
         try (Connection conn = DBConnection.getConnection()) {
@@ -553,29 +642,17 @@ public class AdminController {
                 }
             }
 
-            // 1. Delete associated blood requests (foreign key fk_br_hospital)
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM blood_requests WHERE hospital_id = ?")) {
-                ps.setInt(1, id);
-                ps.executeUpdate();
-            } catch (Exception e) {
-                log.warn("Notice deleting blood_requests for hospital {}: {}", id, e.getMessage());
+            if (confirmName == null || confirmName.isBlank()) {
+                confirmName = request.getParameter("confirmName");
+            }
+            if (confirmName != null && !confirmName.isBlank()) {
+                if (!confirmName.trim().equalsIgnoreCase(hospitalName.trim())) {
+                    return ResponseEntity.badRequest()
+                            .body(new ApiResponse(false, "Confirmation failed: Typed name \"" + confirmName.trim() + "\" does not match \"" + hospitalName + "\"."));
+                }
             }
 
-            // 2. Delete inventory records
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM hospital_inventory WHERE hospital_id = ?")) {
-                ps.setInt(1, id);
-                ps.executeUpdate();
-            } catch (Exception e) {
-                log.warn("Notice deleting hospital_inventory for hospital {}: {}", id, e.getMessage());
-            }
-
-            // 3. Nullify donations hospital_id
-            try (PreparedStatement ps = conn.prepareStatement("UPDATE donations SET hospital_id = NULL WHERE hospital_id = ?")) {
-                ps.setInt(1, id);
-                ps.executeUpdate();
-            } catch (Exception ignored) {}
-
-            // 4. Terminate all active sessions for this hospital (by numeric id or email)
+            // 1. Terminate all active sessions for this hospital (by numeric id or email)
             try (PreparedStatement ps = conn.prepareStatement(
                     "DELETE FROM user_sessions WHERE user_type = 'HOSPITAL' AND (user_id = ? OR user_id = ?)")) {
                 ps.setString(1, String.valueOf(id));
@@ -583,8 +660,9 @@ public class AdminController {
                 ps.executeUpdate();
             } catch (Exception ignored) {}
 
-            // 5. Delete the hospital record
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM hospitals WHERE id = ?")) {
+            // 2. Soft-delete hospital record by setting verification_status = 'Deleted'
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE hospitals SET verification_status = 'Deleted', updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
                 ps.setInt(1, id);
                 int rows = ps.executeUpdate();
                 if (rows == 0) {
@@ -593,8 +671,8 @@ public class AdminController {
                 }
             }
 
-            addLog("HOSPITAL_DELETED", "Hospital account permanently deleted: " + hospitalName + " (ID: " + id + ", Email: " + hospitalEmail + ")");
-            return ResponseEntity.ok(new ApiResponse(true, "Hospital account for \"" + hospitalName + "\" permanently deleted."));
+            addLog("HOSPITAL_DELETED", "Hospital account soft-deleted: " + hospitalName + " (ID: " + id + ")");
+            return ResponseEntity.ok(new ApiResponse(true, "Hospital account for \"" + hospitalName + "\" has been deleted."));
         } catch (Exception e) {
             log.error("Error deleting hospital {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
