@@ -65,3 +65,4 @@ public final class BloodCompatibilityUtil {
         return false;
     }
 }
+

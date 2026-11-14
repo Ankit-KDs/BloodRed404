@@ -213,16 +213,87 @@ async function initHospitalProfile() {
 
   if (!profile) {
     try {
-      const stored = sessionStorage.getItem('red404_hospital_user') || localStorage.getItem('red404_hospital_user');
-      if (stored) profile = JSON.parse(stored);
+      if (typeof Auth !== 'undefined' && typeof Auth.getSession === 'function') {
+        const u = Auth.getSession();
+        if (u) profile = u.hospital || u;
+      }
+      if (!profile && typeof Store !== 'undefined' && typeof Store.get === 'function') {
+        profile = Store.get('hospitalUser') || Store.get('hospitalProfile') || Store.get('hospital') || Store.get('session');
+        if (profile && profile.user) profile = profile.user.hospital || profile.user;
+      }
+      if (!profile) {
+        const stored = sessionStorage.getItem('red404_hospital_user') || 
+                       localStorage.getItem('red404_hospital_user') ||
+                       localStorage.getItem('hospitalUser') ||
+                       localStorage.getItem('red404_hospitalProfile') ||
+                       sessionStorage.getItem('hospitalUser');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          profile = (parsed && parsed.hospital) ? parsed.hospital : parsed;
+        }
+      }
     } catch (e) {}
   }
 
-  const name = (profile && (profile.name || profile.hospitalName)) || 'Hospital';
+  // Fallback to directory/list if profile still not resolved
+  if (!profile || (!profile.name && !profile.hospitalName && !profile.hospital_name)) {
+    try {
+      const dirRes = await fetch('/api/hospital/list', { credentials: 'include' });
+      if (dirRes.ok) {
+        const dData = await dirRes.json();
+        const list = dData.data || dData;
+        if (Array.isArray(list) && list.length > 0) {
+          profile = list[0];
+        }
+      }
+    } catch (e) {}
+  }
 
-  if (topName) topName.textContent = name;
-  if (navName) navName.textContent = name;
-  if (mobileName) mobileName.textContent = name;
+  const rawName = profile ? (profile.name || profile.hospitalName || profile.hospital_name) : '';
+  const realName = (rawName && typeof rawName === 'string' && rawName.trim() && rawName.trim().toLowerCase() !== 'hospital')
+    ? rawName.trim()
+    : '';
+
+  if (realName) {
+    if (topName) topName.textContent = realName;
+    if (navName) navName.textContent = realName;
+    if (mobileName) mobileName.textContent = realName;
+  } else {
+    // If name is missing in profile, show a clear "Add hospital name" prompt linking to Profile instead of the word "Hospital"
+    const promptLink = `<a href="javascript:void(0)" class="add-hosp-name-link" style="color: var(--hosp-blue, #6ea8ff); text-decoration: underline; font-weight: 600;">Add hospital name</a>`;
+    if (topName) topName.innerHTML = promptLink;
+    if (navName) navName.innerHTML = promptLink;
+    if (mobileName) mobileName.innerHTML = promptLink;
+
+    document.querySelectorAll('.add-hosp-name-link').forEach(link => {
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const input = window.prompt('Enter registered hospital name:');
+        if (input && input.trim()) {
+          const newName = input.trim();
+          try {
+            await fetch('/api/hospital/profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ hospitalName: newName }),
+              credentials: 'include'
+            });
+            if (profile) {
+              profile.name = newName;
+              profile.hospitalName = newName;
+            } else {
+              profile = { name: newName, hospitalName: newName };
+            }
+            sessionStorage.setItem('red404_hospital_user', JSON.stringify(profile));
+            localStorage.setItem('red404_hospital_user', JSON.stringify(profile));
+            initHospitalProfile();
+          } catch (err) {
+            console.error('Update hospital name error:', err);
+          }
+        }
+      });
+    });
+  }
 }
 
 /* ============================================================

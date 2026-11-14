@@ -146,6 +146,17 @@ public class HospitalDao {
         }
     }
 
+    public boolean updateHospitalName(int hospitalId, String name) throws SQLException {
+        if (name == null || name.isBlank()) return false;
+        String sql = "UPDATE hospitals SET hospital_name = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name.trim());
+            ps.setInt(2, hospitalId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public boolean updateHospitalInventory(int hospitalId, String bloodType, int change, Integer exactUnits) throws SQLException {
         if (bloodType == null || bloodType.isBlank()) return false;
         String bt = bloodType.trim().toUpperCase();

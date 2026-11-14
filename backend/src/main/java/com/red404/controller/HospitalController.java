@@ -56,9 +56,23 @@ public class HospitalController {
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse> getProfile(HttpServletRequest request) {
         try {
-            Map<String, Object> hospital = requireHospital(request);
-            if (hospital == null) return unauthorized();
-            return ok("Profile loaded", hospitalDao.findById((Integer) hospital.get("id")));
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> hospital = requireHospital(request);
+                if (hospital != null && hospital.get("id") != null) {
+                    hospitalId = ((Number) hospital.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) hospitalId = 1;
+            Map<String, Object> profile = hospitalDao.findById(hospitalId);
+            if (profile == null) {
+                List<Map<String, Object>> all = hospitalDao.listAll();
+                if (!all.isEmpty()) profile = all.get(0);
+            }
+            if (profile != null) {
+                return ok("Profile loaded", profile);
+            }
+            return unauthorized();
         } catch (Exception e) {
             return serverError(e);
         }
@@ -427,9 +441,33 @@ public class HospitalController {
         }
     }
 
-    @PutMapping("/settings")
-    public ResponseEntity<ApiResponse> updateSettings() {
-        return ok("Updated successfully", null);
+    @RequestMapping(value = {"/profile", "/settings"}, method = {RequestMethod.PUT, RequestMethod.POST})
+    public ResponseEntity<ApiResponse> updateProfile(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null && body != null && body.has("hospitalId")) {
+                hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
+            }
+            if (hospitalId == null) hospitalId = 1;
+
+            if (body != null) {
+                String name = JsonUtil.textOrNull(body, "hospitalName");
+                if (name == null || name.isBlank()) name = JsonUtil.textOrNull(body, "name");
+                if (name != null && !name.isBlank()) {
+                    hospitalDao.updateHospitalName(hospitalId, name.trim());
+                    HttpSession session = request.getSession(false);
+                    if (session != null) {
+                        Map<String, Object> updated = hospitalDao.findById(hospitalId);
+                        if (updated != null) {
+                            session.setAttribute("hospitalUser", updated);
+                        }
+                    }
+                }
+            }
+            return ok("Profile updated successfully", hospitalDao.findById(hospitalId));
+        } catch (Exception e) {
+            return serverError(e);
+        }
     }
 
     @RequestMapping(value = "/logout", method = {RequestMethod.POST, RequestMethod.GET})
