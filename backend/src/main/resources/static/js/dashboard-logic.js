@@ -202,6 +202,12 @@
     // 1. Render Welcome Banner & Telemetry Pills
     renderWelcomeBanner();
 
+    // Initialize Status Row (Location, Notif, Availability)
+    initStatusRow();
+
+    // Render Upcoming Donation Drives Card
+    renderUpcomingDrives();
+
     if (window.updateCommandNav) {
       window.updateCommandNav(donorData);
     }
@@ -239,8 +245,20 @@
             if (d.bloodType || d.bloodGroup) {
               donorData.bloodGroup = d.bloodType || d.bloodGroup;
             }
+            if (d.bloodGroupStatus || d.blood_group_status) {
+              donorData.bloodGroupStatus = d.bloodGroupStatus || d.blood_group_status;
+            }
+            if (d.bloodGroupVerifiedByHospitalName || d.blood_group_verified_by_hospital_name) {
+              donorData.bloodGroupVerifiedBy = d.bloodGroupVerifiedByHospitalName || d.blood_group_verified_by_hospital_name;
+            }
+            if (d.availability) donorData.availability = d.availability;
+            if (d.available !== undefined) donorData.available = d.available;
+            if (d.pausedUntil || d.paused_until) donorData.pausedUntil = d.pausedUntil || d.paused_until;
             if (d.name) donorData.name = d.name;
+            if (d.city) donorData.district = d.city.toUpperCase();
             renderWelcomeBanner();
+            initStatusRow();
+            renderUpcomingDrives();
             if (window.updateCommandNav) {
               window.updateCommandNav(d);
             }
@@ -352,14 +370,27 @@
   function renderWelcomeBanner() {
     const userNameEl = document.getElementById('user-name');
     const userBloodGroupEl = document.getElementById('user-blood-group');
+    const userBloodGroupStatusEl = document.getElementById('user-blood-group-status');
     const userLocationEl = document.getElementById('user-location');
-    const userNodeStatusEl = document.getElementById('user-node-status');
     const userDonorIdEl = document.getElementById('user-donor-id');
 
     if (userNameEl) userNameEl.textContent = donorData.name;
     if (userBloodGroupEl) userBloodGroupEl.textContent = donorData.bloodGroup;
-    if (userLocationEl) userLocationEl.textContent = donorData.location;
-    if (userNodeStatusEl) userNodeStatusEl.textContent = 'Active';
+    if (userBloodGroupStatusEl) {
+      if (donorData.bloodGroupStatus === 'hospital_verified') {
+        userBloodGroupStatusEl.textContent = `Verified by ${donorData.bloodGroupVerifiedBy || 'Hospital'}`;
+        userBloodGroupStatusEl.style.color = '#34d399';
+        userBloodGroupStatusEl.style.background = 'rgba(52, 211, 153, 0.12)';
+        userBloodGroupStatusEl.style.border = '1px solid rgba(52, 211, 153, 0.25)';
+      } else {
+        userBloodGroupStatusEl.textContent = 'Self-declared';
+        userBloodGroupStatusEl.style.color = '#94a3b8';
+        userBloodGroupStatusEl.style.background = 'rgba(148, 163, 184, 0.1)';
+        userBloodGroupStatusEl.style.border = '1px solid rgba(148, 163, 184, 0.2)';
+      }
+      userBloodGroupStatusEl.style.display = 'inline-block';
+    }
+    if (userLocationEl) userLocationEl.textContent = donorData.district ? `${donorData.district}, India` : (donorData.location || 'India');
     if (userDonorIdEl) userDonorIdEl.textContent = donorData.donorId || 'DNR-0811-A404';
 
     // Top command nav avatar fallback
@@ -374,7 +405,7 @@
   }
 
   /**
-   * 2. Emergency SOS Dispatch Card
+   * 2. Emergency requests near you (Part 3.1)
    */
   function renderAlerts() {
     const badgeEl = document.getElementById('sos-badge');
@@ -395,18 +426,18 @@
       // DEFAULT STATE: EMPTY
       if (badgeEl) {
         badgeEl.className = 'action-badge badge-clear';
-        badgeEl.innerHTML = '<i class="fa-solid fa-shield-heart"></i> STATUS: CLEAR';
+        badgeEl.innerHTML = '<i class="fa-solid fa-shield-heart"></i> NO REQUESTS';
       }
       summaryContainer.innerHTML = `
         <p class="action-summary-text clear-status">
           <i class="fa-solid fa-circle-check" style="color: #34d399; font-size: 1rem;"></i>
-          Status Clear: No active SOS requests in your zone
+          No active requests near you
         </p>
       `;
       if (actionContainer) {
         actionContainer.innerHTML = `
-          <a href="donor-alerts.html" class="action-footer-link" title="Open Live Radar Map">
-            <span>Open Live Radar Map</span>
+          <a href="donor-alerts.html" class="action-footer-link" title="See requests">
+            <span>See requests</span>
             <i class="fa-solid fa-arrow-right"></i>
           </a>
         `;
@@ -416,12 +447,12 @@
       const count = donorData.activeAlerts.length;
       if (badgeEl) {
         badgeEl.className = 'action-badge';
-        badgeEl.textContent = `${count} ACTIVE ALERT${count > 1 ? 'S' : ''}`;
+        badgeEl.textContent = `${count} ACTIVE REQUEST${count > 1 ? 'S' : ''}`;
       }
       const firstAlert = donorData.activeAlerts[0];
       const summaryText = count === 1
-        ? `Critical emergency at <strong>${firstAlert.hospital || 'District Hospital'}</strong>: ${firstAlert.bloodGroup || donorData.bloodGroup} needed immediately.`
-        : `<strong>${count} Sector Emergencies Active:</strong> Highest priority at ${firstAlert.hospital || 'Nearby Hospital'} (${firstAlert.distance || '2.4 km'} away).`;
+        ? `1 request needs you at <strong>${firstAlert.hospital || 'Nearby Hospital'}</strong> (${firstAlert.bloodGroup || donorData.bloodGroup}).`
+        : `<strong>${count} requests need you:</strong> Highest priority at <strong>${firstAlert.hospital || 'Nearby Hospital'}</strong>.`;
 
       summaryContainer.innerHTML = `
         <p class="action-summary-text">
@@ -430,8 +461,8 @@
       `;
       if (actionContainer) {
         actionContainer.innerHTML = `
-          <a href="donor-alerts.html" class="action-footer-link" style="color: #ef4444;" title="Respond to Active Alert">
-            <span>Respond to Alert (${count} Active)</span>
+          <a href="donor-alerts.html" class="action-footer-link" style="color: #ef4444;" title="See requests">
+            <span>See requests (${count} active)</span>
             <i class="fa-solid fa-arrow-right"></i>
           </a>
         `;
@@ -440,103 +471,323 @@
   }
 
   /**
-   * 3. System Notifications & Logs
-   * Displays verified initialization, active emergency alerts, and non-urgent donation drive invitations
+   * 3. System Notifications (Part 3.4 & Part 3.7)
    */
-  async function renderSystemLogs() {
+  function renderSystemLogs() {
     const logsContainer = document.getElementById('system-logs-container');
+    const footerLink = document.getElementById('notificationsFooterLink');
     if (!logsContainer) return;
 
-    let driveHtml = '';
-    try {
-      const driveRes = await fetch('/api/donor/drives/invitations', { credentials: 'include' });
-      if (driveRes.ok) {
-        const dJson = await driveRes.json();
-        const driveInvitations = dJson.data || [];
-        if (driveInvitations.length > 0) {
-          driveHtml = driveInvitations.map(drive => {
-            const rsvp = (drive.rsvpStatus || '').toUpperCase();
-            let rsvpContent = '';
-            if (rsvp === 'ATTENDING') {
-              rsvpContent = `<span class="drive-rsvp-done attending" style="color: #38bdf8; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-check"></i> You're attending</span>`;
-            } else if (rsvp === 'DECLINED') {
-              rsvpContent = `<span class="drive-rsvp-done declined" style="color: #94a3b8; font-size: 0.8rem;">Response: Not now</span>`;
-            } else {
-              rsvpContent = `
-                <div class="drive-rsvp-actions" style="display: inline-flex; gap: 8px; margin-top: 6px;">
-                  <button type="button" class="btn-drive-rsvp attend" onclick="window.submitDriveRsvp(${drive.id}, 'ATTENDING')">I'll attend</button>
-                  <button type="button" class="btn-drive-rsvp notnow" onclick="window.submitDriveRsvp(${drive.id}, 'DECLINED')">Not now</button>
-                </div>
-              `;
-            }
+    const logItems = [];
 
-            return `
-              <div class="terminal-log-item camp drive-invitation-item">
-                <div class="log-icon-wrap">
-                  <i class="fa-solid fa-calendar-check"></i>
-                </div>
-                <div class="log-content">
-                  <div class="log-meta-row">
-                    <span class="log-time">[COMMUNITY DRIVE]</span>
-                    <span class="log-type-tag">DONATION DRIVE INVITATION</span>
-                  </div>
-                  <div class="log-message">
-                    <strong>${drive.hospitalName || 'Local Hospital'}</strong> invites you to <strong>${drive.title}</strong> on <strong>${drive.driveDate}</strong> (${drive.startTime} - ${drive.endTime}) at <strong>${drive.venue}</strong>.
-                    ${drive.bloodGroups ? `<br><span style="font-size:0.78rem;color:#94a3b8;">Target groups: ${drive.bloodGroups}</span>` : ''}
-                  </div>
-                  <div>
-                    ${rsvpContent}
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-    } catch (e) {
-      console.debug('Drive invitations fetch notice:', e);
-    }
-
-    let logsHtml = driveHtml + `
-      <div class="terminal-log-item verify">
-        <div class="log-icon-wrap">
-          <i class="fa-solid fa-circle-check"></i>
-        </div>
-        <div class="log-content">
-          <div class="log-meta-row">
-            <span class="log-time">[SYSTEM]</span>
-            <span class="log-type-tag">PROFILE INITIALIZED</span>
-          </div>
-          <div class="log-message">
-            System: Donor Profile officially verified and created on <strong>${donorData.profileCreatedAt}</strong>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // If active alerts exist, append real logs
+    // Real active emergency requests
     if (donorData.activeAlerts && donorData.activeAlerts.length > 0) {
-      donorData.activeAlerts.forEach((alert) => {
-        logsHtml = `
+      donorData.activeAlerts.forEach(alert => {
+        logItems.push(`
           <div class="terminal-log-item sos">
-            <div class="log-icon-wrap">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
+            <div class="log-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <div class="log-content">
               <div class="log-meta-row">
                 <span class="log-time">[URGENT]</span>
-                <span class="log-type-tag">EMERGENCY SOS</span>
+                <span class="log-type-tag">EMERGENCY REQUEST</span>
               </div>
               <div class="log-message">
-                <strong>${alert.bloodGroup || 'Blood'}</strong> required at <strong>${alert.hospital || 'Local Hospital'}</strong>.
+                <strong>${alert.bloodGroup || 'Blood'}</strong> required at <strong>${alert.hospital || 'Nearby Hospital'}</strong>.
               </div>
             </div>
           </div>
-        ` + logsHtml;
+        `);
       });
     }
 
-    logsContainer.innerHTML = logsHtml;
+    // Real verified donations from history
+    if (donorData.donations && donorData.donations.length > 0) {
+      donorData.donations.forEach(d => {
+        logItems.push(`
+          <div class="terminal-log-item verify">
+            <div class="log-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="log-content">
+              <div class="log-meta-row">
+                <span class="log-time">[DONATION]</span>
+                <span class="log-type-tag">VERIFIED DONATION</span>
+              </div>
+              <div class="log-message">
+                Completed donation at <strong>${d.hospital || 'Hospital'}</strong> on <strong>${d.date || 'Recent'}</strong>.
+              </div>
+            </div>
+          </div>
+        `);
+      });
+    }
+
+    // Honest account creation event
+    const verifyNote = (donorData.bloodGroupStatus === 'hospital_verified')
+      ? ` • Verified by ${donorData.bloodGroupVerifiedBy || 'hospital'}`
+      : '';
+    logItems.push(`
+      <div class="terminal-log-item verify">
+        <div class="log-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="log-content">
+          <div class="log-meta-row">
+            <span class="log-time">[SYSTEM]</span>
+            <span class="log-type-tag">ACCOUNT CREATED</span>
+          </div>
+          <div class="log-message">
+            Account created on <strong>${donorData.profileCreatedAt || 'Registration'}</strong>${verifyNote}
+          </div>
+        </div>
+      </div>
+    `);
+
+    // Show latest 5 items only (Part 3.7)
+    const displayedItems = logItems.slice(0, 5);
+    logsContainer.innerHTML = displayedItems.join('');
+
+    if (footerLink) {
+      if (logItems.length > 5) {
+        footerLink.style.display = 'block';
+      } else {
+        footerLink.style.display = 'none';
+      }
+    }
+  }
+
+  /**
+   * Status Row (Part 3.5)
+   */
+  function initStatusRow() {
+    const locText = document.getElementById('statusRowLocationText');
+    const locSub = document.getElementById('statusRowLocationSub');
+    const btnLoc = document.getElementById('btnFixLocation');
+
+    const notifText = document.getElementById('statusRowNotifText');
+    const notifSub = document.getElementById('statusRowNotifSub');
+    const btnNotif = document.getElementById('btnFixNotif');
+
+    const availText = document.getElementById('statusRowAvailText');
+    const availSub = document.getElementById('statusRowAvailSub');
+    const btnAvail = document.getElementById('btnToggleAvailability');
+    const pauseNotice = document.getElementById('statusRowPauseUntilNotice');
+    const btnPauseDate = document.getElementById('btnSetPauseDate');
+
+    // 1. Location Status
+    function updateLocationUI() {
+      const lat = sessionStorage.getItem('red404_user_lat');
+      const time = sessionStorage.getItem('red404_user_loc_time') || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (lat && locText) {
+        locText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>Location: On';
+        if (locSub) locSub.textContent = `Updated ${time}`;
+        if (btnLoc) btnLoc.textContent = 'Refresh';
+      } else if (locText) {
+        locText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Location: Off';
+        if (locSub) locSub.textContent = 'GPS not enabled';
+        if (btnLoc) btnLoc.textContent = 'Enable';
+      }
+    }
+    updateLocationUI();
+
+    if (btnLoc && !btnLoc.dataset.bound) {
+      btnLoc.dataset.bound = 'true';
+      btnLoc.addEventListener('click', () => {
+        detectUserLocation();
+        sessionStorage.setItem('red404_user_loc_time', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        updateLocationUI();
+      });
+    }
+
+    // 2. Notifications Status
+    function updateNotifUI() {
+      if (!('Notification' in window)) {
+        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#94a3b8; margin-right:6px;"></span>Notifications: N/A';
+        if (notifSub) notifSub.textContent = 'Not supported';
+        if (btnNotif) btnNotif.style.display = 'none';
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>Notifications: On';
+        if (notifSub) notifSub.textContent = 'Emergency alerts enabled';
+        if (btnNotif) { btnNotif.textContent = 'Enabled'; btnNotif.disabled = true; btnNotif.style.opacity = '0.7'; }
+      } else {
+        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Notifications: Off';
+        if (notifSub) notifSub.textContent = 'Permission needed';
+        if (btnNotif) { btnNotif.textContent = 'Enable'; btnNotif.disabled = false; btnNotif.style.opacity = '1'; }
+      }
+    }
+    updateNotifUI();
+
+    if (btnNotif && !btnNotif.dataset.bound) {
+      btnNotif.dataset.bound = 'true';
+      btnNotif.addEventListener('click', async () => {
+        if ('Notification' in window) {
+          await Notification.requestPermission();
+          updateNotifUI();
+        }
+      });
+    }
+
+    // 3. Availability Toggle & Pause Until Date
+    function updateAvailUI() {
+      const isPaused = (donorData.availability && (donorData.availability.toLowerCase() === 'paused' || donorData.availability.toLowerCase() === 'unavailable')) || donorData.available === false;
+      if (isPaused) {
+        if (availText) availText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Status: Paused';
+        if (availSub) availSub.textContent = 'Excluded from searches';
+        if (btnAvail) {
+          btnAvail.textContent = 'Resume Availability';
+          btnAvail.style.background = '#0284c7';
+        }
+        if (pauseNotice) {
+          if (donorData.pausedUntil) {
+            pauseNotice.textContent = `Paused until: ${donorData.pausedUntil}`;
+            pauseNotice.style.display = 'inline';
+          } else {
+            pauseNotice.style.display = 'none';
+          }
+        }
+      } else {
+        if (availText) availText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>Status: Available to donate';
+        if (availSub) availSub.textContent = 'Ready for emergency requests';
+        if (btnAvail) {
+          btnAvail.textContent = 'Pause';
+          btnAvail.style.background = 'rgba(255,255,255,0.08)';
+        }
+        if (pauseNotice) pauseNotice.style.display = 'none';
+      }
+    }
+    updateAvailUI();
+
+    if (btnAvail && !btnAvail.dataset.bound) {
+      btnAvail.dataset.bound = 'true';
+      btnAvail.addEventListener('click', async () => {
+        const isPaused = (donorData.availability && (donorData.availability.toLowerCase() === 'paused' || donorData.availability.toLowerCase() === 'unavailable')) || donorData.available === false;
+        const newAvailable = isPaused;
+        try {
+          const res = await fetch('/api/donor/availability', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ available: newAvailable }),
+            credentials: 'include'
+          });
+          if (res.ok) {
+            donorData.available = newAvailable;
+            donorData.availability = newAvailable ? 'Available' : 'Paused';
+            donorData.pausedUntil = null;
+            updateAvailUI();
+            renderUpcomingDrives();
+            if (typeof showToast === 'function') {
+              showToast(newAvailable ? 'You are now Available to donate' : 'Your status is now Paused', 'info');
+            }
+          }
+        } catch (e) {
+          console.error('Availability toggle error:', e);
+        }
+      });
+    }
+
+    if (btnPauseDate && !btnPauseDate.dataset.bound) {
+      btnPauseDate.dataset.bound = 'true';
+      btnPauseDate.addEventListener('click', async () => {
+        const defaultDate = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+        const dateInput = prompt('Enter date to pause until (YYYY-MM-DD):', defaultDate);
+        if (!dateInput || !dateInput.trim()) return;
+        try {
+          const res = await fetch('/api/donor/availability', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ available: false, pausedUntil: dateInput.trim() }),
+            credentials: 'include'
+          });
+          if (res.ok) {
+            donorData.available = false;
+            donorData.availability = 'Paused';
+            donorData.pausedUntil = dateInput.trim();
+            updateAvailUI();
+            renderUpcomingDrives();
+            if (typeof showToast === 'function') {
+              showToast(`Paused until ${dateInput.trim()}`, 'info');
+            }
+          }
+        } catch (e) {
+          console.error('Pause date error:', e);
+        }
+      });
+    }
+  }
+
+  /**
+   * Upcoming Donation Drives (Part 3.6)
+   */
+  async function renderUpcomingDrives() {
+    const container = document.getElementById('upcomingDrivesContainer');
+    if (!container) return;
+
+    const isPaused = (donorData.availability && (donorData.availability.toLowerCase() === 'paused' || donorData.availability.toLowerCase() === 'unavailable')) || donorData.available === false;
+    if (isPaused) {
+      container.innerHTML = `
+        <div style="padding: 12px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 13px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+          Your availability is currently paused. Resume availability to view and RSVP to upcoming donation drives.
+        </div>
+      `;
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/donor/drives/invitations', { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        const drives = json.data || [];
+        if (drives.length === 0) {
+          container.innerHTML = `
+            <div style="padding: 12px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 13px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+              No upcoming donation drives in your area right now.
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = drives.map(drive => {
+          const rsvp = (drive.rsvpStatus || '').toUpperCase();
+          let rsvpHtml = '';
+          if (rsvp === 'ATTENDING') {
+            rsvpHtml = `<span style="color: #38bdf8; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-check"></i> You're attending</span>`;
+          } else if (rsvp === 'DECLINED') {
+            rsvpHtml = `<span style="color: #94a3b8; font-size: 12px;">Response: Not now</span>`;
+          } else {
+            rsvpHtml = `
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button type="button" onclick="window.submitDriveRsvp(${drive.id}, 'ATTENDING')" style="padding: 5px 12px; font-size: 12px; border-radius: 4px; background: #0284c7; border: none; color: #fff; cursor: pointer; font-weight: 600;">I'll attend</button>
+                <button type="button" onclick="window.submitDriveRsvp(${drive.id}, 'DECLINED')" style="padding: 5px 12px; font-size: 12px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; cursor: pointer;">Not now</button>
+              </div>
+            `;
+          }
+
+          return `
+            <div style="padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                <strong style="color: #fff; font-size: 14px;">${drive.title}</strong>
+                <span style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px;">${drive.driveDate}</span>
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">
+                <i class="fa-solid fa-hospital" style="margin-right: 4px;"></i>${drive.hospitalName || 'Local Hospital'} • <i class="fa-solid fa-location-dot" style="margin-right: 4px;"></i>${drive.venue}
+              </div>
+              ${drive.bloodGroups ? `<div style="font-size: 11px; color: #64748b;">Target groups: ${drive.bloodGroups}</div>` : ''}
+              ${rsvpHtml}
+            </div>
+          `;
+        }).join('');
+      } else {
+        container.innerHTML = `
+          <div style="padding: 12px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 13px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+            No upcoming donation drives in your area right now.
+          </div>
+        `;
+      }
+    } catch (e) {
+      container.innerHTML = `
+        <div style="padding: 12px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 13px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+          No upcoming donation drives in your area right now.
+        </div>
+      `;
+    }
   }
 
   window.submitDriveRsvp = async function(driveId, status) {

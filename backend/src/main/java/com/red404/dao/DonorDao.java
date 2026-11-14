@@ -249,14 +249,24 @@ public class DonorDao {
         }
     }
 
-    public boolean updateAvailability(int id, boolean available) throws SQLException {
-        String sql = "UPDATE donors SET availability = ? WHERE id = ?";
+    public boolean updateAvailability(int id, boolean available, Date pausedUntil) throws SQLException {
+        ensureDonorColumnsExist();
+        String sql = "UPDATE donors SET availability = ?, paused_until = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, available ? "Available" : "Unavailable");
-            ps.setInt(2, id);
+            ps.setString(1, available ? "Available" : "Paused");
+            if (!available && pausedUntil != null) {
+                ps.setDate(2, pausedUntil);
+            } else {
+                ps.setNull(2, Types.DATE);
+            }
+            ps.setInt(3, id);
             return ps.executeUpdate() > 0;
         }
+    }
+
+    public boolean updateAvailability(int id, boolean available) throws SQLException {
+        return updateAvailability(id, available, null);
     }
 
     public boolean updateLocation(int donorId, double latitude, double longitude) throws SQLException {
@@ -765,7 +775,7 @@ public class DonorDao {
     }
 
     public List<Map<String, Object>> findNearby(Double lat, Double lng, double radiusKm, String bloodType) throws SQLException {
-        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR availability <> 'Unavailable')";
+        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR (LOWER(availability) NOT IN ('unavailable', 'busy', 'paused') AND (paused_until IS NULL OR paused_until <= CURRENT_DATE)))";
         List<Map<String, Object>> results = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -852,13 +862,22 @@ public class DonorDao {
                 }
                 compatibleRegisteredCount++;
 
-                // 2. Medical eligibility funnel step
-                boolean isEligible = true;
-                // Availability
+                // 2. Availability & Paused Check (Part 3.5: Paused donor must be excluded from hospital search, broadcast and drive invitations)
                 String avail = str(donor.get("availability"));
-                if (avail != null && (avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy"))) {
-                    isEligible = false;
+                if (avail != null && (avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy") || avail.equalsIgnoreCase("Paused"))) {
+                    continue;
                 }
+                Object pausedUntilObj = donor.get("paused_until");
+                if (pausedUntilObj != null) {
+                    try {
+                        java.time.LocalDate pUntil = java.time.LocalDate.parse(pausedUntilObj.toString());
+                        if (pUntil.isAfter(java.time.LocalDate.now())) {
+                            continue;
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                boolean isEligible = true;
                 // Status
                 String st = str(donor.get("status"));
                 if (st != null && (st.equalsIgnoreCase("INACTIVE") || st.equalsIgnoreCase("Banned"))) {

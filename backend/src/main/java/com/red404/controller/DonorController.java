@@ -288,6 +288,12 @@ public class DonorController {
             Map<String, Object> donor = requireDonor(request);
             Integer donorId = null;
             if (donor != null && donor.get("id") != null) {
+                // Part 3.5: Paused donor must be excluded from emergency requests and alerts
+                String avail = (String) donor.get("availability");
+                if (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable"))) {
+                    return ok("Donor availability is paused", Collections.emptyList());
+                }
+
                 donorId = ((Number) donor.get("id")).intValue();
                 if (lat == null) lat = asDouble(donor.get("latitude"));
                 if (lng == null) lng = asDouble(donor.get("longitude"));
@@ -367,6 +373,13 @@ public class DonorController {
         try {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null) return unauthorized();
+
+            // Part 3.5: Paused donor must be excluded from drive invitations
+            String avail = (String) donor.get("availability");
+            if (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable"))) {
+                return ok("Donor availability is paused", Collections.emptyList());
+            }
+
             String donorId = String.valueOf(donor.get("id"));
             String bloodType = (String) donor.get("bloodType");
             Double lat = asDouble(donor.get("latitude"));
@@ -957,6 +970,33 @@ public class DonorController {
                     "donorId", donorId,
                     "currentGroup", currentBg != null ? currentBg : "Unknown",
                     "requestedGroup", normGroup
+            ));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/availability")
+    public ResponseEntity<ApiResponse> setAvailability(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null || donor.get("id") == null) return unauthorized();
+            int donorId = ((Number) donor.get("id")).intValue();
+
+            boolean available = JsonUtil.asBoolean(body, "available", true);
+            String pausedUntilStr = JsonUtil.textOrNull(body, "pausedUntil");
+            Date pausedUntil = null;
+            if (pausedUntilStr != null && !pausedUntilStr.isBlank()) {
+                try {
+                    pausedUntil = Date.valueOf(pausedUntilStr.trim());
+                } catch (Exception ignored) {}
+            }
+
+            donorDao.updateAvailability(donorId, available, pausedUntil);
+            return ok("Availability status updated successfully", Map.of(
+                    "available", available,
+                    "availability", available ? "Available" : "Paused",
+                    "pausedUntil", pausedUntil != null ? pausedUntil.toString() : null
             ));
         } catch (Exception e) {
             return serverError(e);

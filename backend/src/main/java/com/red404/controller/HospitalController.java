@@ -47,6 +47,13 @@ public class HospitalController {
             List<Map<String, Object>> allHospitals = hospitalDao.listAll();
             List<Map<String, Object>> filtered = new ArrayList<>();
             for (Map<String, Object> h : allHospitals) {
+                // Only hospitals with verification status = Verified count as partner hospitals and appear in public directory (Part 1 & Part 3)
+                String vStatus = (String) h.get("verificationStatus");
+                if (vStatus == null) vStatus = (String) h.get("verification_status");
+                if (vStatus == null || !"Verified".equalsIgnoreCase(vStatus.trim())) {
+                    continue;
+                }
+
                 String hState = (String) h.get("state");
                 String hCity = (String) h.get("city");
                 boolean matchesState = (state == null || state.isBlank() || (hState != null && hState.equalsIgnoreCase(state.trim())));
@@ -54,6 +61,10 @@ public class HospitalController {
                 boolean matchesDistrict = (targetDistrict == null || targetDistrict.isBlank() || targetDistrict.equalsIgnoreCase("ALL") || 
                         (hCity != null && (hCity.equalsIgnoreCase(targetDistrict.trim()) || hCity.toLowerCase().contains(targetDistrict.toLowerCase()))));
                 if (matchesState && matchesDistrict) {
+                    try {
+                        int hid = ((Number) h.get("id")).intValue();
+                        h.put("inventory", hospitalDao.getHospitalInventory(hid));
+                    } catch (Exception ignored) {}
                     filtered.add(h);
                 }
             }

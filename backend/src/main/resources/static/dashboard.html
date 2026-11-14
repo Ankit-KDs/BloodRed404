@@ -135,15 +135,57 @@
         </div>
 
         <!-- Location Pill -->
-        <div class="welcome-stat-pill" title="Live Telemetry Location">
+        <div class="welcome-stat-pill" title="Current City Location">
           <i class="fa-solid fa-location-dot"></i>
           <span id="user-location"></span>
         </div>
+      </div>
+    </section>
 
-        <!-- Node Status Pill -->
-        <div class="welcome-stat-pill status-pill" title="Donor Node Dispatch Status">
-          <span class="live-status-dot"></span>
-          <span>Node Status: <b id="user-node-status">Active</b></span>
+    <!-- REAL STATUS ROW (Part 3.5) -->
+    <section class="donor-status-strip" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; align-items: center; justify-content: space-between;">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+        <!-- Location Status -->
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+          <span style="color: var(--text-secondary, #94a3b8);">Location:</span>
+          <strong id="statusLocationText" style="color: #22c55e;">Checking...</strong>
+          <span id="statusLocationTime" style="font-size: 11px; color: #64748b;"></span>
+          <button type="button" id="btnFixLocation" style="padding: 3px 8px; font-size: 11px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;">Update</button>
+        </div>
+
+        <!-- Notification Status -->
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+          <span style="color: var(--text-secondary, #94a3b8);">Notifications:</span>
+          <strong id="statusNotifText" style="color: #22c55e;">Enabled</strong>
+          <button type="button" id="btnFixNotif" style="padding: 3px 8px; font-size: 11px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;">Toggle</button>
+        </div>
+      </div>
+
+      <!-- Availability Toggle & Pause Until -->
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+        <span style="color: var(--text-secondary, #94a3b8);">Availability:</span>
+        <button type="button" id="btnToggleAvailability" style="padding: 5px 14px; font-size: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; background: #22c55e; color: #fff; transition: background 0.2s;">Available to donate</button>
+        <span id="pausedUntilLabel" style="display: none; font-size: 11px; color: #facc15;"></span>
+        <button type="button" id="btnSetPauseDate" style="padding: 3px 8px; font-size: 11px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;">Pause Until</button>
+      </div>
+    </section>
+
+    <!-- UPCOMING DONATION DRIVES CARD (Part 3.6) -->
+    <section id="upcomingDrivesSection" style="margin-bottom: 24px;">
+      <div class="bento-card" style="padding: 16px;">
+        <div class="action-header-row" style="margin-bottom: 12px;">
+          <div class="action-icon-title">
+            <div class="action-icon-wrap" style="color: #38bdf8;">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <h2 class="action-title" style="font-size: 15px;">Upcoming Donation Drives</h2>
+          </div>
+          <span class="action-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">COMMUNITY</span>
+        </div>
+        <div id="upcomingDrivesContainer">
+          <div style="padding: 12px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 13px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+            No upcoming donation drives in your area right now.
+          </div>
         </div>
       </div>
     </section>
@@ -151,7 +193,7 @@
     <!-- ROW 2: CORE ACTION CARDS (SIDE-BY-SIDE) -->
     <section class="bento-row-actions">
 
-      <!-- CARD 1: EMERGENCY SOS DISPATCH (DYNAMIC EMPTY/ACTIVE STATE) -->
+      <!-- CARD 1: EMERGENCY REQUESTS (Part 3.1) -->
       <div class="bento-card bento-action-card card-sos" id="emergencyCardWrap">
         <div>
           <div class="action-header-row">
@@ -159,7 +201,7 @@
               <div class="action-icon-wrap">
                 <i class="fa-solid fa-triangle-exclamation"></i>
               </div>
-              <h2 class="action-title">Emergency SOS Dispatch</h2>
+              <h2 class="action-title">Emergency requests near you</h2>
             </div>
             <span class="action-badge" id="sos-badge"></span>
           </div>
@@ -174,7 +216,7 @@
         </div>
       </div>
 
-      <!-- CARD 2: FIND NEARBY BLOOD BANKS (CYAN TECH GLOW) -->
+      <!-- CARD 2: FIND NEARBY BLOOD BANKS (Part 3.3) -->
       <a href="blood-availability.html?portal=donor" class="bento-card bento-action-card card-inventory" title="Open Real-time Hospital Blood Inventory Search">
         <div>
           <div class="action-header-row">
@@ -184,16 +226,16 @@
               </div>
               <h2 class="action-title">Find Nearby Blood Banks</h2>
             </div>
-            <span class="action-badge">LIVE INVENTORY ENGINE</span>
+            <span class="action-badge">VERIFIED HOSPITALS</span>
           </div>
 
           <p class="action-summary-text">
-            <strong>Clinical Inventory Engine:</strong> Regional network hospitals actively reporting real-time component reserves and availability status.
+            View verified partner hospitals near you with real-time available blood units and direct route navigation.
           </p>
         </div>
 
         <div class="action-footer-link">
-          <span>Search Live Blood Inventory</span>
+          <span>Search verified blood banks</span>
           <i class="fa-solid fa-arrow-right"></i>
         </div>
       </a>
@@ -203,18 +245,21 @@
     <!-- ROW 3: SPLIT GRID (FEED & MINI DONATIONS) -->
     <section class="bento-row-split">
 
-      <!-- THIRD ROW LEFT: GLOBAL NOTIFICATION & SYSTEM FEED (PURE VERIFIED STATE) -->
+      <!-- THIRD ROW LEFT: NOTIFICATIONS (Part 3.4 & Part 3.7) -->
       <section class="bento-card" id="systemFeedCard">
         <div class="card-header-bar">
           <h3 class="chb-title">
-            <i class="fa-solid fa-terminal"></i>
-            <span>System Notifications &amp; Logs</span>
+            <i class="fa-solid fa-bell"></i>
+            <span>Notifications</span>
           </h3>
-          <span class="chb-tag">REAL-TIME TELEMETRY FEED</span>
+          <span class="chb-tag">RECENT UPDATES</span>
         </div>
 
-        <div class="terminal-feed-container" id="system-logs-container">
-          <!-- Injected dynamically by dashboard-logic.js: only verified profile creation by default -->
+        <div class="terminal-feed-container" id="system-logs-container" style="min-height: auto; max-height: 280px; overflow-y: auto;">
+          <!-- Injected dynamically by dashboard-logic.js -->
+        </div>
+        <div id="notificationsFooterLink" style="padding-top: 8px; text-align: right; display: none;">
+          <a href="donor-alerts.html" style="font-size: 12px; color: #38bdf8; text-decoration: none;">See all notifications &rarr;</a>
         </div>
       </section>
 
