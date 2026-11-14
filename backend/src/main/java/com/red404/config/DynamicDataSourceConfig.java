@@ -154,6 +154,7 @@ public class DynamicDataSourceConfig {
         ensureDonorColumns(ds);
         try {
             new com.red404.dao.DonationDriveDao().ensureTablesExist();
+            new com.red404.dao.BloodRequestNotificationDao().ensureTableExists();
         } catch (Exception ignored) {}
     }
 

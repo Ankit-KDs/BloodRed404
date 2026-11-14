@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -706,6 +707,158 @@ public class DonorDao {
                 ((Number) a.getOrDefault("distance", 0)).doubleValue(),
                 ((Number) b.getOrDefault("distance", 0)).doubleValue()));
         return results;
+    }
+
+    public Map<String, Object> searchMatchingDonorsForHospital(
+            Double hospLat, 
+            Double hospLng, 
+            double radiusKm, 
+            String recipientBloodType, 
+            int hospitalId) throws SQLException {
+        
+        Map<String, Object> response = new HashMap<>();
+        List<Map<String, Object>> matches = new ArrayList<>();
+        int unlocatedCount = 0;
+
+        if (recipientBloodType == null || recipientBloodType.isBlank()) {
+            response.put("donors", matches);
+            response.put("unlocatedCount", 0);
+            response.put("totalMatches", 0);
+            response.put("availableCount", 0);
+            return response;
+        }
+
+        String targetBlood = recipientBloodType.trim().toUpperCase();
+        List<String> compatibleGroups = com.red404.util.BloodCompatibilityUtil.getCompatibleDonorGroups(targetBlood);
+        if (compatibleGroups.isEmpty()) {
+            response.put("donors", matches);
+            response.put("unlocatedCount", 0);
+            response.put("totalMatches", 0);
+            response.put("availableCount", 0);
+            return response;
+        }
+
+        Map<Integer, String> notificationStatuses = new com.red404.dao.BloodRequestNotificationDao().getDonorStatusesForHospital(hospitalId);
+
+        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR availability <> 'Unavailable')";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            
+            while (rs.next()) {
+                Map<String, Object> donor = mapDonor(rs, false);
+                int donorId = ((Number) donor.get("id")).intValue();
+
+                // 1. Blood compatibility
+                String dBlood = str(donor.get("bloodType"));
+                if (!com.red404.util.BloodCompatibilityUtil.isCompatible(dBlood, targetBlood)) {
+                    continue;
+                }
+
+                // 2. Medical eligibility
+                // Availability
+                String avail = str(donor.get("availability"));
+                if (avail != null && (avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy"))) {
+                    continue;
+                }
+                // Status
+                String st = str(donor.get("status"));
+                if (st != null && (st.equalsIgnoreCase("INACTIVE") || st.equalsIgnoreCase("Banned"))) {
+                    continue;
+                }
+                // Weight (>= 45kg)
+                Object wObj = donor.get("weight");
+                if (wObj instanceof Number && ((Number) wObj).doubleValue() > 0 && ((Number) wObj).doubleValue() < 45.0) {
+                    continue;
+                }
+                // Last donation gap (90 days minimum)
+                Date lastDon = rs.getDate("last_donation");
+                if (lastDon != null) {
+                    long diffDays = (System.currentTimeMillis() - lastDon.getTime()) / (1000L * 60 * 60 * 24);
+                    if (diffDays < 90) {
+                        continue;
+                    }
+                }
+
+                // 3. Stored location check
+                Object latObj = donor.get("latitude");
+                Object lngObj = donor.get("longitude");
+                if (latObj == null || lngObj == null || !(latObj instanceof Number) || !(lngObj instanceof Number)) {
+                    unlocatedCount++;
+                    continue;
+                }
+                double donorLat = ((Number) latObj).doubleValue();
+                double donorLng = ((Number) lngObj).doubleValue();
+                if (donorLat == 0.0 && donorLng == 0.0) {
+                    unlocatedCount++;
+                    continue;
+                }
+
+                // 4. Distance calculation & radius filter
+                double distance = 0.0;
+                if (hospLat != null && hospLng != null && hospLat != 0.0 && hospLng != 0.0) {
+                    distance = DistanceCalculator.calculateDistance(hospLat, hospLng, donorLat, donorLng);
+                    if (distance > radiusKm) {
+                        continue;
+                    }
+                }
+
+                donor.put("distance", distance);
+                donor.put("distanceKm", Math.round(distance * 10.0) / 10.0);
+                donor.put("distanceFormatted", String.format(Locale.US, "%.1f km", distance));
+                donor.put("eta", "-");
+                donor.put("etaMinutes", null);
+
+                // 5. Notification Status per donor
+                String nStatus = notificationStatuses.getOrDefault(donorId, "Available");
+                donor.put("status", nStatus);
+                donor.put("requestStatus", nStatus);
+
+                // 6. SERVER PHONE PRIVACY (Part 5 & Part 3)
+                // Strip phone number completely unless status is Accepted
+                if (!"Accepted".equalsIgnoreCase(nStatus)) {
+                    donor.remove("phone");
+                    donor.remove("contactNumber");
+                    donor.remove("adminPhone");
+                    donor.remove("emergencyContact");
+                }
+                donor.remove("password");
+
+                // Flag exact match for sorting
+                boolean isExact = dBlood.equalsIgnoreCase(targetBlood);
+                donor.put("isExactMatch", isExact);
+
+                matches.add(donor);
+            }
+        }
+
+        // Sort: Exact-group donors first, then by distance ascending
+        matches.sort((a, b) -> {
+            boolean exactA = Boolean.TRUE.equals(a.get("isExactMatch"));
+            boolean exactB = Boolean.TRUE.equals(b.get("isExactMatch"));
+            if (exactA != exactB) {
+                return exactA ? -1 : 1;
+            }
+            double distA = ((Number) a.getOrDefault("distance", 0.0)).doubleValue();
+            double distB = ((Number) b.getOrDefault("distance", 0.0)).doubleValue();
+            return Double.compare(distA, distB);
+        });
+
+        long availableCount = 0;
+        for (Map<String, Object> m : matches) {
+            if ("Available".equalsIgnoreCase(str(m.get("status")))) {
+                availableCount++;
+            }
+        }
+
+        response.put("donors", matches);
+        response.put("unlocatedCount", unlocatedCount);
+        response.put("totalMatches", matches.size());
+        response.put("availableCount", availableCount);
+        response.put("recipientBloodType", targetBlood);
+        response.put("radiusKm", radiusKm);
+
+        return response;
     }
 
     public List<Map<String, Object>> searchPublicAvailability(String bloodGroup, double radiusKm, String pincode, Double userLat, Double userLng) throws SQLException {

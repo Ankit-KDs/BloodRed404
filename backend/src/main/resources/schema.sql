@@ -189,3 +189,17 @@ CREATE TABLE IF NOT EXISTS donation_drive_invitations (
     UNIQUE KEY uq_inv_drive_donor (drive_id, donor_id)
 );
 
+CREATE TABLE IF NOT EXISTS blood_request_notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id INT NOT NULL,
+    donor_id INT NOT NULL,
+    hospital_id INT NOT NULL,
+    blood_type VARCHAR(10) NOT NULL,
+    units_requested INT DEFAULT 1,
+    patient_name VARCHAR(150),
+    notes TEXT,
+    status VARCHAR(20) DEFAULT 'NOTIFIED',
+    notified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP NULL
+);
+

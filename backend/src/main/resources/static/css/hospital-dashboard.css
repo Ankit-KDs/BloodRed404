@@ -602,8 +602,14 @@ a:hover {
   transition: background-color 0.15s ease;
 }
 
-.btn-primary-action:hover {
+.btn-primary-action:hover:not(:disabled) {
   background: var(--hosp-blue-hover);
+}
+
+.btn-primary-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
 }
 
 /* Dominant Split: Active Requests (Wider) + Send SOS */
@@ -1465,7 +1471,7 @@ a:hover {
   border: 1px solid var(--hosp-amber-border);
 }
 
-.chip-status.critical {
+.chip-status.critical, .chip-status.danger, .chip-status.declined {
   background: var(--hosp-red-subtle);
   color: var(--hosp-red);
   border: 1px solid var(--hosp-red-border);

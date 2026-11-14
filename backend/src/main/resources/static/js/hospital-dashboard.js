@@ -1025,31 +1025,344 @@ function initInlineSosForm() {
 /* ============================================================
    7. FIND DONORS / DISPATCH (RADAR MAP & REAL NEARBY DONORS)
    ============================================================ */
+/* ============================================================
+   7. FIND DONORS / DISPATCH (SEARCH FIRST, REAL MATCHES & RADAR)
+   ============================================================ */
 function initDispatchRadar() {
+  const form = document.getElementById('formFullDispatch');
+  const btnSearch = document.getElementById('btnSearchDonors');
+  const btnBroadcast = document.getElementById('btnBroadcastMatching');
+  const tbody = document.getElementById('dispatchResponsesTableBody');
+  const unlocatedNote = document.getElementById('unlocatedDonorsNote');
+  const bloodRadios = document.querySelectorAll('input[name="dispBloodGroup"]');
   const canvas = document.getElementById('radarCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const ctx = canvas ? canvas.getContext('2d') : null;
 
   let radarAngle = 0;
-  let nearbyDonors = [];
+  let matchingDonors = [];
+  let isSearching = false;
 
-  async function fetchDonors() {
-    try {
-      const res = await fetch('/api/hospital/donors', { credentials: 'include' });
-      if (res.ok) {
-        const json = await res.json();
-        nearbyDonors = Array.isArray(json.data) ? json.data : [];
-        renderDispatchResponsesTable(nearbyDonors);
+  // 1. Enable 'Search donors' button ONLY when a blood group is selected
+  bloodRadios.forEach(r => {
+    r.addEventListener('change', () => {
+      if (btnSearch) {
+        btnSearch.disabled = false;
       }
-    } catch (e) {
-      console.debug('Donor fetch error:', e);
+    });
+  });
+
+  // Verify initial state: button is disabled if no radio selected
+  if (btnSearch) {
+    const selected = document.querySelector('input[name="dispBloodGroup"]:checked');
+    btnSearch.disabled = !selected;
+  }
+
+  // 2. Initial state: table is empty, radar has NO donor markers
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 32px 16px; color: var(--hosp-text-muted);">
+          Select a blood group and search to see matching donors.
+        </td>
+      </tr>
+    `;
+  }
+  if (btnBroadcast) {
+    btnBroadcast.disabled = true;
+    updateBroadcastButtonCount(0);
+  }
+
+  function updateBroadcastButtonCount(count) {
+    if (!btnBroadcast) return;
+    btnBroadcast.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <span>Broadcast to all matching donors (${count})</span>
+    `;
+    btnBroadcast.disabled = (count <= 0);
+  }
+
+  // 3. Form submission: Search donors
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const bloodRadio = document.querySelector('input[name="dispBloodGroup"]:checked');
+      if (!bloodRadio) {
+        if (typeof showToast === 'function') showToast('Please select a required blood group to search.', 'warning');
+        return;
+      }
+      const bloodType = bloodRadio.value.trim();
+      const radius = document.getElementById('dispRadius')?.value || '10';
+      const patientName = document.getElementById('dispPatientName')?.value.trim() || '';
+      const units = document.getElementById('dispUnits')?.value || '1';
+      const notes = document.getElementById('dispNotes')?.value.trim() || '';
+
+      await executeDonorSearch(bloodType, radius, patientName, units, notes);
+    });
+  }
+
+  async function executeDonorSearch(bloodType, radius, patientName, units, notes) {
+    isSearching = true;
+    matchingDonors = [];
+    if (unlocatedNote) unlocatedNote.style.display = 'none';
+
+    // Skeleton loading state
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr class="skeleton-search-row">
+          <td colspan="6" style="padding: 28px 16px; text-align: center;">
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 460px; margin: 0 auto;">
+              <div style="height: 14px; background: rgba(255,255,255,0.06); border-radius: 4px; animation: pulse 1s infinite alternate;"></div>
+              <div style="height: 14px; background: rgba(255,255,255,0.04); border-radius: 4px; animation: pulse 1s infinite alternate 0.2s;"></div>
+              <div style="height: 14px; background: rgba(255,255,255,0.05); border-radius: 4px; animation: pulse 1s infinite alternate 0.4s;"></div>
+            </div>
+            <div style="margin-top: 14px; font-size: 13px; color: var(--hosp-text-muted);">
+              Searching eligible compatible donors within ${radius} km...
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    updateBroadcastButtonCount(0);
+
+    try {
+      const url = `/api/hospital/donors/search?bloodType=${encodeURIComponent(bloodType)}&radius=${encodeURIComponent(radius)}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      const json = await res.json();
+      const payload = json.data || json;
+      matchingDonors = Array.isArray(payload.donors) ? payload.donors : [];
+      const unlocated = payload.unlocatedCount || 0;
+
+      renderMatchingDonorsTable(matchingDonors, radius, bloodType, patientName, units, notes);
+
+      if (unlocated > 0 && unlocatedNote) {
+        unlocatedNote.style.display = 'block';
+        unlocatedNote.textContent = `${unlocated} matching donor${unlocated === 1 ? '' : 's'} have not shared a location.`;
+      } else if (unlocatedNote) {
+        unlocatedNote.style.display = 'none';
+      }
+
+      const availableCount = matchingDonors.filter(d => !d.status || d.status.toLowerCase() === 'available').length;
+      updateBroadcastButtonCount(availableCount);
+    } catch (err) {
+      console.error('Donor search failed:', err);
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 28px 16px; color: var(--hosp-red);">
+              <div>Failed to query matching donors. ${err.message || 'Network error'}</div>
+              <div style="margin-top: 12px;">
+                <button type="button" class="btn-primary-action btn-retry-search" style="height: 32px; padding: 0 16px; font-size: 12.5px;">Retry Search</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        const retryBtn = tbody.querySelector('.btn-retry-search');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', () => {
+            executeDonorSearch(bloodType, radius, patientName, units, notes);
+          });
+        }
+      }
+    } finally {
+      isSearching = false;
     }
   }
 
-  fetchDonors();
+  function renderMatchingDonorsTable(donors, radius, bloodType, patientName, units, notes) {
+    if (!tbody) return;
 
+    if (!donors || donors.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 32px 16px; color: var(--hosp-text-muted);">
+            No matching donors within ${radius} km. Try a larger radius.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = donors.map((d) => {
+      const name = d.name || d.fullName || 'Donor';
+      const blood = d.bloodType || d.blood_type || bloodType;
+      const dist = (typeof d.distance === 'number') ? `${d.distance.toFixed(1)} km` : (d.distanceFormatted || '-');
+      const eta = d.eta || d.estimatedEta || '-';
+      const rawStatus = (d.status || d.requestStatus || 'Available').trim();
+      const statusKey = rawStatus.toLowerCase();
+      const isAvailable = (statusKey === 'available');
+
+      let statusBadge = `<span class="chip-status available">Available</span>`;
+      if (statusKey === 'notified') {
+        statusBadge = `<span class="chip-status pending">Notified</span>`;
+      } else if (statusKey === 'accepted') {
+        statusBadge = `<span class="chip-status completed">Accepted</span>`;
+      } else if (statusKey === 'declined') {
+        statusBadge = `<span class="chip-status danger">Declined</span>`;
+      }
+
+      const actionBtn = isAvailable
+        ? `<button type="button" class="btn-primary-action btn-send-donor" data-donor-id="${d.id}" style="height: 32px; padding: 0 14px; font-size: 12.5px; border-radius: 6px;">Send</button>`
+        : `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+
+      return `
+        <tr data-donor-id="${d.id}">
+          <td><strong>${name}</strong></td>
+          <td>${getDropBadgeSvg(blood, '')}</td>
+          <td><span class="mono-data">${dist}</span></td>
+          <td><span class="mono-data">${eta}</span></td>
+          <td class="donor-status-cell">${statusBadge}</td>
+          <td class="donor-action-cell">${actionBtn}</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Wire individual "Send" buttons
+    tbody.querySelectorAll('.btn-send-donor').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const donorId = parseInt(btn.dataset.donorId, 10);
+        if (!donorId) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+          const res = await fetch('/api/hospital/requests/send-single', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              donorId: donorId,
+              bloodType: bloodType,
+              unitsNeeded: parseInt(units, 10) || 1,
+              patientName: patientName,
+              notes: notes,
+              radius: parseFloat(radius) || 10
+            })
+          });
+          const resJson = await res.json();
+          if (res.ok && resJson.success !== false) {
+            // Update donor state in local array
+            const targetDonor = matchingDonors.find(x => x.id === donorId);
+            if (targetDonor) {
+              targetDonor.status = 'Notified';
+              targetDonor.requestStatus = 'Notified';
+            }
+            // Update row visually
+            const row = tbody.querySelector(`tr[data-donor-id="${donorId}"]`);
+            if (row) {
+              const statusCell = row.querySelector('.donor-status-cell');
+              const actionCell = row.querySelector('.donor-action-cell');
+              if (statusCell) statusCell.innerHTML = `<span class="chip-status pending">Notified</span>`;
+              if (actionCell) actionCell.innerHTML = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+            }
+            const remAvailable = matchingDonors.filter(d => !d.status || d.status.toLowerCase() === 'available').length;
+            updateBroadcastButtonCount(remAvailable);
+
+            if (typeof showToast === 'function') {
+              showToast('Emergency request dispatched to donor!', 'success');
+            }
+          } else {
+            throw new Error(resJson.message || 'Dispatch failed');
+          }
+        } catch (err) {
+          console.error('Send single donor error:', err);
+          btn.disabled = false;
+          btn.textContent = 'Send';
+          if (typeof showToast === 'function') {
+            showToast('Failed to dispatch request: ' + err.message, 'error');
+          }
+        }
+      });
+    });
+  }
+
+  // 4. Broadcast to all matching donors
+  if (btnBroadcast) {
+    btnBroadcast.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const availableDonors = matchingDonors.filter(d => !d.status || d.status.toLowerCase() === 'available');
+      const count = availableDonors.length;
+      if (count === 0) return;
+
+      const confirmMessage = `Send this request to ${count} donor${count === 1 ? '' : 's'}?`;
+      let ok = false;
+      if (typeof showAppConfirm === 'function') {
+        ok = await showAppConfirm({
+          title: 'Confirm Emergency Broadcast',
+          message: confirmMessage,
+          confirmText: `Broadcast to ${count} Donors`,
+          cancelText: 'Cancel',
+          type: 'danger'
+        });
+      } else {
+        ok = window.confirm(confirmMessage);
+      }
+      if (!ok) return;
+
+      btnBroadcast.disabled = true;
+      btnBroadcast.textContent = 'Broadcasting...';
+
+      const bloodRadio = document.querySelector('input[name="dispBloodGroup"]:checked');
+      const bloodType = bloodRadio ? bloodRadio.value.trim() : 'O-';
+      const radius = document.getElementById('dispRadius')?.value || '10';
+      const patientName = document.getElementById('dispPatientName')?.value.trim() || '';
+      const units = document.getElementById('dispUnits')?.value || '1';
+      const notes = document.getElementById('dispNotes')?.value.trim() || '';
+
+      try {
+        const donorIds = availableDonors.map(d => d.id);
+        const res = await fetch('/api/hospital/requests/broadcast-matching', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            donorIds: donorIds,
+            bloodType: bloodType,
+            unitsNeeded: parseInt(units, 10) || 1,
+            patientName: patientName,
+            notes: notes,
+            radius: parseFloat(radius) || 10
+          })
+        });
+        const resJson = await res.json();
+        if (res.ok && resJson.success !== false) {
+          // Mark all available as Notified
+          availableDonors.forEach(d => {
+            d.status = 'Notified';
+            d.requestStatus = 'Notified';
+            const row = tbody.querySelector(`tr[data-donor-id="${d.id}"]`);
+            if (row) {
+              const statusCell = row.querySelector('.donor-status-cell');
+              const actionCell = row.querySelector('.donor-action-cell');
+              if (statusCell) statusCell.innerHTML = `<span class="chip-status pending">Notified</span>`;
+              if (actionCell) actionCell.innerHTML = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+            }
+          });
+          updateBroadcastButtonCount(0);
+          if (typeof showToast === 'function') {
+            showToast(`Broadcast dispatched to ${count} matching donors!`, 'success');
+          }
+        } else {
+          throw new Error(resJson.message || 'Broadcast failed');
+        }
+      } catch (err) {
+        console.error('Broadcast matching error:', err);
+        const remAvailable = matchingDonors.filter(d => !d.status || d.status.toLowerCase() === 'available').length;
+        updateBroadcastButtonCount(remAvailable);
+        if (typeof showToast === 'function') {
+          showToast('Broadcast failed: ' + err.message, 'error');
+        }
+      }
+    });
+  }
+
+  // 5. Canvas Radar (no donors drawn before search, draws searched matching donors)
   function drawRadar() {
+    if (!canvas || !ctx) return;
     const w = (canvas.width = canvas.parentElement.clientWidth || 400);
     const h = (canvas.height = 280);
     const cx = w / 2;
@@ -1105,28 +1418,32 @@ function initDispatchRadar() {
     ctx.stroke();
     ctx.restore();
 
-    // Center Marker
+    // Center Marker (Hospital)
     ctx.beginPath();
     ctx.arc(cx, cy, 5, 0, Math.PI * 2);
     ctx.fillStyle = '#6ea8ff';
     ctx.fill();
 
-    // Plot real donors if available
-    nearbyDonors.forEach((p, idx) => {
-      const angle = (idx * 1.05) % (Math.PI * 2);
-      const pr = maxR * 0.5;
-      const px = cx + Math.cos(angle) * pr;
-      const py = cy + Math.sin(angle) * pr;
+    // Plot real donors ONLY after search
+    if (matchingDonors && matchingDonors.length > 0) {
+      matchingDonors.forEach((p, idx) => {
+        const distRatio = Math.min(1.0, (p.distance || 5) / 20);
+        const angle = (idx * 1.35) % (Math.PI * 2);
+        const pr = Math.max(15, distRatio * maxR);
+        const px = cx + Math.cos(angle) * pr;
+        const py = cy + Math.sin(angle) * pr;
 
-      ctx.beginPath();
-      ctx.arc(px, py, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#3ecf8e';
-      ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#3ecf8e';
+        ctx.fill();
 
-      ctx.fillStyle = '#ecebe8';
-      ctx.font = '13px Instrument Sans, sans-serif';
-      ctx.fillText(`${p.name || p.full_name || 'Donor'} (${p.blood_group || p.bloodType || 'O+'})`, px + 6, py + 3);
-    });
+        ctx.fillStyle = '#ecebe8';
+        ctx.font = '12px Instrument Sans, sans-serif';
+        const pBlood = p.bloodType || p.blood_type || '';
+        ctx.fillText(`${p.name || 'Donor'} (${pBlood})`, px + 6, py + 3);
+      });
+    }
 
     radarAngle += 0.015;
     requestAnimationFrame(drawRadar);
@@ -1134,42 +1451,6 @@ function initDispatchRadar() {
 
   window.drawRadarFrame = drawRadar;
   drawRadar();
-}
-
-function renderDispatchResponsesTable(donors) {
-  const tbody = document.getElementById('dispatchResponsesTableBody');
-  if (!tbody) return;
-
-  if (!donors || donors.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 24px; color: var(--hosp-text-muted);">
-          No registered donors within radar range.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = donors.map(d => {
-    const name = d.name || d.full_name || 'Donor';
-    const blood = d.blood_group || d.bloodType || '-';
-    const dist = d.distance ? `${Number(d.distance).toFixed(1)} km` : '-';
-    return `
-      <tr>
-        <td><strong>${name}</strong></td>
-        <td>${getDropBadgeSvg(blood, '')}</td>
-        <td><span class="mono-data">${dist}</span></td>
-        <td><span class="mono-data">-</span></td>
-        <td><span class="chip-status available">Available</span></td>
-        <td>
-          <button type="button" class="btn-secondary" style="height: 36px; padding: 0 12px; font-size: 13px;" onclick="alert('Notification sent to ${name}')">
-            <span>Notify</span>
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join('');
 }
 
 /* ============================================================

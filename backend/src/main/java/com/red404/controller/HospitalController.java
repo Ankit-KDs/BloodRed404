@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class HospitalController {
     private final DonorDao donorDao = new DonorDao();
     private final BloodRequestDao requestDao = new BloodRequestDao();
     private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
+    private final com.red404.dao.BloodRequestNotificationDao notificationDao = new com.red404.dao.BloodRequestNotificationDao();
 
     // ======================== GET ========================
 
@@ -78,23 +80,134 @@ public class HospitalController {
         }
     }
 
-    @GetMapping({"/donors/nearby", "/donors"})
-    public ResponseEntity<ApiResponse> getNearbyDonors(
+    @GetMapping({"/donors/search", "/donors/nearby", "/donors"})
+    public ResponseEntity<ApiResponse> searchMatchingDonors(
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
-            @RequestParam(defaultValue = "50") double radius,
+            @RequestParam(defaultValue = "10") double radius,
             @RequestParam(required = false) String bloodType,
             HttpServletRequest request) {
         try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) hospitalId = 1;
+
             if (lat == null || lng == null) {
-                Map<String, Object> hospital = getHospitalFromSession(request);
+                Map<String, Object> hospital = hospitalDao.findById(hospitalId);
                 if (hospital != null) {
                     lat = asDouble(hospital.get("latitude"));
                     lng = asDouble(hospital.get("longitude"));
                 }
             }
-            List<Map<String, Object>> donors = donorDao.findNearby(lat, lng, radius, bloodType);
-            return ok("Donors loaded", donors);
+
+            if (bloodType == null || bloodType.isBlank()) {
+                // Before search: return empty structure
+                return ok("Select a blood group and search to see matching donors.", Map.of(
+                        "donors", Collections.emptyList(),
+                        "totalMatches", 0,
+                        "unlocatedCount", 0,
+                        "availableCount", 0
+                ));
+            }
+
+            Map<String, Object> result = donorDao.searchMatchingDonorsForHospital(lat, lng, radius, bloodType, hospitalId);
+            return ok("Matching donors loaded", result);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/requests/send-single")
+    public ResponseEntity<ApiResponse> sendSingleDonorRequest(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) hospitalId = 1;
+            int donorId = JsonUtil.asInt(body, "donorId", 0);
+            if (donorId <= 0) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Valid donor ID is required."));
+            }
+            String bloodType = JsonUtil.textOrNull(body, "bloodType");
+            int units = JsonUtil.asInt(body, "unitsNeeded", 1);
+            String patientName = JsonUtil.textOrNull(body, "patientName");
+            if (patientName == null || patientName.isBlank()) patientName = "Emergency Patient";
+            String notes = JsonUtil.textOrNull(body, "notes");
+            Double radVal = JsonUtil.asDouble(body, "radius");
+            double radius = radVal != null ? radVal : 10.0;
+
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            Double lat = hosp != null ? asDouble(hosp.get("latitude")) : null;
+            Double lng = hosp != null ? asDouble(hosp.get("longitude")) : null;
+
+            Map<String, Object> reqPayload = new HashMap<>();
+            reqPayload.put("hospitalId", hospitalId);
+            reqPayload.put("patientName", patientName);
+            reqPayload.put("bloodType", bloodType != null ? bloodType : "O-");
+            reqPayload.put("unitsRequested", units);
+            reqPayload.put("urgencyLevel", "HIGH");
+            reqPayload.put("latitude", lat);
+            reqPayload.put("longitude", lng);
+            reqPayload.put("notes", notes);
+            reqPayload.put("notificationRadius", (int) radius);
+            int reqId = requestDao.insert(reqPayload);
+
+            notificationDao.notifyDonor(reqId, donorId, hospitalId, bloodType, units, patientName, notes);
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("requestId", reqId);
+            resp.put("donorId", donorId);
+            resp.put("status", "Notified");
+
+            return ok("Request sent to donor successfully", resp);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/requests/broadcast-matching")
+    public ResponseEntity<ApiResponse> broadcastMatchingDonors(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) hospitalId = 1;
+            List<Integer> donorIds = new ArrayList<>();
+            if (body.has("donorIds") && body.get("donorIds").isArray()) {
+                for (JsonNode n : body.get("donorIds")) {
+                    donorIds.add(n.asInt());
+                }
+            }
+            if (donorIds.isEmpty()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "No available matching donors to broadcast to."));
+            }
+            String bloodType = JsonUtil.textOrNull(body, "bloodType");
+            int units = JsonUtil.asInt(body, "unitsNeeded", 1);
+            String patientName = JsonUtil.textOrNull(body, "patientName");
+            if (patientName == null || patientName.isBlank()) patientName = "Emergency Patient";
+            String notes = JsonUtil.textOrNull(body, "notes");
+            Double radVal = JsonUtil.asDouble(body, "radius");
+            double radius = radVal != null ? radVal : 10.0;
+
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            Double lat = hosp != null ? asDouble(hosp.get("latitude")) : null;
+            Double lng = hosp != null ? asDouble(hosp.get("longitude")) : null;
+
+            Map<String, Object> reqPayload = new HashMap<>();
+            reqPayload.put("hospitalId", hospitalId);
+            reqPayload.put("patientName", patientName);
+            reqPayload.put("bloodType", bloodType != null ? bloodType : "O-");
+            reqPayload.put("unitsRequested", units);
+            reqPayload.put("urgencyLevel", "HIGH");
+            reqPayload.put("latitude", lat);
+            reqPayload.put("longitude", lng);
+            reqPayload.put("notes", notes);
+            reqPayload.put("notificationRadius", (int) radius);
+            int reqId = requestDao.insert(reqPayload);
+
+            notificationDao.broadcastToDonors(reqId, donorIds, hospitalId, bloodType, units, patientName, notes);
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("requestId", reqId);
+            resp.put("notifiedCount", donorIds.size());
+            resp.put("status", "Notified");
+
+            return ok("Broadcast dispatched to " + donorIds.size() + " matching donors", resp);
         } catch (Exception e) {
             return serverError(e);
         }

@@ -479,7 +479,7 @@
             <fieldset class="sos-fieldset">
               <legend class="form-legend">Required blood group *</legend>
               <div class="sos-blood-grid">
-                <input type="radio" name="dispBloodGroup" id="dbg-o-neg" value="O-" class="blood-chip-radio" checked />
+                <input type="radio" name="dispBloodGroup" id="dbg-o-neg" value="O-" class="blood-chip-radio" />
                 <label for="dbg-o-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">O-</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-o-pos" value="O+" class="blood-chip-radio" />
@@ -525,9 +525,9 @@
               <input type="text" id="dispNotes" class="form-input" placeholder="e.g. Please report to Blood Bank Gate 2" />
             </div>
 
-            <button type="submit" class="btn-send-sos">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              <span>Send SOS</span>
+            <button type="submit" class="btn-primary-action" id="btnSearchDonors" disabled style="width: 100%; justify-content: center;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <span>Search donors</span>
             </button>
           </form>
         </article>
@@ -549,6 +549,14 @@
               <span class="legend-item"><span class="leg-dot z2"></span> 10 km</span>
               <span class="legend-item"><span class="leg-dot z3"></span> 20 km</span>
             </div>
+          </div>
+
+          <!-- Bottom: Broadcast to all matching donors -->
+          <div class="radar-broadcast-row" style="margin-top: var(--sp-16); padding-top: var(--sp-16); border-top: 1px solid var(--hosp-border);">
+            <button type="button" class="btn-primary-action" id="btnBroadcastMatching" style="width: 100%; justify-content: center;" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Broadcast to all matching donors (0)</span>
+            </button>
           </div>
         </article>
 
@@ -576,10 +584,15 @@
               </tr>
             </thead>
             <tbody id="dispatchResponsesTableBody">
-              <!-- Dynamically populated rows -->
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 32px 16px; color: var(--hosp-text-muted);">
+                  Select a blood group and search to see matching donors.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
+        <div id="unlocatedDonorsNote" style="margin-top: 12px; font-size: 13px; color: var(--hosp-text-dim); display: none;"></div>
       </article>
 
     </section>
