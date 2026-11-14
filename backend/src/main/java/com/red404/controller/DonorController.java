@@ -841,6 +841,10 @@ public class DonorController {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null) return unauthorized();
             requestDao.updateStatus(requestId, status);
+            if ("Accepted".equalsIgnoreCase(status) && donor.get("id") != null) {
+                int donorId = ((Number) donor.get("id")).intValue();
+                new com.red404.dao.BloodRequestNotificationDao().acceptRequestByDonor(requestId, donorId);
+            }
             Map<String, Object> bloodRequest = requestDao.findById(requestId);
             if (bloodRequest == null) {
                 bloodRequest = new HashMap<>();

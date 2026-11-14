@@ -843,6 +843,24 @@ function renderActiveRequests(requests) {
           </div>
         </div>
 
+        ${(isAccepted && r.donorName) ? `
+          <div class="accepted-donor-bar">
+            <div class="adb-left">
+              ${getDropBadgeSvg(r.donorBloodType || bloodType, 'ok')}
+              <div>
+                <div class="adb-name">Accepted Donor: <strong>${escapeHtml(r.donorName)}</strong></div>
+                <div class="adb-meta">${r.donorDistance != null ? `${r.donorDistance} km away &bull; ` : ''}En route to hospital</div>
+              </div>
+            </div>
+            ${(r.donorPhone || r.phone) ? `
+              <a href="tel:${escapeHtml(r.donorPhone || r.phone)}" class="btn-call-donor">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                <span>Call donor</span>
+              </a>
+            ` : ''}
+          </div>
+        ` : ''}
+
         <div class="req-item-actions">
           ${isArrived ? `<button type="button" class="btn-action-checkin" onclick="switchTab('tab-checkin')">Start check-in</button>` : ''}
           <button type="button" class="btn-action-cancel" data-id="${r.id}">Cancel request</button>
@@ -1416,8 +1434,9 @@ function initDispatchRadar() {
       const dist = typeof d.distance === 'number' ? `${d.distance.toFixed(1)} km` : (d.distanceFormatted || '-');
       const status = (d.status || d.requestStatus || 'Available').trim();
       const isAvailable = (status.toLowerCase() === 'available');
+      const isAccepted = (status.toLowerCase() === 'accepted');
 
-      const markerPinClass = isAvailable ? (isExact ? 'exact' : 'compatible') : 'notified';
+      const markerPinClass = isAvailable ? (isExact ? 'exact' : 'compatible') : (isAccepted ? 'accepted' : 'notified');
 
       const donorIcon = L.divIcon({
         className: 'custom-donor-marker',
@@ -1431,6 +1450,20 @@ function initDispatchRadar() {
 
       const marker = L.marker([dLat, dLng], { icon: donorIcon }).addTo(leafletMap);
 
+      let popupActionHtml = '';
+      if (isAccepted && (d.phone || d.donorPhone)) {
+        popupActionHtml = `
+          <a href="tel:${escapeHtml(d.phone || d.donorPhone)}" class="hpc-btn-call">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <span>Call donor</span>
+          </a>`;
+      } else {
+        popupActionHtml = `
+          <button type="button" class="hpc-btn-send" data-donor-id="${d.id}" ${!isAvailable ? 'disabled' : ''}>
+            ${isAvailable ? 'Send' : 'Sent'}
+          </button>`;
+      }
+
       const popupHtml = `
         <div class="hosp-popup-content" data-donor-id="${d.id}">
           <div class="hpc-header">
@@ -1440,13 +1473,11 @@ function initDispatchRadar() {
           <div class="hpc-meta">
             <div>Distance: <strong style="color:var(--hosp-text);">${dist}</strong></div>
             <div>${d.lastSeen ? `Last seen: ${escapeHtml(d.lastSeen)}` : 'Active recently in area'}</div>
-            <div class="popup-status-row">Status: <strong class="popup-status-text" style="color:${isAvailable ? 'var(--hosp-green)' : 'var(--hosp-blue)'};">${status}</strong></div>
+            <div class="popup-status-row">Status: <strong class="popup-status-text" style="color:${isAvailable ? 'var(--hosp-green)' : (isAccepted ? 'var(--hosp-blue)' : 'var(--hosp-amber)')};">${status}</strong></div>
           </div>
           <div class="hpc-footer">
             <span style="font-size:11px; color:var(--hosp-text-muted);">ID: #${d.id}</span>
-            <button type="button" class="hpc-btn-send" data-donor-id="${d.id}" ${!isAvailable ? 'disabled' : ''}>
-              ${isAvailable ? 'Send' : 'Sent'}
-            </button>
+            ${popupActionHtml}
           </div>
         </div>
       `;
@@ -1601,9 +1632,18 @@ function initDispatchRadar() {
         statusBadge = `<span class="chip-status danger">Declined</span>`;
       }
 
-      const actionBtn = isAvailable
-        ? `<button type="button" class="btn-primary-action btn-send-donor" data-donor-id="${d.id}" style="height: 32px; padding: 0 14px; font-size: 12.5px; border-radius: 6px;">Send</button>`
-        : `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+      let actionBtn = '';
+      if (statusKey === 'accepted' && (d.phone || d.donorPhone)) {
+        actionBtn = `
+          <a href="tel:${escapeHtml(d.phone || d.donorPhone)}" class="btn-call-donor" style="height: 32px; padding: 0 12px; font-size: 12.5px; border-radius: 6px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <span>Call donor</span>
+          </a>`;
+      } else if (isAvailable) {
+        actionBtn = `<button type="button" class="btn-primary-action btn-send-donor" data-donor-id="${d.id}" style="height: 32px; padding: 0 14px; font-size: 12.5px; border-radius: 6px;">Send</button>`;
+      } else {
+        actionBtn = `<button type="button" class="btn-secondary" disabled style="height: 32px; padding: 0 14px; font-size: 12.5px; opacity: 0.5; border-radius: 6px;">Sent</button>`;
+      }
 
       return `
         <tr data-donor-id="${d.id}" style="cursor: pointer;">

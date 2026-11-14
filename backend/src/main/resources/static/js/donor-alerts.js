@@ -403,6 +403,10 @@
                 <span>Accept Alert & Navigate</span>
                 <i class="fas fa-arrow-right"></i>
               </button>
+              <button type="button" class="btn-sos-directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
+                <i class="fas fa-location-arrow"></i>
+                <span>Directions</span>
+              </button>
               <button class="btn-sos-decline" onclick="window.declineAlert(${req.id})">
                 Decline
               </button>
@@ -424,6 +428,10 @@
               <span class="sos-distance-pill">${distance}km</span>
               <span class="sos-zone-tag">${req.zoneTag}</span>
               <div class="ssc-blood-pill">${escapeHtml(req.bloodType)}</div>
+              <button type="button" class="btn-sos-mini-directions" title="Directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
+                <i class="fas fa-location-arrow"></i>
+                <span>Directions</span>
+              </button>
               <button class="btn-sos-mini-accept" onclick="window.acceptAndNavigate(${req.id})">
                 ACCEPT →
               </button>
@@ -690,6 +698,33 @@
     renderEmergencyFeed();
     updateRadarVisualization();
     showToast('Alert dismissed.', 'info');
+  };
+
+  window.openDirectionsToHospital = function (hospLat, hospLng) {
+    if (hospLat == null || hospLng == null || isNaN(hospLat) || isNaN(hospLng)) {
+      showToast("Hospital coordinates are not available for driving directions.", "error");
+      return;
+    }
+    if (!navigator.geolocation) {
+      showToast("Turn on location permissions in your browser to get driving directions to the hospital.", "error");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        if (!pos || !pos.coords) {
+          showToast("Turn on location permissions in your browser to get driving directions to the hospital.", "error");
+          return;
+        }
+        const donorLat = pos.coords.latitude;
+        const donorLng = pos.coords.longitude;
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${donorLat},${donorLng}&destination=${hospLat},${hospLng}&travelmode=driving`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      },
+      function (err) {
+        showToast("Turn on location permissions in your browser to get driving directions to the hospital.", "error");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   // ======================== 10. UTILS & HELPERS ========================

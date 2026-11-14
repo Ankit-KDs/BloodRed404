@@ -122,6 +122,72 @@ public class BloodRequestNotificationDao {
         }
     }
 
+    public boolean acceptRequestByDonor(int requestId, int donorId) {
+        ensureTableExists();
+        String updateSql = "UPDATE blood_request_notifications SET status = 'ACCEPTED', responded_at = CURRENT_TIMESTAMP WHERE request_id = ? AND donor_id = ?";
+        try (Connection conn = DBConnection.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                ps.setInt(1, requestId);
+                ps.setInt(2, donorId);
+                if (ps.executeUpdate() > 0) {
+                    return true;
+                }
+            }
+            String insertSql = "INSERT INTO blood_request_notifications (request_id, donor_id, hospital_id, blood_type, units_requested, patient_name, notes, status, notified_at, responded_at) " +
+                    "SELECT id, ?, hospital_id, blood_type, units_requested, patient_name, '', 'ACCEPTED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM blood_requests WHERE id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                ps.setInt(1, donorId);
+                ps.setInt(2, requestId);
+                return ps.executeUpdate() > 0;
+            }
+        } catch (Exception e) {
+            log.warn("Error marking request accepted by donor: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public Map<String, Object> getAcceptedDonorForRequest(int requestId) {
+        ensureTableExists();
+        String sql = "SELECT n.status, d.id as donor_pk, d.name, d.blood_type, d.phone, d.latitude, d.longitude, " +
+                     "br.latitude as hosp_lat, br.longitude as hosp_lng " +
+                     "FROM blood_request_notifications n " +
+                     "JOIN donors d ON n.donor_id = d.id " +
+                     "JOIN blood_requests br ON n.request_id = br.id " +
+                     "WHERE n.request_id = ? AND UPPER(n.status) = 'ACCEPTED' " +
+                     "ORDER BY n.responded_at DESC, n.id DESC LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("donorId", rs.getInt("donor_pk"));
+                    map.put("donorName", rs.getString("name"));
+                    map.put("donorBloodType", rs.getString("blood_type"));
+                    map.put("donorPhone", rs.getString("phone"));
+
+                    Object dLatObj = rs.getObject("latitude");
+                    Object dLngObj = rs.getObject("longitude");
+                    Object hLatObj = rs.getObject("hosp_lat");
+                    Object hLngObj = rs.getObject("hosp_lng");
+                    if (dLatObj instanceof Number && dLngObj instanceof Number && hLatObj instanceof Number && hLngObj instanceof Number) {
+                        double dist = com.red404.util.DistanceCalculator.calculateDistance(
+                                ((Number) hLatObj).doubleValue(), ((Number) hLngObj).doubleValue(),
+                                ((Number) dLatObj).doubleValue(), ((Number) dLngObj).doubleValue()
+                        );
+                        map.put("donorDistance", Math.round(dist * 10.0) / 10.0);
+                    } else {
+                        map.put("donorDistance", null);
+                    }
+                    return map;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error getting accepted donor for request {}: {}", requestId, e.getMessage());
+        }
+        return null;
+    }
+
     private static String capitalize(String str) {
         if (str == null || str.isBlank()) return "Available";
         String s = str.trim().toLowerCase();

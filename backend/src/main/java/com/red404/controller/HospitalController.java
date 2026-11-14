@@ -220,6 +220,7 @@ public class HospitalController {
             List<Map<String, Object>> list = (hospId != null)
                     ? requestDao.listByHospital(hospId)
                     : requestDao.listActive();
+            enrichAndSanitizeRequests(list);
             return ok("Requests loaded", list);
         } catch (Exception e) {
             return serverError(e);
@@ -233,6 +234,7 @@ public class HospitalController {
             List<Map<String, Object>> list = (hospId != null)
                     ? requestDao.listByHospital(hospId)
                     : requestDao.listActive();
+            enrichAndSanitizeRequests(list);
             return ok("History loaded", list);
         } catch (Exception e) {
             return serverError(e);
@@ -242,9 +244,34 @@ public class HospitalController {
     @GetMapping("/dispatch-log")
     public ResponseEntity<ApiResponse> getDispatchLog() {
         try {
-            return ok("Log loaded", requestDao.listActive());
+            List<Map<String, Object>> list = requestDao.listActive();
+            enrichAndSanitizeRequests(list);
+            return ok("Log loaded", list);
         } catch (Exception e) {
             return serverError(e);
+        }
+    }
+
+    private void enrichAndSanitizeRequests(List<Map<String, Object>> list) {
+        if (list == null) return;
+        com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
+        for (Map<String, Object> reqItem : list) {
+            int reqId = reqItem.get("id") != null ? ((Number) reqItem.get("id")).intValue() : 0;
+            String reqStatus = reqItem.get("status") != null ? reqItem.get("status").toString() : "";
+            Map<String, Object> acceptedDonor = (reqId > 0) ? notifDao.getAcceptedDonorForRequest(reqId) : null;
+            if (acceptedDonor != null) {
+                reqItem.put("donorId", acceptedDonor.get("donorId"));
+                reqItem.put("donorName", acceptedDonor.get("donorName"));
+                reqItem.put("donorBloodType", acceptedDonor.get("donorBloodType"));
+                reqItem.put("donorDistance", acceptedDonor.get("donorDistance"));
+                reqItem.put("donorPhone", acceptedDonor.get("donorPhone"));
+                reqItem.put("phone", acceptedDonor.get("donorPhone"));
+            } else if (!"Accepted".equalsIgnoreCase(reqStatus) && !"On the way".equalsIgnoreCase(reqStatus) && !"Arrived".equalsIgnoreCase(reqStatus)) {
+                reqItem.remove("donorPhone");
+                reqItem.remove("phone");
+                reqItem.remove("contact_number");
+                reqItem.remove("contactNumber");
+            }
         }
     }
 

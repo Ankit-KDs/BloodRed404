@@ -1657,6 +1657,85 @@ a:hover {
   background: var(--hosp-blue, #6ea8ff);
 }
 
+.cdm-pin.accepted {
+  background: var(--hosp-blue, #6ea8ff);
+  box-shadow: 0 0 0 3px rgba(110, 168, 255, 0.4);
+}
+
+.accepted-donor-bar {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: rgba(110, 168, 255, 0.06);
+  border: 1px solid rgba(110, 168, 255, 0.22);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.accepted-donor-bar .adb-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.accepted-donor-bar .adb-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--hosp-text);
+}
+
+.accepted-donor-bar .adb-meta {
+  font-size: 12px;
+  color: var(--hosp-text-muted);
+}
+
+.btn-call-donor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  background: #2563eb;
+  color: #ffffff !important;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-call-donor:hover {
+  background: #1d4ed8;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.hpc-btn-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  background: #2563eb;
+  color: #ffffff !important;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.hpc-btn-call:hover {
+  background: #1d4ed8;
+  color: #ffffff !important;
+}
+
 .cdm-badge {
   margin-top: 3px;
   background: rgba(14, 23, 42, 0.92);

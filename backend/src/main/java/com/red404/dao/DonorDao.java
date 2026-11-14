@@ -818,9 +818,15 @@ public class DonorDao {
                 // Strip phone number completely unless status is Accepted
                 if (!"Accepted".equalsIgnoreCase(nStatus)) {
                     donor.remove("phone");
+                    donor.remove("contact_number");
                     donor.remove("contactNumber");
                     donor.remove("adminPhone");
                     donor.remove("emergencyContact");
+                    donor.remove("donorPhone");
+                } else {
+                    if (donor.get("phone") != null && donor.get("donorPhone") == null) {
+                        donor.put("donorPhone", donor.get("phone"));
+                    }
                 }
                 donor.remove("password");
 

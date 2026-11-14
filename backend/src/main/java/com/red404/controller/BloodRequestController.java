@@ -110,8 +110,21 @@ public class BloodRequestController {
     public ResponseEntity<ApiResponse> accept(@PathVariable int id, HttpServletRequest request) {
         try {
             requestDao.updateStatus(id, "Accepted");
+            int donorId = 0;
+            HttpSession session = request.getSession(false);
+            if (session != null && session.getAttribute("user") != null) {
+                Object u = session.getAttribute("user");
+                if (u instanceof Map) {
+                    Object dId = ((Map<?, ?>) u).get("id");
+                    if (dId instanceof Number) {
+                        donorId = ((Number) dId).intValue();
+                    }
+                }
+            }
+            if (donorId > 0) {
+                new com.red404.dao.BloodRequestNotificationDao().acceptRequestByDonor(id, donorId);
+            }
             Map<String, Object> req = requestDao.findById(id);
-            HttpSession session = request.getSession(true);
             if (session != null) {
                 session.setAttribute("activeMission", req);
             }
