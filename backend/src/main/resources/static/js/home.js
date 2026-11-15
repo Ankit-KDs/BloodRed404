@@ -26,10 +26,10 @@ function initParticlesHome() {
   if (!container) return;
 
   for (let i = 0; i < 55; i++) {
-    const p        = document.createElement('div');
-    p.className    = 'particle';
-    const size     = Math.random() * 5 + 2;
-    const delay    = Math.random() * 14;
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 5 + 2;
+    const delay = Math.random() * 14;
     const duration = Math.random() * 14 + 10;
 
     p.style.cssText = `
@@ -51,13 +51,13 @@ function initFloatingDropsHome() {
   if (!container) return;
 
   for (let i = 0; i < 14; i++) {
-    const drop     = document.createElement('div');
+    const drop = document.createElement('div');
     drop.className = 'floating-drop';
-    const size     = Math.random() * 1.4 + 0.7;
-    const delay    = Math.random() * 18;
+    const size = Math.random() * 1.4 + 0.7;
+    const delay = Math.random() * 18;
     const duration = Math.random() * 14 + 12;
 
-    drop.innerHTML    = '<i class="fas fa-tint"></i>';
+    drop.innerHTML = '<i class="fas fa-tint"></i>';
     drop.style.cssText = `
       left:               ${Math.random() * 100}%;
       font-size:          ${size}rem;
@@ -91,9 +91,9 @@ function animateHeroCounter(el) {
   if (isNaN(target)) return;
 
   const duration = 2200;
-  const steps    = 60;
-  const stepVal  = target / steps;
-  let   current  = 0;
+  const steps = 60;
+  const stepVal = target / steps;
+  let current = 0;
 
   const timer = setInterval(() => {
     current = Math.min(current + stepVal, target);
@@ -127,13 +127,13 @@ function initStatBars() {
   const io = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        const el          = entry.target;
+        const el = entry.target;
         const targetWidth = el.style.width;
-        el.style.width    = '0%';
+        el.style.width = '0%';
         requestAnimationFrame(() => {
           setTimeout(() => {
             el.style.transition = 'width 1.5s ease';
-            el.style.width      = targetWidth;
+            el.style.width = targetWidth;
           }, 150);
         });
         io.unobserve(el);
@@ -151,7 +151,7 @@ function initScrollRevealHome() {
   );
 
   targets.forEach((el, idx) => {
-    el.style.opacity   = '0';
+    el.style.opacity = '0';
     el.style.transform = 'translateY(30px)';
     el.style.transition = `opacity 0.65s ease, transform 0.65s ease`;
     el.style.transitionDelay = `${(el.dataset.delay || (idx % 4) * 100)}ms`;
@@ -160,7 +160,7 @@ function initScrollRevealHome() {
   const io = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        entry.target.style.opacity   = '1';
+        entry.target.style.opacity = '1';
         entry.target.style.transform = 'translateY(0)';
         io.unobserve(entry.target);
       }
@@ -174,12 +174,12 @@ function initScrollRevealHome() {
 function initHeroMapAnimation() {
   /* Animate donor nodes appearing */
   document.querySelectorAll('.donor-node').forEach((node, idx) => {
-    node.style.opacity   = '0';
+    node.style.opacity = '0';
     node.style.transform = 'translate(-50%,-50%) scale(0)';
     setTimeout(() => {
       node.style.transition = 'all 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-      node.style.opacity    = '1';
-      node.style.transform  = 'translate(-50%,-50%) scale(1)';
+      node.style.opacity = '1';
+      node.style.transform = 'translate(-50%,-50%) scale(1)';
     }, 800 + idx * 200);
   });
 
@@ -188,7 +188,7 @@ function initHeroMapAnimation() {
     line.style.opacity = '0';
     setTimeout(() => {
       line.style.transition = 'opacity 0.5s ease';
-      line.style.opacity    = '0.35';
+      line.style.opacity = '0.35';
     }, 1500 + idx * 150);
   });
 }
@@ -216,23 +216,23 @@ function initZoneDiagramAnimation() {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         rings.forEach((ring, idx) => {
-          ring.style.opacity   = '0';
+          ring.style.opacity = '0';
           ring.style.transform = 'translate(-50%,-50%) scale(0.5)';
           setTimeout(() => {
             ring.style.transition = 'all 0.8s cubic-bezier(0.34,1.56,0.64,1)';
-            ring.style.opacity    = '1';
-            ring.style.transform  = 'translate(-50%,-50%) scale(1)';
+            ring.style.opacity = '1';
+            ring.style.transform = 'translate(-50%,-50%) scale(1)';
           }, idx * 200);
         });
 
         /* Animate donor dots */
         document.querySelectorAll('.zd-donor').forEach((dot, idx) => {
-          dot.style.opacity   = '0';
+          dot.style.opacity = '0';
           dot.style.transform = 'translate(-50%,-50%) scale(0)';
           setTimeout(() => {
             dot.style.transition = 'all 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-            dot.style.opacity    = '1';
-            dot.style.transform  = 'translate(-50%,-50%) scale(1)';
+            dot.style.opacity = '1';
+            dot.style.transform = 'translate(-50%,-50%) scale(1)';
           }, 600 + idx * 120);
         });
 
@@ -445,7 +445,7 @@ async function loadDonationGapConfig() {
     if (metricEl) {
       metricEl.textContent = `${maleGap} / ${femaleGap} Days`;
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 /* ==================== REAL-TIME NATIONAL BLOOD STOCK ENGINE ==================== */
@@ -471,12 +471,12 @@ function normalizeBloodGroupId(groupId) {
 }
 
 const HOME_STOCK_THRESHOLDS = {
-  'O-':  { critical: 4, low: 8 },
-  'O+':  { critical: 4, low: 8 },
-  'A-':  { critical: 3, low: 5 },
-  'A+':  { critical: 3, low: 5 },
-  'B-':  { critical: 3, low: 5 },
-  'B+':  { critical: 3, low: 5 },
+  'O-': { critical: 4, low: 8 },
+  'O+': { critical: 4, low: 8 },
+  'A-': { critical: 3, low: 5 },
+  'A+': { critical: 3, low: 5 },
+  'B-': { critical: 3, low: 5 },
+  'B+': { critical: 3, low: 5 },
   'AB-': { critical: 2, low: 4 },
   'AB+': { critical: 2, low: 4 }
 };
@@ -657,7 +657,7 @@ function initNationalBloodStockStream() {
 
     sse.onerror = () => {
       // If SSE connection drops, gracefully close and rely on sync interval
-      try { sse.close(); } catch (_) {}
+      try { sse.close(); } catch (_) { }
     };
   } catch (e) {
     console.warn('SSE stream notice:', e);
