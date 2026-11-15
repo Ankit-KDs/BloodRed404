@@ -163,6 +163,27 @@ public class HospitalController {
             if (donorId <= 0) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Valid donor ID is required."));
             }
+
+            // Exclude paused donors (Group C.5)
+            Map<String, Object> targetDonor = donorDao.findById(donorId);
+            if (targetDonor != null) {
+                String avail = (String) targetDonor.get("availability");
+                Object isAvail = targetDonor.get("available");
+                Object pUntil = targetDonor.get("paused_until");
+                boolean isPaused = (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy")))
+                        || (isAvail instanceof Boolean && !((Boolean) isAvail));
+                if (!isPaused && pUntil != null) {
+                    try {
+                        if (java.time.LocalDate.parse(pUntil.toString()).isAfter(java.time.LocalDate.now())) {
+                            isPaused = true;
+                        }
+                    } catch (Exception ignored) {}
+                }
+                if (isPaused) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ApiResponse(false, "Donor is currently paused and cannot receive emergency requests."));
+                }
+            }
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
             int units = JsonUtil.asInt(body, "unitsNeeded", 1);
             String patientName = JsonUtil.textOrNull(body, "patientName");
@@ -214,6 +235,32 @@ public class HospitalController {
             if (donorIds.isEmpty()) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "No available matching donors to broadcast to."));
             }
+            // Exclude paused donors (Group C.5)
+            List<Integer> activeDonorIds = new ArrayList<>();
+            for (Integer dId : donorIds) {
+                Map<String, Object> d = donorDao.findById(dId);
+                if (d != null) {
+                    String avail = (String) d.get("availability");
+                    Object isAvail = d.get("available");
+                    Object pUntil = d.get("paused_until");
+                    boolean isPaused = (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy")))
+                            || (isAvail instanceof Boolean && !((Boolean) isAvail));
+                    if (!isPaused && pUntil != null) {
+                        try {
+                            if (java.time.LocalDate.parse(pUntil.toString()).isAfter(java.time.LocalDate.now())) {
+                                isPaused = true;
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    if (!isPaused) {
+                        activeDonorIds.add(dId);
+                    }
+                }
+            }
+            if (activeDonorIds.isEmpty()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "No active unpaused matching donors to broadcast to."));
+            }
+
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
             int units = JsonUtil.asInt(body, "unitsNeeded", 1);
             String patientName = JsonUtil.textOrNull(body, "patientName");
@@ -238,14 +285,14 @@ public class HospitalController {
             reqPayload.put("notificationRadius", (int) radius);
             int reqId = requestDao.insert(reqPayload);
 
-            notificationDao.broadcastToDonors(reqId, donorIds, hospitalId, bloodType, units, patientName, notes);
+            notificationDao.broadcastToDonors(reqId, activeDonorIds, hospitalId, bloodType, units, patientName, notes);
 
             Map<String, Object> resp = new HashMap<>();
             resp.put("requestId", reqId);
-            resp.put("notifiedCount", donorIds.size());
+            resp.put("notifiedCount", activeDonorIds.size());
             resp.put("status", "Notified");
 
-            return ok("Broadcast dispatched to " + donorIds.size() + " matching donors", resp);
+            return ok("Broadcast dispatched to " + activeDonorIds.size() + " matching donors", resp);
         } catch (Exception e) {
             return serverError(e);
         }

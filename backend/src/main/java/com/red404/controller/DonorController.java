@@ -288,18 +288,7 @@ public class DonorController {
         return ok("Notifications loaded", donorDao.getDonorNotifications(donorId));
     }
 
-    @PostMapping({"/blood-group-correction-request", "/request-blood-group-correction"})
-    public ResponseEntity<ApiResponse> requestBloodGroupCorrection(@RequestBody JsonNode body, HttpServletRequest request) {
-        Map<String, Object> donor = requireDonor(request);
-        if (donor == null || donor.get("id") == null) return unauthorized();
-        int donorId = ((Number) donor.get("id")).intValue();
-        String requestedGroup = JsonUtil.textOrNull(body, "requestedBloodGroup");
-        String reason = JsonUtil.textOrNull(body, "reason");
-        String note = (requestedGroup != null ? "Requested: " + requestedGroup + ". " : "") + (reason != null ? reason : "");
-        donorDao.addDonorNotification(donorId, "Blood Group Correction Requested",
-                "Your request to correct blood group has been logged. Please present your laboratory cross-match documentation at your next hospital check-in.", "correction_request");
-        return ok("Correction request submitted. Staff will review lab documentation at your next check-in.", null);
-    }
+
 
     @GetMapping("/blood-requests")
     public ResponseEntity<ApiResponse> getBloodRequests(HttpServletRequest request) {
@@ -410,9 +399,20 @@ public class DonorController {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null) return unauthorized();
 
-            // Part 3.5: Paused donor must be excluded from drive invitations
+            // Exclude paused donors from drive invitations (Group C.5)
             String avail = (String) donor.get("availability");
-            if (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable"))) {
+            Object isAvail = donor.get("available");
+            Object pUntil = donor.get("paused_until");
+            boolean isPaused = (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy")))
+                    || (isAvail instanceof Boolean && !((Boolean) isAvail));
+            if (!isPaused && pUntil != null) {
+                try {
+                    if (java.time.LocalDate.parse(pUntil.toString()).isAfter(java.time.LocalDate.now())) {
+                        isPaused = true;
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (isPaused) {
                 return ok("Donor availability is paused", Collections.emptyList());
             }
 
@@ -433,6 +433,26 @@ public class DonorController {
         try {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null) return unauthorized();
+
+            // Group C.5: Paused donor cannot RSVP to drives
+            String avail = (String) donor.get("availability");
+            Object availObj = donor.get("available");
+            boolean availBool = (availObj == null || Boolean.TRUE.equals(availObj) || "1".equals(String.valueOf(availObj)));
+            Object pausedUntilObj = donor.get("paused_until");
+            if (pausedUntilObj == null) pausedUntilObj = donor.get("pausedUntil");
+            boolean isPaused = (avail != null && ("paused".equalsIgnoreCase(avail) || "unavailable".equalsIgnoreCase(avail))) || !availBool;
+            if (pausedUntilObj != null) {
+                try {
+                    java.time.LocalDate pausedUntil = java.time.LocalDate.parse(String.valueOf(pausedUntilObj).substring(0, 10));
+                    if (!pausedUntil.isBefore(java.time.LocalDate.now())) {
+                        isPaused = true;
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (isPaused) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Your availability is currently paused. Resume availability to RSVP to donation drives."));
+            }
+
             String donorId = String.valueOf(donor.get("id"));
             String status = JsonUtil.textOrNull(body, "status");
             if (status == null || status.isBlank()) status = "ATTENDING";
@@ -1073,13 +1093,14 @@ public class DonorController {
         }
     }
 
-    @PostMapping("/request-blood-group-correction")
+    @PostMapping({"/blood-group-correction-request", "/request-blood-group-correction"})
     public ResponseEntity<ApiResponse> requestBloodGroupCorrection(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null || donor.get("id") == null) return unauthorized();
             int donorId = ((Number) donor.get("id")).intValue();
             String requestedGroup = JsonUtil.textOrNull(body, "requestedGroup");
+            if (requestedGroup == null) requestedGroup = JsonUtil.textOrNull(body, "requestedBloodGroup");
             if (requestedGroup == null) requestedGroup = JsonUtil.textOrNull(body, "bloodType");
             String reason = JsonUtil.textOrNull(body, "reason");
 
@@ -1098,6 +1119,8 @@ public class DonorController {
             String currentBg = currentRecord != null ? (String) currentRecord.get("bloodType") : null;
 
             bloodGroupAuditDao.insertAudit(donorId, currentBg, normGroup, "donor_correction_request", donorId, reason.trim());
+            donorDao.addDonorNotification(donorId, "Blood Group Correction Requested",
+                    "Your request to correct blood group to " + normGroup + " has been logged. Please present your laboratory cross-match documentation at your next hospital check-in.", "correction_request");
             return ok("Correction request submitted successfully. Hospital staff will review and verify your blood group during check-in.", Map.of(
                     "donorId", donorId,
                     "currentGroup", currentBg != null ? currentBg : "Unknown",

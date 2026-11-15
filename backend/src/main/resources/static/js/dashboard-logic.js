@@ -379,7 +379,8 @@
     if (userBloodGroupEl) userBloodGroupEl.textContent = donorData.bloodGroup;
     if (userBloodGroupStatusEl) {
       if (donorData.bloodGroupStatus === 'hospital_verified') {
-        userBloodGroupStatusEl.textContent = `Verified by ${donorData.bloodGroupVerifiedBy || 'Hospital'}`;
+        const by = donorData.bloodGroupVerifiedBy || donorData.bloodGroupVerifiedByHospitalName || 'Hospital';
+        userBloodGroupStatusEl.textContent = `Verified by ${by}`;
         userBloodGroupStatusEl.style.color = '#34d399';
         userBloodGroupStatusEl.style.background = 'rgba(52, 211, 153, 0.12)';
         userBloodGroupStatusEl.style.border = '1px solid rgba(52, 211, 153, 0.25)';
@@ -391,7 +392,12 @@
       }
       userBloodGroupStatusEl.style.display = 'inline-block';
     }
-    if (userLocationEl) userLocationEl.textContent = donorData.district ? `${donorData.district}, India` : (donorData.location || 'India');
+    if (userLocationEl) {
+      const regCity = donorData.city || '';
+      const regState = donorData.state || '';
+      const locStr = regCity ? (regCity + (regState ? ', ' + regState : '')) : (donorData.location && !donorData.location.toLowerCase().includes('india') ? donorData.location : 'Location not shared');
+      userLocationEl.textContent = locStr;
+    }
     if (userDonorIdEl) userDonorIdEl.textContent = donorData.donorId || 'DNR-0811-A404';
 
     // Top command nav avatar fallback
@@ -406,7 +412,7 @@
   }
 
   /**
-   * 2. Emergency requests near you (Part 3.1)
+   * 2. Emergency requests near you (Group C.1)
    */
   function renderAlerts() {
     const badgeEl = document.getElementById('sos-badge');
@@ -424,10 +430,11 @@
     if (!summaryContainer) return;
 
     if (!donorData.activeAlerts || donorData.activeAlerts.length === 0) {
-      // DEFAULT STATE: EMPTY
+      // DEFAULT STATE: EMPTY (Plain text status, no badge pill)
       if (badgeEl) {
-        badgeEl.className = 'action-badge badge-clear';
-        badgeEl.innerHTML = '<i class="fa-solid fa-shield-heart"></i> NO REQUESTS';
+        badgeEl.className = 'plain-status-text';
+        badgeEl.style.cssText = 'font-size: 12px; color: #94a3b8; font-weight: normal; background: none; border: none; padding: 0;';
+        badgeEl.textContent = 'No active requests';
       }
       summaryContainer.innerHTML = `
         <p class="action-summary-text clear-status">
@@ -447,8 +454,9 @@
       // ACTIVE ALERTS PRESENT
       const count = donorData.activeAlerts.length;
       if (badgeEl) {
-        badgeEl.className = 'action-badge';
-        badgeEl.textContent = `${count} ACTIVE REQUEST${count > 1 ? 'S' : ''}`;
+        badgeEl.className = 'plain-status-text';
+        badgeEl.style.cssText = 'font-size: 12px; color: #f87171; font-weight: 600; background: none; border: none; padding: 0;';
+        badgeEl.textContent = `${count} active ${count === 1 ? 'request' : 'requests'}`;
       }
       const firstAlert = donorData.activeAlerts[0];
       const summaryText = count === 1
@@ -472,16 +480,43 @@
   }
 
   /**
-   * 3. System Notifications (Part 3.4 & Part 3.7)
+   * 3. System Notifications (Group C.4)
    */
-  function renderSystemLogs() {
+  async function renderSystemLogs() {
     const logsContainer = document.getElementById('system-logs-container');
     const footerLink = document.getElementById('notificationsFooterLink');
     if (!logsContainer) return;
 
     const logItems = [];
 
-    // Real active emergency requests
+    // 1. Fetch real notifications from database
+    try {
+      const notifRes = await fetch('/api/donor/notifications', { credentials: 'include' });
+      if (notifRes.ok) {
+        const notifJson = await notifRes.json();
+        const dbNotifs = notifJson.data || [];
+        dbNotifs.forEach(n => {
+          const isSos = (n.type && (n.type.includes('sos') || n.type.includes('emergency')));
+          const timeStr = n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '[UPDATE]';
+          logItems.push(`
+            <div class="terminal-log-item ${isSos ? 'sos' : 'verify'}">
+              <div class="log-icon-wrap"><i class="fa-solid ${isSos ? 'fa-triangle-exclamation' : 'fa-bell'}"></i></div>
+              <div class="log-content">
+                <div class="log-meta-row">
+                  <span class="log-time">${escapeHtml(timeStr)}</span>
+                  <span class="log-type-tag">${escapeHtml((n.title || 'NOTIFICATION').toUpperCase())}</span>
+                </div>
+                <div class="log-message">
+                  ${escapeHtml(n.message || '')}
+                </div>
+              </div>
+            </div>
+          `);
+        });
+      }
+    } catch (_) {}
+
+    // 2. Real active emergency requests
     if (donorData.activeAlerts && donorData.activeAlerts.length > 0) {
       donorData.activeAlerts.forEach(alert => {
         logItems.push(`
@@ -493,7 +528,7 @@
                 <span class="log-type-tag">EMERGENCY REQUEST</span>
               </div>
               <div class="log-message">
-                <strong>${alert.bloodGroup || 'Blood'}</strong> required at <strong>${alert.hospital || 'Nearby Hospital'}</strong>.
+                <strong>${escapeHtml(alert.bloodGroup || 'Blood')}</strong> required at <strong>${escapeHtml(alert.hospital || 'Nearby Hospital')}</strong>.
               </div>
             </div>
           </div>
@@ -501,7 +536,7 @@
       });
     }
 
-    // Real verified donations from history
+    // 3. Real verified donations from history
     if (donorData.donations && donorData.donations.length > 0) {
       donorData.donations.forEach(d => {
         logItems.push(`
@@ -513,7 +548,7 @@
                 <span class="log-type-tag">VERIFIED DONATION</span>
               </div>
               <div class="log-message">
-                Completed donation at <strong>${d.hospital || 'Hospital'}</strong> on <strong>${d.date || 'Recent'}</strong>.
+                Completed donation at <strong>${escapeHtml(d.hospital || 'Hospital')}</strong> on <strong>${escapeHtml(d.date || 'Recent')}</strong>.
               </div>
             </div>
           </div>
@@ -521,26 +556,29 @@
       });
     }
 
-    // Honest account creation event
-    const verifyNote = (donorData.bloodGroupStatus === 'hospital_verified')
-      ? ` • Verified by ${donorData.bloodGroupVerifiedBy || 'hospital'}`
-      : '';
+    // 4. Honest account creation event (Group C.4)
+    const isHospitalVerified = (donorData.bloodGroupStatus === 'hospital_verified');
+    const creationTitle = isHospitalVerified ? 'PROFILE VERIFIED' : 'ACCOUNT CREATED';
+    const creationMessage = isHospitalVerified
+      ? `Profile verified by ${escapeHtml(donorData.bloodGroupVerifiedBy || 'Hospital')}. Account active.`
+      : `Account created on <strong>${escapeHtml(donorData.profileCreatedAt || 'Registration')}</strong>`;
+
     logItems.push(`
       <div class="terminal-log-item verify">
         <div class="log-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
         <div class="log-content">
           <div class="log-meta-row">
             <span class="log-time">[SYSTEM]</span>
-            <span class="log-type-tag">ACCOUNT CREATED</span>
+            <span class="log-type-tag">${creationTitle}</span>
           </div>
           <div class="log-message">
-            Account created on <strong>${donorData.profileCreatedAt || 'Registration'}</strong>${verifyNote}
+            ${creationMessage}
           </div>
         </div>
       </div>
     `);
 
-    // Show latest 5 items only (Part 3.7)
+    // Show latest 5 items only (Group C.4)
     const displayedItems = logItems.slice(0, 5);
     logsContainer.innerHTML = displayedItems.join('');
 
@@ -554,21 +592,19 @@
   }
 
   /**
-   * Status Row (Part 3.5)
+   * Status Row (Group C.5)
    */
   function initStatusRow() {
-    const locText = document.getElementById('statusRowLocationText');
-    const locSub = document.getElementById('statusRowLocationSub');
+    const locText = document.getElementById('statusLocationText') || document.getElementById('statusRowLocationText');
+    const locSub = document.getElementById('statusLocationTime') || document.getElementById('statusRowLocationSub');
     const btnLoc = document.getElementById('btnFixLocation');
 
-    const notifText = document.getElementById('statusRowNotifText');
+    const notifText = document.getElementById('statusNotifText') || document.getElementById('statusRowNotifText');
     const notifSub = document.getElementById('statusRowNotifSub');
     const btnNotif = document.getElementById('btnFixNotif');
 
-    const availText = document.getElementById('statusRowAvailText');
-    const availSub = document.getElementById('statusRowAvailSub');
     const btnAvail = document.getElementById('btnToggleAvailability');
-    const pauseNotice = document.getElementById('statusRowPauseUntilNotice');
+    const pauseNotice = document.getElementById('pausedUntilLabel') || document.getElementById('statusRowPauseUntilNotice');
     const btnPauseDate = document.getElementById('btnSetPauseDate');
 
     // 1. Location Status
@@ -630,53 +666,47 @@
     function updateAvailUI() {
       const isPaused = (donorData.availability && (donorData.availability.toLowerCase() === 'paused' || donorData.availability.toLowerCase() === 'unavailable')) || donorData.available === false;
       if (isPaused) {
-        if (availText) availText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Status: Paused';
-        if (availSub) availSub.textContent = 'Excluded from searches';
         if (btnAvail) {
-          btnAvail.textContent = 'Resume Availability';
+          btnAvail.textContent = 'Status: Paused (Resume)';
           btnAvail.style.background = '#0284c7';
         }
         if (pauseNotice) {
           if (donorData.pausedUntil) {
-            pauseNotice.textContent = `Paused until: ${donorData.pausedUntil}`;
+            pauseNotice.textContent = `(Paused until: ${donorData.pausedUntil})`;
             pauseNotice.style.display = 'inline';
           } else {
             pauseNotice.style.display = 'none';
           }
         }
       } else {
-        if (availText) availText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>Status: Available to donate';
-        if (availSub) availSub.textContent = 'Ready for emergency requests';
         if (btnAvail) {
-          btnAvail.textContent = 'Pause';
-          btnAvail.style.background = 'rgba(255,255,255,0.08)';
+          btnAvail.textContent = 'Available to donate';
+          btnAvail.style.background = '#22c55e';
         }
         if (pauseNotice) pauseNotice.style.display = 'none';
       }
     }
+
     updateAvailUI();
 
     if (btnAvail && !btnAvail.dataset.bound) {
       btnAvail.dataset.bound = 'true';
       btnAvail.addEventListener('click', async () => {
-        const isPaused = (donorData.availability && (donorData.availability.toLowerCase() === 'paused' || donorData.availability.toLowerCase() === 'unavailable')) || donorData.available === false;
-        const newAvailable = isPaused;
+        const currentIsPaused = (donorData.availability && (donorData.availability.toLowerCase() === 'paused' || donorData.availability.toLowerCase() === 'unavailable')) || donorData.available === false;
+        const nextAvail = currentIsPaused ? 'Available' : 'Paused';
         try {
           const res = await fetch('/api/donor/availability', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ available: newAvailable }),
-            credentials: 'include'
+            credentials: 'include',
+            body: JSON.stringify({ availability: nextAvail, available: currentIsPaused })
           });
           if (res.ok) {
-            donorData.available = newAvailable;
-            donorData.availability = newAvailable ? 'Available' : 'Paused';
-            donorData.pausedUntil = null;
+            donorData.availability = nextAvail;
+            donorData.available = currentIsPaused;
+            if (currentIsPaused) donorData.pausedUntil = null;
             updateAvailUI();
             renderUpcomingDrives();
-            if (typeof showToast === 'function') {
-              showToast(newAvailable ? 'You are now Available to donate' : 'Your status is now Paused', 'info');
-            }
           }
         } catch (e) {
           console.error('Availability toggle error:', e);
@@ -687,25 +717,21 @@
     if (btnPauseDate && !btnPauseDate.dataset.bound) {
       btnPauseDate.dataset.bound = 'true';
       btnPauseDate.addEventListener('click', async () => {
-        const defaultDate = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
-        const dateInput = prompt('Enter date to pause until (YYYY-MM-DD):', defaultDate);
-        if (!dateInput || !dateInput.trim()) return;
+        const targetDate = window.prompt('Enter date until which availability should be paused (YYYY-MM-DD):');
+        if (!targetDate || !targetDate.trim()) return;
         try {
           const res = await fetch('/api/donor/availability', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ available: false, pausedUntil: dateInput.trim() }),
-            credentials: 'include'
+            credentials: 'include',
+            body: JSON.stringify({ availability: 'Paused', available: false, pausedUntil: targetDate.trim() })
           });
           if (res.ok) {
-            donorData.available = false;
             donorData.availability = 'Paused';
-            donorData.pausedUntil = dateInput.trim();
+            donorData.available = false;
+            donorData.pausedUntil = targetDate.trim();
             updateAvailUI();
             renderUpcomingDrives();
-            if (typeof showToast === 'function') {
-              showToast(`Paused until ${dateInput.trim()}`, 'info');
-            }
           }
         } catch (e) {
           console.error('Pause date error:', e);
@@ -713,6 +739,8 @@
       });
     }
   }
+
+
 
   /**
    * Upcoming Donation Drives (Part 3.6)

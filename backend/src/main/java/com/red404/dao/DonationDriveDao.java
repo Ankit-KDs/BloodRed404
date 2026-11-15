@@ -194,7 +194,7 @@ public class DonationDriveDao {
                 "FROM donation_drives d " +
                 "JOIN hospitals h ON d.hospital_id = h.id " +
                 "LEFT JOIN donation_drive_rsvps r ON r.drive_id = d.id AND r.donor_id = ? " +
-                "WHERE d.status = 'upcoming' AND d.drive_date >= CURRENT_DATE " +
+                "WHERE d.status = 'upcoming' AND d.drive_date >= CURRENT_DATE AND (h.verification_status = 'Verified' OR h.verification_status = 'VERIFIED') " +
                 "ORDER BY d.drive_date ASC, d.created_at DESC";
 
         List<Map<String, Object>> matches = new ArrayList<>();

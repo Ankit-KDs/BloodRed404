@@ -317,7 +317,7 @@ body.bento-dashboard-body::after {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 20px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .card-header-bar {
