@@ -501,6 +501,10 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("status", "VARCHAR(20) DEFAULT 'Active'");
         requiredColumns.put("latitude", "DOUBLE NULL");
         requiredColumns.put("longitude", "DOUBLE NULL");
+        requiredColumns.put("radius_km", "DOUBLE DEFAULT 10.0");
+        requiredColumns.put("ward_info", "VARCHAR(150) NULL");
+        requiredColumns.put("staff_user", "VARCHAR(150) NULL DEFAULT 'Hospital Staff'");
+        requiredColumns.put("first_response_time", "VARCHAR(50) NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "blood_requests", requiredColumns);

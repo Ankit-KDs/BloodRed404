@@ -118,6 +118,18 @@ public class BloodRequestDao {
         }
     }
 
+    public boolean updateRadius(int id, double radius) throws SQLException {
+        String sql = "UPDATE blood_requests SET radius_km = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, radius);
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
     public boolean incrementUnitsFulfilled(int id) throws SQLException {
         String sql = "UPDATE blood_requests SET units_fulfilled = COALESCE(units_fulfilled, 0) + 1, " +
                      "status = CASE WHEN COALESCE(units_fulfilled, 0) + 1 >= units_requested THEN 'Fulfilled' ELSE status END " +
@@ -182,8 +194,36 @@ public class BloodRequestDao {
         req.put("hospitalName", rs.getString("hospital_name"));
         req.put("city", rs.getString("city"));
         req.put("phone", rs.getString("hospital_phone"));
-        req.put("donorsAccepted", 0);
-        req.put("donorsNotified", 0);
+        try {
+            Object rad = rs.getObject("radius_km");
+            req.put("radiusKm", rad instanceof Number ? ((Number) rad).doubleValue() : 10.0);
+        } catch (SQLException ignored) {
+            req.put("radiusKm", 10.0);
+        }
+        try {
+            String ward = rs.getString("ward_info");
+            req.put("wardInfo", ward != null && !ward.isBlank() ? ward : null);
+            String staff = rs.getString("staff_user");
+            req.put("staffUser", staff != null && !staff.isBlank() ? staff : "Hospital Staff");
+        } catch (SQLException ignored) {
+            req.put("wardInfo", null);
+            req.put("staffUser", "Hospital Staff");
+        }
+
+        try {
+            BloodRequestNotificationDao nDao = new BloodRequestNotificationDao();
+            Map<String, Object> metrics = nDao.getRequestMetrics(id);
+            req.put("donorsNotified", metrics.get("notified"));
+            req.put("donorsAccepted", metrics.get("accepted"));
+            req.put("donorsArrived", metrics.get("arrived"));
+            req.put("firstResponseTime", metrics.get("firstResponseTime"));
+            req.put("firstResponseMin", metrics.get("firstResponseMin"));
+        } catch (Exception ignored) {
+            req.put("donorsAccepted", 0);
+            req.put("donorsNotified", 0);
+            req.put("donorsArrived", 0);
+            req.put("firstResponseTime", null);
+        }
         try {
             req.put("unitsFulfilled", rs.getInt("units_fulfilled"));
             req.put("fulfillmentNote", rs.getString("fulfillment_note"));

@@ -295,7 +295,66 @@ public class HospitalController {
                     ? requestDao.listByHospital(hospId)
                     : requestDao.listActive();
             enrichAndSanitizeRequests(list);
-            return ok("History loaded", list);
+
+            int activeNow = 0;
+            int fulfilledThisMonth = 0;
+            int cancelledThisMonth = 0;
+            double totalFirstRespMins = 0;
+            int respCount = 0;
+
+            java.time.LocalDate now = java.time.LocalDate.now();
+            int currentYear = now.getYear();
+            int currentMonth = now.getMonthValue();
+
+            for (Map<String, Object> reqItem : list) {
+                String st = reqItem.get("status") != null ? reqItem.get("status").toString().toLowerCase() : "";
+                if (st.equals("active") || st.equals("open") || st.equals("accepted") || st.equals("arrived")) {
+                    activeNow++;
+                }
+
+                String createdStr = (String) reqItem.get("createdAt");
+                if (createdStr == null) createdStr = (String) reqItem.get("time");
+                if (createdStr != null && createdStr.length() >= 7) {
+                    try {
+                        String[] parts = createdStr.substring(0, 10).split("-");
+                        int y = Integer.parseInt(parts[0]);
+                        int m = Integer.parseInt(parts[1]);
+                        if (y == currentYear && m == currentMonth) {
+                            if (st.equals("fulfilled")) {
+                                fulfilledThisMonth++;
+                            } else if (st.equals("cancelled")) {
+                                cancelledThisMonth++;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                Object frMin = reqItem.get("firstResponseMin");
+                if (frMin instanceof Number) {
+                    totalFirstRespMins += ((Number) frMin).doubleValue();
+                    respCount++;
+                }
+            }
+
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("activeNow", activeNow);
+            summary.put("fulfilledThisMonth", fulfilledThisMonth);
+            summary.put("cancelledThisMonth", cancelledThisMonth);
+            if (respCount >= 5) {
+                long avg = Math.round(totalFirstRespMins / respCount);
+                summary.put("avgFirstResponseMin", avg);
+                summary.put("avgFirstResponseText", avg + " min");
+            } else {
+                summary.put("avgFirstResponseMin", null);
+                summary.put("avgFirstResponseText", "No data yet");
+            }
+            summary.put("totalRequests", list.size());
+
+            Map<String, Object> respData = new HashMap<>();
+            respData.put("summary", summary);
+            respData.put("requests", list);
+
+            return ok("History loaded", respData);
         } catch (Exception e) {
             return serverError(e);
         }
@@ -369,6 +428,37 @@ public class HospitalController {
             }
             requestDao.updateStatusWithNote(id, "Fulfilled", note.trim());
             return ok("Request marked as fulfilled", null);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping("/requests/{id}/donors")
+    public ResponseEntity<ApiResponse> getRequestDonors(@PathVariable int id) {
+        try {
+            com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
+            return ok("Donors loaded", notifDao.getDonorsForRequest(id));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/requests/{id}/extend-radius")
+    public ResponseEntity<ApiResponse> extendRadius(
+            @PathVariable int id,
+            @RequestBody JsonNode body) {
+        try {
+            double radius = 15.0;
+            if (body != null && body.has("radius")) {
+                radius = body.get("radius").asDouble();
+            } else if (body != null && body.has("radiusKm")) {
+                radius = body.get("radiusKm").asDouble();
+            }
+            if (radius < 1.0 || radius > 100.0) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Radius must be between 1 and 100 km."));
+            }
+            requestDao.updateRadius(id, radius);
+            return ok("Radius extended to " + radius + " km", Map.of("id", id, "radius", radius));
         } catch (Exception e) {
             return serverError(e);
         }

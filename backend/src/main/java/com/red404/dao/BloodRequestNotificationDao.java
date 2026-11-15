@@ -264,6 +264,125 @@ public class BloodRequestNotificationDao {
         }
     }
 
+    public static String maskDonorName(String fullName) {
+        if (fullName == null || fullName.isBlank()) return "Donor";
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length == 1) return parts[0];
+        return parts[0] + " " + parts[parts.length - 1].substring(0, 1).toUpperCase() + ".";
+    }
+
+    public List<Map<String, Object>> getDonorsForRequest(int requestId) {
+        ensureTableExists();
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT n.id, n.status as notif_status, n.notified_at, n.responded_at, " +
+                     "d.id as donor_pk, d.donor_id, d.name, d.blood_type, d.phone, d.latitude, d.longitude, " +
+                     "br.latitude as hosp_lat, br.longitude as hosp_lng, br.status as req_status " +
+                     "FROM blood_request_notifications n " +
+                     "JOIN donors d ON n.donor_id = d.id " +
+                     "JOIN blood_requests br ON n.request_id = br.id " +
+                     "WHERE n.request_id = ? " +
+                     "ORDER BY n.id ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new HashMap<>();
+                    String notifStatus = rs.getString("notif_status");
+                    String reqStatus = rs.getString("req_status");
+                    map.put("id", rs.getInt("id"));
+                    map.put("donorId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("donor_pk"));
+                    map.put("donorName", maskDonorName(rs.getString("name")));
+                    map.put("bloodType", rs.getString("blood_type"));
+                    map.put("status", notifStatus);
+                    
+                    Object dLatObj = rs.getObject("latitude");
+                    Object dLngObj = rs.getObject("longitude");
+                    Object hLatObj = rs.getObject("hosp_lat");
+                    Object hLngObj = rs.getObject("hosp_lng");
+                    if (dLatObj instanceof Number && dLngObj instanceof Number && hLatObj instanceof Number && hLngObj instanceof Number) {
+                        double dist = com.red404.util.DistanceCalculator.calculateDistance(
+                                ((Number) hLatObj).doubleValue(), ((Number) hLngObj).doubleValue(),
+                                ((Number) dLatObj).doubleValue(), ((Number) dLngObj).doubleValue()
+                        );
+                        double roundedDist = Math.round(dist * 10.0) / 10.0;
+                        map.put("distanceKm", roundedDist);
+                        map.put("etaMinutes", com.red404.util.DistanceCalculator.getEstimatedTravelTime(roundedDist, "DRIVING"));
+                    } else {
+                        map.put("distanceKm", null);
+                        map.put("etaMinutes", null);
+                    }
+
+                    boolean isReqActive = reqStatus != null && (reqStatus.equalsIgnoreCase("Open") || reqStatus.equalsIgnoreCase("Accepted") || reqStatus.equalsIgnoreCase("Active") || reqStatus.equalsIgnoreCase("Arrived"));
+                    boolean isDonorAccepted = notifStatus != null && (notifStatus.equalsIgnoreCase("ACCEPTED") || notifStatus.equalsIgnoreCase("ARRIVED") || notifStatus.equalsIgnoreCase("DONATED"));
+                    if (isReqActive && isDonorAccepted) {
+                        map.put("phone", rs.getString("phone"));
+                    } else {
+                        map.put("phone", null);
+                    }
+
+                    Object notifAt = rs.getObject("notified_at");
+                    map.put("notifiedAt", notifAt != null ? notifAt.toString() : null);
+                    Object respAt = rs.getObject("responded_at");
+                    map.put("respondedAt", respAt != null ? respAt.toString() : null);
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error getting donors for request {}: {}", requestId, e.getMessage());
+        }
+        return list;
+    }
+
+    public Map<String, Object> getRequestMetrics(int requestId) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("notified", 0);
+        res.put("accepted", 0);
+        res.put("arrived", 0);
+        res.put("firstResponseTime", null);
+        res.put("firstResponseMin", null);
+
+        String sql = "SELECT status, notified_at, responded_at FROM blood_request_notifications WHERE request_id = ? ORDER BY id ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            int notified = 0;
+            int accepted = 0;
+            int arrived = 0;
+            Long firstRespSec = null;
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    notified++;
+                    String st = rs.getString("status");
+                    if (st != null) {
+                        String stUpper = st.toUpperCase();
+                        if (stUpper.equals("ACCEPTED") || stUpper.equals("ARRIVED") || stUpper.equals("DONATED")) {
+                            accepted++;
+                        }
+                        if (stUpper.equals("ARRIVED") || stUpper.equals("DONATED")) {
+                            arrived++;
+                        }
+                    }
+                    if (firstRespSec == null && rs.getTimestamp("notified_at") != null && rs.getTimestamp("responded_at") != null) {
+                        long diff = (rs.getTimestamp("responded_at").getTime() - rs.getTimestamp("notified_at").getTime()) / 1000L;
+                        if (diff >= 0) {
+                            firstRespSec = diff;
+                        }
+                    }
+                }
+            }
+            res.put("notified", notified);
+            res.put("accepted", accepted);
+            res.put("arrived", arrived);
+            if (firstRespSec != null) {
+                long mins = Math.max(1, Math.round(firstRespSec / 60.0));
+                res.put("firstResponseMin", mins);
+                res.put("firstResponseTime", mins + " min");
+            }
+        } catch (Exception ignored) {}
+        return res;
+    }
+
     public List<Map<String, Object>> getNotificationsForDonor(int donorId, Double donorLat, Double donorLng) {
         ensureTableExists();
         expireOldNotifications();

@@ -2108,85 +2108,786 @@ async function updateInventoryUnit(bloodType, change) {
 /* ============================================================
    9. MY REQUESTS / DISPATCH LOGS (REAL BACKEND REQUEST HISTORY)
    ============================================================ */
-let currentRecordsList = [];
+let recordsAll = [];
+let recordsFiltered = [];
+let recordsSummary = {};
+let currentRecordsPage = 1;
+const recordsPageSize = 10;
+let selectedRequest = null;
 
 function initRecords() {
-  loadRecordsTable();
+  // Search & Filter listeners
+  const searchInput = document.getElementById('reqSearchInput');
+  const filterStatus = document.getElementById('reqFilterStatus');
+  const filterBlood = document.getElementById('reqFilterBloodGroup');
+  const filterUrgency = document.getElementById('reqFilterUrgency');
+  const filterDate = document.getElementById('reqFilterDate');
+  const btnReset = document.getElementById('btnResetReqFilters');
 
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      currentRecordsPage = 1;
+      applyRecordsFilter();
+    });
+  }
+  if (filterStatus) filterStatus.addEventListener('change', () => { currentRecordsPage = 1; applyRecordsFilter(); });
+  if (filterBlood) filterBlood.addEventListener('change', () => { currentRecordsPage = 1; applyRecordsFilter(); });
+  if (filterUrgency) filterUrgency.addEventListener('change', () => { currentRecordsPage = 1; applyRecordsFilter(); });
+  if (filterDate) filterDate.addEventListener('change', () => { currentRecordsPage = 1; applyRecordsFilter(); });
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      if (filterStatus) filterStatus.value = 'ALL';
+      if (filterBlood) filterBlood.value = 'ALL';
+      if (filterUrgency) filterUrgency.value = 'ALL';
+      if (filterDate) filterDate.value = 'ALL';
+      currentRecordsPage = 1;
+      applyRecordsFilter();
+    });
+  }
+
+  // Pagination buttons
+  const btnPrev = document.getElementById('btnReqPrevPage');
+  const btnNext = document.getElementById('btnReqNextPage');
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      if (currentRecordsPage > 1) {
+        currentRecordsPage--;
+        renderRecordsPage();
+      }
+    });
+  }
+  if (btnNext) {
+    btnNext.addEventListener('click', () => {
+      const maxPage = Math.max(1, Math.ceil(recordsFiltered.length / recordsPageSize));
+      if (currentRecordsPage < maxPage) {
+        currentRecordsPage++;
+        renderRecordsPage();
+      }
+    });
+  }
+
+  // Export CSV
   const exportBtn = document.getElementById('btnExportRecordsCsv');
   if (exportBtn) {
     exportBtn.addEventListener('click', exportCsv);
   }
+
+  // Drawer Close
+  const closeDrawerBtn = document.getElementById('btnCloseReqDrawer');
+  const drawerBackdrop = document.getElementById('reqDrawerBackdrop');
+  if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeRequestDrawer);
+  if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeRequestDrawer);
+
+  // Drawer Action Buttons & Modals
+  setupDrawerActions();
+
+  // Load initial data
+  loadRecordsTable();
 }
 
 async function loadRecordsTable() {
   const tbody = document.getElementById('recordsTableBody');
+  const emptyBox = document.getElementById('recordsEmptyState');
+  const errorBox = document.getElementById('recordsErrorState');
   if (!tbody) return;
+
+  if (errorBox) errorBox.style.display = 'none';
 
   try {
     const res = await fetch('/api/hospital/requests/history', { credentials: 'include' });
     if (res.ok) {
       const json = await res.json();
-      currentRecordsList = Array.isArray(json.data) ? json.data : [];
+      if (json && json.data) {
+        if (Array.isArray(json.data)) {
+          recordsAll = json.data;
+          recordsSummary = {};
+        } else if (json.data.requests) {
+          recordsAll = Array.isArray(json.data.requests) ? json.data.requests : [];
+          recordsSummary = json.data.summary || {};
+        }
+      } else {
+        recordsAll = [];
+      }
+    } else {
+      if (errorBox) errorBox.style.display = 'block';
+      return;
     }
   } catch (e) {
     console.error('Records fetch error:', e);
-  }
-
-  if (currentRecordsList.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: var(--sp-32); color: var(--hosp-text-muted);">
-          No emergency requests dispatched yet. <button type="button" class="btn-secondary" onclick="switchTab('tab-dashboard')" style="margin-left: 8px;">Send SOS</button>
-        </td>
-      </tr>
-    `;
+    if (errorBox) errorBox.style.display = 'block';
     return;
   }
 
-  tbody.innerHTML = currentRecordsList.map(r => {
+  // Render Summary Cards (Group 4.1)
+  renderRecordsSummaryCards();
+
+  // Apply filters and render page
+  applyRecordsFilter();
+}
+
+function renderRecordsSummaryCards() {
+  const elActive = document.getElementById('summaryActiveNow');
+  const elFulfilled = document.getElementById('summaryFulfilledThisMonth');
+  const elCancelled = document.getElementById('summaryCancelledThisMonth');
+  const elAvgResp = document.getElementById('summaryAvgResponseTime');
+
+  let activeCount = recordsSummary.activeNow;
+  let fulfilledCount = recordsSummary.fulfilledThisMonth;
+  let cancelledCount = recordsSummary.cancelledThisMonth;
+  let avgText = recordsSummary.avgFirstResponseText;
+
+  // Fallback calculation if backend didn't supply summary object
+  if (activeCount === undefined) {
+    activeCount = recordsAll.filter(r => {
+      const s = (r.status || '').toLowerCase();
+      return s === 'active' || s === 'open' || s === 'accepted' || s === 'arrived';
+    }).length;
+  }
+  if (fulfilledCount === undefined) {
+    fulfilledCount = recordsAll.filter(r => (r.status || '').toLowerCase() === 'fulfilled').length;
+  }
+  if (cancelledCount === undefined) {
+    cancelledCount = recordsAll.filter(r => (r.status || '').toLowerCase() === 'cancelled').length;
+  }
+  if (!avgText) {
+    avgText = 'No data yet';
+  }
+
+  if (elActive) elActive.textContent = activeCount;
+  if (elFulfilled) elFulfilled.textContent = fulfilledCount;
+  if (elCancelled) elCancelled.textContent = cancelledCount;
+  if (elAvgResp) elAvgResp.textContent = avgText;
+}
+
+function applyRecordsFilter() {
+  const searchInput = document.getElementById('reqSearchInput');
+  const filterStatus = document.getElementById('reqFilterStatus');
+  const filterBlood = document.getElementById('reqFilterBloodGroup');
+  const filterUrgency = document.getElementById('reqFilterUrgency');
+  const filterDate = document.getElementById('reqFilterDate');
+
+  const q = (searchInput ? searchInput.value : '').trim().toLowerCase();
+  const st = filterStatus ? filterStatus.value : 'ALL';
+  const bg = filterBlood ? filterBlood.value : 'ALL';
+  const urg = filterUrgency ? filterUrgency.value : 'ALL';
+  const dFilter = filterDate ? filterDate.value : 'ALL';
+
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const weekAgo = new Date(now.getTime() - 7 * 86400000);
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  recordsFiltered = recordsAll.filter(r => {
+    // 1. Status Filter
+    const rStatus = (r.status || 'Active').toUpperCase();
+    if (st === 'ACTIVE') {
+      if (!['ACTIVE', 'OPEN', 'ACCEPTED', 'ARRIVED'].includes(rStatus)) return false;
+    } else if (st !== 'ALL') {
+      if (rStatus !== st) return false;
+    }
+
+    // 2. Blood Group Filter
+    const rBlood = (r.blood_type || r.bloodType || '').toUpperCase();
+    if (bg !== 'ALL' && rBlood !== bg.toUpperCase()) return false;
+
+    // 3. Urgency Filter
+    const rUrg = (r.urgency_level || r.urgency || 'Normal').toUpperCase();
+    if (urg !== 'ALL' && rUrg !== urg.toUpperCase()) return false;
+
+    // 4. Date Filter
+    if (dFilter !== 'ALL' && r.created_at) {
+      const rDate = new Date(r.created_at);
+      if (!isNaN(rDate.getTime())) {
+        if (dFilter === 'TODAY') {
+          if (r.created_at.slice(0, 10) !== todayStr) return false;
+        } else if (dFilter === 'WEEK') {
+          if (rDate < weekAgo) return false;
+        } else if (dFilter === 'MONTH') {
+          if (rDate.getMonth() !== currentMonth || rDate.getFullYear() !== currentYear) return false;
+        }
+      }
+    }
+
+    // 5. Search Text Query (ID, Patient, Ward, Notes)
+    if (q) {
+      const reqIdStr = `#REQ-${String(r.id || '').padStart(3, '0')}`.toLowerCase();
+      const rawId = String(r.id || '').toLowerCase();
+      const pName = String(r.patient_name || r.patientName || '').toLowerCase();
+      const wInfo = String(r.wardInfo || r.ward_info || '').toLowerCase();
+      const notes = String(r.fulfillment_note || r.notes || '').toLowerCase();
+      if (!reqIdStr.includes(q) && !rawId.includes(q) && !pName.includes(q) && !wInfo.includes(q) && !notes.includes(q)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  renderRecordsPage();
+}
+
+function renderRecordsPage() {
+  const tbody = document.getElementById('recordsTableBody');
+  const emptyBox = document.getElementById('recordsEmptyState');
+  const paginationInfo = document.getElementById('reqPaginationInfo');
+  const pageNumSpan = document.getElementById('reqPageNum');
+  const btnPrev = document.getElementById('btnReqPrevPage');
+  const btnNext = document.getElementById('btnReqNextPage');
+  if (!tbody) return;
+
+  const total = recordsFiltered.length;
+  const maxPage = Math.max(1, Math.ceil(total / recordsPageSize));
+  if (currentRecordsPage > maxPage) currentRecordsPage = maxPage;
+
+  if (total === 0) {
+    tbody.innerHTML = '';
+    if (emptyBox) emptyBox.style.display = 'block';
+    if (paginationInfo) paginationInfo.textContent = 'Showing 0 of 0 requests';
+    if (pageNumSpan) pageNumSpan.textContent = 'Page 1 of 1';
+    if (btnPrev) btnPrev.disabled = true;
+    if (btnNext) btnNext.disabled = true;
+    return;
+  }
+
+  if (emptyBox) emptyBox.style.display = 'none';
+
+  const startIdx = (currentRecordsPage - 1) * recordsPageSize;
+  const endIdx = Math.min(startIdx + recordsPageSize, total);
+  const pageItems = recordsFiltered.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageItems.map(r => {
+    const idFormatted = `#REQ-${String(r.id).padStart(3, '0')}`;
     const blood = r.blood_type || r.bloodType || '-';
-    const units = `${r.units_requested || 1} units`;
+    const units = `${r.units_requested || 1} ${r.units_requested === 1 ? 'unit' : 'units'}`;
     const relTime = getRelativeTime(r.created_at || r.createdAt);
-    const time = r.created_at ? new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+    const dateObj = r.created_at ? new Date(r.created_at) : null;
+    const timeStr = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+    const dateStr = dateObj ? dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+    
+    // Urgency
+    const urgRaw = (r.urgency_level || r.urgency || 'Normal').toUpperCase();
+    let urgClass = 'normal';
+    let urgLabel = 'Normal';
+    if (urgRaw.includes('CRIT')) { urgClass = 'critical'; urgLabel = 'Critical'; }
+    else if (urgRaw.includes('URG')) { urgClass = 'urgent'; urgLabel = 'Urgent'; }
+
+    // Status
     const status = r.status || 'Active';
-    const statusClass = status === 'Fulfilled' ? 'available' : (status === 'Cancelled' ? 'low' : 'active');
+    let statusClass = 'active';
+    if (status === 'Fulfilled') statusClass = 'available';
+    else if (status === 'Cancelled') statusClass = 'low';
+    else if (status === 'Expired') statusClass = 'expired';
+    else if (status === 'Accepted' || status === 'Arrived') statusClass = 'accepted';
+
+    // Radius (Group 4.3: Real radius, NOT "Normal")
+    const radiusVal = (r.radiusKm !== null && r.radiusKm !== undefined) ? r.radiusKm : 10;
+    const radiusStr = `${radiusVal} km`;
+
+    // Counts
+    const notified = r.donorsNotified ?? 0;
+    const accepted = r.donorsAccepted ?? 0;
+    const arrived = r.donorsArrived ?? 0;
+
+    // First response time
+    const respTimeStr = r.firstResponseTime || ((status === 'Open' || status === 'Active') ? '<span style="color:#f59e0b;">Pending</span>' : '-');
+
+    // Patient & Ward
+    const pName = escapeHtml(r.patient_name || r.patientName || 'Emergency Patient');
+    const wInfo = r.wardInfo ? `<div style="font-size:11px; color:#94a3b8;">${escapeHtml(r.wardInfo)}</div>` : '';
+
+    // Staff
+    const staffName = escapeHtml(r.staffUser || 'Hospital Staff');
 
     return `
-      <tr>
+      <tr class="req-row-clickable" onclick="handleRequestRowClick(${r.id})" style="cursor: pointer;" title="Click to view request timeline and donors">
+        <td><strong style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${idFormatted}</strong></td>
         <td>
-          <div><strong>${relTime}</strong></div>
-          <div class="time-mono" style="font-size: 13px; color: var(--hosp-text-muted);">${time}</div>
+          <div style="font-weight: 600; color: #fff;">${relTime}</div>
+          <div style="font-size: 11.5px; color: var(--hosp-text-muted);">${dateStr} ${timeStr}</div>
+        </td>
+        <td>
+          <div style="font-weight: 500; color: #fff;">${pName}</div>
+          ${wInfo}
         </td>
         <td>${getDropBadgeSvg(blood, '')}</td>
         <td><span class="mono-data">${units}</span></td>
-        <td><span class="mono-data">${r.urgency_level || 'Normal'}</span></td>
+        <td><span class="chip-status ${urgClass}">${urgLabel}</span></td>
+        <td><strong style="color: #cbd5e1; font-family: 'JetBrains Mono', monospace;">${radiusStr}</strong></td>
+        <td><span class="mono-data">${notified}</span></td>
+        <td><strong style="color: ${accepted > 0 ? '#22c55e' : '#94a3b8'}; font-family: 'JetBrains Mono', monospace;">${accepted}</strong></td>
+        <td><strong style="color: ${arrived > 0 ? '#38bdf8' : '#94a3b8'}; font-family: 'JetBrains Mono', monospace;">${arrived}</strong></td>
         <td><span class="chip-status ${statusClass}">${status}</span></td>
-        <td><span class="mono-data">${r.donationRef ? `<span style="color:#22c55e; font-weight:600;" title="Linked donation record">${escapeHtml(r.donationRef)}</span>` : '-'}</span></td>
+        <td><span class="mono-data">${respTimeStr}</span></td>
+        <td><span style="font-size: 12px; color: #cbd5e1;">${staffName}</span></td>
       </tr>
     `;
   }).join('');
+
+  if (paginationInfo) paginationInfo.textContent = `Showing ${startIdx + 1}–${endIdx} of ${total} requests`;
+  if (pageNumSpan) pageNumSpan.textContent = `Page ${currentRecordsPage} of ${maxPage}`;
+  if (btnPrev) btnPrev.disabled = currentRecordsPage <= 1;
+  if (btnNext) btnNext.disabled = currentRecordsPage >= maxPage;
 }
 
+window.handleRequestRowClick = function(reqId) {
+  const req = recordsAll.find(r => r.id === reqId);
+  if (req) {
+    openRequestDrawer(req);
+  }
+};
+
+/* ============================================================
+   DETAIL DRAWER ENGINE (Group 4.4 & 4.5)
+   ============================================================ */
+async function openRequestDrawer(r) {
+  selectedRequest = r;
+  const drawer = document.getElementById('reqDetailDrawer');
+  const backdrop = document.getElementById('reqDrawerBackdrop');
+  if (!drawer || !backdrop) return;
+
+  const idFormatted = `#REQ-${String(r.id).padStart(3, '0')}`;
+  document.getElementById('drawerReqId').textContent = idFormatted;
+
+  const blood = r.blood_type || r.bloodType || '-';
+  const bloodBadge = document.getElementById('drawerBloodBadge');
+  if (bloodBadge) bloodBadge.innerHTML = getDropBadgeSvg(blood, '');
+
+  const statusBadge = document.getElementById('drawerStatusBadge');
+  const status = r.status || 'Active';
+  let statusClass = 'active';
+  if (status === 'Fulfilled') statusClass = 'available';
+  else if (status === 'Cancelled') statusClass = 'low';
+  else if (status === 'Expired') statusClass = 'expired';
+  else if (status === 'Accepted' || status === 'Arrived') statusClass = 'accepted';
+  if (statusBadge) {
+    statusBadge.className = `chip-status ${statusClass}`;
+    statusBadge.textContent = status;
+  }
+
+  // Populate Meta details
+  const pName = escapeHtml(r.patient_name || r.patientName || 'Emergency Patient');
+  const wInfo = r.wardInfo ? ` (${escapeHtml(r.wardInfo)})` : '';
+  document.getElementById('drawerPatient').innerHTML = `${pName}${wInfo}`;
+  document.getElementById('drawerUnits').textContent = `${r.units_requested || 1} units`;
+  document.getElementById('drawerUrgency').textContent = r.urgency_level || r.urgency || 'Normal';
+  document.getElementById('drawerRadius').textContent = `${(r.radiusKm !== null && r.radiusKm !== undefined) ? r.radiusKm : 10} km`;
+  document.getElementById('drawerStaff').textContent = r.staffUser || 'Hospital Staff';
+
+  const dateObj = r.created_at ? new Date(r.created_at) : null;
+  const timeFormatted = dateObj ? `${dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '-';
+  document.getElementById('drawerSentTime').textContent = timeFormatted;
+
+  const noteText = r.fulfillment_note || r.notes || '';
+  const noteSpan = document.getElementById('drawerNoteText');
+  if (noteSpan) noteSpan.textContent = noteText || 'None recorded';
+
+  // Cancelled reason box
+  const cancelBox = document.getElementById('drawerCancelReasonBox');
+  const cancelSpan = document.getElementById('drawerCancelReasonText');
+  if (r.cancelled_reason && status === 'Cancelled') {
+    cancelSpan.textContent = r.cancelled_reason;
+    cancelBox.style.display = 'block';
+  } else {
+    cancelBox.style.display = 'none';
+  }
+
+  // Linked donations box
+  const donBox = document.getElementById('drawerLinkedDonationsBox');
+  const donSpan = document.getElementById('drawerLinkedDonationText');
+  if (r.donationRef || (r.linkedDonations && r.linkedDonations.length > 0)) {
+    const ref = r.donationRef || r.linkedDonations[0].refCode || `RED-${String(r.linkedDonations[0].donationId).padStart(5, '0')}`;
+    donSpan.textContent = `${ref} (Verified intake donation recorded)`;
+    donBox.style.display = 'block';
+  } else {
+    donBox.style.display = 'none';
+  }
+
+  // Actions visibility based on lifecycle state (Group 4.5)
+  const isClosed = status === 'Fulfilled' || status === 'Cancelled' || status === 'Expired';
+  const btnCancel = document.getElementById('btnDrawerCancel');
+  const btnExtend = document.getElementById('btnDrawerExtend');
+  const btnFulfill = document.getElementById('btnDrawerFulfill');
+  const btnDuplicate = document.getElementById('btnDrawerDuplicate');
+
+  if (btnCancel) btnCancel.style.display = !isClosed ? 'inline-block' : 'none';
+  if (btnExtend) btnExtend.style.display = !isClosed ? 'inline-block' : 'none';
+  if (btnFulfill) btnFulfill.style.display = !isClosed ? 'inline-block' : 'none';
+  if (btnDuplicate) btnDuplicate.style.display = 'inline-block';
+
+  // Render Status Timeline (Group 4.4)
+  renderRequestTimeline(r);
+
+  // Load Contacted Donors List
+  loadRequestDonorsList(r.id);
+
+  // Show drawer
+  drawer.style.display = 'block';
+  backdrop.style.display = 'block';
+}
+
+function closeRequestDrawer() {
+  const drawer = document.getElementById('reqDetailDrawer');
+  const backdrop = document.getElementById('reqDrawerBackdrop');
+  if (drawer) drawer.style.display = 'none';
+  if (backdrop) backdrop.style.display = 'none';
+  selectedRequest = null;
+}
+
+function renderRequestTimeline(r) {
+  const timelineEl = document.getElementById('drawerTimeline');
+  if (!timelineEl) return;
+
+  const status = (r.status || 'Active').toLowerCase();
+  const isFulfilled = status === 'fulfilled';
+  const isCancelled = status === 'cancelled';
+  const isExpired = status === 'expired';
+  const isAccepted = status === 'accepted' || isFulfilled || status === 'arrived';
+  const isArrived = status === 'arrived' || isFulfilled;
+
+  const dateStr = r.created_at ? new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+  const steps = [
+    { title: 'Sent & Dispatched', time: dateStr, done: true, color: '#38bdf8' },
+    { title: `Notified (${r.donorsNotified ?? 0} donors)`, time: `${(r.radiusKm || 10)} km radius`, done: (r.donorsNotified ?? 0) > 0, color: '#38bdf8' },
+    { title: `Accepted (${r.donorsAccepted ?? 0} confirmed)`, time: r.firstResponseTime ? `First response: ${r.firstResponseTime}` : (isAccepted ? 'Confirmed' : 'Awaiting response'), done: isAccepted, color: '#22c55e' },
+    { title: 'Arrived at Facility', time: isArrived ? 'Donor at check-in' : 'In transit / Pending', done: isArrived, color: '#38bdf8' }
+  ];
+
+  if (isCancelled) {
+    steps.push({ title: 'Request Cancelled', time: r.cancelled_reason || 'Cancelled by staff', done: true, color: '#f87171' });
+  } else if (isExpired) {
+    steps.push({ title: 'Request Expired', time: '60 min window ended', done: true, color: '#94a3b8' });
+  } else {
+    steps.push({ title: isFulfilled ? 'Fulfilled (Intake Complete)' : 'Fulfillment', time: isFulfilled ? 'Donation approved' : 'Pending donation intake', done: isFulfilled, color: '#22c55e' });
+  }
+
+  timelineEl.innerHTML = steps.map((s, idx) => `
+    <div style="display: flex; gap: 12px; align-items: flex-start;">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${s.done ? s.color : '#475569'}; margin-top: 4px;"></span>
+        ${idx < steps.length - 1 ? '<span style="display: inline-block; width: 2px; height: 20px; background: rgba(255,255,255,0.1); margin: 2px 0;"></span>' : ''}
+      </div>
+      <div>
+        <div style="font-size: 13px; font-weight: ${s.done ? '600' : '400'}; color: ${s.done ? '#fff' : '#94a3b8'};">${s.title}</div>
+        <div style="font-size: 11.5px; color: var(--hosp-text-muted);">${s.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadRequestDonorsList(reqId) {
+  const container = document.getElementById('drawerDonorList');
+  const countEl = document.getElementById('drawerDonorCount');
+  if (!container) return;
+
+  container.innerHTML = '<div style="font-size: 12px; color: var(--hosp-text-muted);">Loading contacted donors...</div>';
+
+  try {
+    const res = await fetch(`/api/hospital/requests/${reqId}/donors`, { credentials: 'include' });
+    if (res.ok) {
+      const json = await res.json();
+      const donors = Array.isArray(json.data) ? json.data : [];
+      if (countEl) countEl.textContent = donors.length;
+
+      if (donors.length === 0) {
+        container.innerHTML = '<div style="font-size: 12.5px; color: var(--hosp-text-muted); padding: 10px; background: rgba(255,255,255,0.02); border-radius: 6px;">No donors contacted yet.</div>';
+        return;
+      }
+
+      container.innerHTML = donors.map(d => {
+        const dStatus = (d.status || 'NOTIFIED').toUpperCase();
+        let statusBadgeClass = 'normal';
+        if (dStatus === 'ACCEPTED' || dStatus === 'DONATED') statusBadgeClass = 'available';
+        else if (dStatus === 'ARRIVED') statusBadgeClass = 'accepted';
+        else if (dStatus === 'DECLINED') statusBadgeClass = 'low';
+        else if (dStatus === 'EXPIRED') statusBadgeClass = 'expired';
+
+        const distStr = d.distanceKm !== null ? `${d.distanceKm} km` : '';
+        const etaStr = d.etaMinutes !== null ? `(${d.etaMinutes} min)` : '';
+
+        // Phone: Revealed ONLY if donor accepted an active request (Rule 4.4)
+        const phoneHtml = d.phone
+          ? `<a href="tel:${d.phone}" class="btn-secondary" style="padding: 2px 8px; font-size: 11px; color: #34d399; border-color: rgba(52,211,153,0.3); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+               Call donor
+             </a>`
+          : '';
+
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--hosp-border); border-radius: 8px; padding: 10px 12px; font-size: 12.5px;">
+            <div>
+              <div style="font-weight: 600; color: #fff;">${escapeHtml(d.donorName || 'Donor')} <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 4px;">(${escapeHtml(d.bloodType || '')})</span></div>
+              <div style="font-size: 11.5px; color: var(--hosp-text-muted);">${distStr} ${etaStr}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="chip-status ${statusBadgeClass}" style="font-size: 11px; padding: 2px 6px;">${dStatus}</span>
+              ${phoneHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      container.innerHTML = '<div style="font-size: 12px; color: #f87171;">Could not load donor responses.</div>';
+    }
+  } catch (_) {
+    container.innerHTML = '<div style="font-size: 12px; color: #f87171;">Network notice loading responses.</div>';
+  }
+}
+
+/* ============================================================
+   DRAWER ACTIONS & CONFIRMATION MODALS (Group 4.5)
+   ============================================================ */
+function setupDrawerActions() {
+  // 1. Cancel Action
+  const btnCancel = document.getElementById('btnDrawerCancel');
+  const modalCancel = document.getElementById('modalCancelRequest');
+  const btnCancelClose = document.getElementById('btnCancelModalClose');
+  const btnConfirmCancel = document.getElementById('btnConfirmCancelRequest');
+  const inputCancelReason = document.getElementById('cancelReasonInput');
+
+  if (btnCancel && modalCancel) {
+    btnCancel.addEventListener('click', () => {
+      if (inputCancelReason) inputCancelReason.value = '';
+      modalCancel.style.display = 'flex';
+    });
+  }
+  if (btnCancelClose && modalCancel) {
+    btnCancelClose.addEventListener('click', () => { modalCancel.style.display = 'none'; });
+  }
+  if (btnConfirmCancel && modalCancel) {
+    btnConfirmCancel.addEventListener('click', async () => {
+      const reason = (inputCancelReason ? inputCancelReason.value : '').trim();
+      if (!reason || reason.length < 3) {
+        alert('Please enter a cancellation reason (minimum 3 characters).');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/hospital/requests/${selectedRequest.id}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ reason })
+        });
+        if (res.ok) {
+          modalCancel.style.display = 'none';
+          showToast('Request cancelled successfully', 'info');
+          closeRequestDrawer();
+          loadRecordsTable();
+        } else {
+          const err = await res.json();
+          alert(err.message || 'Failed to cancel request');
+        }
+      } catch (e) {
+        alert('Network error cancelling request');
+      }
+    });
+  }
+
+  // 2. Extend Radius Action
+  const btnExtend = document.getElementById('btnDrawerExtend');
+  const modalExtend = document.getElementById('modalExtendRadius');
+  const btnExtendClose = document.getElementById('btnExtendRadiusClose');
+  const btnConfirmExtend = document.getElementById('btnConfirmExtendRadius');
+  const selRadius = document.getElementById('selExtendRadius');
+
+  if (btnExtend && modalExtend) {
+    btnExtend.addEventListener('click', () => {
+      if (selRadius && selectedRequest) {
+        const curRad = selectedRequest.radiusKm || 10;
+        if (curRad >= 20) selRadius.value = '25';
+        else if (curRad >= 15) selRadius.value = '20';
+        else selRadius.value = '15';
+      }
+      modalExtend.style.display = 'flex';
+    });
+  }
+  if (btnExtendClose && modalExtend) {
+    btnExtendClose.addEventListener('click', () => { modalExtend.style.display = 'none'; });
+  }
+  if (btnConfirmExtend && modalExtend) {
+    btnConfirmExtend.addEventListener('click', async () => {
+      const radius = parseFloat(selRadius ? selRadius.value : 15);
+      try {
+        const res = await fetch(`/api/hospital/requests/${selectedRequest.id}/extend-radius`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ radius })
+        });
+        if (res.ok) {
+          modalExtend.style.display = 'none';
+          showToast(`Search perimeter extended to ${radius} km`, 'success');
+          selectedRequest.radiusKm = radius;
+          document.getElementById('drawerRadius').textContent = `${radius} km`;
+          loadRecordsTable();
+        } else {
+          alert('Failed to extend radius');
+        }
+      } catch (e) {
+        alert('Network error extending radius');
+      }
+    });
+  }
+
+  // 3. Mark Fulfilled Action
+  const btnFulfill = document.getElementById('btnDrawerFulfill');
+  const modalFulfill = document.getElementById('modalFulfillRequest');
+  const btnFulfillClose = document.getElementById('btnFulfillModalClose');
+  const btnConfirmFulfill = document.getElementById('btnConfirmFulfillRequest');
+  const inputFulfillNote = document.getElementById('fulfillNoteInput');
+
+  if (btnFulfill && modalFulfill) {
+    btnFulfill.addEventListener('click', () => {
+      if (inputFulfillNote) inputFulfillNote.value = '';
+      modalFulfill.style.display = 'flex';
+    });
+  }
+  if (btnFulfillClose && modalFulfill) {
+    btnFulfillClose.addEventListener('click', () => { modalFulfill.style.display = 'none'; });
+  }
+  if (btnConfirmFulfill && modalFulfill) {
+    btnConfirmFulfill.addEventListener('click', async () => {
+      const note = (inputFulfillNote ? inputFulfillNote.value : '').trim();
+      if (!note || note.length < 3) {
+        alert('Please enter a fulfillment note (minimum 3 characters).');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/hospital/requests/${selectedRequest.id}/fulfill`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ note })
+        });
+        if (res.ok) {
+          modalFulfill.style.display = 'none';
+          showToast('Request marked as fulfilled', 'success');
+          closeRequestDrawer();
+          loadRecordsTable();
+        } else {
+          const err = await res.json();
+          alert(err.message || 'Failed to fulfill request');
+        }
+      } catch (e) {
+        alert('Network error fulfilling request');
+      }
+    });
+  }
+
+  // 4. Duplicate Request Action
+  const btnDuplicate = document.getElementById('btnDrawerDuplicate');
+  const modalDuplicate = document.getElementById('modalDuplicateRequest');
+  const btnDuplicateClose = document.getElementById('btnDuplicateModalClose');
+  const btnConfirmDuplicate = document.getElementById('btnConfirmDuplicateRequest');
+
+  if (btnDuplicate && modalDuplicate) {
+    btnDuplicate.addEventListener('click', () => {
+      modalDuplicate.style.display = 'flex';
+    });
+  }
+  if (btnDuplicateClose && modalDuplicate) {
+    btnDuplicateClose.addEventListener('click', () => { modalDuplicate.style.display = 'none'; });
+  }
+  if (btnConfirmDuplicate && modalDuplicate) {
+    btnConfirmDuplicate.addEventListener('click', () => {
+      modalDuplicate.style.display = 'none';
+      closeRequestDrawer();
+
+      // Pre-fill Find Donors dispatch form in tab-dispatch
+      if (selectedRequest) {
+        const bgSel = document.getElementById('dispBloodGroup') || document.getElementById('selSearchBloodGroup');
+        const unitsInp = document.getElementById('dispUnits') || document.getElementById('inpSearchUnits');
+        const urgSel = document.getElementById('dispUrgency') || document.getElementById('selSearchUrgency');
+        const notesInp = document.getElementById('dispNotes') || document.getElementById('inpSearchNotes');
+
+        if (bgSel) bgSel.value = selectedRequest.blood_type || selectedRequest.bloodType || 'A+';
+        if (unitsInp) unitsInp.value = selectedRequest.units_requested || 1;
+        if (urgSel) urgSel.value = (selectedRequest.urgency_level || 'HIGH').toUpperCase();
+        if (notesInp) notesInp.value = selectedRequest.fulfillment_note || selectedRequest.notes || '';
+      }
+
+      switchTab('tab-dispatch');
+      showToast('Request parameters loaded into Find Donors', 'info');
+    });
+  }
+}
+
+/* ============================================================
+   EXPORT CSV (Group 4.2: Respects all active filters)
+   ============================================================ */
 function exportCsv() {
-  if (currentRecordsList.length === 0) {
-    alert('No records available to export.');
+  if (recordsFiltered.length === 0) {
+    alert('No matching records available to export.');
     return;
   }
-  const headers = ['Request ID', 'Blood Group', 'Units', 'Urgency', 'Status', 'Timestamp'];
-  const rows = currentRecordsList.map(r => [
-    `"${r.id}"`,
-    `"${r.blood_type || r.bloodType}"`,
-    `"${r.units_requested || 1}"`,
-    `"${r.urgency_level || 'Normal'}"`,
-    `"${r.status || 'Active'}"`,
-    `"${r.created_at || ''}"`
-  ]);
+  const headers = [
+    'Request ID',
+    'Sent Date',
+    'Sent Time',
+    'Patient Name',
+    'Ward / Bed',
+    'Blood Group',
+    'Units',
+    'Urgency',
+    'Radius (km)',
+    'Donors Notified',
+    'Donors Accepted',
+    'Donors Arrived',
+    'Status',
+    'First Response Time',
+    'Created By',
+    'Fulfillment Note',
+    'Cancellation Reason'
+  ];
+
+  const rows = recordsFiltered.map(r => {
+    const idFormatted = `#REQ-${String(r.id).padStart(3, '0')}`;
+    const dateObj = r.created_at ? new Date(r.created_at) : null;
+    const dateStr = dateObj ? dateObj.toLocaleDateString('en-GB') : '';
+    const timeStr = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const blood = r.blood_type || r.bloodType || '';
+    const units = r.units_requested || 1;
+    const urg = r.urgency_level || r.urgency || 'Normal';
+    const radius = (r.radiusKm !== null && r.radiusKm !== undefined) ? r.radiusKm : 10;
+    const notified = r.donorsNotified ?? 0;
+    const accepted = r.donorsAccepted ?? 0;
+    const arrived = r.donorsArrived ?? 0;
+    const status = r.status || 'Active';
+    const respTime = r.firstResponseTime || '-';
+    const staff = r.staffUser || 'Hospital Staff';
+    const pName = (r.patient_name || r.patientName || 'Emergency Patient').replace(/"/g, '""');
+    const ward = (r.wardInfo || '').replace(/"/g, '""');
+    const fNote = (r.fulfillment_note || r.notes || '').replace(/"/g, '""');
+    const cReason = (r.cancelled_reason || '').replace(/"/g, '""');
+
+    return [
+      `"${idFormatted}"`,
+      `"${dateStr}"`,
+      `"${timeStr}"`,
+      `"${pName}"`,
+      `"${ward}"`,
+      `"${blood}"`,
+      `"${units}"`,
+      `"${urg}"`,
+      `"${radius}"`,
+      `"${notified}"`,
+      `"${accepted}"`,
+      `"${arrived}"`,
+      `"${status}"`,
+      `"${respTime}"`,
+      `"${staff}"`,
+      `"${fNote}"`,
+      `"${cReason}"`
+    ];
+  });
+
   const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `RED404_Hospital_Requests_${Date.now()}.csv`);
+  link.setAttribute('download', `RED404_MyRequests_Export_${Date.now()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
