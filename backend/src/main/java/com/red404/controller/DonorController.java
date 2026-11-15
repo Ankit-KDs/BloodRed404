@@ -49,6 +49,7 @@ public class DonorController {
     private final SessionDao sessionDao = new SessionDao();
     private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
     private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
+    private final com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
 
     // ======================== GET ========================
 
@@ -295,6 +296,9 @@ public class DonorController {
         try {
             Map<String, Object> donor = requireDonor(request);
             if (donor == null) return unauthorized();
+            if (!DonorEligibilityService.isEligible(donor)) {
+                return ok("Donor is currently not eligible for emergency blood requests", Collections.emptyList());
+            }
             Double lat = asDouble(donor.get("latitude"));
             Double lng = asDouble(donor.get("longitude"));
             return ok("Requests loaded", requestDao.listForDonor(lat, lng));
@@ -313,10 +317,9 @@ public class DonorController {
             Map<String, Object> donor = requireDonor(request);
             Integer donorId = null;
             if (donor != null && donor.get("id") != null) {
-                // Part 3.5: Paused donor must be excluded from emergency requests and alerts
-                String avail = (String) donor.get("availability");
-                if (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable"))) {
-                    return ok("Donor availability is paused", Collections.emptyList());
+                // Authoritative ONE server function isEligible(donor)
+                if (!DonorEligibilityService.isEligible(donor)) {
+                    return ok("Donor is currently not eligible for emergency requests", Collections.emptyList());
                 }
 
                 donorId = ((Number) donor.get("id")).intValue();
@@ -492,9 +495,14 @@ public class DonorController {
             }
             if (body != null && body.has("requestId")) {
                 int reqId = body.get("requestId").asInt();
-                requestDao.updateStatus(reqId, "Fulfilled");
+                requestDao.updateStatus(reqId, "Arrived");
+                Map<String, Object> donor = requireDonor(request);
+                if (donor != null && donor.get("id") != null) {
+                    int dId = ((Number) donor.get("id")).intValue();
+                    notifDao.markDonorArrived(reqId, dId);
+                }
             }
-            return ok("Mission completed successfully", null);
+            return ok("Mission completed successfully (status marked Arrived)", null);
         } catch (Exception e) {
             return serverError(e);
         }
@@ -513,6 +521,11 @@ public class DonorController {
             String email = JsonUtil.text(body, "email").trim().toLowerCase();
             String phone = JsonUtil.text(body, "phone").trim().replaceAll("\\s+", "");
             String password = JsonUtil.text(body, "password").trim();
+            String gender = JsonUtil.text(body, "gender").trim();
+            if (gender.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Gender is required for donor registration (Male, Female, or Other)."));
+            }
 
             Map<String, Object> existing = donorDao.findByEmail(email);
             if (existing != null) {

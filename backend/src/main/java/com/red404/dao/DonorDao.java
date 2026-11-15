@@ -975,41 +975,8 @@ public class DonorDao {
                 }
                 compatibleRegisteredCount++;
 
-                // 2. Availability & Paused Check (Part 3.5: Paused donor must be excluded from hospital search, broadcast and drive invitations)
-                String avail = str(donor.get("availability"));
-                if (avail != null && (avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy") || avail.equalsIgnoreCase("Paused"))) {
-                    continue;
-                }
-                Object pausedUntilObj = donor.get("paused_until");
-                if (pausedUntilObj != null) {
-                    try {
-                        java.time.LocalDate pUntil = java.time.LocalDate.parse(pausedUntilObj.toString());
-                        if (pUntil.isAfter(java.time.LocalDate.now())) {
-                            continue;
-                        }
-                    } catch (Exception ignored) {}
-                }
-
-                boolean isEligible = true;
-                // Status
-                String st = str(donor.get("status"));
-                if (st != null && (st.equalsIgnoreCase("INACTIVE") || st.equalsIgnoreCase("Banned"))) {
-                    isEligible = false;
-                }
-                // Weight (>= 45kg)
-                Object wObj = donor.get("weight");
-                if (wObj instanceof Number && ((Number) wObj).doubleValue() > 0 && ((Number) wObj).doubleValue() < 45.0) {
-                    isEligible = false;
-                }
-                // Last donation gap (90 days minimum)
-                Date lastDon = rs.getDate("last_donation");
-                if (lastDon != null) {
-                    long diffDays = (System.currentTimeMillis() - lastDon.getTime()) / (1000L * 60 * 60 * 24);
-                    if (diffDays < 90) {
-                        isEligible = false;
-                    }
-                }
-                if (!isEligible) {
+                // 2. Authoritative ONE server function isEligible(donor)
+                if (!com.red404.service.DonorEligibilityService.isEligible(donor)) {
                     ineligibleCount++;
                     continue;
                 }
@@ -1068,7 +1035,7 @@ public class DonorDao {
 
                 // 6. SERVER PHONE PRIVACY
                 // Strip phone number completely in search results (privacy before donor accepts)
-                if (!"Accepted".equalsIgnoreCase(nStatus)) {
+                if (!"Accepted".equalsIgnoreCase(nStatus) && !"Arrived".equalsIgnoreCase(nStatus)) {
                     donor.remove("phone");
                     donor.remove("contact_number");
                     donor.remove("contactNumber");
@@ -1112,15 +1079,19 @@ public class DonorDao {
         }
 
         String emptySummary;
-        if (compatibleRegisteredCount == 0) {
-            emptySummary = "No registered donors found with compatible blood groups for " + targetBlood + ".";
+        int unavailableCount = ineligibleCount + withoutLocationCount + staleLocationCount;
+        if (matches.isEmpty()) {
+            if (compatibleRegisteredCount == 0) {
+                emptySummary = "No registered donors found with compatible blood groups for " + targetBlood + ".";
+            } else if (unavailableCount > 0) {
+                emptySummary = unavailableCount + " matching " + (unavailableCount == 1 ? "donor is" : "donors are") + " not available right now (recently donated, paused or location not shared).";
+            } else if (outsideRadiusCount > 0) {
+                emptySummary = outsideRadiusCount + " matching " + (outsideRadiusCount == 1 ? "donor is" : "donors are") + " outside your selected " + (int) radiusKm + " km radius.";
+            } else {
+                emptySummary = "No matching donors within " + (int) radiusKm + " km. Try a larger radius.";
+            }
         } else {
-            emptySummary = "No matching donors within " + (int) radiusKm + " km. " +
-                           compatibleRegisteredCount + " compatible donor" + (compatibleRegisteredCount == 1 ? "" : "s") + " registered: " +
-                           ineligibleCount + " not eligible yet, " +
-                           staleLocationCount + " location older than " + FRESHNESS_HOURS + " h, " +
-                           outsideRadiusCount + " outside this radius, " +
-                           withoutLocationCount + " without a saved location.";
+            emptySummary = matches.size() + " matching " + (matches.size() == 1 ? "donor" : "donors") + " found within " + (int) radiusKm + " km.";
         }
 
         response.put("donors", matches);
@@ -1269,8 +1240,12 @@ public class DonorDao {
     }
 
     public boolean recordDonation(String donorId, Integer hospitalId, String bloodType, int units, int volumeMl, String vitalsJson, String staffUser, String status, String deferralReason) throws SQLException {
-        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?)";
+        return recordDonation(donorId, hospitalId, bloodType, units, volumeMl, vitalsJson, staffUser, status, deferralReason, null);
+    }
+
+    public boolean recordDonation(String donorId, Integer hospitalId, String bloodType, int units, int volumeMl, String vitalsJson, String staffUser, String status, String deferralReason, Integer requestId) throws SQLException {
+        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason, request_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
@@ -1286,6 +1261,11 @@ public class DonorDao {
             ps.setString(7, staffUser != null ? staffUser : "Staff");
             ps.setString(8, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
             ps.setString(9, deferralReason);
+            if (requestId == null || requestId <= 0) {
+                ps.setNull(10, Types.INTEGER);
+            } else {
+                ps.setInt(10, requestId);
+            }
             int inserted = ps.executeUpdate();
             if (inserted > 0 && !"DEFERRED".equalsIgnoreCase(status)) {
                 try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE donor_id = ? OR CAST(id AS CHAR) = ?")) {

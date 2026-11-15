@@ -493,6 +493,9 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("patient_name", "VARCHAR(150) NULL");
         requiredColumns.put("blood_type", "VARCHAR(5) NOT NULL DEFAULT 'O+'");
         requiredColumns.put("units_requested", "INT DEFAULT 1");
+        requiredColumns.put("units_fulfilled", "INT DEFAULT 0");
+        requiredColumns.put("fulfillment_note", "TEXT NULL");
+        requiredColumns.put("cancelled_reason", "TEXT NULL");
         requiredColumns.put("urgency_level", "VARCHAR(20) DEFAULT 'HIGH'");
         requiredColumns.put("required_before", "DATE NULL");
         requiredColumns.put("status", "VARCHAR(20) DEFAULT 'Active'");
@@ -501,6 +504,20 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
         ensureColumns(conn, "blood_requests", requiredColumns);
+
+        // Fix unapproved historical requests marked 'Fulfilled' without verified donations or staff fulfillment note
+        try (Statement st = conn.createStatement()) {
+            st.executeUpdate(
+                "UPDATE blood_requests br " +
+                "SET br.status = CASE " +
+                "    WHEN br.created_at < DATE_SUB(NOW(), INTERVAL 60 MINUTE) THEN 'Expired' " +
+                "    ELSE 'Open' " +
+                "END " +
+                "WHERE UPPER(br.status) = 'FULFILLED' " +
+                "AND (br.fulfillment_note IS NULL OR TRIM(br.fulfillment_note) = '') " +
+                "AND NOT EXISTS (SELECT 1 FROM donations d WHERE d.request_id = br.id AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED'))"
+            );
+        } catch (Exception ignored) {}
     }
 
     private void migrateDonationsTable(Connection conn) {
@@ -512,6 +529,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         Map<String, String> requiredColumns = new LinkedHashMap<>();
         requiredColumns.put("donor_id", "VARCHAR(30) NOT NULL DEFAULT 'DNR-0101-D1'");
         requiredColumns.put("hospital_id", "INT NULL");
+        requiredColumns.put("request_id", "INT NULL");
         requiredColumns.put("blood_type", "VARCHAR(5) NULL");
         requiredColumns.put("units", "INT DEFAULT 1");
         requiredColumns.put("volume_ml", "INT DEFAULT 450");

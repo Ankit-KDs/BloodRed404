@@ -77,7 +77,14 @@ public class BloodRequestNotificationDao {
 
     public String getDonorStatusForHospital(int donorId, int hospitalId) {
         ensureTableExists();
-        String sql = "SELECT status FROM blood_request_notifications WHERE donor_id = ? AND hospital_id = ? ORDER BY id DESC LIMIT 1";
+        expireOldNotifications();
+        String sql = "SELECT n.status FROM blood_request_notifications n " +
+                     "JOIN blood_requests br ON n.request_id = br.id " +
+                     "WHERE n.donor_id = ? AND n.hospital_id = ? " +
+                     "AND UPPER(br.status) IN ('OPEN', 'ACTIVE', 'PENDING', 'ACCEPTED', 'ARRIVED') " +
+                     "AND (br.created_at IS NULL OR br.created_at >= NOW() - INTERVAL " + EXPIRY_MINUTES + " MINUTE) " +
+                     "AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED', 'ARRIVED') " +
+                     "ORDER BY n.id DESC LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, donorId);
@@ -96,8 +103,15 @@ public class BloodRequestNotificationDao {
 
     public Map<Integer, String> getDonorStatusesForHospital(int hospitalId) {
         ensureTableExists();
+        expireOldNotifications();
         Map<Integer, String> map = new HashMap<>();
-        String sql = "SELECT donor_id, status FROM blood_request_notifications WHERE hospital_id = ? ORDER BY id ASC";
+        String sql = "SELECT n.donor_id, n.status FROM blood_request_notifications n " +
+                     "JOIN blood_requests br ON n.request_id = br.id " +
+                     "WHERE n.hospital_id = ? " +
+                     "AND UPPER(br.status) IN ('OPEN', 'ACTIVE', 'PENDING', 'ACCEPTED', 'ARRIVED') " +
+                     "AND (br.created_at IS NULL OR br.created_at >= NOW() - INTERVAL " + EXPIRY_MINUTES + " MINUTE) " +
+                     "AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED', 'ARRIVED') " +
+                     "ORDER BY n.id ASC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, hospitalId);
@@ -108,6 +122,54 @@ public class BloodRequestNotificationDao {
             }
         } catch (Exception ignored) {}
         return map;
+    }
+
+    public int getActiveRequestIdForDonorAndHospital(int donorId, int hospitalId) {
+        ensureTableExists();
+        expireOldNotifications();
+        String sql = "SELECT n.request_id FROM blood_request_notifications n " +
+                     "JOIN blood_requests br ON n.request_id = br.id " +
+                     "WHERE n.donor_id = ? AND n.hospital_id = ? " +
+                     "AND UPPER(br.status) IN ('OPEN', 'ACTIVE', 'PENDING', 'ACCEPTED', 'ARRIVED') " +
+                     "AND (br.created_at IS NULL OR br.created_at >= NOW() - INTERVAL " + EXPIRY_MINUTES + " MINUTE) " +
+                     "ORDER BY n.id DESC LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            ps.setInt(2, hospitalId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception ignored) {}
+        return 0;
+    }
+
+    public boolean markDonorArrived(int requestId, int donorId) {
+        ensureTableExists();
+        String sql = "UPDATE blood_request_notifications SET status = 'ARRIVED', responded_at = CURRENT_TIMESTAMP WHERE request_id = ? AND donor_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            ps.setInt(2, donorId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            log.warn("Error marking donor arrived: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean markDonorDonated(int requestId, int donorId) {
+        ensureTableExists();
+        String sql = "UPDATE blood_request_notifications SET status = 'DONATED', responded_at = CURRENT_TIMESTAMP WHERE request_id = ? AND donor_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            ps.setInt(2, donorId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            log.warn("Error marking donor donated: {}", e.getMessage());
+            return false;
+        }
     }
 
     public boolean updateDonorResponse(int requestId, int donorId, String status) throws SQLException {
@@ -214,7 +276,7 @@ public class BloodRequestNotificationDao {
                      "FROM blood_request_notifications n " +
                      "JOIN blood_requests br ON n.request_id = br.id " +
                      "LEFT JOIN hospitals h ON br.hospital_id = h.id " +
-                     "WHERE n.donor_id = ? AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'FULFILLED') " +
+                     "WHERE n.donor_id = ? AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'FULFILLED', 'ARRIVED', 'DONATED', 'WITHDRAWN') " +
                      "ORDER BY n.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -267,8 +329,11 @@ public class BloodRequestNotificationDao {
 
                     String displayStatus = "New";
                     if ("ACCEPTED".equalsIgnoreCase(status)) displayStatus = "Accepted";
+                    else if ("ARRIVED".equalsIgnoreCase(status)) displayStatus = "Arrived";
+                    else if ("DONATED".equalsIgnoreCase(status)) displayStatus = "Donated";
                     else if ("DECLINED".equalsIgnoreCase(status)) displayStatus = "Declined";
                     else if ("EXPIRED".equalsIgnoreCase(status)) displayStatus = "Expired";
+                    else if ("WITHDRAWN".equalsIgnoreCase(status)) displayStatus = "Withdrawn";
                     else if ("FULFILLED".equalsIgnoreCase(status)) displayStatus = "Fulfilled";
                     map.put("status", displayStatus);
                     map.put("bloodType", bType != null ? bType : "O-");

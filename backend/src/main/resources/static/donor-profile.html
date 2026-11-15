@@ -2402,8 +2402,9 @@
               </select>
             </div>
             <div class="form-field-group">
-              <label for="editDonorGender">Gender</label>
-              <select id="editDonorGender" name="gender">
+              <label for="editDonorGender">Gender <span class="req" style="color:#ef4444;">*</span></label>
+              <select id="editDonorGender" name="gender" required>
+                <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>

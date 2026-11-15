@@ -42,15 +42,28 @@ public class BloodRequestDao {
         }
     }
 
+    public void expireOldRequests() {
+        String sql = "UPDATE blood_requests SET status = 'Expired' " +
+                     "WHERE UPPER(status) IN ('ACTIVE', 'OPEN', 'PENDING') " +
+                     "AND created_at < DATE_SUB(NOW(), INTERVAL 60 MINUTE)";
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement()) {
+            st.executeUpdate(sql);
+        } catch (Exception ignored) {}
+    }
+
     public List<Map<String, Object>> listActive() throws SQLException {
+        expireOldRequests();
         String sql = "SELECT br.*, h.hospital_name, h.city, h.hospital_phone FROM blood_requests br " +
                 "JOIN hospitals h ON br.hospital_id = h.id " +
-                "WHERE br.status IN ('Active', 'Accepted', 'PENDING') " +
+                "WHERE UPPER(br.status) IN ('ACTIVE', 'OPEN', 'PENDING', 'ACCEPTED', 'ARRIVED') " +
+                "AND (br.created_at IS NULL OR br.created_at >= NOW() - INTERVAL 60 MINUTE) " +
                 "ORDER BY br.created_at DESC";
         return queryList(sql, null);
     }
 
     public List<Map<String, Object>> listByHospital(int hospitalId) throws SQLException {
+        expireOldRequests();
         String sql = "SELECT br.*, h.hospital_name, h.city, h.hospital_phone FROM blood_requests br " +
                 "JOIN hospitals h ON br.hospital_id = h.id WHERE br.hospital_id = ? ORDER BY br.created_at DESC";
         return queryList(sql, hospitalId);
@@ -79,6 +92,39 @@ public class BloodRequestDao {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);
             ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean updateStatusWithReason(int id, String status, String reason) throws SQLException {
+        String sql = "UPDATE blood_requests SET status = ?, cancelled_reason = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setString(2, reason);
+            ps.setInt(3, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean updateStatusWithNote(int id, String status, String note) throws SQLException {
+        String sql = "UPDATE blood_requests SET status = ?, fulfillment_note = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setString(2, note);
+            ps.setInt(3, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean incrementUnitsFulfilled(int id) throws SQLException {
+        String sql = "UPDATE blood_requests SET units_fulfilled = COALESCE(units_fulfilled, 0) + 1, " +
+                     "status = CASE WHEN COALESCE(units_fulfilled, 0) + 1 >= units_requested THEN 'Fulfilled' ELSE status END " +
+                     "WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         }
     }
@@ -138,6 +184,13 @@ public class BloodRequestDao {
         req.put("phone", rs.getString("hospital_phone"));
         req.put("donorsAccepted", 0);
         req.put("donorsNotified", 0);
+        try {
+            req.put("unitsFulfilled", rs.getInt("units_fulfilled"));
+            req.put("fulfillmentNote", rs.getString("fulfillment_note"));
+            req.put("cancelledReason", rs.getString("cancelled_reason"));
+        } catch (SQLException ignored) {
+            req.put("unitsFulfilled", 0);
+        }
         try {
             Object created = rs.getObject("created_at");
             req.put("time", created == null ? null : created.toString());

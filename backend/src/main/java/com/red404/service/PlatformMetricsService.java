@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.util.*;
 
@@ -111,29 +112,18 @@ public class PlatformMetricsService {
         int minCompletedRequests = getMinCompletedRequestsForMetrics();
 
         try (Connection conn = DBConnection.getConnection()) {
-            // 1. Registered Donors & Active (non-paused) Donors
+            // 1. Registered Donors & Active Eligible Donors (Step 1 requirement 2: Authoritative DonorEligibilityService.isEligible)
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT COUNT(*), " +
-                         "SUM(CASE WHEN (availability IS NULL OR (LOWER(availability) <> 'unavailable' AND LOWER(availability) <> 'paused')) " +
-                         "AND (paused_until IS NULL OR paused_until <= CURRENT_DATE) THEN 1 ELSE 0 END) " +
-                         "FROM donors")) {
-                if (rs.next()) {
-                    totalDonors = rs.getInt(1);
-                    activeDonors = rs.getInt(2);
+                 ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
+                while (rs.next()) {
+                    totalDonors++;
+                    Map<String, Object> d = mapDonorRow(rs);
+                    if (DonorEligibilityService.isEligible(d)) {
+                        activeDonors++;
+                    }
                 }
             } catch (Exception e) {
-                // Fallback if paused_until column not yet present
-                try (Statement st = conn.createStatement();
-                     ResultSet rs = st.executeQuery(
-                             "SELECT COUNT(*), " +
-                             "SUM(CASE WHEN availability IS NULL OR LOWER(availability) <> 'unavailable' THEN 1 ELSE 0 END) " +
-                             "FROM donors")) {
-                    if (rs.next()) {
-                        totalDonors = rs.getInt(1);
-                        activeDonors = rs.getInt(2);
-                    }
-                } catch (Exception ignored) {}
+                log.warn("Notice querying donors for platform metrics: {}", e.getMessage());
             }
 
             // 2. Partner Hospitals (strictly VERIFIED and not soft-deleted)
@@ -336,41 +326,23 @@ public class PlatformMetricsService {
                 log.warn("Notice querying verified hospital inventory: {}", e.getMessage());
             }
 
-            // 2. Real Active (non-paused) Donors by blood group
+            // 2. Real Active Eligible Donors by blood group (Authoritative DonorEligibilityService.isEligible)
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT blood_type, COUNT(*) FROM donors " +
-                         "WHERE (availability IS NULL OR (LOWER(availability) <> 'unavailable' AND LOWER(availability) <> 'paused')) " +
-                         "AND (paused_until IS NULL OR paused_until <= CURRENT_DATE) " +
-                         "GROUP BY blood_type")) {
+                 ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
                 while (rs.next()) {
-                    String bg = rs.getString(1);
-                    int cnt = rs.getInt(2);
-                    if (bg != null) {
-                        String clean = bg.trim().toUpperCase();
-                        if (donorsMap.containsKey(clean)) {
-                            donorsMap.put(clean, cnt);
+                    Map<String, Object> d = mapDonorRow(rs);
+                    if (DonorEligibilityService.isEligible(d)) {
+                        String bg = rs.getString("blood_type");
+                        if (bg != null) {
+                            String clean = com.red404.util.BloodCompatibilityUtil.normalizeBloodGroup(bg);
+                            if (clean != null && donorsMap.containsKey(clean)) {
+                                donorsMap.put(clean, donorsMap.get(clean) + 1);
+                            }
                         }
                     }
                 }
             } catch (Exception e) {
-                // Fallback if paused_until not yet present
-                try (Statement st = conn.createStatement();
-                     ResultSet rs = st.executeQuery(
-                             "SELECT blood_type, COUNT(*) FROM donors " +
-                             "WHERE availability IS NULL OR LOWER(availability) <> 'unavailable' " +
-                             "GROUP BY blood_type")) {
-                    while (rs.next()) {
-                        String bg = rs.getString(1);
-                        int cnt = rs.getInt(2);
-                        if (bg != null) {
-                            String clean = bg.trim().toUpperCase();
-                            if (donorsMap.containsKey(clean)) {
-                                donorsMap.put(clean, cnt);
-                            }
-                        }
-                    }
-                } catch (Exception ignored) {}
+                log.warn("Notice querying donors by blood type: {}", e.getMessage());
             }
 
         } catch (Exception e) {
@@ -408,5 +380,17 @@ public class PlatformMetricsService {
         response.put("cachedAt", System.currentTimeMillis());
 
         return response;
+    }
+
+    private static Map<String, Object> mapDonorRow(ResultSet rs) {
+        Map<String, Object> d = new HashMap<>();
+        try {
+            ResultSetMetaData meta = rs.getMetaData();
+            for (int i = 1; i <= meta.getColumnCount(); i++) {
+                String col = meta.getColumnLabel(i);
+                d.put(col, rs.getObject(i));
+            }
+        } catch (Exception ignored) {}
+        return d;
     }
 }

@@ -11,6 +11,7 @@ import com.red404.dao.DonorDao;
 import com.red404.dao.HospitalDao;
 import com.red404.model.ApiResponse;
 import com.red404.service.DonorEligibilityService;
+import com.red404.util.DBConnection;
 import com.red404.util.JsonUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -18,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -164,25 +167,11 @@ public class HospitalController {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Valid donor ID is required."));
             }
 
-            // Exclude paused donors (Group C.5)
+            // Authoritative ONE server function isEligible(donor) (Step 1 requirement 2 & 3)
             Map<String, Object> targetDonor = donorDao.findById(donorId);
-            if (targetDonor != null) {
-                String avail = (String) targetDonor.get("availability");
-                Object isAvail = targetDonor.get("available");
-                Object pUntil = targetDonor.get("paused_until");
-                boolean isPaused = (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy")))
-                        || (isAvail instanceof Boolean && !((Boolean) isAvail));
-                if (!isPaused && pUntil != null) {
-                    try {
-                        if (java.time.LocalDate.parse(pUntil.toString()).isAfter(java.time.LocalDate.now())) {
-                            isPaused = true;
-                        }
-                    } catch (Exception ignored) {}
-                }
-                if (isPaused) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(new ApiResponse(false, "Donor is currently paused and cannot receive emergency requests."));
-                }
+            if (targetDonor == null || !DonorEligibilityService.isEligible(targetDonor)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse(false, "Donor is currently not eligible to receive emergency requests (recently donated, paused, deferred or inactive)."));
             }
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
             int units = JsonUtil.asInt(body, "unitsNeeded", 1);
@@ -235,30 +224,16 @@ public class HospitalController {
             if (donorIds.isEmpty()) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "No available matching donors to broadcast to."));
             }
-            // Exclude paused donors (Group C.5)
+            // Authoritative ONE server function isEligible(donor) (Step 1 requirement 2 & 3)
             List<Integer> activeDonorIds = new ArrayList<>();
             for (Integer dId : donorIds) {
                 Map<String, Object> d = donorDao.findById(dId);
-                if (d != null) {
-                    String avail = (String) d.get("availability");
-                    Object isAvail = d.get("available");
-                    Object pUntil = d.get("paused_until");
-                    boolean isPaused = (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy")))
-                            || (isAvail instanceof Boolean && !((Boolean) isAvail));
-                    if (!isPaused && pUntil != null) {
-                        try {
-                            if (java.time.LocalDate.parse(pUntil.toString()).isAfter(java.time.LocalDate.now())) {
-                                isPaused = true;
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                    if (!isPaused) {
-                        activeDonorIds.add(dId);
-                    }
+                if (d != null && DonorEligibilityService.isEligible(d)) {
+                    activeDonorIds.add(dId);
                 }
             }
             if (activeDonorIds.isEmpty()) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "No active unpaused matching donors to broadcast to."));
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "No eligible matching donors to broadcast to (donors may be recently donated, paused, or deferred)."));
             }
 
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
@@ -366,9 +341,16 @@ public class HospitalController {
     }
 
     @PostMapping("/requests/{id}/cancel")
-    public ResponseEntity<ApiResponse> cancelRequest(@PathVariable int id) {
+    public ResponseEntity<ApiResponse> cancelRequest(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body) {
         try {
-            requestDao.updateStatus(id, "Cancelled");
+            String reason = body != null ? JsonUtil.textOrNull(body, "reason") : null;
+            if (reason == null || reason.trim().length() < 3) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Cancellation reason is required (minimum 3 characters)."));
+            }
+            requestDao.updateStatusWithReason(id, "Cancelled", reason.trim());
             return ok("Request cancelled", null);
         } catch (Exception e) {
             return serverError(e);
@@ -376,9 +358,16 @@ public class HospitalController {
     }
 
     @PostMapping("/requests/{id}/fulfill")
-    public ResponseEntity<ApiResponse> fulfillRequest(@PathVariable int id) {
+    public ResponseEntity<ApiResponse> fulfillRequest(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body) {
         try {
-            requestDao.updateStatus(id, "Fulfilled");
+            String note = body != null ? JsonUtil.textOrNull(body, "note") : null;
+            if (note == null || note.trim().length() < 3) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Fulfillment note is required when manually marking a request as fulfilled."));
+            }
+            requestDao.updateStatusWithNote(id, "Fulfilled", note.trim());
             return ok("Request marked as fulfilled", null);
         } catch (Exception e) {
             return serverError(e);
@@ -633,7 +622,7 @@ public class HospitalController {
                             }
                         }
                     }
-                    if (comp) {
+                    if (comp && DonorEligibilityService.isEligible(donor)) {
                         invitedDonorIds.add(dId);
                     }
                 }
@@ -812,6 +801,7 @@ public class HospitalController {
                 } catch (Exception ignored) {}
             }
             details.put("age", age > 0 ? age : 25);
+            details.put("gender", donor.get("gender"));
 
             // Weight & Registration health-form answers (Group B.5)
             Object wtObj = donor.get("weight");
@@ -940,6 +930,90 @@ public class HospitalController {
         }
     }
 
+    @GetMapping("/donation-gaps")
+    public ResponseEntity<ApiResponse> getDonationGaps() {
+        return ok("Donation gap configuration", DonorEligibilityService.getDonationGapConfig());
+    }
+
+    @PostMapping("/donation-gaps")
+    public ResponseEntity<ApiResponse> updateDonationGaps(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+            int male = JsonUtil.asInt(body, "male", DonorEligibilityService.configuredMaleGap);
+            int female = JsonUtil.asInt(body, "female", DonorEligibilityService.configuredFemaleGap);
+            int unspec = JsonUtil.asInt(body, "unspecified", DonorEligibilityService.configuredUnspecGap);
+            DonorEligibilityService.setDonationGapDays(male, female, unspec);
+            return ok("Donation gap configuration updated", DonorEligibilityService.getDonationGapConfig());
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/donors/set-gender")
+    public ResponseEntity<ApiResponse> setDonorGender(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            if (hosp == null) return unauthorized();
+            String vStatus = (String) hosp.get("verificationStatus");
+            if (vStatus == null) vStatus = (String) hosp.get("verification_status");
+            if (vStatus == null || !"Verified".equalsIgnoreCase(vStatus.trim())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Verified hospital status is required to update donor gender."));
+            }
+
+            if (body == null) return ResponseEntity.badRequest().body(new ApiResponse(false, "Body is required."));
+            String donorIdentifier = JsonUtil.textOrNull(body, "donorId");
+            if (donorIdentifier == null) donorIdentifier = JsonUtil.textOrNull(body, "smartId");
+            if (donorIdentifier == null || donorIdentifier.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Donor ID is required."));
+            }
+
+            String gender = JsonUtil.textOrNull(body, "gender");
+            if (gender == null || gender.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Valid gender is required (Male, Female, or Other)."));
+            }
+            gender = gender.trim();
+            if (!gender.equalsIgnoreCase("Male") && !gender.equalsIgnoreCase("Female") && !gender.equalsIgnoreCase("Other")) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Gender must be Male, Female, or Other."));
+            }
+            String normGender = Character.toUpperCase(gender.charAt(0)) + gender.substring(1).toLowerCase();
+
+            Map<String, Object> donor = donorDao.findByIdOrDonorId(donorIdentifier);
+            if (donor == null || donor.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Donor not found."));
+            }
+
+            int donorNumId = donor.get("id") != null ? ((Number) donor.get("id")).intValue() : 0;
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement("UPDATE donors SET gender = ? WHERE id = ?")) {
+                ps.setString(1, normGender);
+                ps.setInt(2, donorNumId);
+                ps.executeUpdate();
+            }
+
+            Map<String, Object> updatedDonor = donorDao.findById(donorNumId);
+            Map<String, Object> updatedElig = DonorEligibilityService.computeEligibility(updatedDonor);
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("donorId", donorIdentifier);
+            resp.put("gender", normGender);
+            resp.put("eligibility", updatedElig);
+            resp.put("cooldownDays", updatedElig.get("cooldown_days"));
+            resp.put("isEligible", updatedElig.get("eligible"));
+
+            return ok("Gender updated to " + normGender + " and eligibility recomputed successfully.", resp);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     @PostMapping({"/donors/checkin", "/donors/approve-donation"})
     public ResponseEntity<ApiResponse> approveDonationCheckin(
             @RequestBody JsonNode body,
@@ -996,15 +1070,29 @@ public class HospitalController {
             String staffUser = JsonUtil.textOrNull(body, "staffUser");
             if (staffUser == null) staffUser = "Hospital Staff";
 
-            boolean recorded = donorDao.recordDonation(donorId, hospitalId, bloodType, 1, volumeMl, vitalsJson, staffUser, "COMPLETED", null);
+            // Resolve linked blood request if this donor accepted or was dispatched for a request
+            int donorIntId = (existingDonor != null && existingDonor.get("id") != null) ? ((Number) existingDonor.get("id")).intValue() : 0;
+            int reqId = JsonUtil.asInt(body, "requestId", 0);
+            if (reqId <= 0 && donorIntId > 0) {
+                reqId = notificationDao.getActiveRequestIdForDonorAndHospital(donorIntId, hospitalId);
+            }
+
+            boolean recorded = donorDao.recordDonation(donorId, hospitalId, bloodType, 1, volumeMl, vitalsJson, staffUser, "COMPLETED", null, reqId > 0 ? reqId : null);
             if (!recorded) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(new ApiResponse(false, "Failed to record donation in database."));
             }
 
+            // If linked to active blood request, update donor status to DONATED and increment request fulfillment
+            if (reqId > 0 && donorIntId > 0) {
+                try {
+                    notificationDao.markDonorDonated(reqId, donorIntId);
+                    requestDao.incrementUnitsFulfilled(reqId);
+                } catch (Exception ignored) {}
+            }
+
             // Update donor blood group status to hospital_verified and log audit (Part 5)
             if (existingDonor != null && existingDonor.get("id") != null) {
-                int donorIntId = ((Number) existingDonor.get("id")).intValue();
                 Map<String, Object> hosp = hospitalDao.findById(hospitalId);
                 String hospName = (hosp != null && hosp.get("hospital_name") != null) ? (String) hosp.get("hospital_name") : "Verified Hospital";
                 donorDao.updateBloodGroupHospitalVerified(donorIntId, bloodType, hospitalId, hospName);
@@ -1024,12 +1112,13 @@ public class HospitalController {
 
             // Audit log
             AdminController.addLog("DONATION_APPROVED", "Donation approved at hospital ID " + hospitalId +
-                    " for donor " + donorId + " (" + bloodType + ", " + volumeMl + " mL) by " + staffUser);
+                    " for donor " + donorId + " (" + bloodType + ", " + volumeMl + " mL) by " + staffUser + (reqId > 0 ? " [linked request #" + reqId + "]" : ""));
 
             Map<String, Object> resp = new HashMap<>();
             resp.put("donorId", donorId);
             resp.put("bloodType", bloodType);
             resp.put("volumeMl", volumeMl);
+            resp.put("requestId", reqId > 0 ? reqId : null);
             resp.put("newInventory", hospitalDao.getHospitalInventory(hospitalId));
 
             return ok("Donation verified, recorded, and inventory updated (+1 unit " + bloodType + ").", resp);

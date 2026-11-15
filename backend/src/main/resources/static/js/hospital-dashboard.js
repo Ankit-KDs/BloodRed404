@@ -1062,28 +1062,33 @@ function renderActiveRequests(requests) {
     `;
   }).join('');
 
-  // Wire Cancel and Fulfill Actions with Confirm Modal
+  // Wire Cancel and Fulfill Actions with Confirm Modal and Required Notes/Reasons (Step 1 requirement 4 & 5)
   container.querySelectorAll('.btn-action-cancel').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       if (!id) return;
-      const confirmed = (typeof showAppConfirm === 'function')
-        ? await showAppConfirm({
-            title: 'Cancel Emergency Request',
-            message: 'Are you sure you want to cancel this request? Nearby notified donors will be alerted of the cancellation.',
-            confirmText: 'Yes, Cancel Request',
-            cancelText: 'Keep Request',
-            type: 'danger'
-          })
-        : window.confirm('Cancel this emergency request?');
+      const reason = window.prompt('Please enter a required reason for cancelling this emergency request:');
+      if (reason === null) return; // User cancelled prompt
+      if (!reason.trim() || reason.trim().length < 3) {
+        alert('Cancellation reason is required (minimum 3 characters).');
+        return;
+      }
 
-      if (confirmed) {
-        try {
-          await fetch(`/api/hospital/requests/${id}/cancel`, { method: 'POST', credentials: 'include' });
+      try {
+        const resp = await fetch(`/api/hospital/requests/${id}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ reason: reason.trim() })
+        });
+        const res = await resp.json();
+        if (res && res.success) {
           loadDashboardData();
-        } catch (e) {
-          console.error('Cancel request error:', e);
+        } else {
+          alert((res && res.message) || 'Failed to cancel request.');
         }
+      } catch (e) {
+        console.error('Cancel request error:', e);
       }
     });
   });
@@ -1092,23 +1097,28 @@ function renderActiveRequests(requests) {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       if (!id) return;
-      const confirmed = (typeof showAppConfirm === 'function')
-        ? await showAppConfirm({
-            title: 'Mark Request as Fulfilled',
-            message: 'Confirm that blood units have been received and this emergency request is fulfilled.',
-            confirmText: 'Mark Fulfilled',
-            cancelText: 'Cancel',
-            type: 'warning'
-          })
-        : window.confirm('Mark this request as fulfilled?');
+      const note = window.prompt('Please enter a required fulfillment note (e.g. units received via mutual blood bank exchange):');
+      if (note === null) return; // User cancelled prompt
+      if (!note.trim() || note.trim().length < 3) {
+        alert('Fulfillment note is required when manually marking a request fulfilled (minimum 3 characters).');
+        return;
+      }
 
-      if (confirmed) {
-        try {
-          await fetch(`/api/hospital/requests/${id}/fulfill`, { method: 'POST', credentials: 'include' });
+      try {
+        const resp = await fetch(`/api/hospital/requests/${id}/fulfill`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ note: note.trim() })
+        });
+        const res = await resp.json();
+        if (res && res.success) {
           loadDashboardData();
-        } catch (e) {
-          console.error('Fulfill request error:', e);
+        } else {
+          alert((res && res.message) || 'Failed to fulfill request.');
         }
+      } catch (e) {
+        console.error('Fulfill request error:', e);
       }
     });
   });
@@ -1299,10 +1309,10 @@ function initDispatchRadar() {
 
     zoneCircles = [z1, z2, z3];
 
-    // Emphasize selected radius and fit map so the selected circle is fully visible
+    // Emphasize selected radius and fit map so the selected circle is fully visible (Step 1 requirement 6)
     const activeCircle = selectedRadiusKm === 5 ? z1 : (selectedRadiusKm === 20 ? z3 : z2);
     try {
-      leafletMap.fitBounds(activeCircle.getBounds(), { padding: [25, 25] });
+      leafletMap.fitBounds(activeCircle.getBounds(), { padding: [35, 35] });
     } catch (_) {}
   }
 
@@ -1669,8 +1679,12 @@ function initDispatchRadar() {
       } catch (_) {}
     }
 
-    if (boundsLatLngs.length > 1) {
-      leafletMap.fitBounds(L.latLngBounds(boundsLatLngs), { padding: [30, 30] });
+    if (activeCircle) {
+      try {
+        leafletMap.fitBounds(activeCircle.getBounds(), { padding: [35, 35] });
+      } catch (_) {}
+    } else if (boundsLatLngs.length > 1) {
+      leafletMap.fitBounds(L.latLngBounds(boundsLatLngs), { padding: [35, 35] });
     }
   }
 
@@ -2382,6 +2396,61 @@ function initDonorCheckin() {
     }
 
     if (ageEl) ageEl.textContent = (d.age || 25) + ' yrs';
+
+    // Step 1: Donor Gender display & Hospital Check-in setter
+    const genderWrap = document.getElementById('dlcGenderWrap');
+    const curGender = (d.gender || '').trim();
+    if (genderWrap) {
+      if (curGender) {
+        genderWrap.innerHTML = `<strong style="color: #fff;" id="dlcGender">${escapeHtml(curGender)}</strong>`;
+      } else {
+        genderWrap.innerHTML = `
+          <select id="dlcSetGenderSelect" class="form-input" style="display:inline-block; width:auto; padding:2px 6px; font-size:12px; height:24px; vertical-align:middle;">
+            <option value="">Set Gender</option>
+            <option value="Male">Male (90-day gap)</option>
+            <option value="Female">Female (120-day gap)</option>
+            <option value="Other">Other (120-day gap)</option>
+          </select>
+          <button type="button" id="btnSaveGender" class="btn-primary" style="padding:2px 8px; font-size:11px; height:24px; vertical-align:middle; margin-left:4px;">Save</button>
+        `;
+        const selGender = document.getElementById('dlcSetGenderSelect');
+        const btnSaveGender = document.getElementById('btnSaveGender');
+        if (btnSaveGender && selGender) {
+          btnSaveGender.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            const val = selGender.value;
+            if (!val) {
+              alert('Please select a gender.');
+              return;
+            }
+            try {
+              btnSaveGender.disabled = true;
+              btnSaveGender.textContent = 'Saving...';
+              const resp = await fetch('/api/hospital/donors/set-gender', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ donorId: d.donorId || d.id, gender: val })
+              });
+              const json = await resp.json();
+              if (json && json.success) {
+                lookupDonor(d.donorId || d.id);
+              } else {
+                alert((json && json.message) || 'Failed to update gender.');
+                btnSaveGender.disabled = false;
+                btnSaveGender.textContent = 'Save';
+              }
+            } catch (err) {
+              console.error(err);
+              alert('Error updating gender');
+              btnSaveGender.disabled = false;
+              btnSaveGender.textContent = 'Save';
+            }
+          });
+        }
+      }
+    }
+
     if (wtEl) wtEl.textContent = (d.weight ? d.weight + ' kg' : 'Not recorded');
     if (lastEl) lastEl.textContent = d.lastDonationDaysAgo || (d.lastDonationDate || 'Never');
 

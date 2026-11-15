@@ -1195,7 +1195,7 @@
           hintEl.innerHTML = '<span style="color: #94a3b8;"><i class="fa-solid fa-circle-info"></i> Self-declared blood group (can be edited)</span>';
         }
       }
-      if (genderInput) genderInput.value = currentDonor.gender || 'Male';
+      if (genderInput) genderInput.value = currentDonor.gender || '';
       if (dobInput) {
         const dob = currentDonor.dob || '';
         dobInput.value = dob === '1998-05-15' ? '' : dob;
@@ -1387,13 +1387,19 @@
           currentDonor.qrToken = newToken;
           localStorage.setItem('red404_qr_token_donor_' + (currentDonor.id || 1), newToken);
 
+          const genderChosen = (document.getElementById('editDonorGender')?.value || '').trim();
+          if (!genderChosen) {
+            alert('Please select your gender (Male, Female, or Other).');
+            return;
+          }
+
           const payload = {
             id: currentDonor.id || 1,
             donorId: currentDonor.id || 1,
             name: (document.getElementById('editDonorFullName')?.value || '').trim() || currentDonor.name,
             fatherName: (document.getElementById('editDonorFatherName')?.value || '').trim(),
             bloodType: (document.getElementById('editDonorBloodType')?.value || '').trim() || currentDonor.bloodType,
-            gender: (document.getElementById('editDonorGender')?.value || '').trim() || 'Male',
+            gender: genderChosen,
             dob: (document.getElementById('editDonorDob')?.value || '').trim(),
             weight: weightStr ? parseFloat(weightStr) : null,
             phone: (document.getElementById('editDonorPhone')?.value || '').trim(),
