@@ -36,6 +36,20 @@ public class HospitalController {
     private final com.red404.dao.BloodRequestNotificationDao notificationDao = new com.red404.dao.BloodRequestNotificationDao();
     private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
 
+    private static final Map<Integer, List<Long>> LOOKUP_RATE_LIMITS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int MAX_LOOKUPS_PER_MINUTE = 30;
+
+    private synchronized boolean checkLookupRateLimit(int hospitalId) {
+        long now = System.currentTimeMillis();
+        List<Long> timestamps = LOOKUP_RATE_LIMITS.computeIfAbsent(hospitalId, k -> new ArrayList<>());
+        timestamps.removeIf(t -> (now - t) > 60_000L);
+        if (timestamps.size() >= MAX_LOOKUPS_PER_MINUTE) {
+            return false;
+        }
+        timestamps.add(now);
+        return true;
+    }
+
     // ======================== GET ========================
 
     @GetMapping({"/directory", "/public-list", "/search", "/list"})
@@ -671,15 +685,52 @@ public class HospitalController {
             @RequestParam(required = false) String id,
             HttpServletRequest request) {
         try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                return unauthorized();
+            }
+
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            if (hosp == null) return unauthorized();
+            String hospName = (String) hosp.get("hospital_name");
+            String vStatus = (String) hosp.get("verificationStatus");
+            if (vStatus == null) vStatus = (String) hosp.get("verification_status");
+
             String queryId = smartId != null ? smartId.trim() : (id != null ? id.trim() : "");
             if (queryId.isBlank()) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Please enter a valid Donor ID or Smart ID."));
             }
 
+            // Gating: Only verified hospitals may look up donor records / scan QR
+            if (vStatus == null || !"Verified".equalsIgnoreCase(vStatus.trim())) {
+                donorDao.logCheckinScan(hospitalId, hospName, queryId, null, false, "Forbidden: Hospital not verified");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Access denied: Verified hospital status is required to perform donor check-in lookups."));
+            }
+
+            // Rate-limiting: max 30 lookups per minute
+            if (!checkLookupRateLimit(hospitalId)) {
+                donorDao.logCheckinScan(hospitalId, hospName, queryId, null, false, "Rate limit exceeded");
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(new ApiResponse(false, "Check-in rate limit exceeded (maximum 30 lookups per minute). Please wait a moment."));
+            }
+
             Map<String, Object> donor = donorDao.findByIdOrDonorId(queryId);
             if (donor == null || donor.isEmpty()) {
+                donorDao.logCheckinScan(hospitalId, hospName, queryId, null, false, "Donor not found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse(false, "Donor not found: No registered donor with ID " + queryId));
+                        .body(new ApiResponse(false, "Donor not found: No registered donor with ID or QR token " + queryId));
+            }
+
+            int donorNumId = donor.get("id") != null ? ((Number) donor.get("id")).intValue() : 0;
+
+            // Log successful scan
+            donorDao.logCheckinScan(hospitalId, hospName, queryId, donorNumId, true, "Lookup successful");
+
+            // Dispatch donor check-in notification
+            if (donorNumId > 0) {
+                donorDao.addDonorNotification(donorNumId, "Checked in at " + hospName,
+                        "You have successfully checked in at " + hospName + " for blood donation verification.", "checkin");
             }
 
             // Real backend data calculation
@@ -715,10 +766,15 @@ public class HospitalController {
             }
             details.put("age", age > 0 ? age : 25);
 
-            // Weight
+            // Weight & Registration health-form answers (Group B.5)
             Object wtObj = donor.get("weight");
             double weight = wtObj instanceof Number ? ((Number) wtObj).doubleValue() : 60.0;
             details.put("weight", weight);
+            details.put("allergies", donor.get("allergies"));
+            details.put("conditions", donor.get("conditions"));
+            details.put("medications", donor.get("medications"));
+            details.put("surgeries", donor.get("surgeries"));
+            details.put("donorType", donor.get("donorType") != null ? donor.get("donorType") : donor.get("donor_type"));
 
             // Authoritative Donor Eligibility Service single source of truth
             Map<String, Object> elig = DonorEligibilityService.computeEligibility(donor);
@@ -735,25 +791,103 @@ public class HospitalController {
             details.put("progress_pct", elig.get("progress_pct"));
             details.put("cooldown_days", elig.get("cooldown_days"));
 
-            // Health verification status
-            String availability = (String) donor.get("availability");
-            String healthStatus = "Verified / Active";
-            if ("unavailable".equalsIgnoreCase(availability)) {
-                healthStatus = "Unavailable";
+            // Real health verification status (Group B.4)
+            Object vDate = donor.get("verifiedDate");
+            if (vDate == null) vDate = donor.get("verified_date");
+            String vFac = (String) donor.get("verifiedFacility");
+            if (vFac == null) vFac = (String) donor.get("verified_facility");
+
+            String healthStatus;
+            if (vDate != null && vFac != null && !vFac.isBlank()) {
+                healthStatus = "Verified by " + vFac + " on " + vDate.toString();
+            } else {
+                healthStatus = "Not yet verified by a hospital";
             }
             details.put("healthStatus", healthStatus);
+            details.put("verifiedDate", vDate != null ? vDate.toString() : null);
+            details.put("verifiedFacility", vFac);
 
-            // Blood group verification status (Part 5)
+            // Blood group verification status (Group B.3)
             String bgStatus = (String) donor.get("bloodGroupStatus");
             details.put("bloodGroupStatus", bgStatus != null ? bgStatus : "self_declared");
             details.put("blood_group_status", details.get("bloodGroupStatus"));
             details.put("bloodGroupVerifiedByHospitalName", donor.get("bloodGroupVerifiedByHospitalName"));
             details.put("bloodGroupVerifiedAt", donor.get("bloodGroupVerifiedAt"));
             details.put("bloodGroupEditCount", donor.get("bloodGroupEditCount"));
-            int donorNumId = donor.get("id") != null ? ((Number) donor.get("id")).intValue() : 0;
             details.put("bloodGroupAuditTrail", bloodGroupAuditDao.listByDonor(donorNumId));
 
             return ok("Donor details retrieved", details);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/donors/verify-blood-group", "/donors/update-blood-group"})
+    public ResponseEntity<ApiResponse> verifyDonorBloodGroup(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            if (hosp == null) return unauthorized();
+            String vStatus = (String) hosp.get("verificationStatus");
+            if (vStatus == null) vStatus = (String) hosp.get("verification_status");
+            if (vStatus == null || !"Verified".equalsIgnoreCase(vStatus.trim())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Verified hospital status is required to update blood group."));
+            }
+
+            if (body == null) return ResponseEntity.badRequest().body(new ApiResponse(false, "Body is required."));
+            String donorIdentifier = JsonUtil.textOrNull(body, "donorId");
+            if (donorIdentifier == null) donorIdentifier = JsonUtil.textOrNull(body, "smartId");
+            if (donorIdentifier == null) {
+                int idNum = JsonUtil.asInt(body, "id", 0);
+                if (idNum > 0) donorIdentifier = String.valueOf(idNum);
+            }
+            if (donorIdentifier == null || donorIdentifier.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Donor ID is required."));
+            }
+
+            String newBloodType = JsonUtil.textOrNull(body, "bloodType");
+            if (newBloodType == null) newBloodType = JsonUtil.textOrNull(body, "bloodGroup");
+            if (newBloodType == null || newBloodType.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "New blood group is required."));
+            }
+            String normBlood = com.red404.util.BloodCompatibilityUtil.normalizeBloodGroup(newBloodType);
+            if (normBlood == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid blood group: " + newBloodType));
+            }
+
+            String reason = JsonUtil.textOrNull(body, "reason");
+            if (reason == null || reason.trim().isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Clinical reason is required to verify or update blood group."));
+            }
+
+            Map<String, Object> donor = donorDao.findByIdOrDonorId(donorIdentifier);
+            if (donor == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Donor not found: " + donorIdentifier));
+            }
+            int donorNumId = ((Number) donor.get("id")).intValue();
+            String oldBlood = (String) donor.get("bloodType");
+            if (oldBlood == null) oldBlood = (String) donor.get("blood_type");
+            String hospName = (String) hosp.get("hospital_name");
+
+            donorDao.updateBloodGroupHospitalVerified(donorNumId, normBlood, hospitalId, hospName);
+            bloodGroupAuditDao.insertAudit(donorNumId, oldBlood, normBlood, "hospital", hospitalId, reason.trim());
+
+            donorDao.addDonorNotification(donorNumId, "Blood Group Verified: " + normBlood,
+                    "Your blood group was updated to " + normBlood + " and verified by " + hospName + ". Reason: " + reason.trim(), "blood_group");
+
+            Map<String, Object> updated = new HashMap<>();
+            updated.put("donorId", donorIdentifier);
+            updated.put("bloodType", normBlood);
+            updated.put("bloodGroupStatus", "hospital_verified");
+            updated.put("bloodGroupVerifiedByHospitalName", hospName);
+            updated.put("bloodGroupVerifiedAt", new java.sql.Timestamp(System.currentTimeMillis()).toString());
+            updated.put("bloodGroupAuditTrail", bloodGroupAuditDao.listByDonor(donorNumId));
+
+            return ok("Blood group updated to " + normBlood + " and hospital-verified successfully.", updated);
         } catch (Exception e) {
             return serverError(e);
         }

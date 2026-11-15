@@ -201,6 +201,36 @@ public class DonorDao {
         }
     }
 
+    public static String buildOpaqueSignedQrToken(int donorId) {
+        String randomId = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+        String raw = donorId + ":" + randomId + ":RED404_SEC_PASS_SALT";
+        String signature;
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 4; i++) {
+                sb.append(String.format("%02X", hash[i]));
+            }
+            signature = sb.toString();
+        } catch (Exception e) {
+            signature = "B404";
+        }
+        return "RED404-V1-" + randomId + "-" + signature;
+    }
+
+    public String regenerateQrToken(int donorId) throws SQLException {
+        ensureDonorColumnsExist();
+        String newToken = buildOpaqueSignedQrToken(donorId);
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE donors SET qr_token = ?, qr_token_created_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+            ps.setString(1, newToken);
+            ps.setInt(2, donorId);
+            ps.executeUpdate();
+        }
+        return newToken;
+    }
+
     public String generateOrGetQrToken(int donorId) throws SQLException {
         ensureDonorColumnsExist();
         String sql = "SELECT qr_token, qr_token_created_at FROM donors WHERE id = ?";
@@ -220,14 +250,7 @@ public class DonorDao {
                 }
             }
         }
-        String newToken = "SEC-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("UPDATE donors SET qr_token = ?, qr_token_created_at = CURRENT_TIMESTAMP WHERE id = ?")) {
-            ps.setString(1, newToken);
-            ps.setInt(2, donorId);
-            ps.executeUpdate();
-        }
-        return newToken;
+        return regenerateQrToken(donorId);
     }
 
     public boolean invalidateQrToken(int donorId) throws SQLException {
@@ -235,6 +258,65 @@ public class DonorDao {
              PreparedStatement ps = conn.prepareStatement("UPDATE donors SET qr_token = NULL, qr_token_created_at = NULL WHERE id = ?")) {
             ps.setInt(1, donorId);
             return ps.executeUpdate() > 0;
+        }
+    }
+
+    public void addDonorNotification(int donorId, String title, String message, String type) {
+        String sql = "INSERT INTO donor_notifications (donor_id, title, message, type, read_status) VALUES (?, ?, ?, ?, false)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            ps.setString(2, title);
+            ps.setString(3, message);
+            ps.setString(4, type != null ? type : "general");
+            ps.executeUpdate();
+        } catch (Exception e) {
+            log.warn("Notice inserting donor notification: {}", e.getMessage());
+        }
+    }
+
+    public List<Map<String, Object>> getDonorNotifications(int donorId) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT * FROM donor_notifications WHERE donor_id = ? ORDER BY created_at DESC LIMIT 50";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", rs.getInt("id"));
+                    map.put("title", rs.getString("title"));
+                    map.put("message", rs.getString("message"));
+                    map.put("type", rs.getString("type"));
+                    map.put("read", rs.getBoolean("read_status"));
+                    Timestamp cat = rs.getTimestamp("created_at");
+                    map.put("createdAt", cat != null ? cat.toString() : null);
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice querying donor notifications: {}", e.getMessage());
+        }
+        return list;
+    }
+
+    public void logCheckinScan(int hospitalId, String staffUser, String queryId, Integer donorId, boolean success, String message) {
+        String sql = "INSERT INTO donor_checkin_scans (hospital_id, staff_user, query_id, donor_id, success, message) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, hospitalId);
+            ps.setString(2, staffUser != null ? staffUser : "Staff");
+            ps.setString(3, queryId != null ? queryId : "");
+            if (donorId != null && donorId > 0) {
+                ps.setInt(4, donorId);
+            } else {
+                ps.setNull(4, java.sql.Types.INTEGER);
+            }
+            ps.setBoolean(5, success);
+            ps.setString(6, message != null ? message : "");
+            ps.executeUpdate();
+        } catch (Exception e) {
+            log.warn("Notice logging checkin scan: {}", e.getMessage());
         }
     }
 

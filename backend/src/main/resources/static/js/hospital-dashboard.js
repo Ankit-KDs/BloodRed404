@@ -1800,10 +1800,15 @@ function initDispatchRadar() {
         ? `<span class="blood-match-badge exact-match" style="display:inline-block; font-size:10.5px; padding:1px 6px; border-radius:4px; background:rgba(239,68,68,0.18); color:#f87171; border:1px solid rgba(239,68,68,0.3); font-weight:600; margin-left:6px;">Exact</span>`
         : `<span class="blood-match-badge compatible-match" style="display:inline-block; font-size:10.5px; padding:1px 6px; border-radius:4px; background:rgba(59,130,246,0.18); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); font-weight:600; margin-left:6px;">Compatible</span>`;
 
+      const isBgVerified = (d.bloodGroupStatus === 'hospital_verified');
+      const unverifiedTag = !isBgVerified
+        ? `<span class="badge-unverified" title="Self-declared blood group (unverified by hospital)" style="display:inline-block; font-size:10px; padding:1px 5px; border-radius:3px; background:rgba(234,179,8,0.15); color:#facc15; border:1px solid rgba(234,179,8,0.3); font-weight:normal; margin-left:4px;">unverified</span>`
+        : '';
+
       return `
         <tr data-donor-id="${d.id}" style="cursor: pointer;">
           <td><strong>${escapeHtml(name)}</strong></td>
-          <td><div style="display:inline-flex; align-items:center;">${getDropBadgeSvg(blood, '')} ${matchPill}</div></td>
+          <td><div style="display:inline-flex; align-items:center;">${getDropBadgeSvg(blood, '')} ${matchPill} ${unverifiedTag}</div></td>
           <td><span class="mono-data">${dist}</span></td>
           <td><span class="mono-data">${eta}</span></td>
           <td class="donor-status-cell">${statusBadge}</td>
@@ -2322,22 +2327,36 @@ function initDonorCheckin() {
       bgEl.className = 'chip-status available';
     }
 
-    // Blood group verification tag (Part 5 & Part 6)
+    // Blood group verification tag & detail (Group B.3)
     const verTag = document.getElementById('dlcBloodGroupVerificationTag');
-    if (verTag) {
-      const isVerified = d.bloodGroupStatus === 'hospital_verified';
-      if (isVerified) {
+    const verDetail = document.getElementById('dlcBloodGroupStatusDetail');
+    const isVerified = (d.bloodGroupStatus === 'hospital_verified');
+    if (isVerified) {
+      const by = d.bloodGroupVerifiedByHospitalName || d.verifiedHospitalName || 'Hospital';
+      const at = d.bloodGroupVerifiedAt ? new Date(d.bloodGroupVerifiedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+      const verText = at ? `Verified by ${by} on ${at}` : `Verified by ${by}`;
+      if (verTag) {
         verTag.textContent = 'Verified';
         verTag.style.color = '#22c55e';
         verTag.style.background = 'rgba(34, 197, 94, 0.15)';
         verTag.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-        verTag.title = d.bloodGroupVerifiedByHospitalName ? `Verified by ${d.bloodGroupVerifiedByHospitalName}` : 'Verified by hospital';
-      } else {
-        verTag.textContent = 'unverified';
+        verTag.title = verText;
+      }
+      if (verDetail) {
+        verDetail.textContent = verText;
+        verDetail.style.color = '#22c55e';
+      }
+    } else {
+      if (verTag) {
+        verTag.textContent = 'Self-declared';
         verTag.style.color = '#facc15';
         verTag.style.background = 'rgba(234, 179, 8, 0.15)';
         verTag.style.borderColor = 'rgba(234, 179, 8, 0.3)';
         verTag.title = 'Self-declared blood group (unverified)';
+      }
+      if (verDetail) {
+        verDetail.textContent = 'Self-declared';
+        verDetail.style.color = '#94a3b8';
       }
     }
 
@@ -2350,9 +2369,91 @@ function initDonorCheckin() {
       eligEl.style.color = d.isEligible ? 'var(--hosp-green, #22c55e)' : 'var(--hosp-red, #ef4444)';
     }
 
+    // Health verification status (Group B.4 - reflect real source only)
     if (healthEl) {
-      healthEl.textContent = d.healthStatus || 'Verified / Active';
-      healthEl.style.color = (d.healthStatus && d.healthStatus.toLowerCase().includes('unavail')) ? '#ef4444' : '#22c55e';
+      healthEl.textContent = d.healthStatus || 'Not yet verified by a hospital';
+      healthEl.style.color = (d.healthStatus && d.healthStatus.startsWith('Verified by')) ? '#22c55e' : '#94a3b8';
+    }
+
+    // Populate registration health answers (Group B.5)
+    const regAnsWeight = document.getElementById('regAnsWeight');
+    const regAnsAllergies = document.getElementById('regAnsAllergies');
+    const regAnsConditions = document.getElementById('regAnsConditions');
+    const regAnsMedications = document.getElementById('regAnsMedications');
+    const regAnsSurgeries = document.getElementById('regAnsSurgeries');
+    if (regAnsWeight) regAnsWeight.textContent = (d.weight ? d.weight + ' kg' : 'Not recorded');
+    if (regAnsAllergies) regAnsAllergies.textContent = (d.allergies && String(d.allergies).trim()) ? d.allergies : 'None declared';
+    if (regAnsConditions) regAnsConditions.textContent = (d.conditions && String(d.conditions).trim()) ? d.conditions : 'None declared';
+    if (regAnsMedications) regAnsMedications.textContent = (d.medications && String(d.medications).trim()) ? d.medications : 'None declared';
+    if (regAnsSurgeries) regAnsSurgeries.textContent = (d.surgeries && String(d.surgeries).trim()) ? d.surgeries : 'None declared';
+
+    // Inline blood group verification wiring (Group B.3)
+    const btnEditBloodGroup = document.getElementById('btnEditBloodGroup');
+    const formVerifyBg = document.getElementById('dlcVerifyBloodGroupForm');
+    const selVerifyBg = document.getElementById('selVerifyBloodGroup');
+    const inpVerifyReason = document.getElementById('inpVerifyBloodGroupReason');
+    const btnCancelVerifyBg = document.getElementById('btnCancelVerifyBg');
+    const btnSaveVerifyBg = document.getElementById('btnSaveVerifyBg');
+
+    if (btnEditBloodGroup && formVerifyBg) {
+      btnEditBloodGroup.onclick = () => {
+        const isHidden = formVerifyBg.style.display === 'none';
+        formVerifyBg.style.display = isHidden ? 'block' : 'none';
+        if (isHidden && selVerifyBg) {
+          selVerifyBg.value = d.bloodType || 'A+';
+          if (inpVerifyReason) inpVerifyReason.value = '';
+        }
+      };
+    }
+    if (btnCancelVerifyBg && formVerifyBg) {
+      btnCancelVerifyBg.onclick = () => {
+        formVerifyBg.style.display = 'none';
+      };
+    }
+    if (btnSaveVerifyBg && formVerifyBg) {
+      btnSaveVerifyBg.onclick = async () => {
+        const newGroup = selVerifyBg ? selVerifyBg.value : '';
+        const reason = inpVerifyReason ? inpVerifyReason.value.trim() : '';
+        if (!newGroup) {
+          alert('Please select a valid blood group.');
+          return;
+        }
+        if (!reason || reason.length < 3) {
+          alert('Please provide a clinical reason for modifying the blood group (e.g. Lab cross-match completed).');
+          if (inpVerifyReason) inpVerifyReason.focus();
+          return;
+        }
+        btnSaveVerifyBg.disabled = true;
+        btnSaveVerifyBg.textContent = 'Saving...';
+        try {
+          const res = await fetch('/api/hospitals/donors/verify-blood-group', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              donorId: d.id,
+              bloodGroup: newGroup,
+              reason: reason
+            })
+          });
+          const payload = await res.json();
+          if (payload && payload.success) {
+            d.bloodType = newGroup;
+            d.bloodGroup = newGroup;
+            d.bloodGroupStatus = 'hospital_verified';
+            d.bloodGroupVerifiedAt = new Date().toISOString();
+            formVerifyBg.style.display = 'none';
+            renderLoadedDonor(d);
+            alert('Blood group verified and updated to ' + newGroup + '. Audit record logged.');
+          } else {
+            alert((payload && payload.message) || 'Failed to update blood group.');
+          }
+        } catch (err) {
+          alert('Error communicating with server: ' + err.message);
+        } finally {
+          btnSaveVerifyBg.disabled = false;
+          btnSaveVerifyBg.textContent = 'Save & Verify';
+        }
+      };
     }
 
     // Render Eligibility Capsule in Loaded Donor Card (Part 4 & Part 6)
@@ -2543,6 +2644,12 @@ function initDonorCheckin() {
 
   if (btnScanQrCamera) {
     btnScanQrCamera.addEventListener('click', async () => {
+      // Check secure context (Group B.1)
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isSecure) {
+        alert('Camera QR scanning requires a secure connection (HTTPS) or localhost. Please open RED404 over HTTPS or enter the Smart ID manually.');
+        return;
+      }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert('Camera is not supported on this browser or device. Please use manual entry.');
         return;
@@ -2558,6 +2665,15 @@ function initDonorCheckin() {
         if (cameraModal) cameraModal.style.display = 'flex';
         if (cameraMsg) cameraMsg.textContent = 'Align the donor\'s QR code within the frame...';
 
+        const processRawQr = (rawVal) => {
+          if (!rawVal) return;
+          let val = String(rawVal).trim();
+          if (val.startsWith('RED404:')) val = val.substring('RED404:'.length).trim();
+          if (inputId) inputId.value = val;
+          stopCamera();
+          performDonorLookup();
+        };
+
         if ('BarcodeDetector' in window) {
           const detector = new BarcodeDetector({ formats: ['qr_code'] });
           const detectLoop = async () => {
@@ -2565,22 +2681,43 @@ function initDonorCheckin() {
             try {
               const barcodes = await detector.detect(videoEl);
               if (barcodes && barcodes.length > 0) {
-                let rawVal = barcodes[0].rawValue || '';
-                if (rawVal.startsWith('RED404:')) rawVal = rawVal.substring('RED404:'.length).trim();
-                if (inputId) inputId.value = rawVal;
-                stopCamera();
-                performDonorLookup();
+                processRawQr(barcodes[0].rawValue);
                 return;
               }
             } catch (_) {}
             scanAnimationId = requestAnimationFrame(detectLoop);
           };
           scanAnimationId = requestAnimationFrame(detectLoop);
+        } else if (typeof jsQR !== 'undefined') {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const detectJsQrLoop = () => {
+            if (!cameraStream || !videoEl) return;
+            if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
+              canvas.width = videoEl.videoWidth;
+              canvas.height = videoEl.videoHeight;
+              ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imgData.data, imgData.width, imgData.height, {
+                inversionAttempts: 'dontInvert'
+              });
+              if (code && code.data) {
+                processRawQr(code.data);
+                return;
+              }
+            }
+            scanAnimationId = requestAnimationFrame(detectJsQrLoop);
+          };
+          scanAnimationId = requestAnimationFrame(detectJsQrLoop);
         } else {
           if (cameraMsg) cameraMsg.textContent = 'Camera active. Point at QR code (or type token into lookup box).';
         }
       } catch (err) {
-        alert('Unable to access camera: ' + (err.message || 'Permission denied'));
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          alert('Camera permission was denied. Please allow camera permissions in your browser or enter the Smart ID manually.');
+        } else {
+          alert('Unable to access camera: ' + (err.message || 'Permission denied'));
+        }
         stopCamera();
       }
     });

@@ -1085,29 +1085,45 @@
       btnRegen.dataset.bound = 'true';
       btnRegen.addEventListener('click', async () => {
         const tokenEl = document.getElementById('donor-qr-token');
-        const newToken = generateSecureToken();
-        localStorage.setItem(storageKey, newToken);
-        currentDonor.qrToken = newToken;
-        if (tokenEl) tokenEl.textContent = `TOKEN: ${newToken}`;
+        btnRegen.disabled = true;
+        btnRegen.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Regenerating...';
 
-        // Sync new token with backend MySQL
         try {
-          fetch('/api/donors/profile', {
-            method: 'PUT',
+          const res = await fetch('/api/donor/qr-token/regenerate', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: currentDonor.id, donorId: currentDonor.id, qrToken: newToken })
-          }).catch(() => { });
-        } catch (_) { }
+            body: JSON.stringify({ donorId: currentDonor.id })
+          });
+          const payload = await res.json();
+          if (payload && payload.success && payload.data && payload.data.qrToken) {
+            const newToken = payload.data.qrToken;
+            localStorage.setItem(storageKey, newToken);
+            currentDonor.qrToken = newToken;
+            if (tokenEl) tokenEl.textContent = `TOKEN: ${newToken}`;
+            const qrPayload = `RED404:${newToken}`;
+            renderIntakeQRCode(qrPayload);
 
-        const qrPayload = `RED404:${newToken}`;
-        renderIntakeQRCode(qrPayload);
+            const viewScanFormLink = document.getElementById('viewScanFormLink');
+            if (viewScanFormLink) viewScanFormLink.href = `/user-detail-form.html?token=${encodeURIComponent(newToken)}`;
+            const btnOpenScanPage = document.getElementById('btnOpenScanPage');
+            if (btnOpenScanPage) btnOpenScanPage.href = `/user-detail-form.html?token=${encodeURIComponent(newToken)}`;
 
-        const viewScanFormLink = document.getElementById('viewScanFormLink');
-        if (viewScanFormLink) viewScanFormLink.href = `/user-detail-form.html?token=${encodeURIComponent(newToken)}`;
-        const btnOpenScanPage = document.getElementById('btnOpenScanPage');
-        if (btnOpenScanPage) btnOpenScanPage.href = `/user-detail-form.html?token=${encodeURIComponent(newToken)}`;
-
-        showToast('Security Token Revoked & Regenerated. New intake QR is active.', 'success');
+            showToast('Security Token Revoked & Regenerated. Old QR stops working immediately.', 'success');
+          } else {
+            // Fallback
+            const newToken = generateSecureToken();
+            localStorage.setItem(storageKey, newToken);
+            currentDonor.qrToken = newToken;
+            if (tokenEl) tokenEl.textContent = `TOKEN: ${newToken}`;
+            renderIntakeQRCode(`RED404:${newToken}`);
+            showToast('Security Token Revoked & Regenerated.', 'success');
+          }
+        } catch (err) {
+          showToast('Failed to regenerate QR token: ' + err.message, 'error');
+        } finally {
+          btnRegen.disabled = false;
+          btnRegen.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Regenerate QR';
+        }
       });
     }
   }
@@ -1154,7 +1170,51 @@
         const fn = currentDonor.fatherName || '';
         fatherInput.value = fn.toLowerCase().includes('rajesh') ? '' : fn;
       }
-      if (bgInput) bgInput.value = currentDonor.bloodType || 'A+';
+      if (bgInput) {
+        bgInput.value = currentDonor.bloodType || 'A+';
+        const isVerified = (currentDonor.bloodGroupStatus === 'hospital_verified');
+        bgInput.disabled = isVerified;
+        let hintEl = document.getElementById('editDonorBgStatusHint');
+        if (!hintEl) {
+          hintEl = document.createElement('div');
+          hintEl.id = 'editDonorBgStatusHint';
+          hintEl.style.cssText = 'font-size: 11.5px; margin-top: 4px;';
+          bgInput.parentNode.appendChild(hintEl);
+        }
+        if (isVerified) {
+          const by = currentDonor.bloodGroupVerifiedByHospitalName || 'Hospital';
+          hintEl.innerHTML = `
+            <span style="color: #22c55e; font-weight: 500;"><i class="fa-solid fa-circle-check"></i> Verified by ${by}</span>
+            <a href="javascript:void(0)" id="btnOpenBgCorrectionPrompt" style="color: #38bdf8; margin-left: 8px; text-decoration: underline;">Request correction</a>
+          `;
+          const reqBtn = document.getElementById('btnOpenBgCorrectionPrompt');
+          if (reqBtn) {
+            reqBtn.onclick = async () => {
+              const reqBg = prompt('Enter your requested blood group (e.g. A+, B+, O+, AB-):', currentDonor.bloodType || 'A+');
+              if (!reqBg) return;
+              const reason = prompt('Please provide the clinical reason / lab cross-match details:', 'Laboratory blood cross-match confirmation');
+              if (!reason) return;
+              try {
+                const res = await fetch('/api/donor/request-blood-group-correction', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ requestedGroup: reqBg.trim(), reason: reason.trim() })
+                });
+                const payload = await res.json();
+                if (payload && payload.success) {
+                  alert(payload.message || 'Correction request logged successfully. Hospital staff will review and update at your next check-in.');
+                } else {
+                  alert((payload && payload.message) || 'Failed to submit correction request.');
+                }
+              } catch (e) {
+                alert('Network error while submitting correction request: ' + e.message);
+              }
+            };
+          }
+        } else {
+          hintEl.innerHTML = '<span style="color: #94a3b8;"><i class="fa-solid fa-circle-info"></i> Self-declared blood group (can be edited)</span>';
+        }
+      }
       if (genderInput) genderInput.value = currentDonor.gender || 'Male';
       if (dobInput) {
         const dob = currentDonor.dob || '';

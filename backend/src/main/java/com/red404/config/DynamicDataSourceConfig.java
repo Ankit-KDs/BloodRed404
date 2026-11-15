@@ -34,6 +34,11 @@ public class DynamicDataSourceConfig {
     @Bean
     @Primary
     public DataSource dataSource() {
+        if (Boolean.getBoolean("force.h2") || "true".equalsIgnoreCase(System.getenv("FORCE_H2"))) {
+            log.info("Force H2 mode requested via system property or environment variable.");
+            return createH2Fallback();
+        }
+
         ResolvedConfig cfg = resolveMySQLConfig();
 
         // 1. Try Primary / Railway / Cloud MySQL DataSource first
@@ -60,6 +65,10 @@ public class DynamicDataSourceConfig {
         }
 
         // 2. Fallback to embedded persistent file-based H2 database (MySQL compatibility mode)
+        return createH2Fallback();
+    }
+
+    private DataSource createH2Fallback() {
         try {
             File dataDir = new File("data");
             if (!dataDir.exists() && new File("backend/data").exists()) {

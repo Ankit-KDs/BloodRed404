@@ -134,6 +134,23 @@ public class DonorController {
         }
     }
 
+    @PostMapping({"/qr-token/regenerate", "/regenerate-qr"})
+    public ResponseEntity<ApiResponse> regenerateQrToken(HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null || donor.get("id") == null) return unauthorized();
+            int donorId = ((Number) donor.get("id")).intValue();
+            String token = donorDao.regenerateQrToken(donorId);
+            return ok("QR Pass regenerated successfully. Previous pass has been invalidated.", Map.of(
+                    "token", token,
+                    "qrPayload", "RED404:" + token,
+                    "ttlHours", 24
+            ));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     @PostMapping("/snapshot")
     public ResponseEntity<ApiResponse> saveSnapshot(@RequestBody JsonNode body) {
         try {
@@ -264,8 +281,24 @@ public class DonorController {
     }
 
     @GetMapping("/notifications")
-    public ResponseEntity<ApiResponse> getNotifications() {
-        return ok("Notifications loaded", new ArrayList<>());
+    public ResponseEntity<ApiResponse> getNotifications(HttpServletRequest request) {
+        Map<String, Object> donor = requireDonor(request);
+        if (donor == null || donor.get("id") == null) return unauthorized();
+        int donorId = ((Number) donor.get("id")).intValue();
+        return ok("Notifications loaded", donorDao.getDonorNotifications(donorId));
+    }
+
+    @PostMapping({"/blood-group-correction-request", "/request-blood-group-correction"})
+    public ResponseEntity<ApiResponse> requestBloodGroupCorrection(@RequestBody JsonNode body, HttpServletRequest request) {
+        Map<String, Object> donor = requireDonor(request);
+        if (donor == null || donor.get("id") == null) return unauthorized();
+        int donorId = ((Number) donor.get("id")).intValue();
+        String requestedGroup = JsonUtil.textOrNull(body, "requestedBloodGroup");
+        String reason = JsonUtil.textOrNull(body, "reason");
+        String note = (requestedGroup != null ? "Requested: " + requestedGroup + ". " : "") + (reason != null ? reason : "");
+        donorDao.addDonorNotification(donorId, "Blood Group Correction Requested",
+                "Your request to correct blood group has been logged. Please present your laboratory cross-match documentation at your next hospital check-in.", "correction_request");
+        return ok("Correction request submitted. Staff will review lab documentation at your next check-in.", null);
     }
 
     @GetMapping("/blood-requests")

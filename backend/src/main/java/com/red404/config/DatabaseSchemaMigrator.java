@@ -219,6 +219,27 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             "    changed_by_id INT NULL DEFAULT NULL," +
             "    reason VARCHAR(255) NULL DEFAULT NULL," +
             "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")",
+
+            "CREATE TABLE IF NOT EXISTS donor_checkin_scans (" +
+            "    id INT AUTO_INCREMENT PRIMARY KEY," +
+            "    hospital_id INT NOT NULL," +
+            "    staff_user VARCHAR(150)," +
+            "    query_id VARCHAR(100)," +
+            "    donor_id INT NULL DEFAULT NULL," +
+            "    success BOOLEAN DEFAULT TRUE," +
+            "    message VARCHAR(255)," +
+            "    scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")",
+
+            "CREATE TABLE IF NOT EXISTS donor_notifications (" +
+            "    id INT AUTO_INCREMENT PRIMARY KEY," +
+            "    donor_id INT NOT NULL," +
+            "    title VARCHAR(255) NOT NULL," +
+            "    message TEXT NOT NULL," +
+            "    type VARCHAR(50) DEFAULT 'general'," +
+            "    read_status BOOLEAN DEFAULT FALSE," +
+            "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ")"
         };
 

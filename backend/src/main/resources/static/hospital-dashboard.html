@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -11,7 +12,9 @@
   <!-- Google Fonts: Bricolage Grotesque, Instrument Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <!-- Leaflet CSS for Google Maps Radar Integration -->
@@ -21,6 +24,7 @@
   <!-- Hospital Stylesheet -->
   <link rel="stylesheet" href="css/hospital-dashboard.css?v=20261114_r2" />
 </head>
+
 <body class="hospital-body">
 
   <!-- ==================== MEDICINE FLOW HERO BACKGROUND ==================== -->
@@ -29,12 +33,12 @@
   <!-- ==================== FLAT TOP NAVBAR (1PX BORDER) ==================== -->
   <header class="hosp-navbar">
     <div class="hosp-nav-container">
-      
+
       <!-- Left: Logo & Portal Tag -->
       <a href="hospital-dashboard.html" class="hosp-brand" aria-label="RED404 Hospital Portal Home">
         <span class="brand-drop-icon" aria-hidden="true">
           <svg viewBox="0 0 32 38" class="drop-svg" focusable="false">
-            <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/>
+            <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
           </svg>
         </span>
         <span class="brand-name">RED<span class="brand-num">404</span></span>
@@ -64,35 +68,61 @@
       <!-- Right: Facility Name, Bell, Avatar Menu -->
       <div class="hosp-nav-actions">
         <button type="button" class="hosp-nav-btn" id="navNotifBtn" aria-label="Emergency Notifications">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
           <span class="notif-dot" id="navUnreadDot"></span>
         </button>
 
         <!-- Hospital Avatar Button & Dropdown Menu -->
         <div class="hosp-avatar-wrap" id="hospAvatarWrap" style="position: relative;">
-          <button type="button" class="hosp-avatar-btn" id="hospAvatarBtn" aria-label="Hospital Account Menu" aria-haspopup="true" aria-expanded="false" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1.5px solid var(--hosp-border, #334155); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s;">
+          <button type="button" class="hosp-avatar-btn" id="hospAvatarBtn" aria-label="Hospital Account Menu"
+            aria-haspopup="true" aria-expanded="false"
+            style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1.5px solid var(--hosp-border, #334155); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s;">
             <span id="hospAvatarInitials">HP</span>
           </button>
 
           <!-- Dropdown Menu -->
-          <div class="hosp-dropdown-menu" id="hospDropdownMenu" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 230px; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.5); padding: 12px; z-index: 9999;">
+          <div class="hosp-dropdown-menu" id="hospDropdownMenu"
+            style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 230px; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.5); padding: 12px; z-index: 9999;">
             <div style="padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 8px;">
-              <div id="dropdownHospName" style="font-weight: 600; color: #fff; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hospital</div>
+              <div id="dropdownHospName"
+                style="font-weight: 600; color: #fff; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Hospital</div>
               <div style="margin-top: 4px;">
-                <span id="dropdownHospStatusChip" class="chip-status" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; display: inline-block;">Pending</span>
+                <span id="dropdownHospStatusChip" class="chip-status"
+                  style="font-size: 11px; padding: 2px 8px; border-radius: 12px; display: inline-block;">Pending</span>
               </div>
             </div>
-            <a href="hospital-profile.html" class="hosp-dropdown-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: #cbd5e1; text-decoration: none; font-size: 13px; border-radius: 6px; transition: background 0.15s; cursor: pointer;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <a href="hospital-profile.html" class="hosp-dropdown-item"
+              style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: #cbd5e1; text-decoration: none; font-size: 13px; border-radius: 6px; transition: background 0.15s; cursor: pointer;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
               <span>Hospital profile</span>
             </a>
-            <button type="button" id="dropdownEditLocationBtn" class="hosp-dropdown-item" style="width: 100%; text-align: left; background: none; border: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: #cbd5e1; font-size: 13px; border-radius: 6px; transition: background 0.15s; cursor: pointer;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
+            <button type="button" id="dropdownEditLocationBtn" class="hosp-dropdown-item"
+              style="width: 100%; text-align: left; background: none; border: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: #cbd5e1; font-size: 13px; border-radius: 6px; transition: background 0.15s; cursor: pointer;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="10" r="3"></circle>
+                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+              </svg>
               <span>Edit location</span>
             </button>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 6px 0;"></div>
-            <button type="button" id="btnLogoutLink" class="hosp-dropdown-item" style="width: 100%; text-align: left; background: none; border: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: #f87171; font-size: 13px; border-radius: 6px; transition: background 0.15s; cursor: pointer;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <button type="button" id="btnLogoutLink" class="hosp-dropdown-item"
+              style="width: 100%; text-align: left; background: none; border: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: #f87171; font-size: 13px; border-radius: 6px; transition: background 0.15s; cursor: pointer;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
               <span>Log out</span>
             </button>
           </div>
@@ -102,8 +132,14 @@
         <span id="top-hospital-name" style="display: none;">-</span>
 
         <!-- Mobile Hamburger Toggle -->
-        <button type="button" class="hosp-mobile-menu-btn" id="hospMobileMenuBtn" aria-label="Open mobile navigation menu" aria-expanded="false">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        <button type="button" class="hosp-mobile-menu-btn" id="hospMobileMenuBtn"
+          aria-label="Open mobile navigation menu" aria-expanded="false">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
         </button>
       </div>
 
@@ -138,7 +174,11 @@
         <div class="welcome-heading-row">
           <h1 class="welcome-title">Welcome, <span id="nav-hospital-name">-</span></h1>
           <span class="hospital-verified-pill" id="hospVerifiedPill">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
             <span id="hospVerifiedPillText">Pending verification</span>
           </span>
         </div>
@@ -167,16 +207,24 @@
       <div id="cardStartHere" class="start-here-card" style="display: none;">
         <div class="start-here-content">
           <div class="start-here-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
           </div>
           <div>
             <h3 class="start-here-title">Start here: record your blood stock</h3>
-            <p class="start-here-desc">Your hospital account is verified. Enter your on-hand units in the inventory ledger so the system can monitor deficit thresholds and route emergency requests accurately.</p>
+            <p class="start-here-desc">Your hospital account is verified. Enter your on-hand units in the inventory
+              ledger so the system can monitor deficit thresholds and route emergency requests accurately.</p>
           </div>
         </div>
         <button type="button" class="btn-primary-action" id="btnStartHereAddStock" onclick="switchTab('tab-inventory')">
           <span>Add stock</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
         </button>
       </div>
 
@@ -188,10 +236,16 @@
             <p class="card-subtitle">Live broadcast requests and real-time donor fulfillment</p>
           </div>
           <div class="card-header-actions">
-            <a href="javascript:void(0)" class="card-header-link" onclick="switchTab('tab-records')">See all requests</a>
-            <button type="button" class="btn-primary-action" id="btnFindDonorsHeader" onclick="switchTab('tab-dispatch')">
+            <a href="javascript:void(0)" class="card-header-link" onclick="switchTab('tab-records')">See all
+              requests</a>
+            <button type="button" class="btn-primary-action" id="btnFindDonorsHeader"
+              onclick="switchTab('tab-dispatch')">
               <span>Find donors for a patient</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
             </button>
           </div>
         </div>
@@ -213,7 +267,8 @@
 
         <!-- Empty State (Dashed Box) -->
         <div id="activeReqEmpty" class="dashed-empty-box" style="display: none;">
-          <p>No active requests. When you dispatch a request for a patient, donor responses and arrival status will show up here.</p>
+          <p>No active requests. When you dispatch a request for a patient, donor responses and arrival status will show
+            up here.</p>
         </div>
       </article>
 
@@ -322,7 +377,11 @@
             <p class="card-subtitle">Community blood drives and non-urgent donor mobilization</p>
           </div>
           <button type="button" class="btn-secondary" id="btnOpenPlanDriveModal" style="font-size: 13px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
             <span>Plan donation drive</span>
           </button>
         </div>
@@ -368,14 +427,14 @@
          TAB 2: FIND DONOR (DISPATCH SEARCH & RADAR)
     ============================================================ -->
     <section class="portal-tab-content" id="tab-dispatch" role="tabpanel">
-      
+
       <header class="dash-welcome-header">
         <h1 class="welcome-title">Find Donors</h1>
         <p class="welcome-status-line">Search eligible donors within spatial zones and dispatch direct alerts.</p>
       </header>
 
       <div class="dash-dominant-split">
-        
+
         <!-- Left: Search & Dispatch Form -->
         <article class="hosp-card">
           <div class="card-header">
@@ -395,28 +454,52 @@
               <legend class="form-legend">Required blood group *</legend>
               <div class="sos-blood-grid">
                 <input type="radio" name="dispBloodGroup" id="dbg-o-neg" value="O-" class="blood-chip-radio" />
-                <label for="dbg-o-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">O-</span></span></label>
+                <label for="dbg-o-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg
+                      viewBox="0 0 32 38" class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">O-</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-o-pos" value="O+" class="blood-chip-radio" />
-                <label for="dbg-o-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">O+</span></span></label>
+                <label for="dbg-o-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38"
+                      class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">O+</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-a-neg" value="A-" class="blood-chip-radio" />
-                <label for="dbg-a-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">A-</span></span></label>
+                <label for="dbg-a-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg
+                      viewBox="0 0 32 38" class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">A-</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-a-pos" value="A+" class="blood-chip-radio" />
-                <label for="dbg-a-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">A+</span></span></label>
+                <label for="dbg-a-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38"
+                      class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">A+</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-b-neg" value="B-" class="blood-chip-radio" />
-                <label for="dbg-b-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">B-</span></span></label>
+                <label for="dbg-b-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg
+                      viewBox="0 0 32 38" class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">B-</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-b-pos" value="B+" class="blood-chip-radio" />
-                <label for="dbg-b-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">B+</span></span></label>
+                <label for="dbg-b-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38"
+                      class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">B+</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-ab-neg" value="AB-" class="blood-chip-radio" />
-                <label for="dbg-ab-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">AB-</span></span></label>
+                <label for="dbg-ab-neg" class="blood-chip-label"><span class="blood-drop-badge critical"><svg
+                      viewBox="0 0 32 38" class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">AB-</span></span></label>
 
                 <input type="radio" name="dispBloodGroup" id="dbg-ab-pos" value="AB+" class="blood-chip-radio" />
-                <label for="dbg-ab-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38" class="drop-svg"><path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor"/></svg><span class="drop-text">AB+</span></span></label>
+                <label for="dbg-ab-pos" class="blood-chip-label"><span class="blood-drop-badge"><svg viewBox="0 0 32 38"
+                      class="drop-svg">
+                      <path d="M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z" fill="currentColor" />
+                    </svg><span class="drop-text">AB+</span></span></label>
               </div>
             </fieldset>
 
@@ -437,11 +520,17 @@
 
             <div style="margin-bottom: var(--sp-24);">
               <label class="form-label" for="dispNotes">Notes</label>
-              <input type="text" id="dispNotes" class="form-input" placeholder="e.g. Please report to Blood Bank Gate 2" />
+              <input type="text" id="dispNotes" class="form-input"
+                placeholder="e.g. Please report to Blood Bank Gate 2" />
             </div>
 
-            <button type="submit" class="btn-primary-action" id="btnSearchDonors" disabled style="width: 100%; justify-content: center;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <button type="submit" class="btn-primary-action" id="btnSearchDonors" disabled
+              style="width: 100%; justify-content: center;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
               <span>Search donors</span>
             </button>
           </form>
@@ -449,27 +538,46 @@
 
         <!-- Right: Spatial Radar Map (Real Google Map) -->
         <article class="hosp-card">
-          <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-8);">
+          <div class="card-header"
+            style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-8);">
             <div>
               <h2 class="card-title">Spatial Radar</h2>
               <p class="card-subtitle">Hospital Center: Zone 1 (5km), Zone 2 (10km), Zone 3 (20km)</p>
             </div>
             <!-- Map Layer Switcher (Google Dark, Roads, Satellite) -->
             <div class="radar-layer-bar" id="radarLayerBar" role="group" aria-label="Map Layer Selection">
-              <button type="button" class="rlb-btn active" data-layer="google-dark" title="Google Maps - Tactical Night Mode">Google Dark</button>
-              <button type="button" class="rlb-btn" data-layer="google-roads" title="Google Maps - Standard Roads">Roads</button>
-              <button type="button" class="rlb-btn" data-layer="google-hybrid" title="Google Maps - Satellite Imagery">Satellite</button>
+              <button type="button" class="rlb-btn active" data-layer="google-dark"
+                title="Google Maps - Tactical Night Mode">Google Dark</button>
+              <button type="button" class="rlb-btn" data-layer="google-roads"
+                title="Google Maps - Standard Roads">Roads</button>
+              <button type="button" class="rlb-btn" data-layer="google-hybrid"
+                title="Google Maps - Satellite Imagery">Satellite</button>
             </div>
           </div>
 
-          <div class="radar-container" style="position: relative; width: 100%; min-height: 290px; padding: 0; overflow: hidden; background-color: var(--hosp-surface);">
-            <div id="hospitalRadarMap" class="dark-map" style="width: 100%; height: 290px; border-radius: var(--hosp-radius-card);"></div>
-            <div id="hospNoLocationPrompt" class="hosp-map-no-location" style="display: none; padding: 48px 20px; text-align: center; width: 100%;">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--hosp-amber); margin-bottom: 8px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-              <div style="font-weight: 600; color: var(--hosp-amber); margin-bottom: 4px;">Hospital Location Required</div>
-              <div style="font-size: 13px; color: var(--hosp-text-muted); margin-bottom: 16px;">Coordinates are required to calculate donor distances and render spatial radar.</div>
-              <button type="button" class="btn-primary-action" id="btnSetLocationNow" style="margin: 0 auto; display: inline-flex;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <div class="radar-container"
+            style="position: relative; width: 100%; min-height: 290px; padding: 0; overflow: hidden; background-color: var(--hosp-surface);">
+            <div id="hospitalRadarMap" class="dark-map"
+              style="width: 100%; height: 290px; border-radius: var(--hosp-radius-card);"></div>
+            <div id="hospNoLocationPrompt" class="hosp-map-no-location"
+              style="display: none; padding: 48px 20px; text-align: center; width: 100%;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="color: var(--hosp-amber); margin-bottom: 8px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <div style="font-weight: 600; color: var(--hosp-amber); margin-bottom: 4px;">Hospital Location Required
+              </div>
+              <div style="font-size: 13px; color: var(--hosp-text-muted); margin-bottom: 16px;">Coordinates are required
+                to calculate donor distances and render spatial radar.</div>
+              <button type="button" class="btn-primary-action" id="btnSetLocationNow"
+                style="margin: 0 auto; display: inline-flex;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
                 <span>Set location now</span>
               </button>
             </div>
@@ -483,9 +591,16 @@
           </div>
 
           <!-- Bottom: Broadcast to all matching donors -->
-          <div class="radar-broadcast-row" style="margin-top: var(--sp-16); padding-top: var(--sp-16); border-top: 1px solid var(--hosp-border);">
-            <button type="button" class="btn-primary-action" id="btnBroadcastMatching" style="width: 100%; justify-content: center;" disabled>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <div class="radar-broadcast-row"
+            style="margin-top: var(--sp-16); padding-top: var(--sp-16); border-top: 1px solid var(--hosp-border);">
+            <button type="button" class="btn-primary-action" id="btnBroadcastMatching"
+              style="width: 100%; justify-content: center;" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
               <span>Broadcast to all matching donors (0)</span>
             </button>
           </div>
@@ -523,7 +638,8 @@
             </tbody>
           </table>
         </div>
-        <div id="unlocatedDonorsNote" style="margin-top: 12px; font-size: 13px; color: var(--hosp-text-dim); display: none;"></div>
+        <div id="unlocatedDonorsNote"
+          style="margin-top: 12px; font-size: 13px; color: var(--hosp-text-dim); display: none;"></div>
       </article>
 
     </section>
@@ -532,7 +648,7 @@
          TAB 3: INVENTORY (STOCK OVERVIEW & PER-BAG AUDIT)
     ============================================================ -->
     <section class="portal-tab-content" id="tab-inventory" role="tabpanel">
-      
+
       <header class="dash-welcome-header">
         <h1 class="welcome-title">Blood Inventory</h1>
         <p class="welcome-status-line">Current reserves by blood group. Low groups appear first.</p>
@@ -607,7 +723,7 @@
          TAB 4: MY REQUESTS (DISPATCH LOGS)
     ============================================================ -->
     <section class="portal-tab-content" id="tab-records" role="tabpanel">
-      
+
       <header class="dash-welcome-header">
         <h1 class="welcome-title">My Requests</h1>
         <p class="welcome-status-line">Emergency requests dispatched and donor fulfillment logs.</p>
@@ -620,7 +736,12 @@
             <p class="card-subtitle">Recent emergency broadcasts and timelines</p>
           </div>
           <button type="button" class="btn-secondary" id="btnExportRecordsCsv">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
             <span>Export CSV</span>
           </button>
         </div>
@@ -650,14 +771,14 @@
          TAB 5: CHECK-IN ENGINE
     ============================================================ -->
     <section class="portal-tab-content" id="tab-checkin" role="tabpanel">
-      
+
       <header class="dash-welcome-header">
         <h1 class="welcome-title">Donor Check-in</h1>
         <p class="welcome-status-line">Scan donor pass and verify pre-donation clinical vitals.</p>
       </header>
 
       <div class="dash-dominant-split">
-        
+
         <!-- Left: Smart ID / QR Lookup -->
         <article class="hosp-card">
           <div class="card-header">
@@ -669,59 +790,157 @@
 
           <div style="margin-bottom: var(--sp-16);">
             <div style="display: flex; gap: var(--sp-8);">
-              <input type="text" id="checkinSmartIdInput" class="form-input" placeholder="Enter Smart ID, Donor ID, or QR code" />
+              <input type="text" id="checkinSmartIdInput" class="form-input"
+                placeholder="Enter Smart ID, Donor ID, or QR code" />
               <button type="button" class="btn-secondary" id="btnLookupDonor">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
                 <span>Lookup</span>
               </button>
-              <button type="button" class="btn-primary" id="btnScanQrCamera" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
-                <span>Scan Camera</span>
+              <button type="button" class="btn-primary" id="btnScanQrCamera"
+                style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                  <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                  <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                  <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                  <rect x="7" y="7" width="10" height="10" rx="1" />
+                </svg>
+                <span>Scan QR</span>
               </button>
             </div>
           </div>
 
           <!-- Empty State Prompt -->
-          <div id="checkinEmptyState" style="padding: var(--sp-16); text-align: center; color: var(--hosp-text-muted); font-size: 13.5px; border: 1px dashed var(--hosp-border); border-radius: var(--hosp-radius-card);">
-            Enter a Smart ID / Donor ID, or click <strong>Scan Camera</strong> to scan donor pass.
+          <div id="checkinEmptyState"
+            style="padding: var(--sp-16); text-align: center; color: var(--hosp-text-muted); font-size: 13.5px; border: 1px dashed var(--hosp-border); border-radius: var(--hosp-radius-card);">
+            Enter a Smart ID / Donor ID, or click <strong>Scan QR</strong> to scan donor pass.
           </div>
 
           <!-- Lookup Error State -->
-          <div id="checkinErrorState" style="display: none; padding: var(--sp-12); margin-bottom: var(--sp-12); border-radius: var(--hosp-radius-card); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 13px;">
+          <div id="checkinErrorState"
+            style="display: none; padding: var(--sp-12); margin-bottom: var(--sp-12); border-radius: var(--hosp-radius-card); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 13px;">
             <div id="checkinErrorMsg">Donor not found.</div>
-            <button type="button" id="btnRetryLookup" class="btn-secondary" style="margin-top: 8px; padding: 4px 10px; font-size: 12px;">Retry</button>
+            <button type="button" id="btnRetryLookup" class="btn-secondary"
+              style="margin-top: 8px; padding: 4px 10px; font-size: 12px;">Retry</button>
           </div>
 
           <!-- Loaded Donor Card Details (Populated dynamically from backend only) -->
-          <div id="donorLoadedCard" style="display: none; background: var(--hosp-surface-raised); border: 1px solid var(--hosp-border); border-radius: var(--hosp-radius-card); padding: var(--sp-16);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-12);">
+          <div id="donorLoadedCard"
+            style="display: none; background: var(--hosp-surface-raised); border: 1px solid var(--hosp-border); border-radius: var(--hosp-radius-card); padding: var(--sp-16);">
+            <div
+              style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--sp-12);">
               <div>
                 <strong id="dlcName" style="font-size: 16px; color: #fff;">-</strong>
                 <div class="mono-id" id="dlcSmartId" style="color: var(--hosp-text-muted); font-size: 13px;">-</div>
               </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <span class="chip-status available" id="dlcBloodGroup">-</span>
-                <span id="dlcBloodGroupVerificationTag" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);">unverified</span>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="chip-status available" id="dlcBloodGroup">-</span>
+                  <span id="dlcBloodGroupVerificationTag"
+                    style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);">Self-declared</span>
+                  <button type="button" id="btnEditBloodGroup" class="btn-secondary"
+                    style="padding: 2px 8px; font-size: 11px; height: 22px; margin-left: 2px;">Verify / Edit</button>
+                </div>
+                <div id="dlcBloodGroupStatusDetail" style="font-size: 11px; color: #94a3b8; text-align: right;">
+                  Self-declared</div>
               </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-8); font-size: 13px; color: var(--hosp-text-muted);">
+
+            <!-- Inline Blood Group Verification Form (Initially Hidden) -->
+            <div id="dlcVerifyBloodGroupForm"
+              style="display: none; background: rgba(0,0,0,0.25); border: 1px solid var(--hosp-border); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+              <div style="font-weight: 600; font-size: 12.5px; color: #38bdf8; margin-bottom: 6px;">Verify / Correct
+                Blood Group</div>
+              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 8px; margin-bottom: 8px;">
+                <div>
+                  <label
+                    style="font-size: 11px; color: var(--hosp-text-muted); display: block; margin-bottom: 2px;">Blood
+                    Group *</label>
+                  <select id="selVerifyBloodGroup" class="form-input" style="padding: 4px 8px; font-size: 12.5px;">
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    style="font-size: 11px; color: var(--hosp-text-muted); display: block; margin-bottom: 2px;">Clinical
+                    Reason *</label>
+                  <input type="text" id="inpVerifyBloodGroupReason" class="form-input"
+                    placeholder="e.g. Lab cross-match test completed" style="padding: 4px 8px; font-size: 12.5px;" />
+                </div>
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 6px;">
+                <button type="button" id="btnCancelVerifyBg" class="btn-secondary"
+                  style="padding: 2px 8px; font-size: 11.5px; height: 26px;">Cancel</button>
+                <button type="button" id="btnSaveVerifyBg" class="btn-primary"
+                  style="padding: 2px 10px; font-size: 11.5px; height: 26px;">Save & Verify</button>
+              </div>
+            </div>
+
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-8); font-size: 13px; color: var(--hosp-text-muted);">
               <div>Age: <strong style="color: #fff;" id="dlcAge">-</strong></div>
               <div>Weight: <strong style="color: #fff;" id="dlcWeight">-</strong></div>
               <div>Last Donation: <strong style="color: #fff;" id="dlcLastDonation">-</strong></div>
               <div>Eligibility: <strong id="dlcEligibility">-</strong></div>
-              <div style="grid-column: span 2;">Health Status: <strong style="color: #fff;" id="dlcHealthStatus">Verified / Active</strong></div>
+              <div style="grid-column: span 2;">Health Status: <strong style="color: #94a3b8;" id="dlcHealthStatus">Not
+                  yet verified by a hospital</strong></div>
             </div>
             <!-- Donor Eligibility Capsule (Part 4 & 6) -->
-            <div id="dlcCapsuleContainer" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hosp-border);">
+            <div id="dlcCapsuleContainer"
+              style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hosp-border);">
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
                 <span style="color: var(--hosp-text-muted);">Donation Gap Progress</span>
                 <strong id="dlcCapsulePct" style="color: #fff;">100%</strong>
               </div>
-              <div style="height: 8px; width: 100%; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
-                <div id="dlcCapsuleBar" style="height: 100%; width: 100%; background: #22c55e; border-radius: 999px; transition: width 0.3s;"></div>
+              <div
+                style="height: 8px; width: 100%; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
+                <div id="dlcCapsuleBar"
+                  style="height: 100%; width: 100%; background: #22c55e; border-radius: 999px; transition: width 0.3s;">
+                </div>
               </div>
-              <div id="dlcCapsuleNotice" style="font-size: 11.5px; color: var(--hosp-text-muted); margin-top: 6px;"></div>
+              <div id="dlcCapsuleNotice" style="font-size: 11.5px; color: var(--hosp-text-muted); margin-top: 6px;">
+              </div>
             </div>
+
+            <!-- Collapsible Registration Health-Form Answers (Group B.5) -->
+            <details id="dlcRegAnswersCollapse"
+              style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--hosp-border); font-size: 13px;">
+              <summary
+                style="cursor: pointer; font-weight: 600; color: #38bdf8; display: flex; align-items: center; justify-content: space-between;">
+                <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>Registration health answers</span>
+                <span
+                  style="font-size: 11px; color: var(--hosp-text-muted); font-weight: normal;">(Self-reported)</span>
+              </summary>
+              <div
+                style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; font-size: 12.5px;">
+                <div>Self-reported weight: <strong id="regAnsWeight" style="color: #fff;">-</strong></div>
+                <div>Allergies: <strong id="regAnsAllergies" style="color: #fff;">None declared</strong></div>
+                <div>Medical conditions: <strong id="regAnsConditions" style="color: #fff;">None declared</strong></div>
+                <div>Current medications: <strong id="regAnsMedications" style="color: #fff;">None declared</strong>
+                </div>
+                <div style="grid-column: span 2;">Past surgeries: <strong id="regAnsSurgeries" style="color: #fff;">None
+                    declared</strong></div>
+              </div>
+            </details>
           </div>
         </article>
 
@@ -736,53 +955,67 @@
 
           <form id="formDonorVitals">
             <!-- Vitals disabled hint -->
-            <div id="vitalsDisabledHint" style="padding: 10px; margin-bottom: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); color: var(--hosp-text-muted); font-size: 13px; text-align: center;">
+            <div id="vitalsDisabledHint"
+              style="padding: 10px; margin-bottom: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); color: var(--hosp-text-muted); font-size: 13px; text-align: center;">
               Look up a donor first to unlock clinical vitals entry.
             </div>
 
-            <fieldset id="vitalsFieldset" disabled style="border: none; padding: 0; margin: 0; opacity: 0.55; transition: opacity 0.2s;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
+            <fieldset id="vitalsFieldset" disabled
+              style="border: none; padding: 0; margin: 0; opacity: 0.55; transition: opacity 0.2s;">
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
                 <div>
                   <label class="form-label" for="vitWeight">Weight (kg) *</label>
                   <input type="number" id="vitWeight" class="form-input" step="0.5" placeholder="e.g. 65" required />
-                  <div class="vital-err" id="errVitWeight" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
+                  <div class="vital-err" id="errVitWeight"
+                    style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitHb">Hemoglobin (g/dL) *</label>
                   <input type="number" id="vitHb" class="form-input" step="0.1" placeholder="e.g. 13.5" required />
-                  <div class="vital-err" id="errVitHb" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
+                  <div class="vital-err" id="errVitHb"
+                    style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitBpSystolic">BP Systolic (mmHg) *</label>
                   <input type="number" id="vitBpSystolic" class="form-input" placeholder="120" required />
-                  <div class="vital-err" id="errVitBpSystolic" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
+                  <div class="vital-err" id="errVitBpSystolic"
+                    style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitBpDiastolic">BP Diastolic (mmHg) *</label>
                   <input type="number" id="vitBpDiastolic" class="form-input" placeholder="80" required />
-                  <div class="vital-err" id="errVitBpDiastolic" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
+                  <div class="vital-err" id="errVitBpDiastolic"
+                    style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitPulse">Pulse Rate (bpm) *</label>
                   <input type="number" id="vitPulse" class="form-input" placeholder="72" required />
-                  <div class="vital-err" id="errVitPulse" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
+                  <div class="vital-err" id="errVitPulse"
+                    style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitTemp">Temperature (°F) *</label>
                   <input type="number" id="vitTemp" class="form-input" step="0.1" placeholder="98.4" required />
-                  <div class="vital-err" id="errVitTemp" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
+                  <div class="vital-err" id="errVitTemp"
+                    style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
               </div>
 
               <!-- Blood Group Confirmation & Donation Volume (Part 5 & Part 6) -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
                 <div>
                   <label class="form-label" for="vitConfirmedBloodGroup">Confirmed Blood Group</label>
                   <select id="vitConfirmedBloodGroup" class="form-input">
-                    <option value="A+">A+</option><option value="A-">A-</option>
-                    <option value="B+">B+</option><option value="B-">B-</option>
-                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
-                    <option value="O+">O+</option><option value="O-">O-</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
                   </select>
                 </div>
                 <div>
@@ -795,24 +1028,30 @@
               </div>
 
               <div id="boxBloodGroupReason" style="display: none; margin-bottom: var(--sp-16);">
-                <label class="form-label" for="vitBloodGroupReason" style="color: #facc15;">Reason for modifying blood group *</label>
-                <input type="text" id="vitBloodGroupReason" class="form-input" placeholder="e.g. Confirmed by clinical lab typing test" />
-                <div class="vital-err" id="errVitBloodGroupReason" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
+                <label class="form-label" for="vitBloodGroupReason" style="color: #facc15;">Reason for modifying blood
+                  group *</label>
+                <input type="text" id="vitBloodGroupReason" class="form-input"
+                  placeholder="e.g. Confirmed by clinical lab typing test" />
+                <div class="vital-err" id="errVitBloodGroupReason"
+                  style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
               </div>
 
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
                 <div>
                   <label class="form-label" for="vitStaffName">Doctor / Staff Name *</label>
                   <input type="text" id="vitStaffName" class="form-input" placeholder="e.g. Dr. A. Sharma" required />
                 </div>
                 <div>
                   <label class="form-label" for="vitNotes">Clinical Notes (Optional)</label>
-                  <input type="text" id="vitNotes" class="form-input" placeholder="e.g. Normal screening, well-hydrated" />
+                  <input type="text" id="vitNotes" class="form-input"
+                    placeholder="e.g. Normal screening, well-hydrated" />
                 </div>
               </div>
 
               <!-- Auto-verdict box (appears ONLY after all required vitals entered) -->
-              <div id="verdictBanner" style="display: none; margin-bottom: var(--sp-16); padding: var(--sp-12); border-radius: var(--hosp-radius-card); font-size: 13px;">
+              <div id="verdictBanner"
+                style="display: none; margin-bottom: var(--sp-16); padding: var(--sp-12); border-radius: var(--hosp-radius-card); font-size: 13px;">
                 <div style="display: flex; align-items: center; gap: var(--sp-8);">
                   <span id="verdictIcon"></span>
                   <strong id="verdictTitle">Clinically Fit</strong>
@@ -822,11 +1061,16 @@
 
               <!-- Action buttons -->
               <div style="display: flex; gap: var(--sp-8);">
-                <button type="button" class="btn-secondary" id="btnDeferDonation" disabled style="flex: 1; justify-content: center; border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">
+                <button type="button" class="btn-secondary" id="btnDeferDonation" disabled
+                  style="flex: 1; justify-content: center; border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">
                   <span>Defer donor</span>
                 </button>
-                <button type="submit" class="btn-primary" id="btnRecordDonation" disabled style="flex: 2; justify-content: center;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <button type="submit" class="btn-primary" id="btnRecordDonation" disabled
+                  style="flex: 2; justify-content: center;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
                   <span>Approve donation</span>
                 </button>
               </div>
@@ -834,11 +1078,19 @@
           </form>
 
           <!-- Success State Banner -->
-          <div id="donationSuccessCard" style="display: none; margin-top: var(--sp-16); padding: var(--sp-16); background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: var(--hosp-radius-card); text-align: center;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 8px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            <div style="font-weight: 600; color: #22c55e; font-size: 14px;" id="donationSuccessTitle">Donation Approved & Recorded!</div>
-            <div style="color: #cbd5e1; font-size: 12.5px; margin-top: 4px;" id="donationSuccessMsg">+1 unit added to hospital inventory. Donor ledger timer updated.</div>
-            <button type="button" id="btnNextDonor" class="btn-secondary" style="margin-top: 12px; padding: 6px 16px; font-size: 13px;">
+          <div id="donationSuccessCard"
+            style="display: none; margin-top: var(--sp-16); padding: var(--sp-16); background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: var(--hosp-radius-card); text-align: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 8px;">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <div style="font-weight: 600; color: #22c55e; font-size: 14px;" id="donationSuccessTitle">Donation Approved
+              & Recorded!</div>
+            <div style="color: #cbd5e1; font-size: 12.5px; margin-top: 4px;" id="donationSuccessMsg">+1 unit added to
+              hospital inventory. Donor ledger timer updated.</div>
+            <button type="button" id="btnNextDonor" class="btn-secondary"
+              style="margin-top: 12px; padding: 6px 16px; font-size: 13px;">
               <span>Next donor</span>
             </button>
           </div>
@@ -855,7 +1107,8 @@
     <div class="hosp-modal-box" onclick="event.stopPropagation()">
       <div class="hosp-modal-header">
         <h3 class="hosp-modal-title">Plan Donation Drive</h3>
-        <button type="button" class="hosp-modal-close" id="btnClosePlanDriveModal" aria-label="Close modal">&times;</button>
+        <button type="button" class="hosp-modal-close" id="btnClosePlanDriveModal"
+          aria-label="Close modal">&times;</button>
       </div>
       <form id="formPlanDonationDrive" class="hosp-modal-form">
         <div class="form-row">
@@ -899,7 +1152,8 @@
         <div class="form-grid-2">
           <div class="form-row">
             <label for="driveVenue" class="form-label">Venue</label>
-            <input type="text" id="driveVenue" class="form-input" placeholder="Hospital Blood Bank / Auditorium" required />
+            <input type="text" id="driveVenue" class="form-input" placeholder="Hospital Blood Bank / Auditorium"
+              required />
           </div>
           <div class="form-row">
             <label for="driveTargetUnits" class="form-label">Target units (optional)</label>
@@ -909,7 +1163,8 @@
 
         <div class="form-row">
           <label for="driveNotes" class="form-label">Notes (optional)</label>
-          <textarea id="driveNotes" class="form-textarea" rows="2" placeholder="Special requirements, refreshments, or instructions for donors..."></textarea>
+          <textarea id="driveNotes" class="form-textarea" rows="2"
+            placeholder="Special requirements, refreshments, or instructions for donors..."></textarea>
         </div>
 
         <div class="hosp-modal-actions">
@@ -925,31 +1180,48 @@
     <div class="hosp-modal-box" onclick="event.stopPropagation()" style="max-width: 520px;">
       <div class="hosp-modal-header">
         <h3 class="hosp-modal-title">Hospital Profile &amp; Location</h3>
-        <button type="button" class="hosp-modal-close" id="btnCloseHospProfileModal" aria-label="Close modal">&times;</button>
+        <button type="button" class="hosp-modal-close" id="btnCloseHospProfileModal"
+          aria-label="Close modal">&times;</button>
       </div>
       <div class="hosp-modal-body" style="padding: 20px;">
         <div style="display: flex; flex-direction: column; gap: 16px;">
           <div>
-            <div style="font-size: 12px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600; margin-bottom: 4px;">Facility Name</div>
+            <div
+              style="font-size: 12px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600; margin-bottom: 4px;">
+              Facility Name</div>
             <div id="profHospName" style="font-size: 16px; font-weight: 700; color: #ffffff;">-</div>
           </div>
           <div>
-            <div style="font-size: 12px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600; margin-bottom: 4px;">Registered Address</div>
-            <div id="profHospAddress" style="font-size: 13.5px; color: var(--hosp-text-light, #e5e7eb); line-height: 1.4;">-</div>
+            <div
+              style="font-size: 12px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600; margin-bottom: 4px;">
+              Registered Address</div>
+            <div id="profHospAddress"
+              style="font-size: 13.5px; color: var(--hosp-text-light, #e5e7eb); line-height: 1.4;">-</div>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--hosp-surface-raised); padding: 12px; border-radius: 8px; border: 1px solid var(--hosp-border);">
+          <div
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--hosp-surface-raised); padding: 12px; border-radius: 8px; border: 1px solid var(--hosp-border);">
             <div>
-              <div style="font-size: 11px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600;">Latitude</div>
-              <div id="profHospLat" style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: #ffffff; margin-top: 2px;">--</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600;">
+                Latitude</div>
+              <div id="profHospLat"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: #ffffff; margin-top: 2px;">--
+              </div>
             </div>
             <div>
-              <div style="font-size: 11px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600;">Longitude</div>
-              <div id="profHospLng" style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: #ffffff; margin-top: 2px;">--</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--hosp-text-muted); font-weight: 600;">
+                Longitude</div>
+              <div id="profHospLng"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: #ffffff; margin-top: 2px;">--
+              </div>
             </div>
           </div>
           <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
             <button type="button" class="btn-primary-action" id="btnEditHospLocation">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
               <span>Edit location</span>
             </button>
             <button type="button" class="btn-secondary" id="btnCloseHospProfile">Close</button>
@@ -981,37 +1253,49 @@
   </footer>
 
   <!-- Camera QR Scanner Modal (Part 6) -->
-  <div id="checkinCameraModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 20px; max-width: 440px; width: 92%; text-align: center;">
+  <div id="checkinCameraModal" class="modal-overlay"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 20px; max-width: 440px; width: 92%; text-align: center;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h3 style="margin: 0; font-size: 16px; color: #fff;">Scan Donor QR Pass</h3>
-        <button type="button" id="btnCloseCameraModal" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+        <button type="button" id="btnCloseCameraModal"
+          style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
       </div>
-      <div id="cameraScannerBox" style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 12px;">
+      <div id="cameraScannerBox"
+        style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 12px;">
         <video id="cameraPreviewVideo" style="width: 100%; height: 100%; object-fit: cover;" playsinline></video>
-        <div id="cameraScanOverlay" style="position: absolute; inset: 25px; border: 2px dashed #ef4444; border-radius: 8px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);"></div>
+        <div id="cameraScanOverlay"
+          style="position: absolute; inset: 25px; border: 2px dashed #ef4444; border-radius: 8px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);">
+        </div>
       </div>
       <div id="cameraScannerMsg" style="font-size: 13px; color: var(--hosp-text-muted, #94a3b8); margin-bottom: 12px;">
         Align the donor's QR code within the frame to scan.
       </div>
-      <button type="button" class="btn-secondary" id="btnCancelScan" style="width: 100%; justify-content: center;">Cancel</button>
+      <button type="button" class="btn-secondary" id="btnCancelScan"
+        style="width: 100%; justify-content: center;">Cancel</button>
     </div>
   </div>
 
   <!-- Deferral Reason Modal (Part 6) -->
-  <div id="deferralReasonModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 24px; max-width: 420px; width: 90%;">
+  <div id="deferralReasonModal" class="modal-overlay"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 24px; max-width: 420px; width: 90%;">
       <h3 style="margin: 0 0 8px; color: #fca5a5;">Defer Donor</h3>
       <p style="font-size: 13px; color: var(--hosp-text-muted); margin-bottom: 14px;">
         Document the clinical reason for donor deferral. The donation gap will not reset and QR token will be closed.
       </p>
       <div style="margin-bottom: 14px;">
         <label class="form-label">Deferral Reason *</label>
-        <textarea id="deferralReasonInput" rows="3" class="form-input" placeholder="e.g. Low hemoglobin (11.8 g/dL), advised dietary iron and re-screen in 14 days" style="width: 100%;"></textarea>
+        <textarea id="deferralReasonInput" rows="3" class="form-input"
+          placeholder="e.g. Low hemoglobin (11.8 g/dL), advised dietary iron and re-screen in 14 days"
+          style="width: 100%;"></textarea>
       </div>
       <div style="display: flex; gap: 8px; justify-content: flex-end;">
         <button type="button" class="btn-secondary" id="btnCancelDeferral">Cancel</button>
-        <button type="button" class="btn-primary" id="btnConfirmDeferral" style="background: #ef4444; border-color: #ef4444;">Confirm Deferral</button>
+        <button type="button" class="btn-primary" id="btnConfirmDeferral"
+          style="background: #ef4444; border-color: #ef4444;">Confirm Deferral</button>
       </div>
     </div>
   </div>
@@ -1022,4 +1306,5 @@
   <script src="js/location-picker.js?v=20261114_r2"></script>
   <script src="js/hospital-dashboard.js?v=20261114_r2"></script>
 </body>
+
 </html>
