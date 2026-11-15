@@ -742,6 +742,7 @@
               <div>Gender: <span id="dlcGenderWrap"><strong style="color: #fff;" id="dlcGender">-</strong></span></div>
               <div>Weight: <strong style="color: #fff;" id="dlcWeight">-</strong></div>
               <div>Last Donation: <strong style="color: #fff;" id="dlcLastDonation">-</strong></div>
+              <div>Total Donations: <strong style="color: #fff;" id="dlcTotalDonations">0</strong></div>
               <div>Eligibility: <strong id="dlcEligibility">-</strong></div>
               <div style="grid-column: span 2;">Health Status: <strong style="color: #94a3b8;" id="dlcHealthStatus">Not yet verified by a hospital</strong></div>
             </div>
@@ -783,7 +784,7 @@
             </div>
           </div>
 
-          <form id="formDonorVitals">
+          <form id="formDonorVitals" novalidate>
             <!-- Vitals disabled hint -->
             <div id="vitalsDisabledHint" style="padding: 10px; margin-bottom: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); color: var(--hosp-text-muted); font-size: 13px; text-align: center;">
               Look up a donor first to unlock clinical vitals entry.
@@ -793,32 +794,32 @@
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
                 <div>
                   <label class="form-label" for="vitWeight">Weight (kg) *</label>
-                  <input type="number" id="vitWeight" class="form-input" step="0.5" placeholder="e.g. 65" required />
+                  <input type="number" id="vitWeight" class="form-input" step="0.5" placeholder="e.g. 65" />
                   <div class="vital-err" id="errVitWeight" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitHb">Hemoglobin (g/dL) *</label>
-                  <input type="number" id="vitHb" class="form-input" step="0.1" placeholder="e.g. 13.5" required />
+                  <input type="number" id="vitHb" class="form-input" step="0.1" placeholder="e.g. 13.5" />
                   <div class="vital-err" id="errVitHb" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitBpSystolic">BP Systolic (mmHg) *</label>
-                  <input type="number" id="vitBpSystolic" class="form-input" placeholder="120" required />
+                  <input type="number" id="vitBpSystolic" class="form-input" placeholder="e.g. 120" />
                   <div class="vital-err" id="errVitBpSystolic" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitBpDiastolic">BP Diastolic (mmHg) *</label>
-                  <input type="number" id="vitBpDiastolic" class="form-input" placeholder="80" required />
+                  <input type="number" id="vitBpDiastolic" class="form-input" placeholder="e.g. 80" />
                   <div class="vital-err" id="errVitBpDiastolic" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitPulse">Pulse Rate (bpm) *</label>
-                  <input type="number" id="vitPulse" class="form-input" placeholder="72" required />
+                  <input type="number" id="vitPulse" class="form-input" placeholder="e.g. 72" />
                   <div class="vital-err" id="errVitPulse" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
                 <div>
                   <label class="form-label" for="vitTemp">Temperature (°F) *</label>
-                  <input type="number" id="vitTemp" class="form-input" step="0.1" placeholder="98.4" required />
+                  <input type="number" id="vitTemp" class="form-input" step="0.1" placeholder="e.g. 98.4" />
                   <div class="vital-err" id="errVitTemp" style="display: none; color: #f87171; font-size: 11px; margin-top: 3px;"></div>
                 </div>
               </div>
@@ -836,7 +837,7 @@
                 </div>
                 <div>
                   <label class="form-label" for="vitVolumeMl">Donation Volume *</label>
-                  <select id="vitVolumeMl" class="form-input" required>
+                  <select id="vitVolumeMl" class="form-input">
                     <option value="450" selected>450 mL (Standard Whole Blood)</option>
                     <option value="350">350 mL (Low Volume / Whole Blood)</option>
                   </select>
@@ -852,7 +853,7 @@
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
                 <div>
                   <label class="form-label" for="vitStaffName">Doctor / Staff Name *</label>
-                  <input type="text" id="vitStaffName" class="form-input" placeholder="e.g. Dr. A. Sharma" required />
+                  <input type="text" id="vitStaffName" class="form-input" placeholder="e.g. Dr. A. Sharma" />
                 </div>
                 <div>
                   <label class="form-label" for="vitNotes">Clinical Notes (Optional)</label>
@@ -872,13 +873,14 @@
               <!-- Action buttons -->
               <div style="display: flex; gap: var(--sp-8);">
                 <button type="button" class="btn-secondary" id="btnDeferDonation" disabled style="flex: 1; justify-content: center; border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">
-                  <span>Defer donor</span>
+                  <span>Defer donation</span>
                 </button>
                 <button type="submit" class="btn-primary" id="btnRecordDonation" disabled style="flex: 2; justify-content: center;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   <span>Approve donation</span>
                 </button>
               </div>
+              <div id="approveDisabledReason" style="font-size: 12px; color: #fca5a5; text-align: center; margin-top: 8px; min-height: 18px;">Look up a donor first</div>
             </fieldset>
           </form>
 

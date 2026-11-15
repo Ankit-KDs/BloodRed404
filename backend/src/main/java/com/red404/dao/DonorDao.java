@@ -1276,9 +1276,10 @@ public class DonorDao {
             }
             return inserted > 0;
         } catch (SQLException e) {
-            String legacySql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status) VALUES (?, ?, ?, ?, CURRENT_DATE, ?)";
+            String fallbackSql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason) " +
+                                 "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?)";
             try (Connection conn = DBConnection.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(legacySql)) {
+                 PreparedStatement ps = conn.prepareStatement(fallbackSql)) {
                 ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
                 if (hospitalId == null || hospitalId <= 0) {
                     ps.setNull(2, Types.INTEGER);
@@ -1287,7 +1288,11 @@ public class DonorDao {
                 }
                 ps.setString(3, bloodType != null && !bloodType.isBlank() ? bloodType : "O-");
                 ps.setInt(4, units > 0 ? units : 1);
-                ps.setString(5, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+                ps.setInt(5, volumeMl > 0 ? volumeMl : 450);
+                ps.setString(6, vitalsJson);
+                ps.setString(7, staffUser != null ? staffUser : "Staff");
+                ps.setString(8, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+                ps.setString(9, deferralReason);
                 int inserted = ps.executeUpdate();
                 if (inserted > 0 && !"DEFERRED".equalsIgnoreCase(status)) {
                     try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE donor_id = ? OR CAST(id AS CHAR) = ?")) {
@@ -1298,10 +1303,33 @@ public class DonorDao {
                 }
                 return inserted > 0;
             } catch (SQLException ex) {
-                if (isMissingTable(ex)) {
-                    return false;
+                String legacySql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status) VALUES (?, ?, ?, ?, CURRENT_DATE, ?)";
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(legacySql)) {
+                    ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
+                    if (hospitalId == null || hospitalId <= 0) {
+                        ps.setNull(2, Types.INTEGER);
+                    } else {
+                        ps.setInt(2, hospitalId);
+                    }
+                    ps.setString(3, bloodType != null && !bloodType.isBlank() ? bloodType : "O-");
+                    ps.setInt(4, units > 0 ? units : 1);
+                    ps.setString(5, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+                    int inserted = ps.executeUpdate();
+                    if (inserted > 0 && !"DEFERRED".equalsIgnoreCase(status)) {
+                        try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE donor_id = ? OR CAST(id AS CHAR) = ?")) {
+                            upd.setString(1, donorId);
+                            upd.setString(2, donorId);
+                            upd.executeUpdate();
+                        } catch (SQLException ignored) {}
+                    }
+                    return inserted > 0;
+                } catch (SQLException ex2) {
+                    if (isMissingTable(ex2)) {
+                        return false;
+                    }
+                    throw ex2;
                 }
-                throw ex;
             }
         }
     }

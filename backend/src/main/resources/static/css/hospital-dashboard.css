@@ -753,6 +753,11 @@ a:hover {
   outline: none;
 }
 
+.form-input::placeholder, .form-textarea::placeholder {
+  color: #94a3b8;
+  opacity: 0.85;
+}
+
 .form-select:focus, .form-input:focus {
   border-color: var(--hosp-blue);
 }

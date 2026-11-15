@@ -2240,7 +2240,40 @@ function initDonorCheckin() {
     temp: { min: 95.0, max: 99.5, label: 'Temperature', unit: '°F' }
   };
 
-  function resetCheckinForm(keepInput) {
+  function getLoggedInStaffName() {
+    const p = window.currentHospitalProfile || {};
+    const hospName = (p.name || p.hospitalName || p.hospital_name || '').trim().toLowerCase();
+
+    const candidates = [p.adminName, p.admin_name, p.staffName, p.staff_name, p.contactPerson, p.contact_person];
+    for (const c of candidates) {
+      if (c && typeof c === 'string' && c.trim()) {
+        const clean = c.trim();
+        if (clean.toLowerCase() !== hospName && clean.toLowerCase() !== 'hospital') {
+          return clean;
+        }
+      }
+    }
+
+    try {
+      const raw = localStorage.getItem('red404_hospital_user') || sessionStorage.getItem('red404_hospital_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        const userCandidates = [u.adminName, u.admin_name, u.staffName, u.staff_name, u.contactPerson];
+        for (const c of userCandidates) {
+          if (c && typeof c === 'string' && c.trim()) {
+            const clean = c.trim();
+            if (clean.toLowerCase() !== hospName && clean.toLowerCase() !== 'hospital') {
+              return clean;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    return 'Attending Staff';
+  }
+
+  function resetCheckinForm(keepInput, keepSuccessCard) {
     currentLoadedDonor = null;
     if (!keepInput && inputId) inputId.value = '';
     if (donorCard) donorCard.style.display = 'none';
@@ -2260,10 +2293,16 @@ function initDonorCheckin() {
       el.style.display = 'none';
     });
 
+    const reasonEl = document.getElementById('approveDisabledReason');
+    if (reasonEl) {
+      reasonEl.textContent = 'Look up a donor first';
+      reasonEl.style.display = 'block';
+    }
+
     if (verdictBanner) verdictBanner.style.display = 'none';
     if (btnRecordDonation) btnRecordDonation.disabled = true;
     if (btnDeferDonation) btnDeferDonation.disabled = true;
-    if (successCard) successCard.style.display = 'none';
+    if (!keepSuccessCard && successCard) successCard.style.display = 'none';
   }
 
   // Clear loaded donor when typing or clearing input
@@ -2283,13 +2322,13 @@ function initDonorCheckin() {
   }
 
   if (lookupBtn) {
-    lookupBtn.addEventListener('click', performDonorLookup);
+    lookupBtn.addEventListener('click', () => performDonorLookup());
   }
   if (retryBtn) {
-    retryBtn.addEventListener('click', performDonorLookup);
+    retryBtn.addEventListener('click', () => performDonorLookup());
   }
 
-  async function performDonorLookup() {
+  async function performDonorLookup(preserveSuccessCard) {
     if (!inputId) return;
     const query = inputId.value.trim();
     if (!query) {
@@ -2298,7 +2337,7 @@ function initDonorCheckin() {
       return;
     }
 
-    resetCheckinForm(true);
+    resetCheckinForm(true, preserveSuccessCard);
     if (emptyState) emptyState.style.display = 'none';
     if (errorState) errorState.style.display = 'none';
     if (lookupBtn) {
@@ -2342,6 +2381,11 @@ function initDonorCheckin() {
       }
     }
   }
+
+  window.lookupDonor = async function(query, preserveSuccessCard) {
+    if (inputId) inputId.value = query;
+    await performDonorLookup(preserveSuccessCard);
+  };
 
   function renderLoadedDonor(d) {
     if (!donorCard) return;
@@ -2567,6 +2611,10 @@ function initDonorCheckin() {
       }
     }
 
+    // Total donations (Step 2)
+    const totalEl = document.getElementById('dlcTotalDonations');
+    if (totalEl) totalEl.textContent = d.totalDonations !== undefined ? d.totalDonations : 0;
+
     donorCard.style.display = 'block';
 
     // Unlock Clinical Vitals Panel
@@ -2577,107 +2625,137 @@ function initDonorCheckin() {
     if (vitalsDisabledHint) vitalsDisabledHint.style.display = 'none';
     if (btnDeferDonation) btnDeferDonation.disabled = false;
 
-    // Prefill confirmed blood group and staff user
+    // Prefill confirmed blood group
     const confirmedBg = document.getElementById('vitConfirmedBloodGroup');
-    if (confirmedBg && d.bloodType) {
-      confirmedBg.value = d.bloodType;
+    const donorBg = d.bloodType || d.bloodGroup || d.blood_type || 'O+';
+    if (confirmedBg) {
+      confirmedBg.value = donorBg;
     }
     const boxReason = document.getElementById('boxBloodGroupReason');
     const inputReason = document.getElementById('vitBloodGroupReason');
+    if (boxReason) boxReason.style.display = 'none';
+    if (inputReason) inputReason.value = '';
     if (confirmedBg) {
       confirmedBg.onchange = () => {
-        const changed = confirmedBg.value !== (d.bloodType || '');
+        const changed = confirmedBg.value !== donorBg;
         if (boxReason) boxReason.style.display = changed ? 'block' : 'none';
-        if (inputReason) inputReason.required = changed;
+        evaluateVitals();
       };
     }
+
+    // Donation volume defaults to 450
+    const volumeSelect = document.getElementById('vitVolumeMl');
+    if (volumeSelect) volumeSelect.value = '450';
+
+    // Staff Name: default to logged-in staff member - NEVER hospital name
     const staffInput = document.getElementById('vitStaffName');
-    if (staffInput && !staffInput.value) {
-      staffInput.value = (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Attending Staff';
+    if (staffInput) {
+      staffInput.value = getLoggedInStaffName();
     }
 
-    // Prefill weight from donor record (editable)
-    if (vitWeight && d.weight) {
-      vitWeight.value = d.weight;
-    }
+    // ALL vitals fields start completely empty (Step 2 Rule 3: no prefilled weight or vitals)
+    if (vitWeight) vitWeight.value = '';
+    if (vitHb) vitHb.value = '';
+    if (vitBpSystolic) vitBpSystolic.value = '';
+    if (vitBpDiastolic) vitBpDiastolic.value = '';
+    if (vitPulse) vitPulse.value = '';
+    if (vitTemp) vitTemp.value = '';
+    const notesInput = document.getElementById('vitNotes');
+    if (notesInput) notesInput.value = '';
+
+    // Clear all inline errors
+    document.querySelectorAll('.vital-err').forEach(el => {
+      el.textContent = '';
+      el.style.display = 'none';
+    });
 
     // Trigger evaluation
     evaluateVitals();
   }
 
-  // Live input & blur evaluation on all vitals
-  [vitWeight, vitHb, vitBpSystolic, vitBpDiastolic, vitPulse, vitTemp].forEach(inp => {
+  // Live input & blur evaluation on all vitals & staff name
+  [vitWeight, vitHb, vitBpSystolic, vitBpDiastolic, vitPulse, vitTemp, document.getElementById('vitStaffName'), document.getElementById('vitBloodGroupReason')].forEach(inp => {
     if (inp) {
       inp.addEventListener('input', evaluateVitals);
       inp.addEventListener('blur', evaluateVitals);
     }
   });
+  const confBgSelect = document.getElementById('vitConfirmedBloodGroup');
+  if (confBgSelect) confBgSelect.addEventListener('change', evaluateVitals);
+  const volSelect = document.getElementById('vitVolumeMl');
+  if (volSelect) volSelect.addEventListener('change', evaluateVitals);
 
   function evaluateVitals() {
-    if (!currentLoadedDonor) return;
-
-    const wVal = parseFloat(vitWeight ? vitWeight.value : '');
-    const hbVal = parseFloat(vitHb ? vitHb.value : '');
-    const sysVal = parseFloat(vitBpSystolic ? vitBpSystolic.value : '');
-    const diaVal = parseFloat(vitBpDiastolic ? vitBpDiastolic.value : '');
-    const pulVal = parseFloat(vitPulse ? vitPulse.value : '');
-    const tmpVal = parseFloat(vitTemp ? vitTemp.value : '');
-
-    // Field-level inline errors
-    validateField(vitWeight, 'errVitWeight', wVal, 30, 250, 'Weight must be between 30 and 250 kg');
-    validateField(vitHb, 'errVitHb', hbVal, 5, 25, 'Hemoglobin must be between 5 and 25 g/dL');
-    validateField(vitBpSystolic, 'errVitBpSystolic', sysVal, 60, 260, 'Systolic must be between 60 and 260 mmHg');
-    validateField(vitBpDiastolic, 'errVitBpDiastolic', diaVal, 30, 160, 'Diastolic must be between 30 and 160 mmHg');
-    validateField(vitPulse, 'errVitPulse', pulVal, 30, 200, 'Pulse must be between 30 and 200 bpm');
-    validateField(vitTemp, 'errVitTemp', tmpVal, 94, 106, 'Temperature must be between 94 and 106 °F');
-
-    const allFilled = !isNaN(wVal) && !isNaN(hbVal) && !isNaN(sysVal) && !isNaN(diaVal) && !isNaN(pulVal) && !isNaN(tmpVal);
-
-    if (!allFilled) {
-      if (verdictBanner) verdictBanner.style.display = 'none';
+    const reasonEl = document.getElementById('approveDisabledReason');
+    const setDisabled = (reason) => {
       if (btnRecordDonation) btnRecordDonation.disabled = true;
+      if (reasonEl) {
+        reasonEl.textContent = reason || '';
+        reasonEl.style.display = reason ? 'block' : 'none';
+      }
+    };
+
+    const setEnabled = () => {
+      if (btnRecordDonation) btnRecordDonation.disabled = false;
+      if (reasonEl) {
+        reasonEl.textContent = '';
+        reasonEl.style.display = 'none';
+      }
+    };
+
+    if (!currentLoadedDonor) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Look up a donor first');
       return;
     }
 
-    // Evaluate against Medical Ranges
-    const issues = [];
-    if (wVal < MEDICAL_RANGES.weight.min) {
-      issues.push(`Weight ${wVal} kg is below minimum safe threshold (${MEDICAL_RANGES.weight.min} kg).`);
-    }
-    if (hbVal < MEDICAL_RANGES.hb.min) {
-      issues.push(`Hemoglobin ${hbVal} g/dL is below required ${MEDICAL_RANGES.hb.min} g/dL.`);
-    }
-    if (sysVal < MEDICAL_RANGES.systolic.min || sysVal > MEDICAL_RANGES.systolic.max) {
-      issues.push(`Systolic BP ${sysVal} mmHg is outside safe range (${MEDICAL_RANGES.systolic.min}-${MEDICAL_RANGES.systolic.max} mmHg).`);
-    }
-    if (diaVal < MEDICAL_RANGES.diastolic.min || diaVal > MEDICAL_RANGES.diastolic.max) {
-      issues.push(`Diastolic BP ${diaVal} mmHg is outside safe range (${MEDICAL_RANGES.diastolic.min}-${MEDICAL_RANGES.diastolic.max} mmHg).`);
-    }
-    if (pulVal < MEDICAL_RANGES.pulse.min || pulVal > MEDICAL_RANGES.pulse.max) {
-      issues.push(`Pulse ${pulVal} bpm is outside normal range (${MEDICAL_RANGES.pulse.min}-${MEDICAL_RANGES.pulse.max} bpm).`);
-    }
-    if (tmpVal > MEDICAL_RANGES.temp.max) {
-      issues.push(`Temperature ${tmpVal} °F exceeds maximum allowed (${MEDICAL_RANGES.temp.max} °F).`);
-    }
-
-    const donorEligible = currentLoadedDonor.isEligible;
-    if (!donorEligible) {
-      issues.push(`Donor eligibility cooldown active: ${currentLoadedDonor.eligibilityReason || '90-day cooldown'}.`);
-    }
-
-    if (verdictBanner) {
-      verdictBanner.style.display = 'block';
-      if (issues.length === 0) {
-        verdictBanner.style.background = 'rgba(34, 197, 94, 0.12)';
-        verdictBanner.style.border = '1px solid rgba(34, 197, 94, 0.35)';
-        verdictBanner.style.color = '#22c55e';
-        if (verdictTitle) verdictTitle.textContent = 'Clinically Fit';
+    // 1. Ineligible Donor Check (Step 2 Rule 5)
+    if (!currentLoadedDonor.isEligible) {
+      const eligReason = currentLoadedDonor.eligibilityReason || 'Donor is in donation cooldown';
+      if (verdictBanner) {
+        verdictBanner.style.display = 'block';
+        verdictBanner.style.background = 'rgba(239, 68, 68, 0.12)';
+        verdictBanner.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+        verdictBanner.style.color = '#fca5a5';
+        if (verdictTitle) verdictTitle.textContent = 'Not Eligible';
         if (verdictIcon) {
-          verdictIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+          verdictIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
         }
-        if (verdictReasons) verdictReasons.textContent = 'All clinical vitals and eligibility criteria within acceptable limits. Staff may confirm donation.';
-        if (btnRecordDonation) btnRecordDonation.disabled = false;
-      } else {
+        if (verdictReasons) {
+          verdictReasons.textContent = `Not eligible: ${eligReason}. Use Defer if donating anyway.`;
+        }
+      }
+      if (btnDeferDonation) btnDeferDonation.disabled = false;
+      setDisabled(`Not eligible: ${eligReason}. Use Defer.`);
+      return;
+    }
+
+    // Read raw inputs
+    const rawW = vitWeight ? vitWeight.value.trim() : '';
+    const rawHb = vitHb ? vitHb.value.trim() : '';
+    const rawSys = vitBpSystolic ? vitBpSystolic.value.trim() : '';
+    const rawDia = vitBpDiastolic ? vitBpDiastolic.value.trim() : '';
+    const rawPul = vitPulse ? vitPulse.value.trim() : '';
+    const rawTmp = vitTemp ? vitTemp.value.trim() : '';
+
+    const wVal = parseFloat(rawW);
+    const hbVal = parseFloat(rawHb);
+    const sysVal = parseFloat(rawSys);
+    const diaVal = parseFloat(rawDia);
+    const pulVal = parseFloat(rawPul);
+    const tmpVal = parseFloat(rawTmp);
+
+    // Validate inline per field
+    validateField(vitWeight, 'errVitWeight', rawW, wVal, 30, 250, 'Weight must be between 30 and 250 kg');
+    validateField(vitHb, 'errVitHb', rawHb, hbVal, 5, 25, 'Hemoglobin must be between 5 and 25 g/dL');
+    validateField(vitBpSystolic, 'errVitBpSystolic', rawSys, sysVal, 60, 260, 'Systolic must be between 60 and 260 mmHg');
+    validateField(vitBpDiastolic, 'errVitBpDiastolic', rawDia, diaVal, 30, 160, 'Diastolic must be between 30 and 160 mmHg');
+    validateField(vitPulse, 'errVitPulse', rawPul, pulVal, 30, 200, 'Pulse must be between 30 and 200 bpm');
+    validateField(vitTemp, 'errVitTemp', rawTmp, tmpVal, 94, 106, 'Temperature must be between 94 and 106 °F');
+
+    const showVerdictFail = (msg) => {
+      if (verdictBanner) {
+        verdictBanner.style.display = 'block';
         verdictBanner.style.background = 'rgba(239, 68, 68, 0.12)';
         verdictBanner.style.border = '1px solid rgba(239, 68, 68, 0.35)';
         verdictBanner.style.color = '#fca5a5';
@@ -2685,24 +2763,194 @@ function initDonorCheckin() {
         if (verdictIcon) {
           verdictIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
         }
-        if (verdictReasons) {
-          verdictReasons.innerHTML = '<ul style="margin: 4px 0 0 16px; padding: 0;">' + issues.map(iss => `<li>${window.escapeHtml ? window.escapeHtml(iss) : iss}</li>`).join('') + '</ul>';
-        }
-        if (btnRecordDonation) btnRecordDonation.disabled = true;
+        if (verdictReasons) verdictReasons.textContent = msg;
+      }
+    };
+
+    // Priority Check: Weight
+    if (!rawW || isNaN(wVal)) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Enter weight');
+      return;
+    }
+    if (wVal < 30 || wVal > 250) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Weight must be between 30 and 250 kg');
+      return;
+    }
+    if (wVal < MEDICAL_RANGES.weight.min) {
+      showVerdictFail(`Weight ${wVal} kg is below minimum safe threshold (${MEDICAL_RANGES.weight.min} kg). Use Defer.`);
+      setDisabled(`Weight ${wVal} kg is below ${MEDICAL_RANGES.weight.min} kg minimum. Use Defer.`);
+      return;
+    }
+    if (wVal > MEDICAL_RANGES.weight.max) {
+      showVerdictFail(`Weight ${wVal} kg exceeds safe maximum (${MEDICAL_RANGES.weight.max} kg). Use Defer.`);
+      setDisabled(`Weight ${wVal} kg exceeds ${MEDICAL_RANGES.weight.max} kg maximum. Use Defer.`);
+      return;
+    }
+
+    // Priority Check: Hemoglobin
+    if (!rawHb || isNaN(hbVal)) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Enter hemoglobin');
+      return;
+    }
+    if (hbVal < 5 || hbVal > 25) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Hemoglobin must be between 5 and 25 g/dL');
+      return;
+    }
+    if (hbVal < MEDICAL_RANGES.hb.min) {
+      showVerdictFail(`Hemoglobin ${hbVal} g/dL is below required ${MEDICAL_RANGES.hb.min} g/dL. Use Defer.`);
+      setDisabled(`Hemoglobin ${hbVal} is below ${MEDICAL_RANGES.hb.min}. Use Defer.`);
+      return;
+    }
+    if (hbVal > MEDICAL_RANGES.hb.max) {
+      showVerdictFail(`Hemoglobin ${hbVal} g/dL exceeds safe limit (${MEDICAL_RANGES.hb.max} g/dL). Use Defer.`);
+      setDisabled(`Hemoglobin ${hbVal} exceeds ${MEDICAL_RANGES.hb.max} g/dL. Use Defer.`);
+      return;
+    }
+
+    // Priority Check: Systolic BP
+    if (!rawSys || isNaN(sysVal)) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Enter systolic blood pressure');
+      return;
+    }
+    if (sysVal < 60 || sysVal > 260) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Systolic BP must be between 60 and 260 mmHg');
+      return;
+    }
+    if (sysVal < MEDICAL_RANGES.systolic.min || sysVal > MEDICAL_RANGES.systolic.max) {
+      showVerdictFail(`Systolic BP ${sysVal} mmHg is outside safe range (${MEDICAL_RANGES.systolic.min}-${MEDICAL_RANGES.systolic.max} mmHg). Use Defer.`);
+      setDisabled(`Systolic BP ${sysVal} mmHg is outside safe range (${MEDICAL_RANGES.systolic.min}-${MEDICAL_RANGES.systolic.max} mmHg). Use Defer.`);
+      return;
+    }
+
+    // Priority Check: Diastolic BP
+    if (!rawDia || isNaN(diaVal)) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Enter diastolic blood pressure');
+      return;
+    }
+    if (diaVal < 30 || diaVal > 160) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Diastolic BP must be between 30 and 160 mmHg');
+      return;
+    }
+    if (diaVal < MEDICAL_RANGES.diastolic.min || diaVal > MEDICAL_RANGES.diastolic.max) {
+      showVerdictFail(`Diastolic BP ${diaVal} mmHg is outside safe range (${MEDICAL_RANGES.diastolic.min}-${MEDICAL_RANGES.diastolic.max} mmHg). Use Defer.`);
+      setDisabled(`Diastolic BP ${diaVal} mmHg is outside safe range (${MEDICAL_RANGES.diastolic.min}-${MEDICAL_RANGES.diastolic.max} mmHg). Use Defer.`);
+      return;
+    }
+
+    // Priority Check: Pulse Rate
+    if (!rawPul || isNaN(pulVal)) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Enter pulse rate');
+      return;
+    }
+    if (pulVal < 30 || pulVal > 200) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Pulse rate must be between 30 and 200 bpm');
+      return;
+    }
+    if (pulVal < MEDICAL_RANGES.pulse.min || pulVal > MEDICAL_RANGES.pulse.max) {
+      showVerdictFail(`Pulse ${pulVal} bpm is outside safe range (${MEDICAL_RANGES.pulse.min}-${MEDICAL_RANGES.pulse.max} bpm). Use Defer.`);
+      setDisabled(`Pulse ${pulVal} bpm is outside safe range (${MEDICAL_RANGES.pulse.min}-${MEDICAL_RANGES.pulse.max} bpm). Use Defer.`);
+      return;
+    }
+
+    // Priority Check: Temperature
+    if (!rawTmp || isNaN(tmpVal)) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Enter body temperature');
+      return;
+    }
+    if (tmpVal < 94 || tmpVal > 106) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Temperature must be between 94 and 106 °F');
+      return;
+    }
+    if (tmpVal < MEDICAL_RANGES.temp.min || tmpVal > MEDICAL_RANGES.temp.max) {
+      showVerdictFail(`Temperature ${tmpVal} °F is outside safe range (${MEDICAL_RANGES.temp.min}-${MEDICAL_RANGES.temp.max} °F). Use Defer.`);
+      setDisabled(`Temperature ${tmpVal} °F is outside safe range (${MEDICAL_RANGES.temp.min}-${MEDICAL_RANGES.temp.max} °F). Use Defer.`);
+      return;
+    }
+
+    // Priority Check: Confirmed Blood Group & Reason
+    const confirmedBgEl = document.getElementById('vitConfirmedBloodGroup');
+    const confirmedBg = confirmedBgEl ? confirmedBgEl.value : '';
+    if (!confirmedBg) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Select confirmed blood group');
+      return;
+    }
+    const donorBg = currentLoadedDonor.bloodType || currentLoadedDonor.bloodGroup || '';
+    if (donorBg && confirmedBg !== donorBg) {
+      const bgReasonEl = document.getElementById('vitBloodGroupReason');
+      const bgReason = bgReasonEl ? bgReasonEl.value.trim() : '';
+      if (!bgReason || bgReason.length < 3) {
+        if (verdictBanner) verdictBanner.style.display = 'none';
+        setDisabled('Provide reason for modifying blood group');
+        return;
       }
     }
+
+    // Priority Check: Donation Volume
+    const volumeSelect = document.getElementById('vitVolumeMl');
+    const volumeVal = volumeSelect ? parseInt(volumeSelect.value) : 0;
+    if (volumeVal !== 350 && volumeVal !== 450) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Select donation volume');
+      return;
+    }
+
+    // Priority Check: Staff Name
+    const staffInput = document.getElementById('vitStaffName');
+    const staffVal = staffInput ? staffInput.value.trim() : '';
+    const hospName = ((window.currentHospitalProfile && (window.currentHospitalProfile.name || window.currentHospitalProfile.hospitalName)) || '').trim().toLowerCase();
+    if (!staffVal) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Enter doctor / staff name');
+      return;
+    }
+    if (hospName && staffVal.toLowerCase() === hospName) {
+      if (verdictBanner) verdictBanner.style.display = 'none';
+      setDisabled('Doctor / staff name cannot be hospital name');
+      return;
+    }
+
+    // ALL CHECKS PASSED: Clinically Fit!
+    if (verdictBanner) {
+      verdictBanner.style.display = 'block';
+      verdictBanner.style.background = 'rgba(34, 197, 94, 0.12)';
+      verdictBanner.style.border = '1px solid rgba(34, 197, 94, 0.35)';
+      verdictBanner.style.color = '#22c55e';
+      if (verdictTitle) verdictTitle.textContent = 'Clinically Fit';
+      if (verdictIcon) {
+        verdictIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+      }
+      if (verdictReasons) verdictReasons.textContent = 'All clinical vitals and eligibility criteria within acceptable limits. Staff may confirm donation.';
+    }
+    if (btnDeferDonation) btnDeferDonation.disabled = false;
+    setEnabled();
   }
 
-  function validateField(inputEl, errElId, val, min, max, errMsg) {
+  function validateField(inputEl, errElId, rawStr, val, min, max, errMsg) {
     const errEl = document.getElementById(errElId);
-    if (!errEl || !inputEl || inputEl.value === '') {
-      if (errEl) errEl.style.display = 'none';
+    if (!errEl || !inputEl) return;
+    if (!rawStr || rawStr === '') {
+      errEl.textContent = '';
+      errEl.style.display = 'none';
       return;
     }
     if (isNaN(val) || val < min || val > max) {
       errEl.textContent = errMsg;
       errEl.style.display = 'block';
     } else {
+      errEl.textContent = '';
       errEl.style.display = 'none';
     }
   }
@@ -2822,7 +3070,18 @@ function initDonorCheckin() {
   if (btnDeferDonation) {
     btnDeferDonation.addEventListener('click', () => {
       if (!currentLoadedDonor) return;
-      if (deferReasonInput) deferReasonInput.value = '';
+      if (deferReasonInput) {
+        let reason = '';
+        if (!currentLoadedDonor.isEligible) {
+          reason = currentLoadedDonor.eligibilityReason || 'Donor eligibility cooldown active';
+        } else {
+          const reasonEl = document.getElementById('approveDisabledReason');
+          if (reasonEl && reasonEl.textContent && reasonEl.textContent.includes('Use Defer')) {
+            reason = reasonEl.textContent.replace(/\.?\s*Use Defer\.?/g, '').trim();
+          }
+        }
+        deferReasonInput.value = reason;
+      }
       if (deferModal) deferModal.style.display = 'flex';
     });
   }
@@ -2848,7 +3107,7 @@ function initDonorCheckin() {
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
         const staffNameInput = document.getElementById('vitStaffName');
-        const staffName = (staffNameInput && staffNameInput.value.trim()) || (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Attending Staff';
+        const staffName = (staffNameInput && staffNameInput.value.trim()) || getLoggedInStaffName();
 
         const res = await fetch('/api/hospital/donors/defer', {
           method: 'POST',
@@ -2864,7 +3123,11 @@ function initDonorCheckin() {
         if (deferModal) deferModal.style.display = 'none';
 
         if (res.ok) {
-          alert(`Donor ${currentLoadedDonor.name} has been documented as deferred. The QR token has been closed.`);
+          if (typeof showToast === 'function') {
+            showToast(`Donor ${currentLoadedDonor.name} has been documented as deferred.`, 'info');
+          } else {
+            alert(`Donor ${currentLoadedDonor.name} has been documented as deferred. The QR token has been closed.`);
+          }
           resetCheckinForm(false);
         } else {
           const err = await res.json().catch(() => ({}));
@@ -2877,11 +3140,16 @@ function initDonorCheckin() {
     });
   }
 
-  // Approve donation submit (Part 5 & Part 6)
+  // Approve donation submit (Part 5 & Part 6 & Step 2)
   if (vitalsForm) {
     vitalsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentLoadedDonor) return;
+
+      evaluateVitals();
+      if (btnRecordDonation && btnRecordDonation.disabled) {
+        return;
+      }
 
       const confirmedBgEl = document.getElementById('vitConfirmedBloodGroup');
       const confirmedBg = confirmedBgEl ? confirmedBgEl.value : (currentLoadedDonor.bloodType || currentLoadedDonor.bloodGroup || currentLoadedDonor.blood_type || '');
@@ -2902,10 +3170,17 @@ function initDonorCheckin() {
       const volumeMl = volumeSelect ? parseInt(volumeSelect.value) : 450;
 
       const staffInput = document.getElementById('vitStaffName');
-      const staffUser = (staffInput && staffInput.value.trim()) || (window.currentHospitalProfile && window.currentHospitalProfile.name) || 'Attending Staff';
+      const staffUser = (staffInput && staffInput.value.trim()) || getLoggedInStaffName();
 
       const notesInput = document.getElementById('vitNotes');
       const notes = notesInput ? notesInput.value.trim() : '';
+
+      // Step 2 Requirement 4: Confirmation dialog
+      const donorName = currentLoadedDonor.name || 'Verified Donor';
+      const confirmPrompt = `Record ${volumeMl} mL donation for ${donorName} (${confirmedBg})? Inventory will increase by 1 unit.`;
+      if (!window.confirm(confirmPrompt)) {
+        return;
+      }
 
       if (btnRecordDonation) {
         btnRecordDonation.disabled = true;
@@ -2948,9 +3223,17 @@ function initDonorCheckin() {
           alert('Error approving donation: ' + (err.message || 'Server error'));
           if (btnRecordDonation) {
             btnRecordDonation.disabled = false;
-            btnRecordDonation.innerHTML = '<span>Approve donation</span>';
+            btnRecordDonation.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Approve donation</span>
+            `;
           }
           return;
+        }
+
+        // Show success toast
+        if (typeof showToast === 'function') {
+          showToast(`Donation recorded! +1 unit ${confirmedBg} added to inventory.`, 'success', 3500);
         }
 
         // Update local inventory display immediately
@@ -2961,25 +3244,42 @@ function initDonorCheckin() {
           try { loadHospitalInventory(); } catch (_) {}
         }
 
-        // Show success card and hide vitals form
-        if (vitalsFieldset) vitalsFieldset.disabled = true;
-        if (btnRecordDonation) btnRecordDonation.style.display = 'none';
-        if (btnDeferDonation) btnDeferDonation.style.display = 'none';
+        // Clear vitals form
+        if (vitWeight) vitWeight.value = '';
+        if (vitHb) vitHb.value = '';
+        if (vitBpSystolic) vitBpSystolic.value = '';
+        if (vitBpDiastolic) vitBpDiastolic.value = '';
+        if (vitPulse) vitPulse.value = '';
+        if (vitTemp) vitTemp.value = '';
+        if (notesInput) notesInput.value = '';
+        document.querySelectorAll('.vital-err').forEach(el => {
+          el.textContent = '';
+          el.style.display = 'none';
+        });
 
+        // Show success card and update its message
         if (successCard) {
           successCard.style.display = 'block';
           if (successTitle) {
             successTitle.textContent = `Donation Verified & Approved (${confirmedBg}, ${volumeMl} mL)`;
           }
           if (successMsg) {
-            successMsg.textContent = `Donor ${currentLoadedDonor.name} (${currentLoadedDonor.donorId}) recorded successfully. +1 unit added to live stock. QR token closed.`;
+            successMsg.textContent = `Donor ${donorName} (${currentLoadedDonor.donorId || currentLoadedDonor.id}) recorded successfully. +1 unit added to live stock. QR token closed.`;
           }
         }
+
+        // Reload donor card with fresh state (Last donation = today, incremented total donations, capsule resets to 0%)
+        const targetQuery = currentLoadedDonor.donorId || currentLoadedDonor.id;
+        await performDonorLookup(true);
+
       } catch (err) {
         alert('Network error while saving donation record: ' + err.message);
         if (btnRecordDonation) {
           btnRecordDonation.disabled = false;
-          btnRecordDonation.innerHTML = '<span>Approve donation</span>';
+          btnRecordDonation.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Approve donation</span>
+          `;
         }
       }
     });

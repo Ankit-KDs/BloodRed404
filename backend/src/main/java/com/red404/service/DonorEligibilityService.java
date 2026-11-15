@@ -29,18 +29,18 @@ public class DonorEligibilityService {
     public static volatile int configuredFemaleGap = DONATION_GAP_DAYS_FEMALE;
     public static volatile int configuredUnspecGap = DONATION_GAP_DAYS_UNSPECIFIED;
 
-    public static void setDonationGapDays(int male, int female, int unspecified) {
+    public static synchronized void setDonationGapDays(int male, int female, int unspec) {
         if (male > 0) configuredMaleGap = male;
         if (female > 0) configuredFemaleGap = female;
-        if (unspecified > 0) configuredUnspecGap = unspecified;
+        if (unspec > 0) configuredUnspecGap = unspec;
     }
 
-    public static Map<String, Integer> getDonationGapConfig() {
-        Map<String, Integer> gaps = new HashMap<>();
-        gaps.put("male", configuredMaleGap);
-        gaps.put("female", configuredFemaleGap);
-        gaps.put("unspecified", configuredUnspecGap);
-        return gaps;
+    public static synchronized Map<String, Object> getDonationGapConfig() {
+        Map<String, Object> cfg = new HashMap<>();
+        cfg.put("maleGapDays", getCooldownDays("Male"));
+        cfg.put("femaleGapDays", getCooldownDays("Female"));
+        cfg.put("unspecifiedGapDays", getCooldownDays(null));
+        return cfg;
     }
 
     public static int getCooldownDays() {
