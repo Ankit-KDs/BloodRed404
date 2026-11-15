@@ -531,11 +531,10 @@
       Boolean(bp) &&
       (weight !== null && weight !== undefined);
 
-    // If details are empty: display waiting status
+    // If details are empty: hide eval badge so it does not duplicate waiting notice
     if (!hasData) {
       if (evalBadge) {
-        evalBadge.className = 'health-eval-badge badge-awaiting';
-        evalBadge.innerHTML = `<i class="fas fa-clock" style="margin-right:6px;"></i><span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>`;
+        evalBadge.style.display = 'none';
       }
       return;
     }
@@ -568,18 +567,22 @@
     const metaTag = document.getElementById('eligibilityMetaTag');
     const fluidContainer = document.getElementById('dnaFluidContainer') || document.getElementById('bloodFluid');
 
+    const genderGap = (currentDonor.gender && currentDonor.gender.toLowerCase() === 'male') ? 90 : 120;
+
     // Authoritative Single Source of Truth from Server computeEligibility
     const elig = currentDonor.eligibility || {
       eligible: currentDonor.isEligible !== false,
       days_until_eligible: currentDonor.daysToNextEligible || currentDonor.daysUntilEligible || 0,
       last_donation_date: currentDonor.lastDonationDate || currentDonor.lastDonation || null,
       next_eligible_date: currentDonor.nextEligibleDate || null,
-      progress_pct: (currentDonor.daysToNextEligible ? Math.round(((90 - currentDonor.daysToNextEligible) / 90) * 100) : 100),
+      progress_pct: (currentDonor.daysToNextEligible ? Math.max(0, Math.min(100, Math.round(((genderGap - currentDonor.daysToNextEligible) / genderGap) * 100))) : 100),
+      cooldown_days: genderGap,
       reason: currentDonor.eligibilityReason || 'Eligible to donate'
     };
 
     const isEligible = Boolean(elig.eligible);
     const daysUntil = typeof elig.days_until_eligible === 'number' ? elig.days_until_eligible : 0;
+    const cooldownDays = elig.cooldown_days || genderGap;
     const progressPct = typeof elig.progress_pct === 'number' ? elig.progress_pct : (isEligible ? 100 : 0);
     const nextDateStr = elig.next_eligible_date;
 
@@ -615,6 +618,12 @@
       if (fluidContainer) {
         fluidContainer.style.height = `${progressPct}%`;
       }
+    }
+
+    // Dynamic tick label update based on gender gap
+    const tick90Label = document.querySelector('.telemetry-tick.tick-90 .tick-label');
+    if (tick90Label) {
+      tick90Label.textContent = `${cooldownDays}d`;
     }
 
     if (metaTag) {

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initZoneDiagramAnimation();
   initServicesTabs();
   loadDynamicPlatformStats();
+  loadDonationGapConfig();
   initNationalBloodStockStream();
 });
 
@@ -419,6 +420,28 @@ async function loadDynamicPlatformStats() {
   } catch (err) {
     console.warn('Could not load dynamic platform stats:', err);
   }
+}
+
+/* ==================== DYNAMIC DONATION GAP CONFIGURATION ==================== */
+async function loadDonationGapConfig() {
+  try {
+    let res = await fetch('/api/system/donation-gaps');
+    if (!res.ok) res = await fetch('/api/donor/donation-gaps');
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json || !json.data) return;
+    const gaps = json.data;
+    const maleGap = gaps.maleGap || 90;
+    const femaleGap = gaps.femaleGap || 120;
+    const descEl = document.getElementById('donationGapDesc');
+    const metricEl = document.getElementById('donationGapMetric');
+    if (descEl) {
+      descEl.textContent = `${maleGap} days for men, ${femaleGap} days for women`;
+    }
+    if (metricEl) {
+      metricEl.textContent = `${maleGap} / ${femaleGap} Days`;
+    }
+  } catch (_) {}
 }
 
 /* ==================== REAL-TIME NATIONAL BLOOD STOCK ENGINE ==================== */

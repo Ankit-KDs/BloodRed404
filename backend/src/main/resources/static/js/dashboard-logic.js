@@ -615,11 +615,11 @@
       const lat = sessionStorage.getItem('red404_user_lat');
       const time = sessionStorage.getItem('red404_user_loc_time') || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       if (lat && locText) {
-        locText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>Location: On';
+        locText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>On';
         if (locSub) locSub.textContent = `Updated ${time}`;
         if (btnLoc) btnLoc.textContent = 'Refresh';
       } else if (locText) {
-        locText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Location: Off';
+        locText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Off';
         if (locSub) locSub.textContent = 'GPS not enabled';
         if (btnLoc) btnLoc.textContent = 'Enable';
       }
@@ -638,17 +638,17 @@
     // 2. Notifications Status
     function updateNotifUI() {
       if (!('Notification' in window)) {
-        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#94a3b8; margin-right:6px;"></span>Notifications: N/A';
+        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#94a3b8; margin-right:6px;"></span>N/A';
         if (notifSub) notifSub.textContent = 'Not supported';
         if (btnNotif) btnNotif.style.display = 'none';
         return;
       }
       if (Notification.permission === 'granted') {
-        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>Notifications: On';
+        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#34d399; margin-right:6px;"></span>On';
         if (notifSub) notifSub.textContent = 'Emergency alerts enabled';
         if (btnNotif) { btnNotif.textContent = 'Enabled'; btnNotif.disabled = true; btnNotif.style.opacity = '0.7'; }
       } else {
-        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Notifications: Off';
+        if (notifText) notifText.innerHTML = '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-right:6px;"></span>Off';
         if (notifSub) notifSub.textContent = 'Permission needed';
         if (btnNotif) { btnNotif.textContent = 'Enable'; btnNotif.disabled = false; btnNotif.style.opacity = '1'; }
       }
@@ -982,10 +982,24 @@
         <span>${escapeHtml(msg)}</span>
       `;
     } else {
+      let formattedDate = 'soon';
+      const nextDateStr = elig.next_eligible_date || elig.nextEligibleDate;
+      if (nextDateStr) {
+        try {
+          const nextD = new Date(nextDateStr);
+          if (!isNaN(nextD.getTime())) {
+            formattedDate = nextD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          } else {
+            formattedDate = nextDateStr;
+          }
+        } catch (_) {
+          formattedDate = nextDateStr;
+        }
+      }
       strip.className = 'mini-eligibility-strip cooldown';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Next donation possible in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}</span>
+        <span>Next donation possible on ${escapeHtml(formattedDate)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)</span>
       `;
     }
   }

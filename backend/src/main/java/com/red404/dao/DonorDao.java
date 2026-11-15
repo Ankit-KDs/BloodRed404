@@ -1189,6 +1189,62 @@ public class DonorDao {
         List<Map<String, Object>> rows = new ArrayList<>();
         if (donorId == null || donorId.isBlank()) return rows;
         String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, h.hospital_name AS hospitalName, " +
+                "d.blood_type AS bloodType, d.units, d.status, d.request_id AS requestId FROM donations d " +
+                "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
+                "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
+                "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
+                "ORDER BY d.donation_date DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, donorId.trim());
+            int numericId = 0;
+            try { numericId = Integer.parseInt(donorId.trim()); } catch (Exception ignored) {}
+            ps.setInt(2, numericId);
+            ps.setString(3, donorId.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("donationId", rs.getInt("donationId"));
+                    row.put("id", "RED-" + String.format("%05d", rs.getInt("donationId")));
+                    Date date = rs.getDate("donationDate");
+                    row.put("donationDate", date == null ? null : date.toString());
+                    row.put("date", date == null ? null : date.toString());
+                    String hospName = rs.getString("hospitalName");
+                    row.put("hospitalName", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
+                    row.put("hospital", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
+                    row.put("bloodType", rs.getString("bloodType"));
+                    int units = rs.getInt("units");
+                    row.put("units", units > 0 ? units : 1);
+                    row.put("unitsDonated", (units > 0 ? units : 1) + " Unit");
+                    row.put("donationType", "Whole Blood");
+                    String status = rs.getString("status");
+                    row.put("status", status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+                    try {
+                        Object rId = rs.getObject("requestId");
+                        if (rId != null) {
+                            row.put("requestId", rId);
+                            row.put("request_id", rId);
+                        }
+                    } catch (SQLException ignored) {}
+                    rows.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            if (isMissingTable(e)) {
+                return rows;
+            }
+            // Fallback for schemas without request_id column
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("request_id")) {
+                return donationHistoryLegacy(donorId);
+            }
+            throw e;
+        }
+        return rows;
+    }
+
+    private List<Map<String, Object>> donationHistoryLegacy(String donorId) throws SQLException {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, h.hospital_name AS hospitalName, " +
                 "d.blood_type AS bloodType, d.units, d.status FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
@@ -1222,12 +1278,43 @@ public class DonorDao {
                     rows.add(row);
                 }
             }
-        } catch (SQLException e) {
-            if (isMissingTable(e)) {
-                return rows;
-            }
-            throw e;
         }
+        return rows;
+    }
+
+    public List<Map<String, Object>> findDonationsByRequestId(int requestId) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, h.hospital_name AS hospitalName, " +
+                "d.blood_type AS bloodType, d.units, d.status, d.request_id AS requestId, d.donor_id AS donorId FROM donations d " +
+                "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
+                "WHERE d.request_id = ? AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
+                "ORDER BY d.donation_date DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    int dId = rs.getInt("donationId");
+                    row.put("donationId", dId);
+                    row.put("id", "RED-" + String.format("%05d", dId));
+                    row.put("refCode", "RED-" + String.format("%05d", dId));
+                    Date date = rs.getDate("donationDate");
+                    row.put("donationDate", date == null ? null : date.toString());
+                    row.put("date", date == null ? null : date.toString());
+                    String hospName = rs.getString("hospitalName");
+                    row.put("hospitalName", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
+                    row.put("hospital", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
+                    row.put("bloodType", rs.getString("bloodType"));
+                    int units = rs.getInt("units");
+                    row.put("units", units > 0 ? units : 1);
+                    row.put("donorId", rs.getString("donorId"));
+                    row.put("requestId", requestId);
+                    row.put("status", rs.getString("status"));
+                    rows.add(row);
+                }
+            }
+        } catch (Exception ignored) {}
         return rows;
     }
 

@@ -1150,7 +1150,12 @@ public class HospitalController {
             donorDao.recordDonation(donorId, hospitalId, null, 0, 0, null, staffUser, "DEFERRED", reason);
             Map<String, Object> defDonor = donorDao.findByIdOrDonorId(donorId);
             if (defDonor != null && defDonor.get("id") != null) {
-                donorDao.invalidateQrToken(((Number) defDonor.get("id")).intValue());
+                int defNumId = ((Number) defDonor.get("id")).intValue();
+                donorDao.invalidateQrToken(defNumId);
+                Map<String, Object> hosp = getHospitalFromSession(request);
+                String hospName = (hosp != null && hosp.get("hospital_name") != null) ? hosp.get("hospital_name").toString() : "Hospital";
+                donorDao.addDonorNotification(defNumId, "Donation Deferred",
+                        "Your blood donation was deferred by " + hospName + ". Reason: " + reason, "deferral");
             }
             AdminController.addLog("DONATION_DEFERRED", "Donor " + donorId + " deferred at hospital ID " + hospitalId + ": " + reason);
 

@@ -276,6 +276,11 @@ public class DonorController {
         return ok("Chart loaded", new int[12]);
     }
 
+    @GetMapping("/donation-gaps")
+    public ResponseEntity<ApiResponse> getDonationGaps() {
+        return ok("Donation gap configuration", DonorEligibilityService.getDonationGapConfig());
+    }
+
     @GetMapping("/badges")
     public ResponseEntity<ApiResponse> getBadges() {
         return ok("Badges loaded", defaultBadges());

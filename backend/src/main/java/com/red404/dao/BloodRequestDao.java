@@ -198,6 +198,18 @@ public class BloodRequestDao {
         } catch (SQLException ignored) {
             req.put("time", null);
         }
+        if ("Fulfilled".equalsIgnoreCase(status)) {
+            try {
+                DonorDao dDao = new DonorDao();
+                List<Map<String, Object>> linked = dDao.findDonationsByRequestId(id);
+                if (linked != null && !linked.isEmpty()) {
+                    req.put("linkedDonations", linked);
+                    req.put("donationRecord", linked.get(0));
+                    req.put("donationId", linked.get(0).get("donationId"));
+                    req.put("donationRef", linked.get(0).get("refCode"));
+                }
+            } catch (Exception ignored) {}
+        }
         return req;
     }
 

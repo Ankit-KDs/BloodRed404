@@ -53,6 +53,36 @@
     renderDonationsTable();
     setupExportBtn();
     setupModalEvents();
+
+    // Fetch authoritative live donation history and eligibility from server
+    fetchLiveHistoryAndStats(user);
+  }
+
+  async function fetchLiveHistoryAndStats(user) {
+    try {
+      const [histRes, statsRes] = await Promise.all([
+        fetch('/api/donor/donation-history', { credentials: 'include' }).catch(() => null),
+        fetch('/api/donor/dashboard-stats', { credentials: 'include' }).catch(() => null)
+      ]);
+      let stats = null;
+      if (statsRes && statsRes.ok) {
+        const sJson = await statsRes.json();
+        if (sJson && sJson.data) {
+          stats = sJson.data;
+        }
+      }
+      if (histRes && histRes.ok) {
+        const hJson = await histRes.json();
+        if (hJson && Array.isArray(hJson.data)) {
+          donationRecords = hJson.data;
+        }
+      }
+      renderImpactStats();
+      renderDonationsTable();
+      renderHeaderEligibility(stats || user);
+    } catch (e) {
+      console.warn('Live history fetch notice:', e);
+    }
   }
 
   function renderHeaderEligibility(user) {
@@ -63,15 +93,22 @@
     // 1. Authoritative Server-side Eligibility (Single Source of Truth)
     if (user && user.eligibility) {
       const elig = user.eligibility;
-      const hasDonated = (donationRecords && donationRecords.length > 0) || Boolean(user.lastDonation || user.lastDonationDate);
+      const hasDonated = (donationRecords && donationRecords.length > 0) || Boolean(user.lastDonation || user.lastDonationDate || elig.last_donation_date);
       if (elig.eligible) {
         badge.className = 'status-eligibility-btn eligible-ready';
         textEl.textContent = !hasDonated ? "No donation yet. You're ready." : "You can donate. The hospital does a final check before donating.";
       } else {
         const nextDate = elig.next_eligible_date || elig.nextEligibleDate || '';
         const daysLeft = elig.days_until_eligible || 0;
+        let formattedDate = nextDate;
+        try {
+          const nextD = new Date(nextDate);
+          if (!isNaN(nextD.getTime())) {
+            formattedDate = nextD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
+        } catch (_) {}
         badge.className = 'status-eligibility-btn recovering';
-        textEl.textContent = `Next donation possible on ${nextDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
+        textEl.textContent = `Next donation possible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
       }
       return;
     }
@@ -91,7 +128,7 @@
       return;
     }
 
-    // If donations exist, evaluate recovery window (90 days for whole blood)
+    // If donations exist, evaluate recovery window (gender-based: 90 days male, 120 days female)
     const latest = donationRecords[0];
     const donationDateStr = latest.date || latest.donationDate || (user && (user.lastDonation || user.lastDonationDate));
     if (donationDateStr) {
@@ -99,12 +136,13 @@
       if (!isNaN(dDate.getTime())) {
         const diffMs = Date.now() - dDate.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const recoveryDays = 90;
+        const recoveryDays = (user && user.gender && user.gender.toLowerCase() === 'female') ? 120 : 90;
         if (diffDays >= 0 && diffDays < recoveryDays) {
           const daysLeft = recoveryDays - diffDays;
-          const nextDate = new Date(dDate.getTime() + recoveryDays * 86400000).toISOString().split('T')[0];
+          const nextDateObj = new Date(dDate.getTime() + recoveryDays * 86400000);
+          const formattedDate = nextDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           badge.className = 'status-eligibility-btn recovering';
-          textEl.textContent = `Next donation possible on ${nextDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
+          textEl.textContent = `Next donation possible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
           return;
         }
       }
@@ -164,10 +202,10 @@
 
     tableBody.innerHTML = donationRecords.map((rec) => {
       const bGroup = rec.bloodGroup || rec.bloodType || donorBloodGroup || 'O+';
-      const vol = rec.volume || '450 mL';
-      const ref = rec.refCode || rec.recordId || rec.certId || 'RED-00000';
-      const hosp = rec.hospital || 'Verified Partner Hospital';
-      const dDate = rec.date || 'Recent';
+      const vol = rec.volume || (rec.volume_ml ? rec.volume_ml + ' mL' : (rec.units ? (rec.units * 450) + ' mL' : '450 mL'));
+      const ref = rec.refCode || rec.id || rec.recordId || rec.certId || 'RED-00000';
+      const hosp = rec.hospital || rec.hospitalName || 'Verified Partner Hospital';
+      const dDate = rec.date || rec.donationDate || 'Recent';
 
       return `
         <tr>

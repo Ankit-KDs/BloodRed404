@@ -2,6 +2,7 @@ package com.red404.controller;
 
 import com.red404.dao.DonorDao;
 import com.red404.model.ApiResponse;
+import com.red404.service.DonorEligibilityService;
 import com.red404.service.PlatformMetricsService;
 import com.red404.util.DBConnection;
 import org.springframework.http.MediaType;
@@ -32,6 +33,15 @@ public class SystemController {
         try {
             Map<String, Object> stats = PlatformMetricsService.getInstance().getPlatformStats();
             return ResponseEntity.ok(new ApiResponse(true, "Platform stats loaded", stats));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping({"/donation-gaps", "/config/donation-gaps"})
+    public ResponseEntity<ApiResponse> getDonationGaps() {
+        try {
+            return ResponseEntity.ok(new ApiResponse(true, "Donation gap configuration loaded", DonorEligibilityService.getDonationGapConfig()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
         }

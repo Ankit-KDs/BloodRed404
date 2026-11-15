@@ -1443,36 +1443,40 @@
 
           <!-- Right Verified Vitals Details (Empty by default, auto-filled by hospital dashboard) -->
           <div class="vitals-details-box">
-            <div class="vitals-top-meta">
+            <div class="vitals-top-meta" style="display:none;">
               Age: <b id="vitalAge">--</b> &nbsp;|&nbsp; Weight: <b id="vitalWeight">--</b> kg &nbsp;|&nbsp; Pulse: <b
                 id="vitalPulse">--</b> bpm
             </div>
-            <div class="vitals-verified-sub" id="vitalsVerifiedSub">
-              Awaiting Hospital Health Verification
+            <div class="vitals-verified-sub" id="vitalsVerifiedSub" style="display:none;">
+              Waiting for hospital check
             </div>
 
-            <div class="vital-row">
+            <div id="vitalsWaitingNotice" style="padding: 16px 0; font-size: 14px; color: #94a3b8; font-style: normal;">
+              Waiting for hospital check
+            </div>
+
+            <div class="vital-row" style="display:none;">
               <span class="vr-label">Hemoglobin:</span>
               <b class="vr-val"><span id="vitalHemoglobin">--</span> g/dL</b>
               <span class="vr-dot">•</span>
-              <span class="vital-pill pill-awaiting" id="hbPill">PENDING</span>
+              <span class="vital-pill pill-awaiting" id="hbPill" style="display:none;">PENDING</span>
             </div>
 
-            <div class="vital-row">
+            <div class="vital-row" style="display:none;">
               <span class="vr-label">Blood Pressure:</span>
               <b class="vr-val"><span id="vitalBP">--/--</span> mmHg</b>
               <span class="vr-dot">•</span>
-              <span class="vital-pill pill-awaiting" id="bpPill">PENDING</span>
+              <span class="vital-pill pill-awaiting" id="bpPill" style="display:none;">PENDING</span>
             </div>
 
-            <div class="vital-row">
+            <div class="vital-row" style="display:none;">
               <span class="vr-label">Body Temperature:</span>
               <b class="vr-val"><span id="vitalTemp">--</span>° F</b>
             </div>
 
             <!-- Automated AI Health Evaluation Banner -->
             <div class="health-eval-badge badge-awaiting" id="aiHealthEvalBadge" role="button"
-              title="Hospital Intake Health Status">
+              title="Hospital Intake Health Status" style="display:none;">
               <i class="fas fa-clock" style="margin-right:6px;"></i>
               <span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>
             </div>

@@ -2162,7 +2162,7 @@ async function loadRecordsTable() {
         <td><span class="mono-data">${units}</span></td>
         <td><span class="mono-data">${r.urgency_level || 'Normal'}</span></td>
         <td><span class="chip-status ${statusClass}">${status}</span></td>
-        <td><span class="mono-data">-</span></td>
+        <td><span class="mono-data">${r.donationRef ? `<span style="color:#22c55e; font-weight:600;" title="Linked donation record">${escapeHtml(r.donationRef)}</span>` : '-'}</span></td>
       </tr>
     `;
   }).join('');

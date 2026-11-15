@@ -65,7 +65,7 @@
       'eligibility.title': 'Who Can Donate Blood',
       'eligibility.age': 'Age: 18 to 65 years',
       'eligibility.weight': 'Weight: At least 45 kg',
-      'eligibility.gap': 'Gap between donations: 90 days (120 days for females)',
+      'eligibility.gap': 'Gap between donations: 90 days for men, 120 days for women',
       'faq.title': 'Frequently Asked Questions',
       'privacy.note': 'Privacy Note: Hospitals see your phone number only after you accept a request.',
       'ready.title': 'Ready to Save Lives?',
