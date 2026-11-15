@@ -339,6 +339,15 @@
             currentDonor.latitude = parseFloat(d.latitude);
             currentDonor.longitude = parseFloat(d.longitude);
           }
+          if (d.preferredLanguage || d.preferred_language) {
+            currentDonor.preferredLanguage = d.preferredLanguage || d.preferred_language;
+            if (window.RED404_I18N && !localStorage.getItem('red404_lang')) {
+              window.RED404_I18N.setLanguage(currentDonor.preferredLanguage);
+            }
+          }
+          if (d.smsNotif !== undefined) currentDonor.smsNotif = d.smsNotif;
+          if (d.emailNotif !== undefined) currentDonor.emailNotif = d.emailNotif;
+          if (d.pushNotif !== undefined) currentDonor.pushNotif = d.pushNotif;
         }
       }
     } catch (e) {
@@ -1473,6 +1482,9 @@
             localStorage.setItem('red404_auth_session', JSON.stringify(sessObj));
             if (typeof Auth !== 'undefined' && Auth.saveSession) {
               Auth.saveSession(currentDonor);
+            }
+            if (payload.preferredLanguage && window.RED404_I18N) {
+              window.RED404_I18N.setLanguage(payload.preferredLanguage);
             }
           } catch (_) { }
 

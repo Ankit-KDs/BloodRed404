@@ -467,6 +467,32 @@ public class DonorDao {
             ps.setInt(idx, id);
 
             boolean updated = ps.executeUpdate() > 0;
+
+            if (fields.containsKey("preferred_language") || fields.containsKey("preferredLanguage")) {
+                Object langObj = fields.get("preferred_language") != null ? fields.get("preferred_language") : fields.get("preferredLanguage");
+                try (PreparedStatement prefPs = conn.prepareStatement("UPDATE donors SET preferred_language = ? WHERE id = ?")) {
+                    prefPs.setString(1, (langObj != null && !str(langObj).isBlank()) ? str(langObj).trim().toLowerCase() : "en");
+                    prefPs.setInt(2, id);
+                    prefPs.executeUpdate();
+                } catch (Exception ignored) {}
+            }
+            if (fields.containsKey("sms_notif") || fields.containsKey("smsNotif")) {
+                Object b = fields.get(fields.containsKey("sms_notif") ? "sms_notif" : "smsNotif");
+                try (PreparedStatement prefPs = conn.prepareStatement("UPDATE donors SET sms_notif = ? WHERE id = ?")) {
+                    prefPs.setBoolean(1, b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b)));
+                    prefPs.setInt(2, id);
+                    prefPs.executeUpdate();
+                } catch (Exception ignored) {}
+            }
+            if (fields.containsKey("email_notif") || fields.containsKey("emailNotif")) {
+                Object b = fields.get(fields.containsKey("email_notif") ? "email_notif" : "emailNotif");
+                try (PreparedStatement prefPs = conn.prepareStatement("UPDATE donors SET email_notif = ? WHERE id = ?")) {
+                    prefPs.setBoolean(1, b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b)));
+                    prefPs.setInt(2, id);
+                    prefPs.executeUpdate();
+                } catch (Exception ignored) {}
+            }
+
             if (updated && (dob != null || (dobObj != null && !str(dobObj).isBlank()))) {
                 try {
                     String currentDonorId = null;
@@ -564,6 +590,10 @@ public class DonorDao {
             ensureCol(conn, "blood_group_verified_by_hospital_name", "VARCHAR(180) NULL DEFAULT NULL");
             ensureCol(conn, "blood_group_verified_at", "TIMESTAMP NULL DEFAULT NULL");
             ensureCol(conn, "blood_group_edit_count", "INT DEFAULT 0");
+            ensureCol(conn, "preferred_language", "VARCHAR(10) DEFAULT 'en'");
+            ensureCol(conn, "sms_notif", "BOOLEAN DEFAULT TRUE");
+            ensureCol(conn, "email_notif", "BOOLEAN DEFAULT TRUE");
+            ensureCol(conn, "push_notif", "BOOLEAN DEFAULT TRUE");
 
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name LIKE '%Rajesh%'");

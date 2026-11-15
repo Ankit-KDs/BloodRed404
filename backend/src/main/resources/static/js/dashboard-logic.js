@@ -257,6 +257,9 @@
               donorData.district = d.city.toUpperCase();
               donorData.location = `${d.city}${d.state ? ', ' + d.state : ''}`;
             }
+            if ((d.preferredLanguage || d.preferred_language) && window.RED404_I18N && !localStorage.getItem('red404_lang')) {
+              window.RED404_I18N.setLanguage(d.preferredLanguage || d.preferred_language);
+            }
             renderWelcomeBanner();
             initStatusRow();
             renderUpcomingDrives();

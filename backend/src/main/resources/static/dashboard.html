@@ -49,16 +49,16 @@
 
       <!-- CENTER: HORIZONTAL COMMAND TABS -->
       <nav class="command-nav-center">
-        <a href="dashboard.html" class="command-tab-link active" title="Command Center Dashboard">
+        <a href="dashboard.html" class="command-tab-link active" title="Command Center Dashboard" data-i18n="nav.dashboard">
           <i class="fa-solid fa-gauge-high"></i>
           <span>Dashboard</span>
         </a>
-        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Active Emergencies & Emergency Dispatch Radar">
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Active Emergencies & Emergency Dispatch Radar" data-i18n="nav.emergencies">
           <i class="fa-solid fa-truck-medical"></i>
           <span>Emergencies</span>
           <span class="tab-radar-pulse"></span>
         </a>
-        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs">
+        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs" data-i18n="nav.donations">
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span>Donation History</span>
         </a>
@@ -71,6 +71,13 @@
         <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location">
           <span class="gps-dot-pulse"></span>
           <span>Live GPS: Connected</span>
+        </div>
+
+        <!-- Language Toggle -->
+        <div class="lang-toggle-pill" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; color: #fff; margin-right: 4px;">
+          <button type="button" class="lang-toggle-btn active" data-lang="en" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px; font-size:13px;">EN</button>
+          <span style="opacity: 0.4;">|</span>
+          <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px; font-size:13px;">हिन्दी</button>
         </div>
 
         <!-- Notification Bell -->
@@ -226,11 +233,11 @@
               </div>
               <h2 class="action-title">Find Nearby Blood Banks</h2>
             </div>
-            <span class="action-badge">VERIFIED HOSPITALS</span>
+            <span class="action-badge" style="font-size: 13px; text-transform: none; letter-spacing: normal; color: #94a3b8; font-weight: 500;">Verified hospitals</span>
           </div>
 
           <p class="action-summary-text">
-            View verified partner hospitals near you with real-time available blood units and direct route navigation.
+            Check blood availability at hospitals near you.
           </p>
         </div>
 
@@ -252,14 +259,14 @@
             <i class="fa-solid fa-bell"></i>
             <span>Notifications</span>
           </h3>
-          <span class="chb-tag">RECENT UPDATES</span>
+          <span class="chb-tag" style="font-size: 13px; text-transform: none; letter-spacing: normal; font-weight: 500;">Recent updates</span>
         </div>
 
         <div class="terminal-feed-container" id="system-logs-container" style="min-height: auto; max-height: 280px; overflow-y: auto;">
           <!-- Injected dynamically by dashboard-logic.js -->
         </div>
         <div id="notificationsFooterLink" style="padding-top: 8px; text-align: right; display: none;">
-          <a href="donor-alerts.html" style="font-size: 12px; color: #38bdf8; text-decoration: none;">See all notifications &rarr;</a>
+          <a href="donor-alerts.html" style="font-size: 13px; color: #38bdf8; text-decoration: none;">See all notifications &rarr;</a>
         </div>
       </section>
 
@@ -271,7 +278,7 @@
               <i class="fa-solid fa-clock-rotate-left"></i>
               <span>Donation History</span>
             </h3>
-            <span class="chb-tag">LATEST RECORDS</span>
+            <span class="chb-tag" style="font-size: 13px; text-transform: none; letter-spacing: normal; font-weight: 500;">Recent donations</span>
           </div>
 
           <!-- Mini Logs List -->
