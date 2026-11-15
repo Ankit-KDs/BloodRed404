@@ -436,7 +436,7 @@
       if (donorEmail) headers['X-Donor-Email'] = donorEmail;
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const clientLoc = sessionStorage.getItem('red404_donor_detected_location') || 
-                        (activeUser && activeUser.city ? `${activeUser.city}, ${activeUser.state || 'India'}` : 'Nainital, Uttarakhand');
+                        (activeUser && activeUser.city ? `${activeUser.city}${activeUser.state ? ', ' + activeUser.state : ''}` : '');
       if (clientLoc) headers['X-Client-Location'] = clientLoc;
       return headers;
     }
@@ -943,16 +943,16 @@
           iconClass = 'fa-tablet-screen-button';
         }
 
-        let sessionLoc = s.location || 'Nainital, Uttarakhand';
+        let sessionLoc = s.location || (currentUser && currentUser.city ? `${currentUser.city}${currentUser.state ? ', ' + currentUser.state : ''}` : 'Location not shared');
         if (s.isCurrent) {
           const detected = sessionStorage.getItem('red404_donor_detected_location');
-          const profileCity = (currentUser && currentUser.city) ? `${currentUser.city}, ${currentUser.state || 'India'}` : '';
-          if (detected && !detected.toLowerCase().includes('ozar')) {
-            sessionLoc = detected;
-          } else if (profileCity && !profileCity.toLowerCase().includes('ozar')) {
+          const profileCity = (currentUser && currentUser.city) ? `${currentUser.city}${currentUser.state ? ', ' + currentUser.state : ''}` : '';
+          if (profileCity) {
             sessionLoc = profileCity;
-          } else if (sessionLoc.toLowerCase().includes('ozar') || sessionLoc.toLowerCase().includes('unknown')) {
-            sessionLoc = 'Nainital, Uttarakhand';
+          } else if (detected && !detected.toLowerCase().includes('ozar')) {
+            sessionLoc = detected;
+          } else if (!sessionLoc || sessionLoc.toLowerCase().includes('unknown')) {
+            sessionLoc = 'Location not shared';
           }
         }
 

@@ -1109,6 +1109,7 @@ public class DonorDao {
                 "d.blood_type AS bloodType, d.units, d.status FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
+                "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
                 "ORDER BY d.donation_date DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -1281,7 +1282,10 @@ public class DonorDao {
         }
         donor.put("email", rs.getString("email"));
         donor.put("phone", rs.getString("phone"));
-        donor.put("bloodType", rs.getString("blood_type"));
+        String bTypeVal = rs.getString("blood_type");
+        donor.put("bloodType", bTypeVal);
+        donor.put("blood_type", bTypeVal);
+        donor.put("bloodGroup", bTypeVal);
         donor.put("city", rs.getString("city"));
         donor.put("state", rs.getString("state"));
         donor.put("zone", rs.getString("zone"));

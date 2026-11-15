@@ -85,7 +85,8 @@ function initHeroCounters() {
 }
 
 function animateHeroCounter(el) {
-  const target   = parseInt(el.dataset.target, 10);
+  if (!el || el.dataset.target === 'none') return;
+  const target = parseInt(el.dataset.target, 10);
   if (isNaN(target)) return;
 
   const duration = 2200;

@@ -143,9 +143,13 @@
         statusLabel = '🟢 Active';
       }
 
-      // Zone & City
-      const cityName = d.city || d.location || 'Local Node';
-      const zoneName = d.zone ? 'Zone ' + d.zone : (d.state || 'General Area');
+      // Format Zone cleanly without "Zone Zone"
+      let zoneDisplay = d.zone || 'Location not shared';
+      if (zoneDisplay && !zoneDisplay.startsWith('Zone') && zoneDisplay !== 'Location not shared') {
+        zoneDisplay = 'Zone ' + zoneDisplay;
+      }
+      const registeredCity = d.registeredCity || (d.city ? `${d.city}${d.state ? ', ' + d.state : ''}` : 'Not provided');
+      const lastSeen = d.lastSeenLocationTime || (d.latitude && d.longitude ? `${d.latitude}, ${d.longitude}` : 'Location not shared');
 
       tr.innerHTML = `
         <!-- Column 1: Smart ID & Burned-ID Privacy -->
@@ -163,14 +167,14 @@
 
         <!-- Column 2: Blood Group -->
         <td>
-          <span class="blood-type-tag">${escapeHtml(d.bloodGroup || '-')}</span>
+          <span class="blood-type-tag">${escapeHtml(d.bloodGroup || d.bloodType || '-')}</span>
         </td>
 
-        <!-- Column 3: Zone / City -->
+        <!-- Column 3: Registered City & Last Seen -->
         <td>
           <div class="donor-zone-cell">
-            <span class="donor-city-val">${escapeHtml(cityName)}</span>
-            <span class="donor-subzone-val">${escapeHtml(zoneName)}</span>
+            <span class="donor-city-val" title="Registered City"><i class="fas fa-home" style="font-size: 11px; margin-right: 4px; opacity: 0.7;"></i>${escapeHtml(registeredCity)}</span>
+            <span class="donor-subzone-val" title="Last Seen Location / Zone" style="font-size: 11px; color: #94a3b8;"><i class="fas fa-location-dot" style="font-size: 10px; margin-right: 4px; color: #38bdf8;"></i>${escapeHtml(zoneDisplay)} • ${escapeHtml(lastSeen)}</span>
           </div>
         </td>
 
@@ -332,11 +336,15 @@
 
     // 3. Spatial Routing & Location
     setSpan('modal-donor-address', donor.address || 'Address Not Recorded');
-    const cityStatePin = `${donor.city || '-'}${donor.state ? ', ' + donor.state : ''}${donor.pincode ? ' - ' + donor.pincode : ''}`;
-    setSpan('modal-donor-city-state-pin', cityStatePin);
+    const registeredCity = donor.registeredCity || (donor.city ? `${donor.city}${donor.state ? ', ' + donor.state : ''}${donor.pincode ? ' - ' + donor.pincode : ''}` : 'Not provided');
+    setSpan('modal-donor-city-state-pin', registeredCity);
 
-    const zoneCoords = `${donor.zone ? 'Zone ' + donor.zone : 'Zone Standard'}${donor.latitude && donor.longitude ? ' • GPS: ' + donor.latitude + ', ' + donor.longitude : ''}`;
-    setSpan('modal-donor-zone-coords', zoneCoords);
+    let zoneDisplay = donor.zone || 'Location not shared';
+    if (zoneDisplay && !zoneDisplay.startsWith('Zone') && zoneDisplay !== 'Location not shared') {
+      zoneDisplay = 'Zone ' + zoneDisplay;
+    }
+    const lastSeen = donor.lastSeenLocationTime || (donor.latitude && donor.longitude ? `${donor.latitude}, ${donor.longitude}` : 'Location not shared');
+    setSpan('modal-donor-zone-coords', `${zoneDisplay} • Last seen: ${lastSeen}`);
 
     // 4. Clinical Health Screening
     setSpan('modal-donor-weight', donor.weight ? donor.weight + ' kg' : 'Not recorded');

@@ -2318,7 +2318,7 @@ function initDonorCheckin() {
     if (nameEl) nameEl.textContent = d.name || 'Verified Donor';
     if (idEl) idEl.textContent = d.donorId || d.id || '';
     if (bgEl) {
-      bgEl.textContent = d.bloodType || 'O+';
+      bgEl.textContent = d.bloodType || d.bloodGroup || d.blood_type || 'Not specified';
       bgEl.className = 'chip-status available';
     }
 
@@ -2657,7 +2657,7 @@ function initDonorCheckin() {
       if (!currentLoadedDonor) return;
 
       const confirmedBgEl = document.getElementById('vitConfirmedBloodGroup');
-      const confirmedBg = confirmedBgEl ? confirmedBgEl.value : (currentLoadedDonor.bloodType || 'O+');
+      const confirmedBg = confirmedBgEl ? confirmedBgEl.value : (currentLoadedDonor.bloodType || currentLoadedDonor.bloodGroup || currentLoadedDonor.blood_type || '');
 
       const bgReasonEl = document.getElementById('vitBloodGroupReason');
       const bgReason = bgReasonEl ? bgReasonEl.value.trim() : '';

@@ -32,7 +32,7 @@ public class PlatformMetricsService {
         return INSTANCE;
     }
 
-    public static final int DEFAULT_MIN_HOSPITALS_FOR_PUBLIC_STOCK = 2;
+    public static final int DEFAULT_MIN_HOSPITALS_FOR_PUBLIC_STOCK = 1;
     public static final int DEFAULT_MIN_COMPLETED_REQUESTS_FOR_METRICS = 5;
     private static final long CACHE_TTL_MS = 60_000L; // 60s cache
 
@@ -196,7 +196,7 @@ public class PlatformMetricsService {
             }
 
             // 6. Success Rate (only if >= minCompletedRequests)
-            if (totalRequests >= minCompletedRequests && totalRequests > 0) {
+            if (completedRequests >= minCompletedRequests && totalRequests > 0) {
                 successRate = (int) Math.round(((double) completedRequests / totalRequests) * 100.0);
             }
 

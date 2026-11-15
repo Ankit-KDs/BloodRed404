@@ -228,7 +228,7 @@ public class DonorController {
             Map<String, Object> stats = new HashMap<>();
             stats.put("totalDonations", history.size());
             stats.put("livesImpacted", history.size() * 3);
-            stats.put("badgesEarned", history.isEmpty() ? 1 : Math.min(history.size(), 4));
+            stats.put("badgesEarned", history.isEmpty() ? 0 : Math.min(history.size(), 6));
             stats.put("donationsThisYear", history.size());
             stats.put("daysToNextEligible", elig.get("days_until_eligible"));
             stats.put("days_until_eligible", elig.get("days_until_eligible"));
@@ -1169,8 +1169,12 @@ public class DonorController {
 
     private List<Map<String, Object>> defaultBadges() {
         List<Map<String, Object>> badges = new ArrayList<>();
-        badges.add(Map.of("name", "First Drop", "description", "Made your first donation", "icon", "🩸", "earned", true, "earnedDate", "2024-01-01"));
-        badges.add(Map.of("name", "Hero", "description", "10 total donations", "icon", "🦸", "earned", false, "progress", 0, "target", 10));
+        badges.add(Map.of("name", "First Savior", "description", "First verified donation", "icon", "🩸", "earned", false, "rule", "First verified donation"));
+        badges.add(Map.of("name", "Golden Hour Hero", "description", "Verified donation completed within 45 min", "icon", "⚡", "earned", false, "rule", "Response within 45 minutes"));
+        badges.add(Map.of("name", "Night Owl", "description", "Verified donation between 10 PM and 6 AM", "icon", "🦉", "earned", false, "rule", "Emergency donation at night"));
+        badges.add(Map.of("name", "Rare Vanguard", "description", "Rare Rh-negative verified donation", "icon", "🛡️", "earned", false, "rule", "Rare Rh-negative verified donation"));
+        badges.add(Map.of("name", "Life Giver V", "description", "5 verified donations", "icon", "💖", "earned", false, "rule", "5 verified donations"));
+        badges.add(Map.of("name", "Apex Guardian", "description", "10 verified donations", "icon", "👑", "earned", false, "rule", "10 verified donations"));
         return badges;
     }
 

@@ -114,10 +114,8 @@
 
         if (user.bloodGroup || user.bloodType) donorData.bloodGroup = user.bloodGroup || user.bloodType;
         if (user.city || user.district) {
-          donorData.district = (user.district || user.city).toUpperCase();
-          if (!sessionStorage.getItem('red404_donor_detected_location')) {
-            donorData.location = `${user.city || user.district}, ${user.state || 'India'}`;
-          }
+          donorData.district = (user.city || user.district).toUpperCase();
+          donorData.location = `${user.city || user.district}${user.state ? ', ' + user.state : ''}`;
         }
 
         // Real donations history
@@ -255,7 +253,10 @@
             if (d.available !== undefined) donorData.available = d.available;
             if (d.pausedUntil || d.paused_until) donorData.pausedUntil = d.pausedUntil || d.paused_until;
             if (d.name) donorData.name = d.name;
-            if (d.city) donorData.district = d.city.toUpperCase();
+            if (d.city) {
+              donorData.district = d.city.toUpperCase();
+              donorData.location = `${d.city}${d.state ? ', ' + d.state : ''}`;
+            }
             renderWelcomeBanner();
             initStatusRow();
             renderUpcomingDrives();

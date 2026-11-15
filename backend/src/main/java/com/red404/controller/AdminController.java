@@ -122,52 +122,112 @@ public class AdminController {
         List<Map<String, Object>> donors = new ArrayList<>();
         String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
                 "d.weight, d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
-                "d.latitude, d.longitude, d.allergies, d.conditions, d.medications, d.surgeries, " +
+                "d.latitude, d.longitude, d.location_updated_at, d.allergies, d.conditions, d.medications, d.surgeries, " +
                 "d.last_donation, d.created_at, " +
-                "(SELECT COUNT(*) FROM donations WHERE donor_id = d.donor_id) AS total_donations " +
+                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED')) AS total_donations " +
                 "FROM donors d ORDER BY d.id DESC";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                Map<String, Object> item = new LinkedHashMap<>();
-                item.put("id", rs.getInt("id"));
-                item.put("smartId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("id"));
-                item.put("name", rs.getString("name"));
-                item.put("fatherName", rs.getString("father_name"));
-                item.put("email", rs.getString("email"));
-                item.put("phone", rs.getString("phone"));
-                item.put("dob", rs.getString("dob"));
-                item.put("gender", rs.getString("gender"));
-                item.put("bloodGroup", rs.getString("blood_type"));
-                item.put("weight", rs.getObject("weight"));
-                item.put("donorType", rs.getString("donor_type"));
-                item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
-                item.put("address", rs.getString("address"));
-                item.put("city", rs.getString("city"));
-                item.put("state", rs.getString("state"));
-                item.put("pincode", rs.getString("pincode"));
-                item.put("zone", rs.getString("zone"));
-                item.put("latitude", rs.getObject("latitude"));
-                item.put("longitude", rs.getObject("longitude"));
-                item.put("allergies", rs.getString("allergies"));
-                item.put("conditions", rs.getString("conditions"));
-                item.put("medications", rs.getString("medications"));
-                item.put("surgeries", rs.getString("surgeries"));
-                item.put("lastDonation", rs.getString("last_donation"));
-                item.put("totalDonations", rs.getInt("total_donations"));
-
-                String city = rs.getString("city");
-                String state = rs.getString("state");
-                String locationStr = (city != null && !city.isBlank()) ? city : "Local Zone";
-                if (state != null && !state.isBlank()) {
-                    locationStr += ", " + state;
+            Double refHospLat = null;
+            Double refHospLng = null;
+            try (PreparedStatement hps = conn.prepareStatement(
+                    "SELECT latitude, longitude FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified' AND latitude IS NOT NULL LIMIT 1");
+                 ResultSet hrs = hps.executeQuery()) {
+                if (hrs.next()) {
+                    refHospLat = hrs.getDouble("latitude");
+                    refHospLng = hrs.getDouble("longitude");
                 }
-                item.put("location", locationStr);
-                item.put("createdAt", rs.getString("created_at"));
-                donors.add(item);
+            } catch (Exception ignored) {}
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", rs.getInt("id"));
+                    item.put("smartId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("id"));
+                    item.put("name", rs.getString("name"));
+                    item.put("fatherName", rs.getString("father_name"));
+                    item.put("email", rs.getString("email"));
+                    item.put("phone", rs.getString("phone"));
+                    item.put("dob", rs.getString("dob"));
+                    item.put("gender", rs.getString("gender"));
+                    String bType = rs.getString("blood_type");
+                    item.put("bloodGroup", bType);
+                    item.put("bloodType", bType);
+                    item.put("blood_type", bType);
+                    item.put("weight", rs.getObject("weight"));
+                    item.put("donorType", rs.getString("donor_type"));
+                    item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
+                    item.put("address", rs.getString("address"));
+                    String rawCity = rs.getString("city");
+                    String rawState = rs.getString("state");
+                    item.put("city", rawCity);
+                    item.put("state", rawState);
+                    item.put("pincode", rs.getString("pincode"));
+
+                    // Compute dynamic Zone & Freshness (24 hours)
+                    Object latObj = rs.getObject("latitude");
+                    Object lngObj = rs.getObject("longitude");
+                    java.sql.Timestamp locUpdated = null;
+                    try { locUpdated = rs.getTimestamp("location_updated_at"); } catch (Exception ignored) {}
+                    if (locUpdated == null) {
+                        try { locUpdated = rs.getTimestamp("created_at"); } catch (Exception ignored) {}
+                    }
+
+                    long FRESHNESS_MS = 24L * 60 * 60 * 1000L;
+                    boolean isFresh = locUpdated != null && (System.currentTimeMillis() - locUpdated.getTime()) <= FRESHNESS_MS;
+                    String computedZone = "Location not shared";
+                    String lastSeenLocationTime = "Location not shared";
+
+                    if (latObj != null && lngObj != null && isFresh) {
+                        double dLat = ((Number) latObj).doubleValue();
+                        double dLng = ((Number) lngObj).doubleValue();
+                        long minutesAgo = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
+                        String timeStr = minutesAgo < 60 ? (minutesAgo + " mins ago") : ((minutesAgo / 60) + " hrs ago");
+                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (%s)", dLat, dLng, timeStr);
+
+                        if (refHospLat != null && refHospLng != null && refHospLat != 0.0) {
+                            double distKm = com.red404.util.DistanceCalculator.calculateDistance(refHospLat, refHospLng, dLat, dLng);
+                            if (distKm <= 5.0) computedZone = "Zone 1 (0–5 km)";
+                            else if (distKm <= 10.0) computedZone = "Zone 2 (5–10 km)";
+                            else if (distKm <= 20.0) computedZone = "Zone 3 (10–20 km)";
+                            else computedZone = "Zone 4 (20+ km)";
+                        } else {
+                            computedZone = "Zone 1 (0–5 km)";
+                        }
+                    } else if (latObj != null && lngObj != null) {
+                        double dLat = ((Number) latObj).doubleValue();
+                        double dLng = ((Number) lngObj).doubleValue();
+                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (Stale)", dLat, dLng);
+                    }
+
+                    item.put("zone", computedZone);
+                    item.put("lastSeenLocationTime", lastSeenLocationTime);
+
+                    String registeredCity = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Not provided";
+                    if (rawState != null && !rawState.isBlank() && !registeredCity.equalsIgnoreCase("Not provided")) {
+                        registeredCity += ", " + rawState;
+                    }
+                    item.put("registeredCity", registeredCity);
+
+                    item.put("latitude", latObj);
+                    item.put("longitude", lngObj);
+                    item.put("allergies", rs.getString("allergies"));
+                    item.put("conditions", rs.getString("conditions"));
+                    item.put("medications", rs.getString("medications"));
+                    item.put("surgeries", rs.getString("surgeries"));
+                    item.put("lastDonation", rs.getString("last_donation"));
+                    item.put("totalDonations", rs.getInt("total_donations"));
+
+                    String locationStr = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Local Zone";
+                    if (rawState != null && !rawState.isBlank()) {
+                        locationStr += ", " + rawState;
+                    }
+                    item.put("location", locationStr);
+                    item.put("createdAt", rs.getString("created_at"));
+                    donors.add(item);
+                }
             }
             return ResponseEntity.ok(new ApiResponse(true, "Donors loaded", donors));
         } catch (Exception e) {
@@ -183,13 +243,25 @@ public class AdminController {
 
         String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
                 "d.weight, d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
-                "d.latitude, d.longitude, d.allergies, d.conditions, d.medications, d.surgeries, " +
+                "d.latitude, d.longitude, d.location_updated_at, d.allergies, d.conditions, d.medications, d.surgeries, " +
                 "d.last_donation, d.created_at, " +
-                "(SELECT COUNT(*) FROM donations WHERE donor_id = d.donor_id) AS total_donations " +
+                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED')) AS total_donations " +
                 "FROM donors d WHERE d.id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            Double refHospLat = null;
+            Double refHospLng = null;
+            try (PreparedStatement hps = conn.prepareStatement(
+                    "SELECT latitude, longitude FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified' AND latitude IS NOT NULL LIMIT 1");
+                 ResultSet hrs = hps.executeQuery()) {
+                if (hrs.next()) {
+                    refHospLat = hrs.getDouble("latitude");
+                    refHospLng = hrs.getDouble("longitude");
+                }
+            } catch (Exception ignored) {}
+
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -202,17 +274,67 @@ public class AdminController {
                     item.put("phone", rs.getString("phone"));
                     item.put("dob", rs.getString("dob"));
                     item.put("gender", rs.getString("gender"));
-                    item.put("bloodGroup", rs.getString("blood_type"));
+                    String bType = rs.getString("blood_type");
+                    item.put("bloodGroup", bType);
+                    item.put("bloodType", bType);
+                    item.put("blood_type", bType);
                     item.put("weight", rs.getObject("weight"));
                     item.put("donorType", rs.getString("donor_type"));
                     item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
                     item.put("address", rs.getString("address"));
-                    item.put("city", rs.getString("city"));
-                    item.put("state", rs.getString("state"));
+                    String rawCity = rs.getString("city");
+                    String rawState = rs.getString("state");
+                    item.put("city", rawCity);
+                    item.put("state", rawState);
                     item.put("pincode", rs.getString("pincode"));
-                    item.put("zone", rs.getString("zone"));
-                    item.put("latitude", rs.getObject("latitude"));
-                    item.put("longitude", rs.getObject("longitude"));
+
+                    // Compute dynamic Zone & Freshness (24 hours)
+                    Object latObj = rs.getObject("latitude");
+                    Object lngObj = rs.getObject("longitude");
+                    java.sql.Timestamp locUpdated = null;
+                    try { locUpdated = rs.getTimestamp("location_updated_at"); } catch (Exception ignored) {}
+                    if (locUpdated == null) {
+                        try { locUpdated = rs.getTimestamp("created_at"); } catch (Exception ignored) {}
+                    }
+
+                    long FRESHNESS_MS = 24L * 60 * 60 * 1000L;
+                    boolean isFresh = locUpdated != null && (System.currentTimeMillis() - locUpdated.getTime()) <= FRESHNESS_MS;
+                    String computedZone = "Location not shared";
+                    String lastSeenLocationTime = "Location not shared";
+
+                    if (latObj != null && lngObj != null && isFresh) {
+                        double dLat = ((Number) latObj).doubleValue();
+                        double dLng = ((Number) lngObj).doubleValue();
+                        long minutesAgo = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
+                        String timeStr = minutesAgo < 60 ? (minutesAgo + " mins ago") : ((minutesAgo / 60) + " hrs ago");
+                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (%s)", dLat, dLng, timeStr);
+
+                        if (refHospLat != null && refHospLng != null && refHospLat != 0.0) {
+                            double distKm = com.red404.util.DistanceCalculator.calculateDistance(refHospLat, refHospLng, dLat, dLng);
+                            if (distKm <= 5.0) computedZone = "Zone 1 (0–5 km)";
+                            else if (distKm <= 10.0) computedZone = "Zone 2 (5–10 km)";
+                            else if (distKm <= 20.0) computedZone = "Zone 3 (10–20 km)";
+                            else computedZone = "Zone 4 (20+ km)";
+                        } else {
+                            computedZone = "Zone 1 (0–5 km)";
+                        }
+                    } else if (latObj != null && lngObj != null) {
+                        double dLat = ((Number) latObj).doubleValue();
+                        double dLng = ((Number) lngObj).doubleValue();
+                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (Stale)", dLat, dLng);
+                    }
+
+                    item.put("zone", computedZone);
+                    item.put("lastSeenLocationTime", lastSeenLocationTime);
+
+                    String registeredCity = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Not provided";
+                    if (rawState != null && !rawState.isBlank() && !registeredCity.equalsIgnoreCase("Not provided")) {
+                        registeredCity += ", " + rawState;
+                    }
+                    item.put("registeredCity", registeredCity);
+
+                    item.put("latitude", latObj);
+                    item.put("longitude", lngObj);
                     item.put("allergies", rs.getString("allergies"));
                     item.put("conditions", rs.getString("conditions"));
                     item.put("medications", rs.getString("medications"));

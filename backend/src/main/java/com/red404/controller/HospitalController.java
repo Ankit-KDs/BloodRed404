@@ -691,7 +691,18 @@ public class HospitalController {
             details.put("id", donor.get("id"));
             details.put("donorId", matchedDonorId);
             details.put("name", donor.get("name"));
-            details.put("bloodType", donor.get("blood_type"));
+            String bg = (String) donor.get("bloodType");
+            if (bg == null) bg = (String) donor.get("blood_type");
+            if (bg == null) bg = (String) donor.get("bloodGroup");
+            details.put("bloodType", bg);
+            details.put("blood_type", bg);
+            details.put("bloodGroup", bg);
+            int totalVerifiedDonations = 0;
+            try {
+                List<Map<String, Object>> hist = donorDao.donationHistory(matchedDonorId);
+                totalVerifiedDonations = hist != null ? hist.size() : 0;
+            } catch (Exception ignored) {}
+            details.put("totalDonations", totalVerifiedDonations);
 
             // Calculate age from dob
             Object dobObj = donor.get("dob");
@@ -739,6 +750,8 @@ public class HospitalController {
             details.put("bloodGroupVerifiedByHospitalName", donor.get("bloodGroupVerifiedByHospitalName"));
             details.put("bloodGroupVerifiedAt", donor.get("bloodGroupVerifiedAt"));
             details.put("bloodGroupEditCount", donor.get("bloodGroupEditCount"));
+            int donorNumId = donor.get("id") != null ? ((Number) donor.get("id")).intValue() : 0;
+            details.put("bloodGroupAuditTrail", bloodGroupAuditDao.listByDonor(donorNumId));
 
             return ok("Donor details retrieved", details);
         } catch (Exception e) {
