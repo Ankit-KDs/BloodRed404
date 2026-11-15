@@ -2708,6 +2708,12 @@ body.has-mini-footer > main {
   font-variant-numeric: normal !important;
 }
 
+.stat-value, .stat-num, .stat-count, .ssc-num, .live-data, .metric-value, .hero-metric-val, .badge-num, .donations-table td {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-feature-settings: "zero" 0 !important;
+  font-variant-numeric: normal !important;
+}
+
 /* 2. Minimum 13px font size across all small text, chips, timestamps, badges, table cells, form labels */
 small,
 .badge-rule,
@@ -2733,6 +2739,19 @@ small,
 .compact-donor-badge,
 .scan-to-see-details-label,
 .capsule-status-tag,
+.unit-label,
+.donor-label,
+.hosp-info-loc,
+.stat-label,
+.rch-sub,
+.dhb-subtitle,
+.donations-table th,
+.donations-table td,
+.edit-modal-intro,
+.form-field-group label,
+.form-field-group small {
+  font-size: max(13px, 0.8125rem) !important;
+}
 .stat-meta-label,
 .footer-copy,
 .hero-stat-lbl,

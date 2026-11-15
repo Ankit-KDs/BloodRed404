@@ -68,25 +68,26 @@
         badge.className = 'status-eligibility-btn eligible-ready';
         textEl.textContent = !hasDonated ? "No donation yet. You're ready." : "You can donate. The hospital does a final check before donating.";
       } else {
+        const nextDate = elig.next_eligible_date || elig.nextEligibleDate || '';
         const daysLeft = elig.days_until_eligible || 0;
         badge.className = 'status-eligibility-btn recovering';
-        textEl.textContent = `Next donation possible (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
+        textEl.textContent = `Next donation possible on ${nextDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
       }
       return;
     }
 
     // Check user availability
     const availability = (user && user.availability) || 'Available';
-    if (availability.toLowerCase() === 'unavailable') {
+    if (availability.toLowerCase() === 'unavailable' || availability.toLowerCase() === 'paused') {
       badge.className = 'status-eligibility-btn unavailable';
-      textEl.textContent = 'Status: TEMPORARILY UNAVAILABLE • Status Inactive';
+      textEl.textContent = 'Status: Temporarily paused';
       return;
     }
 
-    // 0 verified donations -> 100% Eligible immediately
+    // 0 verified donations -> Ready
     if (!donationRecords || donationRecords.length === 0) {
       badge.className = 'status-eligibility-btn eligible-ready';
-      textEl.textContent = 'Status: ELIGIBLE TO DONATE';
+      textEl.textContent = "No donation yet. You're ready.";
       return;
     }
 
@@ -101,15 +102,16 @@
         const recoveryDays = 90;
         if (diffDays >= 0 && diffDays < recoveryDays) {
           const daysLeft = recoveryDays - diffDays;
+          const nextDate = new Date(dDate.getTime() + recoveryDays * 86400000).toISOString().split('T')[0];
           badge.className = 'status-eligibility-btn recovering';
-          textEl.textContent = `Status: RECOVERY PERIOD • ${daysLeft} Days Left`;
+          textEl.textContent = `Next donation possible on ${nextDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
           return;
         }
       }
     }
 
     badge.className = 'status-eligibility-btn eligible-ready';
-    textEl.textContent = 'Status: ELIGIBLE TO DONATE';
+    textEl.textContent = "You can donate. The hospital does a final check before donating.";
   }
 
   function renderImpactStats() {
@@ -117,6 +119,7 @@
     const livesSavedEl = document.getElementById('statLivesSaved');
     const totalVolumeEl = document.getElementById('statTotalVolume');
     const tierEl = document.getElementById('statActiveTier');
+    const tierRuleEl = document.getElementById('statTierRule');
 
     const totalDonations = donationRecords.length;
     const livesSaved = totalDonations * 3; // (Total Donations * 3)
@@ -127,10 +130,19 @@
     if (totalVolumeEl) totalVolumeEl.textContent = `${totalVolume.toLocaleString()} mL`;
 
     if (tierEl) {
-      if (totalDonations >= 10) tierEl.textContent = 'Apex Guardian';
-      else if (totalDonations >= 5) tierEl.textContent = 'Platinum Lifesaver';
-      else if (totalDonations >= 1) tierEl.textContent = 'Bronze Guardian';
-      else tierEl.textContent = 'Novice Rescuer';
+      if (totalDonations >= 10) {
+        tierEl.textContent = 'Level 4';
+        if (tierRuleEl) tierRuleEl.textContent = 'Level 4 (10+ verified donations)';
+      } else if (totalDonations >= 5) {
+        tierEl.textContent = 'Level 3';
+        if (tierRuleEl) tierRuleEl.textContent = 'Level 3 (5–9 verified donations)';
+      } else if (totalDonations >= 1) {
+        tierEl.textContent = 'Level 2';
+        if (tierRuleEl) tierRuleEl.textContent = 'Level 2 (1–4 verified donations)';
+      } else {
+        tierEl.textContent = 'Level 1';
+        if (tierRuleEl) tierRuleEl.textContent = 'Level 1 (0 verified donations)';
+      }
     }
   }
 

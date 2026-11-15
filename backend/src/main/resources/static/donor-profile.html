@@ -21,8 +21,26 @@
   <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
   <link rel="stylesheet" href="css/command-nav.css?v=20261113_v40" />
   <link rel="stylesheet" href="css/donor-profile.css?v=20261113_v40">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/location-picker.css?v=20261114_r2" />
   <!-- Critical Inline Styles for 3D Biometric Cuboid (Cache-Proof) -->
   <style>
+    /* Ensure minimum 13px font size across all elements on profile */
+    small,
+    .badge-rule,
+    .badge-status,
+    .card-meta-tag,
+    .scan-to-see-details-label,
+    .form-field-group label,
+    .form-field-group small,
+    .edit-modal-intro,
+    .compact-donor-badge,
+    .btn-edit-detail,
+    .mth-title,
+    .qr-zoom-subtitle,
+    .qr-zoom-footer-hint {
+      font-size: max(13px, 0.8125rem) !important;
+    }
     /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
     .dna-visual-col {
       display: flex !important;
@@ -2260,22 +2278,7 @@
       </section>
 
       <!-- CARD 4: DIGITAL BLOOD DONOR IDENTITY CARD -->
-      <section class="profile-card digital-id-intake-card" id="digitalIdIntakeCard">
-        <div class="card-header-row">
-          <h2 class="card-title">
-            <i class="fa-solid fa-id-card-clip" style="color: #ef4444; margin-right: 8px;"></i>
-            Digital Blood Donor Identity Card
-          </h2>
-          <span class="card-meta-tag secure-meta-tag">
-            <i class="fa-solid fa-shield-halved"></i>
-            CLINICAL EMERGENCY PASS • SECURE QR
-          </span>
-        </div>
-
-        <div class="digital-id-section-subtitle">
-          Verified Emergency Donor Pass &amp; Scannable Clinical Intake Code
-        </div>
-
+      <section class="profile-card digital-id-intake-card" id="digitalIdIntakeCard" style="background: transparent; border: none; padding: 0; box-shadow: none;">
         <!-- Centered Compact Digital Blood Donor Identity Card -->
         <div class="compact-card-outer-center">
           <div class="compact-donor-card" id="printableDonorCard">
@@ -2283,8 +2286,8 @@
             <!-- Top Row: Title Left, Edit Detail Right -->
             <div class="card-top-row">
               <div class="card-top-left-title">
-                <i class="fa-solid fa-id-card-clip"></i>
-                <span>RED404 Pass</span>
+                <i class="fa-solid fa-id-card-clip" style="color: #ef4444; margin-right: 6px;"></i>
+                <span>Digital Blood Donor ID</span>
               </div>
               <button type="button" class="btn-edit-detail" id="btnEditDetail" title="Edit Donor Clinical Information">
                 <i class="fa-solid fa-pen-to-square"></i>
@@ -2299,12 +2302,12 @@
               </div>
 
               <!-- Text label exactly below QR code -->
-              <p class="scan-to-see-details-label">
+              <p class="scan-to-see-details-label" style="font-size: 13px;">
                 <i class="fa-solid fa-magnifying-glass-plus"></i>
                 <span>Tap QR to zoom &bull; Scan for details</span>
               </p>
               <div style="margin-top: 8px; text-align: center;">
-                <button type="button" id="btnRegenerateQr" class="btn-secondary" style="padding: 4px 12px; font-size: 11.5px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); color: #e2e8f0;">
+                <button type="button" id="btnRegenerateQr" class="btn-secondary" style="padding: 6px 14px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); color: #e2e8f0;">
                   <i class="fa-solid fa-arrows-rotate"></i>
                   <span>Regenerate QR</span>
                 </button>
@@ -2454,15 +2457,14 @@
               </select>
             </div>
             <div class="form-field-group full-width"
-              style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+              style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
               <div>
-                <span style="font-size: 13px; font-weight: 600; color: #fff;">GPS Location</span>
-                <div style="font-size: 12px; color: #94a3b8;" id="editLocationCoordsNotice">Update saved coordinates
-                  using browser GPS</div>
+                <span style="font-size: 13px; font-weight: 600; color: #fff;">Saved Location &amp; Coordinates</span>
+                <div style="font-size: 13px; color: #94a3b8;" id="editLocationCoordsNotice">Set exact location on map or via GPS</div>
               </div>
               <button type="button" id="btnSyncGpsInEditForm"
-                style="padding: 6px 12px; font-size: 12px; border-radius: 6px; background: #0284c7; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-location-crosshairs"></i> Detect Location
+                style="padding: 7px 14px; font-size: 13px; border-radius: 6px; background: #0284c7; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-map-location-dot"></i> Change on Map
               </button>
             </div>
             <div class="form-field-group full-width">
@@ -2581,6 +2583,8 @@
   <script src="js/common.js?v=20261113_v40"></script>
   <script src="js/i18n.js?v=20261115_v1"></script>
   <script src="js/command-nav.js?v=20261113_v40"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/location-picker.js?v=20261114_r2"></script>
   <script src="js/qr-generator.js?v=20261113_v40"></script>
   <script src="js/donor-profile.js?v=20261113_v40"></script>
 </body>

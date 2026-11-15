@@ -1041,6 +1041,17 @@ public class DonorController {
             String code = refCode != null && !refCode.isBlank() ? refCode : (certId != null && !certId.isBlank() ? certId : "RED-" + (System.currentTimeMillis() % 100000));
             String vol = volume != null && !volume.isBlank() ? volume : "450 mL (1 Unit)";
 
+            String format = request.getParameter("format");
+            if (!"html".equalsIgnoreCase(format)) {
+                byte[] pdfBytes = com.red404.util.PdfCertificateGenerator.generateCertificate(
+                        donorName, donorId, blood, vol, dDate, code, hosp);
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_PDF);
+                headers.setContentLength(pdfBytes.length);
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"RED404-Certificate-" + code + ".pdf\"");
+                return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+            }
+
             String htmlCert = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>RED404 Clinical Rescue Certificate - " + code + "</title>"
                     + "<style>"
                     + "@page { size: landscape; margin: 0; }"

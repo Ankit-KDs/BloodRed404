@@ -994,6 +994,16 @@
       });
     }
 
+    const qrInnerContainer = document.getElementById('donorRealQrCode');
+    if (qrInnerContainer && !qrInnerContainer.dataset.bound) {
+      qrInnerContainer.dataset.bound = 'true';
+      qrInnerContainer.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openZoomModal();
+      });
+    }
+
     if (btnCloseZoom && !btnCloseZoom.dataset.bound) {
       btnCloseZoom.dataset.bound = 'true';
       btnCloseZoom.addEventListener('click', (e) => {
@@ -1269,6 +1279,42 @@
     if (btnSyncGps && !btnSyncGps.dataset.bound) {
       btnSyncGps.dataset.bound = 'true';
       btnSyncGps.addEventListener('click', () => {
+        if (typeof LocationPicker !== 'undefined') {
+          const currentAddr = document.getElementById('editDonorAddress')?.value || currentDonor.address || '';
+          LocationPicker.openModal({
+            initialLat: currentDonor.latitude || 28.3486,
+            initialLng: currentDonor.longitude || 79.5619,
+            initialAddress: currentAddr,
+            onConfirm: function(data) {
+              if (data.lat && data.lng) {
+                currentDonor.latitude = data.lat;
+                currentDonor.longitude = data.lng;
+                if (noticeEl) {
+                  noticeEl.textContent = `Coordinates: ${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}`;
+                  noticeEl.style.color = '#22c55e';
+                }
+              }
+              if (data.address) {
+                const addrInput = document.getElementById('editDonorAddress');
+                if (addrInput) addrInput.value = data.address;
+              }
+              if (data.city) {
+                const cityInput = document.getElementById('editDonorCity');
+                if (cityInput) cityInput.value = data.city;
+              }
+              if (data.state) {
+                const stateInput = document.getElementById('editDonorState');
+                if (stateInput) stateInput.value = data.state;
+              }
+              if (data.pincode) {
+                const pinInput = document.getElementById('editDonorPincode');
+                if (pinInput) pinInput.value = data.pincode;
+              }
+            }
+          });
+          return;
+        }
+
         if (!navigator.geolocation) {
           if (noticeEl) noticeEl.textContent = 'Geolocation is not supported by your browser.';
           return;
@@ -1300,7 +1346,7 @@
           },
           (err) => {
             btnSyncGps.disabled = false;
-            btnSyncGps.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Detect Location';
+            btnSyncGps.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Change on Map';
             if (noticeEl) noticeEl.textContent = 'Permission denied or location unavailable.';
           },
           { enableHighAccuracy: true, timeout: 8000 }
