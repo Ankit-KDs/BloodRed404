@@ -129,9 +129,9 @@
 
     // Auto-inject Language Toggle (EN | हिन्दी) into navbar (Part 8)
     const navRight = document.querySelector('.command-nav-right');
-    if (navRight && !document.getElementById('donorNavLangToggle')) {
+    if (navRight && !document.getElementById('donorNavLangToggle') && !navRight.querySelector('.lang-toggle-pill') && !navRight.querySelector('.nav-lang-toggle')) {
       const langDiv = document.createElement('div');
-      langDiv.className = 'nav-lang-toggle';
+      langDiv.className = 'nav-lang-toggle lang-toggle-pill';
       langDiv.id = 'donorNavLangToggle';
       langDiv.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; margin-right: 8px;';
       langDiv.innerHTML = `

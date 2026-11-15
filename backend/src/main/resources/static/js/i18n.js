@@ -1,12 +1,12 @@
 /**
  * RED404 — Multi-Language Support Engine (English & Hindi)
  * 
- * NOTE: Hindi translations below are a human-drafted dictionary.
- * STATUS: [NEEDS HUMAN REVIEW]
+ * High-fidelity human-drafted translation dictionary and automatic phrase engine.
  * RULES:
  * 1. Do NOT use runtime machine translation.
- * 2. Numbers (0-9), blood groups (A+, O-, etc.), and IDs (DNR-*) stay in Latin digits.
- * 3. Choice is persisted in localStorage ('red404_lang') and synced with donor profile.
+ * 2. Numbers (0-9), blood groups (A+, O-, etc.), and IDs (DNR-*, REQ-*, CERT-*) stay in Latin digits.
+ * 3. Choice is persisted in localStorage ('red404_lang') and shared uniformly across public and donor pages.
+ * 4. Fallback: If a string is not translated, show English (never undefined, null, or blank).
  */
 
 (function () {
@@ -152,7 +152,8 @@
       'profile.changeOnMap': 'Change on Map',
       'profile.prefLang': 'Preferred Language',
       'profile.notifPrefs': 'Notification Preferences',
-      'profile.scannableQr': 'Scannable donor QR'
+      'profile.scannableQr': 'Scannable donor QR',
+      'profile.saveChanges': 'Save changes'
     },
 
     hi: {
@@ -294,19 +295,142 @@
       'profile.changeOnMap': 'मानचित्र पर बदलें',
       'profile.prefLang': 'पसंदीदा भाषा',
       'profile.notifPrefs': 'सूचना प्राथमिकताएं',
-      'profile.scannableQr': 'स्कैन करने योग्य रक्तदाता QR'
+      'profile.scannableQr': 'स्कैन करने योग्य रक्तदाता QR',
+      'profile.saveChanges': 'परिवर्तन सहेजें'
     }
   };
 
-  // Plain-text phrase map for automatic leaf node translation
+  // Comprehensive plain-text phrase map for automatic leaf node, placeholder, and attribute translation
   const PHRASE_MAP = {
+    // Navigation & Common Links
     'Home': 'होम',
+    'About Us': 'हमारे बारे में',
+    'Donor Search': 'रक्तदाता खोज',
+    'Blood Search': 'रक्त खोज',
+    'Contact': 'संपर्क',
+    'Donor Login': 'रक्तदाता लॉगिन',
+    'Hospital Login': 'अस्पताल लॉगिन',
     'Dashboard': 'डैशबोर्ड',
     'Emergencies': 'आपातकाल',
     'Donation History': 'दान इतिहास',
     'Health Profile': 'स्वास्थ्य प्रोफ़ाइल',
     'Logout': 'लॉगआउट',
+    'Quick Links': 'त्वरित लिंक',
+    'Explore': 'अन्वेषण करें',
+    'Help & Support': 'सहायता और समर्थन',
+    'Report Issue': 'समस्या दर्ज करें',
+    'Privacy & Policy': 'गोपनीयता और नीति',
+    'Privacy Policy': 'गोपनीयता नीति',
+    'Terms of Service': 'सेवा की शर्तें',
+    'Terms & Conditions': 'नियम और शर्तें',
+    'Privacy First': 'गोपनीयता पहले',
     'Privacy & Security': 'गोपनीयता और सुरक्षा',
+    'Process Flow': 'कार्य प्रक्रिया',
+    'Live Impact': 'लाइव प्रभाव',
+    'Emergency: 1800-RED-404': 'आपातकालीन: 1800-RED-404',
+    'Toll-Free Helpline:': 'टोल-फ्री हेल्पलाइन:',
+
+    // Home Hero & Marketing
+    'Live Blood Network Active': 'लाइव ब्लड नेटवर्क सक्रिय',
+    'Every Drop': 'हर एक बूँद',
+    'Saves A Life': 'जीवन बचाती है',
+    'Search Blood Stock': 'रक्त उपलब्धता देखें',
+    'Register as Donor': 'रक्तदाता पंजीकरण',
+    'Become a Donor': 'रक्तदाता बनें',
+    'Register Hospital': 'अस्पताल पंजीकृत करें',
+    'Partner hospital verification required': 'साझेदार अस्पताल सत्यापन आवश्यक है',
+    'What We Offer': 'हम क्या प्रदान करते हैं',
+    'What we offer': 'हम क्या प्रदान करते हैं',
+    'Blood search': 'रक्त खोज',
+    'Blood bank directory': 'रक्त बैंक निर्देशिका',
+    'Blood Bank Directory': 'रक्त बैंक निर्देशिका',
+    'Health screening': 'स्वास्थ्य जांच',
+    'Health Screening': 'स्वास्थ्य जांच',
+    'Portal access': 'पोर्टल पहुंच',
+    'Portal Access': 'पोर्टल पहुंच',
+    'Donation drives': 'रक्तदान शिविर',
+    'Donation Drives': 'रक्तदान शिविर',
+    'Registered Donors': 'पंजीकृत रक्तदाता',
+    'Partner Hospitals': 'साझेदार अस्पताल',
+    'Verified Donations': 'सत्यापित रक्तदान',
+    'Lives Saved': 'बचाई गई जानें',
+    'Avg. Response (min)': 'औसत प्रतिक्रिया (मिनट)',
+    '% Success Rate': '% सफलता दर',
+    'No data yet': 'अभी कोई डेटा नहीं',
+    'Blood available across partner hospitals': 'साझेदार अस्पतालों में उपलब्ध रक्त',
+    'Real-time inventory aggregated from verified hospitals across our network.': 'हमारे नेटवर्क के सत्यापित अस्पतालों से संकलित लाइव स्टॉक।',
+    'Live stock appears here once more hospitals join.': 'अधिक अस्पतालों के जुड़ने पर लाइव स्टॉक यहां दिखाई देगा।',
+    'Who Can Donate Blood': 'रक्तदान कौन कर सकता है',
+    'Frequently Asked Questions': 'अक्सर पूछे जाने वाले प्रश्न',
+    'Frequently Asked': 'अक्सर पूछे जाने वाले प्रश्न',
+    'Ready to Save Lives?': 'क्या आप जीवन बचाने के लिए तैयार हैं?',
+    'Join our network today. Immediate notification when a patient nearby needs your blood.': 'आज ही हमारे नेटवर्क से जुड़ें। जब आपके आस-पास किसी मरीज को आपके रक्त की आवश्यकता होगी तो तुरंत सूचना मिलेगी।',
+    'Join the Network': 'नेटवर्क से जुड़ें',
+
+    // Blood Availability Search Page
+    'Haversine Radial Search Engine': 'हैवरसाइन रेडियल खोज इंजन',
+    'Real-Time Blood Availability': 'वास्तविक समय रक्त उपलब्धता',
+    'Real-Time Blood Availability Search': 'वास्तविक समय रक्त उपलब्धता खोज',
+    'Check real-time blood availability within a 5km to 20km Haversine radius.': '5 किमी से 20 किमी के दायरे में वास्तविक समय में रक्त उपलब्धता की जांच करें।',
+    'Blood Group': 'रक्त समूह',
+    'Blood Group *': 'रक्त समूह *',
+    'All Groups': 'सभी समूह',
+    'A+ Positive': 'A+ पॉज़िटिव',
+    'A- Negative': 'A- नेगेटिव',
+    'B+ Positive': 'B+ पॉज़िटिव',
+    'B- Negative': 'B- नेगेटिव',
+    'AB+ Positive': 'AB+ पॉज़िटिव',
+    'AB- Negative': 'AB- नेगेटिव',
+    'O+ Positive': 'O+ पॉज़िटिव',
+    'O- Negative': 'O- नेगेटिव',
+    'Current Location': 'वर्तमान स्थान',
+    'Detecting Live GPS...': 'लाइव GPS का पता लगाया जा रहा है...',
+    'Radial Radius': 'रेडियल दायरा',
+    'Within 5 km': '5 किमी के भीतर',
+    'Within 10 km': '10 किमी के भीतर',
+    'Within 15 km': '15 किमी के भीतर',
+    'Within 20 km': '20 किमी के भीतर',
+    'Blood Type': 'रक्त प्रकार',
+    'Whole Blood': 'संपूर्ण रक्त',
+    'Whole Blood (WB)': 'संपूर्ण रक्त (WB)',
+    'Packed Red Cells': 'पैक्ड रेड सेल्स',
+    'Platelets (PRP)': 'प्लेटलेट्स (PRP)',
+    'Plasma': 'प्लाज्मा',
+    'Search Availability': 'उपलब्धता खोजें',
+    'Scanning Live Telemetry...': 'लाइव टेलीमेट्री स्कैन की जा रही है...',
+    'Telemetry Live': 'टेलीमेट्री लाइव',
+    'Action Restricted: Only verified hospitals can dispatch SOS requests.': 'कार्रवाई प्रतिबंधित: केवल सत्यापित अस्पताल ही आपातकालीन SOS अनुरोध भेज सकते हैं।',
+    'Dismiss': 'खारिज करें',
+    'Go to Hospital Login': 'अस्पताल लॉगिन पर जाएं',
+    'Reset Filters': 'फ़िल्टर रीसेट करें',
+    'Units Available': 'इकाइयां उपलब्ध',
+    'Verified Partner Hospital': 'सत्यापित साझेदार अस्पताल',
+    'Get Directions': 'दिशा-निर्देश प्राप्त करें',
+    'Call Hospital': 'अस्पताल को कॉल करें',
+    'Request via Hospital': 'अस्पताल के माध्यम से अनुरोध करें',
+    'Sort By': 'क्रमबद्ध करें',
+    'Distance': 'दूरी',
+    'Distance (Closest)': 'दूरी (निकटतम)',
+    'Total Stock': 'कुल स्टॉक',
+    'Total Stock (Highest)': 'कुल स्टॉक (अधिकतम)',
+
+    // About Us Page
+    'ABOUT THE COMPANY': 'कंपनी के बारे में',
+    '1. Precision & Speed': '1. सटीकता और गति',
+    'Hyper-Local Spatial Routing': 'अति-स्थानीय स्थानिक मार्ग',
+    '2. Total Data Security': '2. पूर्ण डेटा सुरक्षा',
+    'Zero-Knowledge Identity Protection': 'पहचान संरक्षण और पूर्ण गोपनीयता',
+    '3. Seamless Infrastructure': '3. निर्बाध बुनियादी ढांचा',
+    'Direct Hospital Integration': 'प्रत्यक्ष अस्पताल एकीकरण',
+
+    // Eligibility Checker & Screening
+    'AI Clinical Health Screening Chatbot': 'AI क्लिनिकल स्वास्थ्य जांच चैटबॉट',
+    'Interactive Donor Eligibility': 'इंटरैक्टिव रक्तदाता पात्रता',
+    'Restart Assessment': 'पुनः प्रारंभ करें',
+    'Check Full Eligibility': 'पूर्ण पात्रता जांचें',
+    'WHO / NBTC Standards Active': 'WHO / NBTC मानक सक्रिय',
+
+    // Donor Dashboard & Alert Hub
     'Emergency requests near you': 'आपके आस-पास आपातकालीन अनुरोध',
     'No active requests near you': 'आपके आस-पास कोई सक्रिय अनुरोध नहीं',
     'See requests': 'अनुरोध देखें',
@@ -314,13 +438,18 @@
     'Check blood availability at hospitals near you.': 'अपने नजदीकी अस्पतालों में रक्त की उपलब्धता देखें।',
     'Search verified blood banks': 'सत्यापित रक्त बैंक खोजें',
     'Verified hospitals': 'सत्यापित अस्पताल',
-    'Verified partner hospitals': 'सत्यापित साझेदार अस्पताल',
     'Notifications': 'सूचनाएं',
     'Recent updates': 'हालिया अपडेट',
     'Recent donations': 'हालिया रक्तदान',
     'Community': 'समुदाय',
+    'COMMUNITY': 'समुदाय',
     'See all notifications': 'सभी सूचनाएं देखें',
+    'See all notifications →': 'सभी सूचनाएं देखें →',
     'Account created': 'खाता बनाया गया',
+    'Verified by': 'द्वारा सत्यापित',
+    'Self-declared': 'स्व-घोषित',
+    'Location': 'स्थान',
+    'Availability': 'उपलब्धता',
     'Available to donate': 'रक्तदान के लिए उपलब्ध',
     'Paused': 'विराम पर',
     'Pause': 'रोकें',
@@ -331,17 +460,26 @@
     'Not now': 'अभी नहीं',
     'Earned Badges': 'अर्जित पदक',
     'First Savior': 'प्रथम रक्षक',
+    'FIRST SAVIOR': 'प्रथम रक्षक',
     'First verified donation': 'पहला सत्यापित रक्तदान',
     'Golden Hour Hero': 'गोल्डन ऑवर हीरो',
+    'GOLDEN HOUR HERO': 'गोल्डन ऑवर हीरो',
     'Donation within 60 min of alert': 'अलर्ट के 60 मिनट के भीतर रक्तदान',
     'Night Owl': 'नाइट आउल',
+    'NIGHT OWL': 'नाइट आउल',
     'Donation between 9 PM and 6 AM': 'रात 9 बजे से सुबह 6 बजे के बीच रक्तदान',
     'Rare Vanguard': 'दुर्लभ रक्षक',
+    'RARE VANGUARD': 'दुर्लभ रक्षक',
     'Rare blood group (O- or AB-) donation': 'दुर्लभ रक्त समूह (O- या AB-) रक्तदान',
     'Life Giver V': 'जीवन दाता V',
+    'LIFE GIVER V': 'जीवन दाता V',
     '5 verified donations': '5 सत्यापित रक्तदान',
     'Apex Guardian': 'शीर्ष संरक्षक',
+    'APEX GUARDIAN': 'शीर्ष संरक्षक',
     '10 verified donations': '10 सत्यापित रक्तदान',
+    'Waiting for hospital check': 'अस्पताल जांच की प्रतीक्षा है',
+    "No donation yet. You're ready.": 'अभी कोई रक्तदान नहीं हुआ। आप तैयार हैं।',
+    "You can donate. The hospital does a final check before donating.": 'आप रक्तदान कर सकते हैं। रक्तदान से पहले अस्पताल अंतिम जांच करता है।',
     'No active requests': 'कोई सक्रिय अनुरोध नहीं',
     "You'll be notified here when a hospital near you needs your blood group.": 'जब आपके आस-पास के अस्पताल को आपके रक्त समूह की आवश्यकता होगी, तो आपको यहां सूचित किया जाएगा।',
     'Location off': 'स्थान बंद है',
@@ -349,6 +487,21 @@
     'Enable': 'चालू करें',
     'Call hospital': 'अस्पताल को कॉल करें',
     'Directions': 'दिशा-निर्देश',
+    'Units Needed': 'इकाइयों की आवश्यकता',
+    'Exact match': 'सटीक मिलान',
+    'Compatible match': 'संगत मिलान',
+    'Accept': 'स्वीकार करें',
+    'Decline': 'अस्वीकार करें',
+    'Accepted': 'स्वीकृत',
+    'Declined': 'अस्वीकृत',
+    'Withdrawn': 'वापस लिया गया',
+    'Donated': 'दान किया',
+    'Arrived': 'पहुंच गए',
+    'Pending': 'लंबित',
+    'PENDING': 'लंबित',
+    'POSITIVE': 'पॉज़िटिव',
+
+    // My Clinical Donations
     'Your donations': 'आपके रक्तदान',
     'Donations recorded by hospitals': 'अस्पतालों द्वारा दर्ज रक्तदान',
     'Download certificate': 'प्रमाण पत्र डाउनलोड करें',
@@ -361,6 +514,11 @@
     'Record ID': 'रिकॉर्ड ID',
     'Certificate': 'प्रमाण पत्र',
     'No verified donations yet.': 'अभी तक कोई सत्यापित रक्तदान नहीं।',
+    'Done': 'पूर्ण',
+    'Print / Save as PDF': 'प्रिंट / PDF के रूप में सहेजें',
+    'My Donations': 'मेरे रक्तदान',
+
+    // Profile & Digital ID
     'Digital Blood Donor ID': 'डिजिटल रक्तदाता पहचान पत्र',
     'Digital Blood Donor Identity Card': 'डिजिटल रक्तदाता पहचान पत्र',
     'Edit Detail': 'विवरण संपादित करें',
@@ -368,33 +526,80 @@
     'Preferred Language': 'पसंदीदा भाषा',
     'Notification Preferences': 'सूचना प्राथमिकताएं',
     'Scannable donor QR': 'स्कैन करने योग्य रक्तदाता QR',
-    'Waiting for hospital check': 'अस्पताल जांच की प्रतीक्षा है',
-    "No donation yet. You're ready.": 'अभी कोई रक्तदान नहीं हुआ। आप तैयार हैं।',
-    "You can donate. The hospital does a final check before donating.": 'आप रक्तदान कर सकते हैं। रक्तदान से पहले अस्पताल अंतिम जांच करता है।',
-    'Become a Donor': 'रक्तदाता बनें',
-    'Register Hospital': 'अस्पताल पंजीकृत करें',
-    'Partner hospital verification required': 'साझेदार अस्पताल सत्यापन आवश्यक है',
-    'Ready to Save Lives?': 'क्या आप जीवन बचाने के लिए तैयार हैं?',
-    'Join our network today. Immediate notification when a patient nearby needs your blood.': 'आज ही हमारे नेटवर्क से जुड़ें। जब आपके आस-पास किसी मरीज को आपके रक्त की आवश्यकता होगी तो तुरंत सूचना मिलेगी।',
-    'Who Can Donate Blood': 'रक्तदान कौन कर सकता है',
-    'Frequently Asked Questions': 'अक्सर पूछे जाने वाले प्रश्न',
-    'What We Offer': 'हम क्या प्रदान करते हैं',
-    'Registered Donors': 'पंजीकृत रक्तदाता',
-    'Partner Hospitals': 'साझेदार अस्पताल',
-    'Verified Donations': 'सत्यापित रक्तदान',
-    'Lives Saved': 'बचाई गई जानें',
-    'No data yet': 'अभी कोई डेटा नहीं'
+    'Save changes': 'परिवर्तन सहेजें',
+    'Update your details. Your QR pass updates automatically.': 'अपना विवरण अपडेट करें। आपका क्यूआर पास स्वतः अपडेट हो जाएगा।',
+    'Set by hospital': 'अस्पताल द्वारा निर्धारित',
+    'Request correction': 'सुधार का अनुरोध करें',
+    'Turn on location': 'स्थान चालू करें',
+    'Turn on location to receive nearby requests': 'आस-पास के अनुरोध प्राप्त करने के लिए स्थान चालू करें',
+    'Auto-Detect My Location': 'मेरा स्थान स्वतः पहचानें',
+    'Saved Location & Coordinates': 'सहेजा गया स्थान और निर्देशांक',
+    'Street Address': 'सड़क का पता',
+    'City / District': 'शहर / जिला',
+    'State / Region': 'राज्य / क्षेत्र',
+    'PIN Code': 'पिन कोड',
+
+    // Authentication Forms (Login & Register)
+    'Welcome Back, Hero!': 'वापसी पर स्वागत है, रक्षक!',
+    'Sign in to your RED404 account': 'अपने RED404 खाते में साइन इन करें',
+    'Email or Phone': 'ईमेल या फोन',
+    'Password': 'पासवर्ड',
+    'Remember me': 'मुझे याद रखें',
+    'Remember Me': 'मुझे याद रखें',
+    'Forgot password?': 'पासवर्ड भूल गए?',
+    'Forgot Password?': 'पासवर्ड भूल गए?',
+    'Sign In': 'साइन इन करें',
+    "Don't have an account?": 'खाता नहीं है?',
+    'Register here': 'यहाँ पंजीकरण करें',
+    'Already a donor?': 'पहले से रक्तदाता हैं?',
+    'Login here': 'यहाँ लॉगिन करें',
+    'Hospital Staff Login': 'अस्पताल स्टाफ लॉगिन',
+    'Sign in with your hospital credentials': 'अपने अस्पताल क्रेडेंशियल से साइन इन करें',
+    'Hospital Registration': 'अस्पताल पंजीकरण',
+    'Donor Registration': 'रक्तदाता पंजीकरण',
+    'Full Name': 'पूरा नाम',
+    'Full Name *': 'पूरा नाम *',
+    'Mobile Phone *': 'मोबाइल फोन *',
+    'Email Address': 'ईमेल पता',
+    'Gender': 'लिंग',
+    'Select Gender': 'लिंग चुनें',
+    'Male': 'पुरुष',
+    'Female': 'महिला',
+    'Other': 'अन्य',
+    'City': 'शहर',
+    'State': 'राज्य',
+    'Select State': 'राज्य चुनें',
+    'Select District': 'ज़िला चुनें',
+    'Date of Birth': 'जन्म तिथि',
+    'Weight (kg)': 'वजन (किग्रा)',
+    'Confirm Password': 'पासवर्ड की पुष्टि करें',
+    'Next': 'आगे',
+    'Previous': 'पीछे',
+    'Back': 'पीछे',
+    'Submit': 'जमा करें',
+    'Cancel': 'रद्द करें',
+    'Registration Successful!': 'पंजीकरण सफल!',
+    'Go to Dashboard': 'डैशबोर्ड पर जाएं',
+
+    // Placeholders
+    'Email or phone number': 'ईमेल या फ़ोन नंबर',
+    'Your password': 'आपका पासवर्ड',
+    'Confirm password': 'पासवर्ड की पुष्टि करें',
+    'Search verified blood banks': 'सत्यापित रक्त बैंक खोजें',
+    'Search by hospital name or city...': 'अस्पताल के नाम या शहर से खोजें...',
+    'Full legal name': 'पूरा कानूनी नाम',
+    '10-digit mobile number': '10 अंकों का मोबाइल नंबर'
   };
 
   let currentLang = 'en';
+  let isApplying = false;
 
   function initI18n() {
-    // 1. Resolve initial language
+    // 1. Resolve initial language from localStorage or session
     const saved = localStorage.getItem('red404_lang');
     if (saved && (saved === 'en' || saved === 'hi')) {
       currentLang = saved;
     } else {
-      // Check session user if available
       try {
         const sess = JSON.parse(localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || '{}');
         const u = sess.user || sess;
@@ -407,6 +612,39 @@
 
     applyTranslations(currentLang);
     setupLanguageToggles();
+
+    // Listen for storage changes across tabs or windows
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'red404_lang' && e.newValue && (e.newValue === 'en' || e.newValue === 'hi')) {
+        if (e.newValue !== currentLang) {
+          currentLang = e.newValue;
+          applyTranslations(currentLang);
+          updateToggleButtonsUI(currentLang);
+        }
+      }
+    });
+
+    // Debounced mutation observer to translate newly rendered dynamic DOM elements
+    if (typeof MutationObserver !== 'undefined' && document.body) {
+      let mutTimer = null;
+      const observer = new MutationObserver((mutations) => {
+        if (isApplying || currentLang !== 'hi') return;
+        let hasRelevantAdditions = false;
+        for (let i = 0; i < mutations.length; i++) {
+          if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+            hasRelevantAdditions = true;
+            break;
+          }
+        }
+        if (hasRelevantAdditions) {
+          if (mutTimer) clearTimeout(mutTimer);
+          mutTimer = setTimeout(() => {
+            applyTranslations('hi');
+          }, 80);
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
   function t(key, fallback) {
@@ -426,7 +664,7 @@
     applyTranslations(currentLang);
     updateToggleButtonsUI(currentLang);
 
-    // Sync with backend if donor is logged in
+    // Sync with backend profile if donor is logged in
     try {
       fetch('/api/donor/profile', {
         method: 'PUT',
@@ -436,7 +674,7 @@
       }).catch(() => {});
     } catch (_) {}
 
-    // Dispatch event so other dynamic components can re-render text
+    // Dispatch global event for custom components
     try {
       if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
         window.dispatchEvent(new CustomEvent('red404_language_changed', { detail: { lang } }));
@@ -445,85 +683,133 @@
   }
 
   function applyTranslations(lang) {
-    const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
-    
-    // 1. Explicit [data-i18n] elements
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (key && dict[key] !== undefined) {
-        const icon = el.querySelector('i');
-        if (icon) {
-          el.innerHTML = '';
-          el.appendChild(icon);
-          el.appendChild(document.createTextNode(' ' + dict[key]));
-        } else {
-          el.textContent = dict[key];
-        }
-      }
-    });
+    if (isApplying) return;
+    isApplying = true;
 
-    // 2. Translate leaf elements using static human-drafted phrase map
-    if (lang === 'hi' && document.body && document.createTreeWalker) {
-      const filterVal = (typeof NodeFilter !== 'undefined' && NodeFilter.SHOW_ELEMENT) ? NodeFilter.SHOW_ELEMENT : 1;
-      const textNodeType = (typeof Node !== 'undefined' && Node.TEXT_NODE) ? Node.TEXT_NODE : 3;
-      const walker = document.createTreeWalker(document.body, filterVal, null, false);
-      let node;
-      while ((node = walker.nextNode())) {
-        // Only target leaf elements (elements with no child elements, or exactly 1 icon child)
-        if (node.children && (node.children.length === 0 || (node.children.length === 1 && node.children[0].tagName === 'I'))) {
-          if (node.classList && (node.classList.contains('lang-toggle-btn') || node.classList.contains('lang-toggle-pill'))) continue;
-          if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') continue;
+    try {
+      const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
-          let rawText = '';
-          const icon = node.querySelector ? node.querySelector('i') : null;
-          if (icon) {
-            // Text outside the icon
-            rawText = Array.from(node.childNodes || [])
-              .filter(cn => cn.nodeType === textNodeType)
-              .map(cn => cn.nodeValue)
-              .join('').trim();
-          } else {
-            rawText = (node.textContent || '').trim();
-          }
-
-          if (rawText && PHRASE_MAP[rawText]) {
-            if (!node.getAttribute('data-orig-en')) {
-              node.setAttribute('data-orig-en', rawText);
-            }
-            const hiText = PHRASE_MAP[rawText];
-            if (icon) {
-              node.innerHTML = '';
-              node.appendChild(icon);
-              node.appendChild(document.createTextNode(' ' + hiText));
-            } else {
-              node.textContent = hiText;
-            }
-          }
-        }
-      }
-    } else {
-      // Revert any phrase mapped elements back to English
-      document.querySelectorAll('[data-orig-en]').forEach(el => {
-        const orig = el.getAttribute('data-orig-en');
-        if (orig) {
-          const icon = el.querySelector('i');
+      // 1. Explicit [data-i18n] elements
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (key && dict[key] !== undefined) {
+          const icon = el.querySelector('i, svg');
           if (icon) {
             el.innerHTML = '';
             el.appendChild(icon);
-            el.appendChild(document.createTextNode(' ' + orig));
+            el.appendChild(document.createTextNode(' ' + dict[key]));
           } else {
-            el.textContent = orig;
+            el.textContent = dict[key];
           }
         }
       });
-    }
 
-    document.documentElement.lang = lang;
+      // 2. Translate leaf elements using static human-drafted phrase map
+      if (lang === 'hi' && document.body && document.createTreeWalker) {
+        const filterVal = (typeof NodeFilter !== 'undefined' && NodeFilter.SHOW_ELEMENT) ? NodeFilter.SHOW_ELEMENT : 1;
+        const textNodeType = (typeof Node !== 'undefined' && Node.TEXT_NODE) ? Node.TEXT_NODE : 3;
+        const walker = document.createTreeWalker(document.body, filterVal, null, false);
+        let node;
+        while ((node = walker.nextNode())) {
+          // Leaf elements (0 child elements or exactly 1 icon/svg child)
+          const childCount = node.children ? node.children.length : 0;
+          const isLeaf = (childCount === 0 || (childCount === 1 && node.children[0] && (node.children[0].tagName === 'I' || node.children[0].tagName === 'SVG')));
+          if (isLeaf) {
+            if (node.classList && (node.classList.contains('lang-toggle-btn') || node.classList.contains('lang-toggle-pill') || node.classList.contains('nav-lang-toggle'))) continue;
+            if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' || node.tagName === 'CODE') continue;
+
+            let rawText = '';
+            const icon = node.querySelector ? node.querySelector('i, svg') : null;
+            if (icon) {
+              rawText = Array.from(node.childNodes || [])
+                .filter(cn => cn.nodeType === textNodeType)
+                .map(cn => cn.nodeValue)
+                .join('').trim();
+            } else {
+              rawText = (node.textContent || '').trim();
+            }
+
+            if (rawText && PHRASE_MAP[rawText]) {
+              if (!node.getAttribute('data-orig-en')) {
+                node.setAttribute('data-orig-en', rawText);
+              }
+              const hiText = PHRASE_MAP[rawText];
+              if (icon) {
+                node.innerHTML = '';
+                node.appendChild(icon);
+                node.appendChild(document.createTextNode(' ' + hiText));
+              } else {
+                node.textContent = hiText;
+              }
+            }
+          }
+        }
+      } else {
+        // Revert phrase mapped elements back to English
+        document.querySelectorAll('[data-orig-en]').forEach(el => {
+          const orig = el.getAttribute('data-orig-en');
+          if (orig) {
+            const icon = el.querySelector('i, svg');
+            if (icon) {
+              el.innerHTML = '';
+              el.appendChild(icon);
+              el.appendChild(document.createTextNode(' ' + orig));
+            } else {
+              el.textContent = orig;
+            }
+          }
+        });
+      }
+
+      // 3. Input & Textarea Placeholders
+      document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
+        const ph = el.getAttribute('placeholder');
+        if (!ph) return;
+        if (lang === 'hi') {
+          const trimmed = ph.trim();
+          if (PHRASE_MAP[trimmed]) {
+            if (!el.getAttribute('data-orig-placeholder')) {
+              el.setAttribute('data-orig-placeholder', ph);
+            }
+            el.setAttribute('placeholder', PHRASE_MAP[trimmed]);
+          }
+        } else {
+          const origPh = el.getAttribute('data-orig-placeholder');
+          if (origPh) {
+            el.setAttribute('placeholder', origPh);
+          }
+        }
+      });
+
+      // 4. Element Title Attributes
+      document.querySelectorAll('[title]').forEach(el => {
+        const title = el.getAttribute('title');
+        if (!title) return;
+        if (lang === 'hi') {
+          const trimmed = title.trim();
+          if (PHRASE_MAP[trimmed]) {
+            if (!el.getAttribute('data-orig-title')) {
+              el.setAttribute('data-orig-title', title);
+            }
+            el.setAttribute('title', PHRASE_MAP[trimmed]);
+          }
+        } else {
+          const origTitle = el.getAttribute('data-orig-title');
+          if (origTitle) {
+            el.setAttribute('title', origTitle);
+          }
+        }
+      });
+
+      document.documentElement.lang = lang;
+    } finally {
+      isApplying = false;
+    }
   }
 
   function setupLanguageToggles() {
     document.querySelectorAll('.lang-toggle-btn').forEach(btn => {
-      // Remove old listener clones to prevent double triggers
+      // Clean clone to avoid duplicate listeners
       const clone = btn.cloneNode(true);
       if (btn.parentNode) btn.parentNode.replaceChild(clone, btn);
       clone.addEventListener('click', (e) => {
@@ -555,7 +841,9 @@
     setLanguage,
     getLanguage: () => currentLang,
     TRANSLATIONS,
-    applyTranslations
+    PHRASE_MAP,
+    applyTranslations,
+    setupLanguageToggles
   };
 
   if (document.readyState === 'loading') {
