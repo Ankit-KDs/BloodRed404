@@ -1685,7 +1685,7 @@
                   </div>
 
                   <!-- Layer B: Dynamic Liquid Blood Column (Anchored to bottom, height: ${percentage}%) -->
-                  <div class="dna-fluid-container" id="dnaFluidContainer" style="height: 100%;">
+                  <div class="dna-fluid-container" id="dnaFluidContainer" style="height: 0%;">
                     <!-- Flowing Wave Meniscus at Fluid Surface -->
                     <div class="dna-wave-meniscus">
                       <div class="dna-wave-track">
@@ -2363,7 +2363,7 @@
       <div class="modal-telemetry-header">
         <div class="mth-title">
           <i class="fa-solid fa-user-pen" style="color: #ef4444; margin-right: 8px;"></i>
-          <span>Edit Donor Clinical Profile</span>
+          <span>Edit Donor Profile</span>
         </div>
         <button type="button" class="modal-close-btn" id="btnCloseEditModal" aria-label="Close Modal">&times;</button>
       </div>
@@ -2372,8 +2372,7 @@
         autocapitalize="off" spellcheck="false" novalidate>
         <div class="modal-telemetry-body">
           <p class="edit-modal-intro">
-            Update your official donor telemetry details below. Saving immediately synchronizes your records with the
-            RED404 MySQL database and updates your digital QR emergency pass.
+            Update your contact and demographic details below. Clinical vitals and donation recovery intervals are verified and set by hospital staff during check-in.
           </p>
 
           <!-- Section 1: Core Identity -->
@@ -2419,8 +2418,9 @@
               <input type="date" id="editDonorDob" name="dob" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorWeight">Weight (kg)</label>
-              <input type="number" id="editDonorWeight" name="weight" step="0.5" placeholder="Weight in kg" />
+              <label for="editDonorWeight">Weight (kg) <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <input type="text" id="editDonorWeight" name="weight" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
           </div>
 
@@ -2504,34 +2504,35 @@
           </div>
           <div class="form-grid-2col">
             <div class="form-field-group">
-              <label for="editDonorPulse">Pulse / Heart Rate (bpm)</label>
-              <input type="number" id="editDonorPulse" name="pulse" placeholder="Resting pulse rate (bpm)" />
+              <label for="editDonorPulse">Pulse / Heart Rate <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <input type="text" id="editDonorPulse" name="pulse" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorHb">Hemoglobin (g/dL)</label>
-              <input type="number" id="editDonorHb" name="hemoglobin" step="0.1"
-                placeholder="Hemoglobin level (g/dL)" />
+              <label for="editDonorHb">Hemoglobin <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <input type="text" id="editDonorHb" name="hemoglobin" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorBp">Blood Pressure (mmHg)</label>
-              <input type="text" id="editDonorBp" name="bloodPressure" placeholder="Blood pressure (e.g. 120/80)" />
+              <label for="editDonorBp">Blood Pressure <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <input type="text" id="editDonorBp" name="bloodPressure" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorTemp">Body Temperature (&deg;F)</label>
-              <input type="number" id="editDonorTemp" name="bodyTemp" step="0.1" placeholder="Body temperature (°F)" />
+              <label for="editDonorTemp">Body Temperature <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <input type="text" id="editDonorTemp" name="bodyTemp" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorLastDonation">Last Donation Date <small
-                  style="color: #94a3b8; font-weight: normal; font-size: 0.74rem;">(Set automatically upon hospital
-                  check-in)</small></label>
-              <input type="date" id="editDonorLastDonation" name="lastDonationDate" disabled
-                style="opacity: 0.6; cursor: not-allowed;"
+              <label for="editDonorLastDonation">Last Donation Date <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <input type="text" id="editDonorLastDonation" name="lastDonationDate" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);"
                 title="Last donation date is set by verified hospital check-in only." />
             </div>
             <div class="form-field-group">
-              <label for="editDonorFacility">Verified Facility</label>
-              <input type="text" id="editDonorFacility" name="verifiedFacility"
-                placeholder="Verified hospital or clinic name" />
+              <label for="editDonorFacility">Verified Facility <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <input type="text" id="editDonorFacility" name="verifiedFacility" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
               <label for="editDonorAllergies">Known Allergies</label>
@@ -2558,9 +2559,9 @@
 
         <div class="modal-telemetry-footer">
           <button type="button" class="btn-cancel" id="btnCancelEditModal">Cancel</button>
-          <button type="submit" class="btn-save-telemetry" id="btnSaveDonorProfile">
-            <i class="fa-solid fa-floppy-disk"></i>
-            <span>Save &amp; Update Database</span>
+          <button type="submit" class="btn-save-telemetry" id="btnSaveDonorProfile" style="display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-check"></i>
+            <span>Save changes</span>
           </button>
         </div>
       </form>

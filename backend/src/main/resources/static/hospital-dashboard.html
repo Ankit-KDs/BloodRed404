@@ -48,7 +48,6 @@
         </button>
         <button type="button" class="hosp-tab-link nav-tab-btn" data-tab="tab-dispatch">
           <span>Find Donor</span>
-          <span class="tab-badge" id="badgeActiveSosCount" style="display: none;">0</span>
         </button>
         <button type="button" class="hosp-tab-link nav-tab-btn" data-tab="tab-inventory">
           <span>Inventory</span>
@@ -435,6 +434,21 @@
               </div>
             </div>
 
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-12); margin-bottom: var(--sp-16);">
+              <div>
+                <label class="form-label" for="dispUrgency">Urgency</label>
+                <select id="dispUrgency" class="form-select">
+                  <option value="Normal">Normal</option>
+                  <option value="Urgent" selected>Urgent</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="dispNeededWithin">Needed within (mins)</label>
+                <input type="number" id="dispNeededWithin" class="form-input" placeholder="e.g. 45 (optional)" min="5" max="720" />
+              </div>
+            </div>
+
             <div style="margin-bottom: var(--sp-24);">
               <label class="form-label" for="dispNotes">Notes</label>
               <input type="text" id="dispNotes" class="form-input" placeholder="e.g. Please report to Blood Bank Gate 2" />
@@ -701,7 +715,7 @@
 
         <!-- Table Wrap (Group 4.3) -->
         <div class="table-wrap" style="overflow-x: auto;">
-          <table class="hosp-table" id="reqHistoryTable" style="width: 100%; min-width: 1050px;">
+          <table class="hosp-table" id="reqHistoryTable" style="width: 100%;">
             <thead>
               <tr>
                 <th>Request ID</th>
@@ -710,13 +724,8 @@
                 <th>Blood Group</th>
                 <th>Units</th>
                 <th>Urgency</th>
-                <th>Radius</th>
-                <th>Notified</th>
-                <th>Accepted</th>
-                <th>Arrived</th>
                 <th>Status</th>
-                <th>First Response</th>
-                <th>Created By</th>
+                <th>Accepted / Notified</th>
               </tr>
             </thead>
             <tbody id="recordsTableBody">
@@ -1204,6 +1213,8 @@
         <div><span style="color: var(--hosp-text-muted);">Units:</span> <strong id="drawerUnits" style="color:#fff;">-</strong></div>
         <div><span style="color: var(--hosp-text-muted);">Urgency:</span> <strong id="drawerUrgency" style="color:#fff;">-</strong></div>
         <div><span style="color: var(--hosp-text-muted);">Radius:</span> <strong id="drawerRadius" style="color:#fff;">-</strong></div>
+        <div><span style="color: var(--hosp-text-muted);">First Response:</span> <strong id="drawerFirstResponse" style="color:#fff;">-</strong></div>
+        <div><span style="color: var(--hosp-text-muted);">Donors Arrived:</span> <strong id="drawerArrived" style="color:#fff;">-</strong></div>
         <div><span style="color: var(--hosp-text-muted);">Created By:</span> <strong id="drawerStaff" style="color:#fff;">-</strong></div>
         <div><span style="color: var(--hosp-text-muted);">Sent:</span> <strong id="drawerSentTime" style="color:#fff;">-</strong></div>
       </div>
@@ -1305,6 +1316,25 @@
       <div style="display: flex; gap: 8px; justify-content: flex-end;">
         <button type="button" class="btn-secondary" id="btnDuplicateModalClose">Cancel</button>
         <button type="button" class="btn-primary-action" id="btnConfirmDuplicateRequest">Continue to Dispatch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Donation Approval Modal (Part 2, Requirement 4) -->
+  <div id="modalConfirmDonationApproval" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 22px; max-width: 440px; width: 90%;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(229, 56, 59, 0.15); display: flex; align-items: center; justify-content: center; color: var(--hosp-red, #e5383b);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3 style="margin: 0; color: #fff; font-size: 16px;">Confirm Donation Approval</h3>
+      </div>
+      <p id="confirmDonationModalText" style="font-size: 13.5px; color: #cbd5e1; line-height: 1.5; margin-bottom: 18px;">
+        Record blood donation?
+      </p>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" id="btnCancelDonationModal">Cancel</button>
+        <button type="button" class="btn-primary-action" id="btnConfirmDonationAction" style="background: var(--hosp-red, #e5383b); border-color: var(--hosp-red, #e5383b);">Confirm &amp; Record</button>
       </div>
     </div>
   </div>

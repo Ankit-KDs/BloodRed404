@@ -318,7 +318,7 @@
       const endpoint = `/api/donor/alerts?lat=${lat}&lng=${lng}&bloodGroup=${encodeURIComponent(donorBloodGroup)}`;
 
       let data = [];
-      const res = await fetch(endpoint);
+      const res = await fetch(endpoint, { credentials: 'include' });
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
@@ -328,7 +328,7 @@
         }
       } else {
         // Fallback to /api/requests
-        const fallbackRes = await fetch('/api/requests');
+        const fallbackRes = await fetch('/api/requests', { credentials: 'include' });
         if (fallbackRes.ok) {
           const fbJson = await fallbackRes.json();
           if (fbJson.success && Array.isArray(fbJson.data)) {
@@ -349,8 +349,8 @@
           hospitalId: req.hospitalId || req.hospital_id,
           hospitalName: req.hospitalName || req.hospital_name || 'Emergency Medical Center',
           bloodType: req.bloodType || req.blood_type || donorBloodGroup,
-          urgencyLevel: req.urgencyLevel || req.urgency || 'CRITICAL',
-          neededWithinMinutes: req.neededWithinMinutes || (req.urgencyLevel === 'CRITICAL' ? 20 : 45),
+          urgencyLevel: req.urgencyLevel || req.urgency_level || req.urgency || null,
+          neededWithinMinutes: req.neededWithinMinutes != null ? req.neededWithinMinutes : (req.neededWithinMins != null ? req.neededWithinMins : null),
           distanceKm: distanceKm.toFixed(1),
           etaMinutes: req.etaMinutes || Math.max(Math.round(distanceKm * 2.5), 6),
           zoneTag: zone.tag,
@@ -360,7 +360,7 @@
           units: req.unitsRequested || req.units || 1,
           patientName: req.patientName || 'Emergency Patient',
           notes: req.notes || req.hosp_notes || '',
-          status: req.status || 'Active',
+          status: req.status || 'New',
           reqLat,
           reqLng
         };
@@ -415,11 +415,9 @@
     activeRequests.forEach((req, idx) => {
       const hospitalName = req.hospitalName || 'Hospital';
       const distance = req.distanceKm != null ? req.distanceKm : '0';
-      const urgencyLabel = (req.urgencyLevel || 'CRITICAL').toUpperCase();
-      const neededMinutes = req.neededWithinMinutes || 30;
       const rawStatus = (req.status || 'New').toUpperCase();
 
-      // Normalize status to one of: New, Accepted, Declined, Expired, Fulfilled
+      // Normalize status to one of: New, Accepted, Declined, Withdrawn, Expired, Fulfilled
       let displayStatus = 'New';
       let statusBadgeStyle = 'background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);';
 
@@ -428,6 +426,9 @@
         statusBadgeStyle = 'background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);';
       } else if (rawStatus === 'DECLINED') {
         displayStatus = 'Declined';
+        statusBadgeStyle = 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);';
+      } else if (rawStatus === 'WITHDRAWN') {
+        displayStatus = 'Withdrawn';
         statusBadgeStyle = 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);';
       } else if (rawStatus === 'EXPIRED') {
         displayStatus = 'Expired';
@@ -449,10 +450,16 @@
               <i class="fas fa-phone"></i>
               <span>Call hospital (${escapeHtml(req.phone || '+91 108')})</span>
             </a>
+            <button type="button" class="btn-sos-withdraw" onclick="window.withdrawAlert(${req.id})" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:9px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:13px; cursor:pointer;">
+              <i class="fas fa-undo"></i>
+              <span>Withdraw</span>
+            </button>
           </div>
         `;
       } else if (displayStatus === 'Declined') {
         actionsHtml = `<div style="font-size:13px; color:#94a3b8; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px; margin-top:12px;"><i class="fas fa-times-circle" style="margin-right:6px;"></i> You declined this request.</div>`;
+      } else if (displayStatus === 'Withdrawn') {
+        actionsHtml = `<div style="font-size:13px; color:#94a3b8; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px; margin-top:12px;"><i class="fas fa-undo" style="margin-right:6px;"></i> You withdrew from this request. The hospital has been notified.</div>`;
       } else if (displayStatus === 'Expired') {
         actionsHtml = `<div style="font-size:13px; color:#f59e0b; padding:10px; background:rgba(245,158,11,0.08); border-radius:8px; margin-top:12px;"><i class="fas fa-clock" style="margin-right:6px;"></i> This emergency request has expired.</div>`;
       } else if (displayStatus === 'Fulfilled') {
@@ -477,6 +484,16 @@
       }
 
       const bloodLabel = (req.bloodType || '').includes('-') ? 'NEGATIVE NEEDED' : 'POSITIVE NEEDED';
+
+      const metaParts = [];
+      if (req.urgencyLevel) {
+        metaParts.push(`<b>${escapeHtml(req.urgencyLevel.toUpperCase())} SOS</b>`);
+      }
+      metaParts.push(`Units: ${req.units || 1}`);
+      if (req.neededWithinMinutes) {
+        metaParts.push(`Needed within ${req.neededWithinMinutes} mins`);
+      }
+      metaParts.push(`Status: <span style="font-weight:700; color:#fff;">${displayStatus}</span>`);
 
       html += `
         <div class="emergency-sos-card" id="req-card-${req.id}" style="margin-bottom:16px;">
@@ -511,7 +528,7 @@
           </div>
 
           <div class="sos-urgency-meta" style="margin-top:10px; font-size:0.84rem; color:#94a3b8;">
-            <b>${escapeHtml(urgencyLabel)} SOS</b> • Units: ${req.units || 1} • Needed within ${neededMinutes} mins • Status: <span style="font-weight:700; color:#fff;">${displayStatus}</span>
+            ${metaParts.join(' • ')}
             ${req.notes ? `<div style="font-size:0.78rem; color:#cbd5e1; margin-top:4px;">Note: ${escapeHtml(req.notes)}</div>` : ''}
           </div>
 
@@ -547,7 +564,14 @@
       } else {
         const nextDate = e.next_eligible_date || e.nextEligibleDate || '';
         const daysLeft = e.days_until_eligible || e.daysUntilEligible || 0;
-        eligText = `Next donation possible on ${nextDate} (${daysLeft} days left)`;
+        let formattedNext = nextDate;
+        try {
+          const nd = new Date(nextDate);
+          if (!isNaN(nd.getTime())) {
+            formattedNext = nd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
+        } catch (_) {}
+        eligText = `Next eligible on ${formattedNext} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
       }
     }
 
@@ -794,13 +818,30 @@
     }
 
     try {
-      await fetch(`/api/donor/blood-requests/${requestId}/accept`, { method: 'POST' });
+      await fetch(`/api/donor/blood-requests/${requestId}/accept`, { method: 'POST', credentials: 'include' });
     } catch (_) { }
     try {
-      await fetch(`/api/requests/${requestId}/accept`, { method: 'POST' });
+      await fetch(`/api/requests/${requestId}/accept`, { method: 'POST', credentials: 'include' });
     } catch (_) { }
 
     showToast('Alert accepted! Hospital dispatch and rescue team notified.', 'success');
+    renderEmergencyFeed();
+    updateRadarVisualization();
+  };
+
+  window.withdrawAlert = async function (requestId) {
+    const selected = activeRequests.find(r => String(r.id) === String(requestId));
+    if (selected) {
+      selected.status = 'Withdrawn';
+    }
+    try {
+      await fetch(`/api/donor/blood-requests/${requestId}/withdraw`, { method: 'POST', credentials: 'include' });
+    } catch (_) { }
+    try {
+      await fetch(`/api/requests/${requestId}/withdraw`, { method: 'POST', credentials: 'include' });
+    } catch (_) { }
+
+    showToast('You withdrew from this request. The hospital has been notified.', 'info');
     renderEmergencyFeed();
     updateRadarVisualization();
   };
@@ -811,10 +852,10 @@
       selected.status = 'Declined';
     }
     try {
-      await fetch(`/api/donor/blood-requests/${requestId}/decline`, { method: 'POST' });
+      await fetch(`/api/donor/blood-requests/${requestId}/decline`, { method: 'POST', credentials: 'include' });
     } catch (_) { }
     try {
-      await fetch(`/api/requests/${requestId}/decline`, { method: 'POST' });
+      await fetch(`/api/requests/${requestId}/decline`, { method: 'POST', credentials: 'include' });
     } catch (_) { }
 
     showToast('Alert dismissed.', 'info');

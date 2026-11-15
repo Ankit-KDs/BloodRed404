@@ -584,6 +584,7 @@ a:hover {
   line-height: 1.4;
 }
 
+.btn-primary,
 .btn-primary-action {
   background: var(--hosp-blue);
   color: #ffffff;
@@ -595,21 +596,41 @@ a:hover {
   font-weight: 600;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   cursor: pointer;
   white-space: nowrap;
-  min-height: 44px;
+  min-height: 42px;
+  box-sizing: border-box;
   transition: background-color 0.15s ease;
 }
 
+.btn-primary:hover:not(:disabled),
 .btn-primary-action:hover:not(:disabled) {
   background: var(--hosp-blue-hover);
 }
 
+.btn-primary:disabled,
 .btn-primary-action:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   filter: grayscale(0.5);
+}
+
+#btnRecordDonation {
+  background: var(--hosp-red, #e5383b);
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+#btnRecordDonation:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+#btnRecordDonation:disabled {
+  background: var(--hosp-red, #e5383b);
+  opacity: 0.45;
 }
 
 /* Dominant Split: Active Requests (Wider) + Send SOS */
@@ -1462,6 +1483,27 @@ a:hover {
   border: 1px solid var(--hosp-border);
   border-radius: var(--hosp-radius-card);
   background: var(--hosp-surface);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.25) rgba(15, 23, 42, 0.6);
+}
+
+.table-wrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-wrap::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 4px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.25);
+  border-radius: 4px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.45);
 }
 
 .hosp-table {

@@ -3,6 +3,7 @@ package com.red404.controller;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,6 +81,17 @@ public class DonorController {
                 }
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse(false, "Donor profile not found or account deleted."));
+            }
+            if (donorProfile.get("id") instanceof Number num) {
+                int dId = num.intValue();
+                String qt = (String) donorProfile.get("qrToken");
+                if (qt == null || qt.isBlank()) {
+                    try {
+                        String newQt = donorDao.generateOrGetQrToken(dId);
+                        donorProfile.put("qrToken", newQt);
+                        donorProfile.put("qr_token", newQt);
+                    } catch (Exception ignored) {}
+                }
             }
             DonorEligibilityService.attachEligibility(donorProfile);
             return ok("Profile loaded", donorProfile);
@@ -414,13 +426,10 @@ public class DonorController {
                 req.put("etaMinutes", Math.max(eta, 5));
                 req.put("zone", zone);
 
-                String urgency = (String) req.getOrDefault("urgencyLevel", "HIGH");
-                int neededWithin = 45;
-                if ("CRITICAL".equalsIgnoreCase(urgency)) neededWithin = 20;
-                else if ("HIGH".equalsIgnoreCase(urgency)) neededWithin = 35;
-                else if ("URGENT".equalsIgnoreCase(urgency)) neededWithin = 45;
-                else neededWithin = 90;
-                req.put("neededWithinMinutes", neededWithin);
+                String currentStatus = (String) req.get("status");
+                if ("Active".equalsIgnoreCase(currentStatus) || "Open".equalsIgnoreCase(currentStatus) || "Pending".equalsIgnoreCase(currentStatus)) {
+                    req.put("status", "New");
+                }
 
                 // Filter by blood compatibility if bloodGroup specified
                 String reqBlood = (String) req.get("bloodType");
@@ -712,6 +721,9 @@ public class DonorController {
     public ResponseEntity<ApiResponse> login(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             String identifier = JsonUtil.text(body, "identifier").trim();
+            if (identifier.isEmpty()) {
+                identifier = JsonUtil.text(body, "email").trim();
+            }
             String password = JsonUtil.text(body, "password").trim();
             Map<String, Object> donor = donorDao.findByLogin(identifier, password);
             if (donor == null) {
@@ -788,6 +800,11 @@ public class DonorController {
     @PostMapping("/blood-requests/{requestId}/decline")
     public ResponseEntity<ApiResponse> declineRequest(@PathVariable int requestId, HttpServletRequest request) {
         return handleRequestAction(requestId, "Declined", request);
+    }
+
+    @PostMapping("/blood-requests/{requestId}/withdraw")
+    public ResponseEntity<ApiResponse> withdrawRequest(@PathVariable int requestId, HttpServletRequest request) {
+        return handleRequestAction(requestId, "Withdrawn", request);
     }
 
     @PostMapping({"/donations/record", "/record-donation"})
@@ -1005,40 +1022,9 @@ public class DonorController {
                 fields.put("qr_token", tokenVal);
             }
 
-            if (body.has("weight")) {
-                Double weight = JsonUtil.asDouble(body, "weight");
-                fields.put("weight", weight);
-            }
-
-            if (body.has("pulse")) {
-                Integer pulseVal = JsonUtil.asInt(body, "pulse", 0);
-                fields.put("pulse", (pulseVal != null && pulseVal > 0) ? pulseVal : null);
-            }
-
-            if (body.has("hemoglobin")) {
-                Double hbVal = JsonUtil.asDouble(body, "hemoglobin");
-                fields.put("hemoglobin", hbVal);
-            }
-
-            if (body.has("bloodPressure") || body.has("blood_pressure")) {
-                String bpVal = JsonUtil.textOrNull(body, "bloodPressure") != null ? JsonUtil.text(body, "bloodPressure") : JsonUtil.textOrNull(body, "blood_pressure");
-                fields.put("blood_pressure", (bpVal != null && !bpVal.isBlank()) ? bpVal.trim() : null);
-            }
-
-            if (body.has("bodyTemp") || body.has("body_temp")) {
-                Double tempVal = JsonUtil.asDouble(body, "bodyTemp") != null ? JsonUtil.asDouble(body, "bodyTemp") : JsonUtil.asDouble(body, "body_temp");
-                fields.put("body_temp", tempVal);
-            }
-
-            if (body.has("donorType") || body.has("donor_type")) {
-                String dType = JsonUtil.textOrNull(body, "donorType") != null ? JsonUtil.text(body, "donorType") : JsonUtil.textOrNull(body, "donor_type");
-                fields.put("donor_type", (dType != null && !dType.isBlank()) ? dType.trim() : null);
-            }
-
-            if (body.has("verifiedFacility") || body.has("verified_facility")) {
-                String facility = JsonUtil.textOrNull(body, "verifiedFacility") != null ? JsonUtil.text(body, "verifiedFacility") : JsonUtil.textOrNull(body, "verified_facility");
-                fields.put("verified_facility", (facility != null && !facility.isBlank()) ? facility.trim() : null);
-            }
+            // Clinical vitals (weight, pulse, hemoglobin, BP, temp), verified facility, and last donation
+            // are verified clinical records set by hospital staff during check-in only (Part 1, Requirement 1).
+            // Direct profile edits by donors ignore any values supplied for these fields.
 
             if (body.has("preferredLanguage") || body.has("preferred_language")) {
                 String lang = JsonUtil.textOrNull(body, "preferredLanguage") != null ? JsonUtil.text(body, "preferredLanguage") : JsonUtil.textOrNull(body, "preferred_language");
@@ -1077,7 +1063,7 @@ public class DonorController {
                 session.setAttribute("user", updated);
             }
 
-            return ok("Profile updated successfully in MySQL database", updated);
+            return ok("Profile updated successfully", updated);
         } catch (Exception e) {
             return serverError(e);
         }
@@ -1100,7 +1086,30 @@ public class DonorController {
             String hosp = hospital != null && !hospital.isBlank() ? hospital : "Verified Regional Trauma Center";
             String dDate = date != null && !date.isBlank() ? date : java.time.LocalDate.now().toString();
             String code = refCode != null && !refCode.isBlank() ? refCode : (certId != null && !certId.isBlank() ? certId : "RED-" + (System.currentTimeMillis() % 100000));
-            String vol = volume != null && !volume.isBlank() ? volume : "450 mL (1 Unit)";
+            String vol = volume != null && !volume.isBlank() ? volume : null;
+            if (vol == null) {
+                int dNum = 0;
+                if (code.startsWith("RED-")) {
+                    try { dNum = Integer.parseInt(code.substring(4)); } catch (Exception ignored) {}
+                }
+                if (dNum > 0) {
+                    try (Connection c = DBConnection.getConnection();
+                         PreparedStatement cps = c.prepareStatement("SELECT volume_ml FROM donations WHERE id = ?")) {
+                        cps.setInt(1, dNum);
+                        try (ResultSet crs = cps.executeQuery()) {
+                            if (crs.next()) {
+                                int dbVol = crs.getInt("volume_ml");
+                                if (dbVol > 0) vol = dbVol + " mL (1 Unit)";
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+            if (vol == null) {
+                vol = "450 mL (1 Unit)";
+            } else if (!vol.contains("Unit")) {
+                vol = vol.endsWith("mL") ? vol + " (1 Unit)" : vol + " mL (1 Unit)";
+            }
 
             String format = request.getParameter("format");
             if (!"html".equalsIgnoreCase(format)) {
@@ -1264,6 +1273,13 @@ public class DonorController {
 
             com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
             if ("Accepted".equalsIgnoreCase(status)) {
+                // Authoritative server enforcement of isEligible (Part 1, Requirement 2)
+                Map<String, Object> freshDonor = donorDao.findById(donorId);
+                if (freshDonor != null) donor = freshDonor;
+                if (!DonorEligibilityService.isEligible(donor)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ApiResponse(false, "You are currently not eligible to accept blood requests due to donation recovery interval, deferral or status."));
+                }
                 boolean accepted = notifDao.acceptRequestByDonor(requestId, donorId);
                 if (!accepted) {
                     return ResponseEntity.badRequest().body(new ApiResponse(false, "This request has expired or is no longer available to accept."));
@@ -1271,6 +1287,9 @@ public class DonorController {
                 requestDao.updateStatus(requestId, "Accepted");
             } else if ("Declined".equalsIgnoreCase(status)) {
                 notifDao.updateDonorResponse(requestId, donorId, "DECLINED");
+            } else if ("Withdrawn".equalsIgnoreCase(status)) {
+                notifDao.updateDonorResponse(requestId, donorId, "WITHDRAWN");
+                requestDao.updateStatus(requestId, "Open");
             }
 
             Map<String, Object> bloodRequest = requestDao.findById(requestId);

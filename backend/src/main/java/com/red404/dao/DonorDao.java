@@ -275,6 +275,41 @@ public class DonorDao {
         }
     }
 
+    public boolean hasRecentCheckinNotification(int donorId, String hospitalName) {
+        String sql = "SELECT created_at FROM donor_notifications WHERE donor_id = ? AND type = 'checkin' AND title LIKE ? ORDER BY id DESC LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            ps.setString(2, "%" + (hospitalName != null ? hospitalName.trim() : "") + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Timestamp ts = rs.getTimestamp("created_at");
+                    if (ts != null && System.currentTimeMillis() - ts.getTime() < 4 * 3600 * 1000L) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice checking recent check-in notification: {}", e.getMessage());
+        }
+        return false;
+    }
+
+    public void updateDonorVitalsAndVerification(int donorId, Double weight, Integer pulse, Double hemoglobin, String bloodPressure, Double bodyTemp, String verifiedFacility) throws SQLException {
+        String sql = "UPDATE donors SET weight = COALESCE(?, weight), pulse = ?, hemoglobin = ?, blood_pressure = ?, body_temp = ?, verified_facility = ?, verified_date = CURRENT_DATE WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (weight != null && weight > 0) ps.setDouble(1, weight); else ps.setNull(1, Types.DOUBLE);
+            if (pulse != null && pulse > 0) ps.setInt(2, pulse); else ps.setNull(2, Types.INTEGER);
+            if (hemoglobin != null && hemoglobin > 0) ps.setDouble(3, hemoglobin); else ps.setNull(3, Types.DOUBLE);
+            if (bloodPressure != null && !bloodPressure.isBlank()) ps.setString(4, bloodPressure); else ps.setNull(4, Types.VARCHAR);
+            if (bodyTemp != null && bodyTemp > 0) ps.setDouble(5, bodyTemp); else ps.setNull(5, Types.DOUBLE);
+            ps.setString(6, verifiedFacility != null && !verifiedFacility.isBlank() ? verifiedFacility.trim() : "Verified Hospital");
+            ps.setInt(7, donorId);
+            ps.executeUpdate();
+        }
+    }
+
     public List<Map<String, Object>> getDonorNotifications(int donorId) {
         List<Map<String, Object>> list = new ArrayList<>();
         String sql = "SELECT * FROM donor_notifications WHERE donor_id = ? ORDER BY created_at DESC LIMIT 50";
@@ -365,41 +400,56 @@ public class DonorDao {
 
     public boolean updateProfile(int id, Map<String, Object> fields) throws SQLException {
         ensureDonorColumnsExist();
-        String sql = "UPDATE donors SET " +
-                "name = COALESCE(?, name), " +
-                "father_name = ?, " +
-                "phone = ?, " +
-                "blood_type = COALESCE(?, blood_type), " +
-                "gender = COALESCE(?, gender), " +
-                "dob = ?, " +
-                "address = ?, " +
-                "city = ?, " +
-                "state = ?, " +
-                "pincode = ?, " +
-                "weight = ?, " +
-                "pulse = ?, " +
-                "hemoglobin = ?, " +
-                "blood_pressure = ?, " +
-                "body_temp = ?, " +
-                "allergies = ?, " +
-                "conditions = ?, " +
-                "medications = ?, " +
-                "surgeries = ?, " +
-                "donor_type = ?, " +
-                "verified_facility = ?, " +
-                "last_donation = ?, " +
-                "qr_token = COALESCE(?, qr_token), " +
-                "availability = COALESCE(?, availability) " +
-                "WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            int idx = 1;
-            ps.setString(idx++, emptyToNull(str(fields.get("name") != null ? fields.get("name") : fields.get("fullName"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("father_name") != null ? fields.get("father_name") : fields.get("fatherName"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("phone"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("blood_type") != null ? fields.get("blood_type") : fields.get("bloodType"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("gender"))));
+        if (fields == null || fields.isEmpty()) return true;
 
+        // Never allow profile update to modify clinical/hospital-managed fields (Part 1, Requirement 1)
+        fields.remove("last_donation");
+        fields.remove("lastDonation");
+        fields.remove("lastDonationDate");
+        fields.remove("last_donation_date");
+        fields.remove("pulse");
+        fields.remove("hemoglobin");
+        fields.remove("blood_pressure");
+        fields.remove("bloodPressure");
+        fields.remove("body_temp");
+        fields.remove("bodyTemp");
+        fields.remove("weight");
+        fields.remove("verified_facility");
+        fields.remove("verifiedFacility");
+        fields.remove("verified_date");
+        fields.remove("verifiedDate");
+
+        List<String> setClauses = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        if (fields.containsKey("name") || fields.containsKey("fullName")) {
+            setClauses.add("name = COALESCE(?, name)");
+            params.add(emptyToNull(str(fields.get("name") != null ? fields.get("name") : fields.get("fullName"))));
+        }
+        if (fields.containsKey("father_name") || fields.containsKey("fatherName")) {
+            setClauses.add("father_name = ?");
+            params.add(emptyToNull(str(fields.get("father_name") != null ? fields.get("father_name") : fields.get("fatherName"))));
+        }
+        if (fields.containsKey("phone")) {
+            setClauses.add("phone = ?");
+            params.add(emptyToNull(str(fields.get("phone"))));
+        }
+        if (fields.containsKey("blood_type") || fields.containsKey("bloodType")) {
+            setClauses.add("blood_type = COALESCE(?, blood_type)");
+            params.add(emptyToNull(str(fields.get("blood_type") != null ? fields.get("blood_type") : fields.get("bloodType"))));
+        }
+        if (fields.containsKey("gender")) {
+            setClauses.add("gender = COALESCE(?, gender)");
+            String g = emptyToNull(str(fields.get("gender")));
+            if (g != null) {
+                String gl = g.trim().toLowerCase();
+                if (gl.startsWith("m")) g = "Male";
+                else if (gl.startsWith("f")) g = "Female";
+                else if (gl.startsWith("o")) g = "Other";
+            }
+            params.add(g);
+        }
+        if (fields.containsKey("dob") || fields.containsKey("dateOfBirth")) {
             Date dob = null;
             Object dobObj = fields.get("dob") != null ? fields.get("dob") : fields.get("dateOfBirth");
             if (dobObj instanceof Date) dob = (Date) dobObj;
@@ -407,94 +457,117 @@ public class DonorDao {
             else if (dobObj != null && !str(dobObj).isBlank()) {
                 try { dob = Date.valueOf(str(dobObj).trim()); } catch (Exception ignored) {}
             }
-            setDate(ps, idx++, dob);
+            setClauses.add("dob = ?");
+            params.add(dob);
+        }
+        if (fields.containsKey("address")) {
+            setClauses.add("address = ?");
+            params.add(emptyToNull(str(fields.get("address"))));
+        }
+        if (fields.containsKey("city")) {
+            setClauses.add("city = ?");
+            params.add(emptyToNull(str(fields.get("city"))));
+        }
+        if (fields.containsKey("state")) {
+            setClauses.add("state = ?");
+            params.add(emptyToNull(str(fields.get("state"))));
+        }
+        if (fields.containsKey("pincode")) {
+            setClauses.add("pincode = ?");
+            params.add(emptyToNull(str(fields.get("pincode"))));
+        }
+        if (fields.containsKey("allergies")) {
+            setClauses.add("allergies = ?");
+            params.add(emptyToNull(str(fields.get("allergies"))));
+        }
+        if (fields.containsKey("conditions")) {
+            setClauses.add("conditions = ?");
+            params.add(emptyToNull(str(fields.get("conditions"))));
+        }
+        if (fields.containsKey("medications")) {
+            setClauses.add("medications = ?");
+            params.add(emptyToNull(str(fields.get("medications"))));
+        }
+        if (fields.containsKey("surgeries")) {
+            setClauses.add("surgeries = ?");
+            params.add(emptyToNull(str(fields.get("surgeries"))));
+        }
+        if (fields.containsKey("donor_type") || fields.containsKey("donorType")) {
+            setClauses.add("donor_type = ?");
+            params.add(emptyToNull(str(fields.get("donor_type") != null ? fields.get("donor_type") : fields.get("donorType"))));
+        }
+        if (fields.containsKey("qr_token") || fields.containsKey("qrToken")) {
+            setClauses.add("qr_token = COALESCE(?, qr_token)");
+            params.add(emptyToNull(str(fields.get("qr_token") != null ? fields.get("qr_token") : fields.get("qrToken"))));
+        }
+        if (fields.containsKey("availability")) {
+            setClauses.add("availability = COALESCE(?, availability)");
+            params.add(emptyToNull(str(fields.get("availability"))));
+        }
+        if (fields.containsKey("preferred_language") || fields.containsKey("preferredLanguage")) {
+            setClauses.add("preferred_language = ?");
+            Object langObj = fields.get("preferred_language") != null ? fields.get("preferred_language") : fields.get("preferredLanguage");
+            params.add((langObj != null && !str(langObj).isBlank()) ? str(langObj).trim().toLowerCase() : "en");
+        }
+        if (fields.containsKey("sms_notif") || fields.containsKey("smsNotif")) {
+            setClauses.add("sms_notif = ?");
+            Object b = fields.get(fields.containsKey("sms_notif") ? "sms_notif" : "smsNotif");
+            params.add(b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b)));
+        }
+        if (fields.containsKey("email_notif") || fields.containsKey("emailNotif")) {
+            setClauses.add("email_notif = ?");
+            Object b = fields.get(fields.containsKey("email_notif") ? "email_notif" : "emailNotif");
+            params.add(b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b)));
+        }
+        if (fields.containsKey("push_notif") || fields.containsKey("pushNotif")) {
+            setClauses.add("push_notif = ?");
+            Object b = fields.get(fields.containsKey("push_notif") ? "push_notif" : "pushNotif");
+            params.add(b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b)));
+        }
+        if (fields.containsKey("latitude") && fields.containsKey("longitude")) {
+            setClauses.add("latitude = ?");
+            params.add(fields.get("latitude"));
+            setClauses.add("longitude = ?");
+            params.add(fields.get("longitude"));
+            setClauses.add("location_updated_at = CURRENT_TIMESTAMP");
+        }
 
-            ps.setString(idx++, emptyToNull(str(fields.get("address"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("city"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("state"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("pincode"))));
+        if (setClauses.isEmpty()) return true;
 
-            Double weightVal = numDouble(fields.get("weight"));
-            if (weightVal == null) {
-                ps.setNull(idx++, Types.DOUBLE);
-            } else {
-                ps.setDouble(idx++, weightVal);
+        String sql = "UPDATE donors SET " + String.join(", ", setClauses) + " WHERE id = ?";
+        boolean updated = false;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int idx = 1;
+            for (Object param : params) {
+                if (param == null) {
+                    ps.setNull(idx++, Types.VARCHAR);
+                } else if (param instanceof Date) {
+                    ps.setDate(idx++, (Date) param);
+                } else if (param instanceof Boolean) {
+                    ps.setBoolean(idx++, (Boolean) param);
+                } else if (param instanceof Double) {
+                    ps.setDouble(idx++, (Double) param);
+                } else if (param instanceof Integer) {
+                    ps.setInt(idx++, (Integer) param);
+                } else {
+                    ps.setString(idx++, param.toString());
+                }
             }
-
-            Integer pulseVal = numInt(fields.get("pulse"));
-            if (pulseVal == null) {
-                ps.setNull(idx++, Types.INTEGER);
-            } else {
-                ps.setInt(idx++, pulseVal);
-            }
-
-            Double hbVal = numDouble(fields.get("hemoglobin"));
-            if (hbVal == null) {
-                ps.setNull(idx++, Types.DOUBLE);
-            } else {
-                ps.setDouble(idx++, hbVal);
-            }
-
-            ps.setString(idx++, emptyToNull(str(fields.get("blood_pressure") != null ? fields.get("blood_pressure") : fields.get("bloodPressure"))));
-
-            Object btObj = fields.get("body_temp") != null ? fields.get("body_temp") : fields.get("bodyTemp");
-            Double btVal = numDouble(btObj);
-            if (btVal == null) {
-                ps.setNull(idx++, Types.DOUBLE);
-            } else {
-                ps.setDouble(idx++, btVal);
-            }
-
-            ps.setString(idx++, emptyToNull(str(fields.get("allergies"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("conditions"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("medications"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("surgeries"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("donor_type") != null ? fields.get("donor_type") : fields.get("donorType"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("verified_facility") != null ? fields.get("verified_facility") : fields.get("verifiedFacility"))));
-
-            Date lastDon = null;
-            Object ldObj = fields.get("last_donation") != null ? fields.get("last_donation") : fields.get("lastDonationDate");
-            if (ldObj == null) ldObj = fields.get("lastDonation");
-            if (ldObj instanceof Date) lastDon = (Date) ldObj;
-            else if (ldObj instanceof java.util.Date) lastDon = new Date(((java.util.Date) ldObj).getTime());
-            else if (ldObj != null && !str(ldObj).isBlank()) {
-                try { lastDon = Date.valueOf(str(ldObj).trim()); } catch (Exception ignored) {}
-            }
-            setDate(ps, idx++, lastDon);
-
-            ps.setString(idx++, emptyToNull(str(fields.get("qr_token") != null ? fields.get("qr_token") : fields.get("qrToken"))));
-            ps.setString(idx++, emptyToNull(str(fields.get("availability"))));
             ps.setInt(idx, id);
+            updated = ps.executeUpdate() > 0;
+        }
 
-            boolean updated = ps.executeUpdate() > 0;
-
-            if (fields.containsKey("preferred_language") || fields.containsKey("preferredLanguage")) {
-                Object langObj = fields.get("preferred_language") != null ? fields.get("preferred_language") : fields.get("preferredLanguage");
-                try (PreparedStatement prefPs = conn.prepareStatement("UPDATE donors SET preferred_language = ? WHERE id = ?")) {
-                    prefPs.setString(1, (langObj != null && !str(langObj).isBlank()) ? str(langObj).trim().toLowerCase() : "en");
-                    prefPs.setInt(2, id);
-                    prefPs.executeUpdate();
-                } catch (Exception ignored) {}
+        if (updated && (fields.containsKey("dob") || fields.containsKey("dateOfBirth"))) {
+            Object dobObj = fields.get("dob") != null ? fields.get("dob") : fields.get("dateOfBirth");
+            Date dob = null;
+            if (dobObj instanceof Date) dob = (Date) dobObj;
+            else if (dobObj instanceof java.util.Date) dob = new Date(((java.util.Date) dobObj).getTime());
+            else if (dobObj != null && !str(dobObj).isBlank()) {
+                try { dob = Date.valueOf(str(dobObj).trim()); } catch (Exception ignored) {}
             }
-            if (fields.containsKey("sms_notif") || fields.containsKey("smsNotif")) {
-                Object b = fields.get(fields.containsKey("sms_notif") ? "sms_notif" : "smsNotif");
-                try (PreparedStatement prefPs = conn.prepareStatement("UPDATE donors SET sms_notif = ? WHERE id = ?")) {
-                    prefPs.setBoolean(1, b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b)));
-                    prefPs.setInt(2, id);
-                    prefPs.executeUpdate();
-                } catch (Exception ignored) {}
-            }
-            if (fields.containsKey("email_notif") || fields.containsKey("emailNotif")) {
-                Object b = fields.get(fields.containsKey("email_notif") ? "email_notif" : "emailNotif");
-                try (PreparedStatement prefPs = conn.prepareStatement("UPDATE donors SET email_notif = ? WHERE id = ?")) {
-                    prefPs.setBoolean(1, b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b)));
-                    prefPs.setInt(2, id);
-                    prefPs.executeUpdate();
-                } catch (Exception ignored) {}
-            }
-
-            if (updated && (dob != null || (dobObj != null && !str(dobObj).isBlank()))) {
-                try {
+            if (dob != null) {
+                try (Connection conn = DBConnection.getConnection()) {
                     String currentDonorId = null;
                     String currentName = str(fields.get("name") != null ? fields.get("name") : fields.get("fullName"));
                     try (PreparedStatement checkPs = conn.prepareStatement("SELECT donor_id, name FROM donors WHERE id = ?")) {
@@ -507,7 +580,7 @@ public class DonorDao {
                         }
                     }
                     if (currentDonorId != null && !currentDonorId.isBlank()) {
-                        String updatedDonorId = com.red404.util.DonorIdGenerator.updateDonorIdDob(currentDonorId, dob != null ? dob : dobObj, currentName);
+                        String updatedDonorId = com.red404.util.DonorIdGenerator.updateDonorIdDob(currentDonorId, dob, currentName);
                         if (updatedDonorId != null && !updatedDonorId.equalsIgnoreCase(currentDonorId)) {
                             try (PreparedStatement upPs = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
                                 upPs.setString(1, updatedDonorId);
@@ -539,8 +612,8 @@ public class DonorDao {
                     log.warn("Notice updating donor_id on DOB change: {}", e.getMessage());
                 }
             }
-            return updated;
         }
+        return updated;
     }
 
     public boolean updateBloodGroupSelfDeclared(int donorId, String newGroup) throws SQLException {
@@ -603,6 +676,37 @@ public class DonorDao {
                 st.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries LIKE '%< 12%'");
                 st.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility LIKE '%City General%'");
             } catch (Exception ignored) {}
+        } catch (Exception ignored) {}
+        ensureDonationsTableCols();
+    }
+
+    private void ensureDonationsTableCols() {
+        try (Connection conn = DBConnection.getConnection()) {
+            ensureTableCol(conn, "donations", "created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            ensureTableCol(conn, "donations", "volume_ml", "INT DEFAULT 450");
+            ensureTableCol(conn, "donations", "vitals_json", "TEXT NULL DEFAULT NULL");
+            ensureTableCol(conn, "donations", "staff_user", "VARCHAR(100) NULL DEFAULT NULL");
+            ensureTableCol(conn, "donations", "deferral_reason", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureTableCol(conn, "donations", "request_id", "INT NULL DEFAULT NULL");
+        } catch (Exception ignored) {}
+    }
+
+    private void ensureTableCol(Connection conn, String tableName, String colName, String colDef) {
+        try {
+            boolean exists = false;
+            try (ResultSet rs = conn.getMetaData().getColumns(null, null, tableName.toLowerCase(), colName.toLowerCase())) {
+                if (rs.next()) exists = true;
+            }
+            if (!exists) {
+                try (ResultSet rs = conn.getMetaData().getColumns(null, null, tableName.toUpperCase(), colName.toUpperCase())) {
+                    if (rs.next()) exists = true;
+                }
+            }
+            if (!exists) {
+                try (Statement st = conn.createStatement()) {
+                    st.executeUpdate("ALTER TABLE " + tableName + " ADD COLUMN " + colName + " " + colDef);
+                }
+            }
         } catch (Exception ignored) {}
     }
 
@@ -1195,14 +1299,15 @@ public class DonorDao {
     }
 
     public List<Map<String, Object>> donationHistory(String donorId) throws SQLException {
+        ensureDonationsTableCols();
         List<Map<String, Object>> rows = new ArrayList<>();
         if (donorId == null || donorId.isBlank()) return rows;
-        String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, h.hospital_name AS hospitalName, " +
-                "d.blood_type AS bloodType, d.units, d.status, d.request_id AS requestId FROM donations d " +
+        String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, d.created_at AS createdAt, h.hospital_name AS hospitalName, " +
+                "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status, d.request_id AS requestId FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
                 "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
-                "ORDER BY d.donation_date DESC";
+                "ORDER BY d.donation_date DESC, d.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, donorId.trim());
@@ -1221,10 +1326,31 @@ public class DonorDao {
                     String hospName = rs.getString("hospitalName");
                     row.put("hospitalName", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
                     row.put("hospital", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
-                    row.put("bloodType", rs.getString("bloodType"));
+                    String bType = rs.getString("bloodType");
+                    row.put("bloodType", bType);
+                    row.put("bloodGroup", bType);
+                    row.put("blood_group", bType);
+                    Timestamp createdAt = null;
+                    try {
+                        createdAt = rs.getTimestamp("createdAt");
+                    } catch (Exception ignored) {}
+                    if (createdAt != null) {
+                        row.put("createdAt", createdAt.toInstant().toString());
+                        row.put("created_at", createdAt.toInstant().toString());
+                        row.put("timestamp", createdAt.toInstant().toString());
+                    } else if (date != null) {
+                        row.put("createdAt", date.toString() + "T06:30:00Z");
+                        row.put("created_at", date.toString() + "T06:30:00Z");
+                        row.put("timestamp", date.toString() + "T06:30:00Z");
+                    }
                     int units = rs.getInt("units");
                     row.put("units", units > 0 ? units : 1);
                     row.put("unitsDonated", (units > 0 ? units : 1) + " Unit");
+                    int vol = rs.getInt("volumeMl");
+                    if (vol <= 0) vol = 450;
+                    row.put("volumeMl", vol);
+                    row.put("volume_ml", vol);
+                    row.put("volume", vol + " mL");
                     row.put("donationType", "Whole Blood");
                     String status = rs.getString("status");
                     row.put("status", status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
@@ -1252,13 +1378,14 @@ public class DonorDao {
     }
 
     private List<Map<String, Object>> donationHistoryLegacy(String donorId) throws SQLException {
+        ensureDonationsTableCols();
         List<Map<String, Object>> rows = new ArrayList<>();
-        String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, h.hospital_name AS hospitalName, " +
-                "d.blood_type AS bloodType, d.units, d.status FROM donations d " +
+        String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, d.created_at AS createdAt, h.hospital_name AS hospitalName, " +
+                "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
                 "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
-                "ORDER BY d.donation_date DESC";
+                "ORDER BY d.donation_date DESC, d.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, donorId.trim());
@@ -1277,10 +1404,31 @@ public class DonorDao {
                     String hospName = rs.getString("hospitalName");
                     row.put("hospitalName", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
                     row.put("hospital", hospName != null && !hospName.isBlank() ? hospName : "City General Hospital");
-                    row.put("bloodType", rs.getString("bloodType"));
+                    String bType = rs.getString("bloodType");
+                    row.put("bloodType", bType);
+                    row.put("bloodGroup", bType);
+                    row.put("blood_group", bType);
+                    Timestamp createdAt = null;
+                    try {
+                        createdAt = rs.getTimestamp("createdAt");
+                    } catch (Exception ignored) {}
+                    if (createdAt != null) {
+                        row.put("createdAt", createdAt.toInstant().toString());
+                        row.put("created_at", createdAt.toInstant().toString());
+                        row.put("timestamp", createdAt.toInstant().toString());
+                    } else if (date != null) {
+                        row.put("createdAt", date.toString() + "T06:30:00Z");
+                        row.put("created_at", date.toString() + "T06:30:00Z");
+                        row.put("timestamp", date.toString() + "T06:30:00Z");
+                    }
                     int units = rs.getInt("units");
                     row.put("units", units > 0 ? units : 1);
                     row.put("unitsDonated", (units > 0 ? units : 1) + " Unit");
+                    int vol = rs.getInt("volumeMl");
+                    if (vol <= 0) vol = 450;
+                    row.put("volumeMl", vol);
+                    row.put("volume_ml", vol);
+                    row.put("volume", vol + " mL");
                     row.put("donationType", "Whole Blood");
                     String status = rs.getString("status");
                     row.put("status", status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
@@ -1340,8 +1488,9 @@ public class DonorDao {
     }
 
     public boolean recordDonation(String donorId, Integer hospitalId, String bloodType, int units, int volumeMl, String vitalsJson, String staffUser, String status, String deferralReason, Integer requestId) throws SQLException {
-        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason, request_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?)";
+        ensureDonationsTableCols();
+        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason, request_id, created_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?, CURRENT_TIMESTAMP)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
@@ -1372,8 +1521,8 @@ public class DonorDao {
             }
             return inserted > 0;
         } catch (SQLException e) {
-            String fallbackSql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason) " +
-                                 "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?)";
+            String fallbackSql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason, created_at) " +
+                                 "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, CURRENT_TIMESTAMP)";
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement ps = conn.prepareStatement(fallbackSql)) {
                 ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
@@ -1399,7 +1548,7 @@ public class DonorDao {
                 }
                 return inserted > 0;
             } catch (SQLException ex) {
-                String legacySql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status) VALUES (?, ?, ?, ?, CURRENT_DATE, ?)";
+                String legacySql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, donation_date, status, created_at) VALUES (?, ?, ?, ?, CURRENT_DATE, ?, CURRENT_TIMESTAMP)";
                 try (Connection conn = DBConnection.getConnection();
                      PreparedStatement ps = conn.prepareStatement(legacySql)) {
                     ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
@@ -1518,6 +1667,24 @@ public class DonorDao {
             donor.put("locationUpdatedAt", null);
         }
         Date lastDonation = rs.getDate("last_donation");
+        // Derive from latest verified donation if cached column is null (Part 1, Requirement 1)
+        if (lastDonation == null) {
+            try {
+                int dId = rs.getInt("id");
+                String dCode = rs.getString("donor_id");
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement donPs = conn.prepareStatement(
+                        "SELECT MAX(donation_date) FROM donations WHERE (donor_id = ? OR donor_id = CAST(? AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'VERIFIED', 'APPROVED')")) {
+                    donPs.setString(1, dCode != null ? dCode : String.valueOf(dId));
+                    donPs.setInt(2, dId);
+                    try (ResultSet drs = donPs.executeQuery()) {
+                        if (drs.next()) {
+                            lastDonation = drs.getDate(1);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
         donor.put("lastDonation", lastDonation == null ? null : lastDonation.toString());
         donor.put("lastDonationDate", lastDonation == null ? null : lastDonation.toString());
         donor.put("dateOfBirth", dob == null ? null : dob.toString());

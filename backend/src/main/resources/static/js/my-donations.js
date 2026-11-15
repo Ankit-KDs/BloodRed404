@@ -60,15 +60,24 @@
 
   async function fetchLiveHistoryAndStats(user) {
     try {
-      const [histRes, statsRes] = await Promise.all([
+      const [histRes, statsRes, profRes] = await Promise.all([
         fetch('/api/donor/donation-history', { credentials: 'include' }).catch(() => null),
-        fetch('/api/donor/dashboard-stats', { credentials: 'include' }).catch(() => null)
+        fetch('/api/donor/dashboard-stats', { credentials: 'include' }).catch(() => null),
+        fetch('/api/donor/profile', { credentials: 'include' }).catch(() => null)
       ]);
       let stats = null;
       if (statsRes && statsRes.ok) {
         const sJson = await statsRes.json();
         if (sJson && sJson.data) {
           stats = sJson.data;
+        }
+      }
+      let profileUser = null;
+      if (profRes && profRes.ok) {
+        const pJson = await profRes.json();
+        if (pJson && pJson.data) {
+          profileUser = pJson.data;
+          donorBloodGroup = profileUser.bloodType || profileUser.bloodGroup || donorBloodGroup;
         }
       }
       if (histRes && histRes.ok) {
@@ -79,7 +88,7 @@
       }
       renderImpactStats();
       renderDonationsTable();
-      renderHeaderEligibility(stats || user);
+      renderHeaderEligibility(profileUser || stats || user);
     } catch (e) {
       console.warn('Live history fetch notice:', e);
     }
@@ -98,6 +107,11 @@
         badge.className = 'status-eligibility-btn eligible-ready';
         textEl.textContent = !hasDonated ? "No donation yet. You're ready." : "You can donate. The hospital does a final check before donating.";
       } else {
+        if (elig.reason && elig.reason.startsWith('Next eligible on')) {
+          badge.className = 'status-eligibility-btn recovering';
+          textEl.textContent = elig.reason;
+          return;
+        }
         const nextDate = elig.next_eligible_date || elig.nextEligibleDate || '';
         const daysLeft = elig.days_until_eligible || 0;
         let formattedDate = nextDate;
@@ -108,7 +122,7 @@
           }
         } catch (_) {}
         badge.className = 'status-eligibility-btn recovering';
-        textEl.textContent = `Next donation possible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
+        textEl.textContent = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
       }
       return;
     }
@@ -142,7 +156,7 @@
           const nextDateObj = new Date(dDate.getTime() + recoveryDays * 86400000);
           const formattedDate = nextDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           badge.className = 'status-eligibility-btn recovering';
-          textEl.textContent = `Next donation possible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
+          textEl.textContent = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
           return;
         }
       }
@@ -161,7 +175,7 @@
 
     const totalDonations = donationRecords.length;
     const livesSaved = totalDonations * 3; // (Total Donations * 3)
-    const totalVolume = totalDonations * 450; // (Total Donations * 450 mL)
+    const totalVolume = donationRecords.reduce((acc, rec) => acc + (rec.volumeMl || rec.volume_ml || (rec.units ? rec.units * 450 : 450)), 0);
 
     if (totalCountEl) totalCountEl.textContent = totalDonations;
     if (livesSavedEl) livesSavedEl.textContent = `${livesSaved} Lives`;
@@ -202,7 +216,8 @@
 
     tableBody.innerHTML = donationRecords.map((rec) => {
       const bGroup = rec.bloodGroup || rec.bloodType || donorBloodGroup || 'O+';
-      const vol = rec.volume || (rec.volume_ml ? rec.volume_ml + ' mL' : (rec.units ? (rec.units * 450) + ' mL' : '450 mL'));
+      const rawVol = rec.volumeMl || rec.volume_ml || rec.volume;
+      const vol = typeof rawVol === 'number' ? `${rawVol} mL` : (rawVol || (rec.units ? `${rec.units * 450} mL` : '450 mL'));
       const ref = rec.refCode || rec.id || rec.recordId || rec.certId || 'RED-00000';
       const hosp = rec.hospital || rec.hospitalName || 'Verified Partner Hospital';
       const dDate = rec.date || rec.donationDate || 'Recent';
@@ -219,9 +234,9 @@
             </div>
           </td>
           <td>
-            <span class="badge-component whole-blood">
-              <i class="fa-solid fa-droplet"></i>
-              ${bGroup}
+            <span class="blood-group-tag" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; color:#ef4444; font-size:14px; background:rgba(239,68,68,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(239,68,68,0.25);">
+              <i class="fa-solid fa-droplet" style="font-size:11px;"></i>
+              <span>${escapeHtml(bGroup)}</span>
             </span>
           </td>
           <td>

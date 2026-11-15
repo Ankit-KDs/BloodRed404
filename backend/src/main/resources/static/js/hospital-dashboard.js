@@ -867,17 +867,7 @@ function renderDashboardStock(inventoryMap, activeCount) {
     }
   }
 
-  // Update Find Donor tab badge from real active request count
-  const badgeActiveSos = document.getElementById('badgeActiveSosCount');
-  if (badgeActiveSos) {
-    if (activeCount > 0) {
-      badgeActiveSos.textContent = activeCount;
-      badgeActiveSos.style.display = 'inline-block';
-    } else {
-      badgeActiveSos.textContent = '0';
-      badgeActiveSos.style.display = 'none';
-    }
-  }
+  // Find Donor tab badge removed as per Round 4 specification
 
   // Render View-Only Stock Section
   if (!hasRecordedStock) {
@@ -1638,8 +1628,7 @@ function initDispatchRadar() {
             <div>${d.lastSeen ? `Last seen: ${escapeHtml(d.lastSeen)}` : 'Active recently in area'}</div>
             <div class="popup-status-row">Status: <strong class="popup-status-text" style="color:${isAvailable ? 'var(--hosp-green)' : (isAccepted ? 'var(--hosp-blue)' : 'var(--hosp-amber)')};">${status}</strong></div>
           </div>
-          <div class="hpc-footer">
-            <span style="font-size:11px; color:var(--hosp-text-muted);">ID: #${d.id}</span>
+          <div class="hpc-footer" style="display:flex; justify-content:flex-end;">
             ${popupActionHtml}
           </div>
         </div>
@@ -1711,6 +1700,10 @@ function initDispatchRadar() {
     const targetDonor = matchingDonors.find(x => x.id === donorId);
     if (!targetDonor) return;
 
+    const urgency = document.getElementById('dispUrgency')?.value || 'Urgent';
+    const neededWithinVal = document.getElementById('dispNeededWithin')?.value;
+    const neededWithinMins = neededWithinVal ? parseInt(neededWithinVal, 10) : null;
+
     try {
       const res = await fetch('/api/hospital/requests/send-single', {
         method: 'POST',
@@ -1722,7 +1715,11 @@ function initDispatchRadar() {
           unitsNeeded: parseInt(units, 10) || 1,
           patientName: patientName,
           notes: notes,
-          radius: parseFloat(radius) || 10
+          radius: parseFloat(radius) || 10,
+          urgencyLevel: urgency,
+          urgency: urgency,
+          neededWithinMins: neededWithinMins,
+          neededWithinMinutes: neededWithinMins
         })
       });
       const resJson = await res.json();
@@ -1915,6 +1912,9 @@ function initDispatchRadar() {
       const patientName = document.getElementById('dispPatientName')?.value.trim() || '';
       const units = document.getElementById('dispUnits')?.value || '1';
       const notes = document.getElementById('dispNotes')?.value.trim() || '';
+      const urgency = document.getElementById('dispUrgency')?.value || 'Urgent';
+      const neededWithinVal = document.getElementById('dispNeededWithin')?.value;
+      const neededWithinMins = neededWithinVal ? parseInt(neededWithinVal, 10) : null;
 
       try {
         const donorIds = availableDonors.map(d => d.id);
@@ -1928,7 +1928,11 @@ function initDispatchRadar() {
             unitsNeeded: parseInt(units, 10) || 1,
             patientName: patientName,
             notes: notes,
-            radius: parseFloat(radius) || 10
+            radius: parseFloat(radius) || 10,
+            urgencyLevel: urgency,
+            urgency: urgency,
+            neededWithinMins: neededWithinMins,
+            neededWithinMinutes: neededWithinMins
           })
         });
         const resJson = await res.json();
@@ -2297,11 +2301,15 @@ function applyRecordsFilter() {
     if (urg !== 'ALL' && rUrg !== urg.toUpperCase()) return false;
 
     // 4. Date Filter
-    if (dFilter !== 'ALL' && r.created_at) {
-      const rDate = new Date(r.created_at);
+    if (dFilter !== 'ALL' && (r.created_at || r.createdAt)) {
+      const rawDateStr = r.created_at || r.createdAt;
+      const rDate = new Date(rawDateStr);
       if (!isNaN(rDate.getTime())) {
         if (dFilter === 'TODAY') {
-          if (r.created_at.slice(0, 10) !== todayStr) return false;
+          const isSameDay = rDate.getFullYear() === now.getFullYear() &&
+                            rDate.getMonth() === now.getMonth() &&
+                            rDate.getDate() === now.getDate();
+          if (!isSameDay) return false;
         } else if (dFilter === 'WEEK') {
           if (rDate < weekAgo) return false;
         } else if (dFilter === 'MONTH') {
@@ -2414,13 +2422,8 @@ function renderRecordsPage() {
         <td>${getDropBadgeSvg(blood, '')}</td>
         <td><span class="mono-data">${units}</span></td>
         <td><span class="chip-status ${urgClass}">${urgLabel}</span></td>
-        <td><strong style="color: #cbd5e1; font-family: 'JetBrains Mono', monospace;">${radiusStr}</strong></td>
-        <td><span class="mono-data">${notified}</span></td>
-        <td><strong style="color: ${accepted > 0 ? '#22c55e' : '#94a3b8'}; font-family: 'JetBrains Mono', monospace;">${accepted}</strong></td>
-        <td><strong style="color: ${arrived > 0 ? '#38bdf8' : '#94a3b8'}; font-family: 'JetBrains Mono', monospace;">${arrived}</strong></td>
         <td><span class="chip-status ${statusClass}">${status}</span></td>
-        <td><span class="mono-data">${respTimeStr}</span></td>
-        <td><span style="font-size: 12px; color: #cbd5e1;">${staffName}</span></td>
+        <td><strong style="color: ${accepted > 0 ? '#22c55e' : '#cbd5e1'}; font-family: 'JetBrains Mono', monospace;">${accepted}</strong> <span style="color: var(--hosp-text-muted);">/</span> <span class="mono-data">${notified}</span></td>
       </tr>
     `;
   }).join('');
@@ -2473,6 +2476,10 @@ async function openRequestDrawer(r) {
   document.getElementById('drawerUnits').textContent = `${r.units_requested || 1} units`;
   document.getElementById('drawerUrgency').textContent = r.urgency_level || r.urgency || 'Normal';
   document.getElementById('drawerRadius').textContent = `${(r.radiusKm !== null && r.radiusKm !== undefined) ? r.radiusKm : 10} km`;
+  const drawerFirstResp = document.getElementById('drawerFirstResponse');
+  if (drawerFirstResp) drawerFirstResp.innerHTML = r.firstResponseTime || ((status === 'Open' || status === 'Active') ? '<span style="color:#f59e0b;">Pending</span>' : '-');
+  const drawerArr = document.getElementById('drawerArrived');
+  if (drawerArr) drawerArr.textContent = String(r.donorsArrived ?? 0);
   document.getElementById('drawerStaff').textContent = r.staffUser || 'Hospital Staff';
 
   const dateObj = r.created_at ? new Date(r.created_at) : null;
@@ -3308,7 +3315,16 @@ function initDonorCheckin() {
       } else if (!d.lastDonationDate || d.lastDonationDate === 'Never') {
         capNotice.textContent = 'No donation yet. Ready for intake.';
       } else {
-        capNotice.textContent = `Next donation possible on ${elig.next_eligible_date || d.nextEligibleDate || 'soon'} (${elig.days_until_eligible || d.daysUntilEligible || 0} days left).`;
+        const nextDateStr = elig.next_eligible_date || d.nextEligibleDate || '';
+        let formattedDate = nextDateStr;
+        try {
+          const nd = new Date(nextDateStr);
+          if (!isNaN(nd.getTime())) {
+            formattedDate = nd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
+        } catch (_) {}
+        const daysLeft = elig.days_until_eligible || d.daysUntilEligible || 0;
+        capNotice.textContent = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
       }
     }
 
@@ -3876,52 +3892,101 @@ function initDonorCheckin() {
       const notesInput = document.getElementById('vitNotes');
       const notes = notesInput ? notesInput.value.trim() : '';
 
-      // Step 2 Requirement 4: Confirmation dialog
       const donorName = currentLoadedDonor.name || 'Verified Donor';
-      const confirmPrompt = `Record ${volumeMl} mL donation for ${donorName} (${confirmedBg})? Inventory will increase by 1 unit.`;
-      if (!window.confirm(confirmPrompt)) {
-        return;
-      }
+      const targetDonorCopy = Object.assign({}, currentLoadedDonor);
 
-      if (btnRecordDonation) {
-        btnRecordDonation.disabled = true;
-        btnRecordDonation.innerHTML = '<span>Recording donation...</span>';
-      }
+      const proceedWithApproval = async () => {
+        if (btnRecordDonation) {
+          btnRecordDonation.disabled = true;
+          btnRecordDonation.innerHTML = '<span>Recording donation...</span>';
+        }
 
-      try {
-        const vitalsData = {
-          weight: parseFloat(vitWeight.value),
-          hemoglobin: parseFloat(vitHb.value),
-          systolic: parseFloat(vitBpSystolic.value),
-          diastolic: parseFloat(vitBpDiastolic.value),
-          pulse: parseFloat(vitPulse.value),
-          temperature: parseFloat(vitTemp.value),
-          notes: notes
-        };
+        try {
+          const vitalsData = {
+            weight: parseFloat(vitWeight.value),
+            hemoglobin: parseFloat(vitHb.value),
+            systolic: parseFloat(vitBpSystolic.value),
+            diastolic: parseFloat(vitBpDiastolic.value),
+            pulse: parseFloat(vitPulse.value),
+            temperature: parseFloat(vitTemp.value),
+            notes: notes
+          };
 
-        const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+          const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const payload = {
-          donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
-          bloodType: confirmedBg,
-          volumeMl: volumeMl,
-          reason: bgReason,
-          vitals: vitalsData,
-          staffUser: staffUser
-        };
+          const payload = {
+            donorId: targetDonorCopy.donorId || targetDonorCopy.id,
+            bloodType: confirmedBg,
+            volumeMl: volumeMl,
+            reason: bgReason,
+            vitals: vitalsData,
+            staffUser: staffUser
+          };
 
-        const res = await fetch('/api/hospital/donors/checkin', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          credentials: 'include'
-        });
+          const res = await fetch('/api/hospital/donors/checkin', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+            credentials: 'include'
+          });
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          alert('Error approving donation: ' + (err.message || 'Server error'));
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert('Error approving donation: ' + (err.message || 'Server error'));
+            if (btnRecordDonation) {
+              btnRecordDonation.disabled = false;
+              btnRecordDonation.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Approve donation</span>
+              `;
+            }
+            return;
+          }
+
+          // Show success toast
+          if (typeof showToast === 'function') {
+            showToast(`Donation recorded! +1 unit ${confirmedBg} added to inventory.`, 'success', 3500);
+          }
+
+          // Update local inventory display immediately
+          if (typeof initInventory === 'function') {
+            try { initInventory(); } catch (_) {}
+          }
+          if (typeof loadHospitalInventory === 'function') {
+            try { loadHospitalInventory(); } catch (_) {}
+          }
+
+          // Reset check-in form and loaded donor state (Part 2, Requirement 2)
+          resetCheckinForm(false, true);
+
+          // Reset Approve donation button text (no stuck "Recording donation...")
+          if (btnRecordDonation) {
+            btnRecordDonation.disabled = true;
+            btnRecordDonation.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Approve donation</span>
+            `;
+          }
+
+          // Hide vitals form and donor card so ONLY success state is visible
+          if (donorCard) donorCard.style.display = 'none';
+          if (formDonorVitals) formDonorVitals.style.display = 'none';
+
+          // Show ONLY success card
+          if (successCard) {
+            successCard.style.display = 'block';
+            if (successTitle) {
+              successTitle.textContent = `Donation Verified & Approved (${confirmedBg}, ${volumeMl} mL)`;
+            }
+            if (successMsg) {
+              successMsg.textContent = `Donor ${donorName} (${targetDonorCopy.donorId || targetDonorCopy.id}) recorded successfully. +1 unit ${confirmedBg} added to inventory.`;
+            }
+          }
+
+        } catch (err) {
+          alert('Network error while saving donation record: ' + err.message);
           if (btnRecordDonation) {
             btnRecordDonation.disabled = false;
             btnRecordDonation.innerHTML = `
@@ -3929,67 +3994,47 @@ function initDonorCheckin() {
               <span>Approve donation</span>
             `;
           }
-          return;
         }
+      };
 
-        // Show success toast
-        if (typeof showToast === 'function') {
-          showToast(`Donation recorded! +1 unit ${confirmedBg} added to inventory.`, 'success', 3500);
-        }
+      // Part 2 Requirement 4: In-app styled confirmation modal
+      const modal = document.getElementById('modalConfirmDonationApproval');
+      const modalText = document.getElementById('confirmDonationModalText');
+      const btnConfirmModal = document.getElementById('btnConfirmDonationAction');
+      const btnCancelModal = document.getElementById('btnCancelDonationModal');
 
-        // Update local inventory display immediately
-        if (typeof initInventory === 'function') {
-          try { initInventory(); } catch (_) {}
-        }
-        if (typeof loadHospitalInventory === 'function') {
-          try { loadHospitalInventory(); } catch (_) {}
-        }
+      if (modal && modalText && btnConfirmModal && btnCancelModal) {
+        modalText.innerHTML = `Record <strong>${volumeMl} mL</strong> blood donation for <strong>${escapeHtml(donorName)}</strong> (${escapeHtml(confirmedBg)})?<br><span style="font-size:12.5px;color:#94a3b8;display:block;margin-top:6px;">Hospital inventory will immediately increase by 1 unit.</span>`;
+        modal.style.display = 'flex';
 
-        // Clear vitals form
-        if (vitWeight) vitWeight.value = '';
-        if (vitHb) vitHb.value = '';
-        if (vitBpSystolic) vitBpSystolic.value = '';
-        if (vitBpDiastolic) vitBpDiastolic.value = '';
-        if (vitPulse) vitPulse.value = '';
-        if (vitTemp) vitTemp.value = '';
-        if (notesInput) notesInput.value = '';
-        document.querySelectorAll('.vital-err').forEach(el => {
-          el.textContent = '';
-          el.style.display = 'none';
-        });
-
-        // Show success card and update its message
-        if (successCard) {
-          successCard.style.display = 'block';
-          if (successTitle) {
-            successTitle.textContent = `Donation Verified & Approved (${confirmedBg}, ${volumeMl} mL)`;
-          }
-          if (successMsg) {
-            successMsg.textContent = `Donor ${donorName} (${currentLoadedDonor.donorId || currentLoadedDonor.id}) recorded successfully. +1 unit added to live stock. QR token closed.`;
-          }
-        }
-
-        // Reload donor card with fresh state (Last donation = today, incremented total donations, capsule resets to 0%)
-        const targetQuery = currentLoadedDonor.donorId || currentLoadedDonor.id;
-        await performDonorLookup(true);
-
-      } catch (err) {
-        alert('Network error while saving donation record: ' + err.message);
-        if (btnRecordDonation) {
-          btnRecordDonation.disabled = false;
-          btnRecordDonation.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>Approve donation</span>
-          `;
+        const onConfirm = () => {
+          modal.style.display = 'none';
+          btnConfirmModal.removeEventListener('click', onConfirm);
+          btnCancelModal.removeEventListener('click', onCancel);
+          proceedWithApproval();
+        };
+        const onCancel = () => {
+          modal.style.display = 'none';
+          btnConfirmModal.removeEventListener('click', onConfirm);
+          btnCancelModal.removeEventListener('click', onCancel);
+        };
+        btnConfirmModal.addEventListener('click', onConfirm);
+        btnCancelModal.addEventListener('click', onCancel);
+      } else {
+        // Fallback if modal container not in DOM
+        if (window.confirm(`Record ${volumeMl} mL donation for ${donorName} (${confirmedBg})? Inventory will increase by 1 unit.`)) {
+          proceedWithApproval();
         }
       }
     });
   }
 
-  // Next donor button
+  // Next donor button (Part 2, Requirement 2)
   if (btnNextDonor) {
     btnNextDonor.addEventListener('click', () => {
-      resetCheckinForm(false);
+      resetCheckinForm(false, false);
+      if (formDonorVitals) formDonorVitals.style.display = '';
+      if (successCard) successCard.style.display = 'none';
       if (btnRecordDonation) {
         btnRecordDonation.style.display = '';
         btnRecordDonation.disabled = true;

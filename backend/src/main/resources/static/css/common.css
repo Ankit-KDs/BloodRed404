@@ -2906,8 +2906,7 @@ body.bento-dashboard-body::after,
 .blood-group-badge,
 .blood-chip,
 .user-blood-badge,
-.smc-top .blood-group-badge,
-.badge-component.whole-blood {
+.smc-top .blood-group-badge {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -2928,8 +2927,7 @@ body.bento-dashboard-body::after,
 .blood-group-badge::before,
 .blood-chip::before,
 .user-blood-badge::before,
-.smc-top .blood-group-badge::before,
-.badge-component.whole-blood::before {
+.smc-top .blood-group-badge::before {
   content: '' !important;
   position: absolute !important;
   inset: 0 !important;
@@ -2957,15 +2955,10 @@ body.bento-dashboard-body::after,
 .blood-group-badge > *,
 .blood-chip > *,
 .user-blood-badge > *,
-.smc-top .blood-group-badge > *,
-.badge-component.whole-blood > * {
+.smc-top .blood-group-badge > * {
   position: relative !important;
   z-index: 1 !important;
   padding-top: 3px !important;
-}
-
-.badge-component.whole-blood i {
-  display: none !important;
 }
 
 /* 6. Subtle blood-drop background flow (3-5% opacity, hero only, off with prefers-reduced-motion) */

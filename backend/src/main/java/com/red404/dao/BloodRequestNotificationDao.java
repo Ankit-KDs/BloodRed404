@@ -389,9 +389,9 @@ public class BloodRequestNotificationDao {
         List<Map<String, Object>> list = new ArrayList<>();
         String sql = "SELECT n.id as notif_id, n.request_id, n.status as notif_status, n.notified_at, n.responded_at, " +
                      "n.units_requested, n.patient_name, n.notes as hosp_notes, n.blood_type as notif_blood_type, " +
-                     "br.hospital_id, br.hospital_name, br.hospital_address, br.latitude as hosp_lat, br.longitude as hosp_lng, " +
-                     "br.urgency_level, br.status as req_status, br.created_at as req_created_at, " +
-                     "h.address as h_address, h.name as h_name, h.hospital_phone as h_phone, h.emergency_contact as h_emergency_contact " +
+                     "br.hospital_id, br.latitude as hosp_lat, br.longitude as hosp_lng, " +
+                     "br.urgency_level, br.needed_within_mins, br.status as req_status, br.created_at as req_created_at, " +
+                     "h.address as h_address, h.hospital_name as h_name, h.hospital_phone as h_phone, h.emergency_contact as h_emergency_contact " +
                      "FROM blood_request_notifications n " +
                      "JOIN blood_requests br ON n.request_id = br.id " +
                      "LEFT JOIN hospitals h ON br.hospital_id = h.id " +
@@ -412,12 +412,10 @@ public class BloodRequestNotificationDao {
                     String notes = rs.getString("hosp_notes");
                     Timestamp notifiedAt = rs.getTimestamp("notified_at");
 
-                    String hospName = rs.getString("hospital_name");
-                    if (hospName == null || hospName.isBlank()) hospName = rs.getString("h_name");
+                    String hospName = rs.getString("h_name");
                     if (hospName == null || hospName.isBlank()) hospName = "Hospital";
 
-                    String hospAddr = rs.getString("hospital_address");
-                    if (hospAddr == null || hospAddr.isBlank()) hospAddr = rs.getString("h_address");
+                    String hospAddr = rs.getString("h_address");
                     if (hospAddr == null || hospAddr.isBlank()) hospAddr = "Hospital Address";
 
                     Double hLat = rs.getObject("hosp_lat") != null ? rs.getDouble("hosp_lat") : null;
@@ -472,7 +470,14 @@ public class BloodRequestNotificationDao {
                     map.put("etaMinutes", Math.max(eta, 5));
                     map.put("zone", zone);
                     map.put("notifiedAt", notifiedAt != null ? notifiedAt.toString() : null);
-                    map.put("urgencyLevel", rs.getString("urgency_level") != null ? rs.getString("urgency_level") : "HIGH");
+                    String urg = rs.getString("urgency_level");
+                    map.put("urgencyLevel", urg);
+                    map.put("urgency_level", urg);
+                    try {
+                        Object nw = rs.getObject("needed_within_mins");
+                        map.put("neededWithinMinutes", nw);
+                        map.put("neededWithinMins", nw);
+                    } catch (SQLException ignored) {}
 
                     list.add(map);
                 }
@@ -481,6 +486,24 @@ public class BloodRequestNotificationDao {
             log.warn("Error getting notifications for donor {}: {}", donorId, e.getMessage());
         }
         return list;
+    }
+
+    public int withdrawOpenNotificationsForDonor(int donorId, Integer excludeRequestId) {
+        ensureTableExists();
+        String sql = "UPDATE blood_request_notifications SET status = 'WITHDRAWN', notes = CONCAT(COALESCE(notes, ''), ' [Withdrawn - not eligible]') " +
+                     "WHERE donor_id = ? AND UPPER(status) IN ('NOTIFIED', 'ACCEPTED', 'ARRIVED', 'NEW')" +
+                     (excludeRequestId != null && excludeRequestId > 0 ? " AND request_id <> ?" : "");
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, donorId);
+            if (excludeRequestId != null && excludeRequestId > 0) {
+                ps.setInt(2, excludeRequestId);
+            }
+            return ps.executeUpdate();
+        } catch (Exception e) {
+            log.warn("Error withdrawing open notifications for donor {}: {}", donorId, e.getMessage());
+            return 0;
+        }
     }
 
     private static String capitalize(String str) {

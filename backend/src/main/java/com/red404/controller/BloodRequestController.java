@@ -137,6 +137,11 @@ public class BloodRequestController {
                 }
             }
             if (donorId > 0) {
+                Map<String, Object> freshDonor = new com.red404.dao.DonorDao().findById(donorId);
+                if (freshDonor != null && !com.red404.service.DonorEligibilityService.isEligible(freshDonor)) {
+                    return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                            .body(new ApiResponse(false, "You are currently not eligible to accept blood requests due to donation recovery interval, deferral or status."));
+                }
                 boolean accepted = new com.red404.dao.BloodRequestNotificationDao().acceptRequestByDonor(id, donorId);
                 if (!accepted) {
                     return ResponseEntity.badRequest().body(new ApiResponse(false, "This request has expired or is no longer available."));

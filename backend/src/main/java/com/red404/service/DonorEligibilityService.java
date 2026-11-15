@@ -274,7 +274,8 @@ public class DonorEligibilityService {
             res.put("next_eligible_date", nextEligible.toString());
             res.put("progress_pct", pct);
             res.put("cooldown_days", cooldown);
-            res.put("reason", "Eligible in " + daysLeft + (daysLeft == 1 ? " day" : " days") + " (" + nextEligible + ")");
+            String nextDateFormatted = nextEligible.format(java.time.format.DateTimeFormatter.ofPattern("d MMM uuuu", java.util.Locale.ENGLISH));
+            res.put("reason", "Next eligible on " + nextDateFormatted + " (" + daysLeft + (daysLeft == 1 ? " day" : " days") + ")");
         }
 
         addAliases(res);

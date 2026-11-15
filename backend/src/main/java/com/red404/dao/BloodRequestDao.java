@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,49 +18,164 @@ import java.util.Map;
 
 public class BloodRequestDao {
 
+    private void ensureColumnsExist() {
+        try (Connection conn = DBConnection.getConnection()) {
+            ensureTableCol(conn, "blood_requests", "needed_within_mins", "INT NULL DEFAULT NULL");
+            ensureTableCol(conn, "blood_requests", "created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        } catch (Exception ignored) {}
+    }
+
+    private void ensureTableCol(Connection conn, String tableName, String colName, String colDef) {
+        try {
+            boolean exists = false;
+            try (ResultSet rs = conn.getMetaData().getColumns(null, null, tableName.toLowerCase(), colName.toLowerCase())) {
+                if (rs.next()) exists = true;
+            }
+            if (!exists) {
+                try (ResultSet rs = conn.getMetaData().getColumns(null, null, tableName.toUpperCase(), colName.toUpperCase())) {
+                    if (rs.next()) exists = true;
+                }
+            }
+            if (!exists) {
+                try (Statement st = conn.createStatement()) {
+                    st.executeUpdate("ALTER TABLE " + tableName + " ADD COLUMN " + colName + " " + colDef);
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private static Double parseDouble(Object val) {
+        if (val instanceof Number n) return n.doubleValue();
+        if (val != null && !String.valueOf(val).isBlank()) {
+            try { return Double.parseDouble(String.valueOf(val).trim()); } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    private static int parseInt(Object val, int fallback) {
+        if (val instanceof Number n) return n.intValue();
+        if (val != null && !String.valueOf(val).isBlank()) {
+            try { return Integer.parseInt(String.valueOf(val).trim()); } catch (Exception ignored) {}
+        }
+        return fallback;
+    }
+
+    private static Date parseDate(Object val) {
+        if (val instanceof Date d) return d;
+        if (val instanceof java.util.Date ud) return new Date(ud.getTime());
+        if (val != null && !String.valueOf(val).isBlank()) {
+            String s = String.valueOf(val).trim();
+            if (s.length() >= 10) s = s.substring(0, 10);
+            try { return Date.valueOf(s); } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    private static void setParamDouble(PreparedStatement ps, int index, Double value) throws SQLException {
+        if (value == null) {
+            ps.setNull(index, Types.DOUBLE);
+        } else {
+            ps.setDouble(index, value);
+        }
+    }
+
     public int insert(Map<String, Object> request) throws SQLException {
+        ensureColumnsExist();
+
+        int hospitalId = parseInt(request.get("hospitalId"), 0);
+        Object pNameObj = request.getOrDefault("patientName", "Emergency Patient");
+        String patientName = (pNameObj == null || String.valueOf(pNameObj).isBlank()) ? "Emergency Patient" : String.valueOf(pNameObj).trim();
+        Object btObj = request.get("bloodType");
+        String bloodType = (btObj == null || String.valueOf(btObj).isBlank()) ? "O-" : String.valueOf(btObj).trim();
+        int units = parseInt(request.getOrDefault("unitsRequested", request.get("units")), 1);
+        if (units <= 0) units = 1;
+        Object urgObj = request.get("urgencyLevel");
+        if (urgObj == null) urgObj = request.get("urgency");
+        String urgency = (urgObj == null || String.valueOf(urgObj).isBlank()) ? "Urgent" : String.valueOf(urgObj).trim();
+        Date requiredBefore = parseDate(request.get("requiredBefore"));
+        Double latitude = parseDouble(request.get("latitude"));
+        Double longitude = parseDouble(request.get("longitude"));
+
+        Object nwObj = request.get("neededWithinMins");
+        if (nwObj == null) nwObj = request.get("neededWithinMinutes");
+        Integer neededWithinMins = null;
+        if (nwObj != null && !String.valueOf(nwObj).isBlank()) {
+            try { neededWithinMins = Integer.parseInt(String.valueOf(nwObj).trim()); } catch (Exception ignored) {}
+        }
+
         String sql = "INSERT INTO blood_requests (hospital_id, patient_name, blood_type, units_requested, " +
-                "urgency_level, required_before, status, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?)";
+                "urgency_level, required_before, status, latitude, longitude, needed_within_mins, created_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, CURRENT_TIMESTAMP)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, ((Number) request.get("hospitalId")).intValue());
-            ps.setString(2, str(request.getOrDefault("patientName", "Emergency Patient")));
-            ps.setString(3, str(request.get("bloodType")));
-            ps.setInt(4, ((Number) request.getOrDefault("unitsRequested", 1)).intValue());
-            ps.setString(5, str(request.getOrDefault("urgencyLevel", "HIGH")));
-            Date requiredBefore = (Date) request.get("requiredBefore");
+            ps.setInt(1, hospitalId);
+            ps.setString(2, patientName);
+            ps.setString(3, bloodType);
+            ps.setInt(4, units);
+            ps.setString(5, urgency);
             if (requiredBefore == null) {
                 ps.setNull(6, Types.DATE);
             } else {
                 ps.setDate(6, requiredBefore);
             }
-            setDouble(ps, 7, (Double) request.get("latitude"));
-            setDouble(ps, 8, (Double) request.get("longitude"));
+            setParamDouble(ps, 7, latitude);
+            setParamDouble(ps, 8, longitude);
+            if (neededWithinMins == null) {
+                ps.setNull(9, Types.INTEGER);
+            } else {
+                ps.setInt(9, neededWithinMins);
+            }
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
-                return keys.next() ? keys.getInt(1) : 0;
+                if (keys.next()) return keys.getInt(1);
+            }
+        } catch (SQLException e) {
+            String fallbackSql = "INSERT INTO blood_requests (hospital_id, patient_name, blood_type, units_requested, " +
+                    "urgency_level, required_before, status, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?)";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(fallbackSql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, hospitalId);
+                ps.setString(2, patientName);
+                ps.setString(3, bloodType);
+                ps.setInt(4, units);
+                ps.setString(5, urgency);
+                if (requiredBefore == null) {
+                    ps.setNull(6, Types.DATE);
+                } else {
+                    ps.setDate(6, requiredBefore);
+                }
+                setParamDouble(ps, 7, latitude);
+                setParamDouble(ps, 8, longitude);
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) return keys.getInt(1);
+                }
             }
         }
+        return 0;
     }
 
     public void expireOldRequests() {
+        Timestamp cutoff = new Timestamp(System.currentTimeMillis() - 24L * 3600L * 1000L);
         String sql = "UPDATE blood_requests SET status = 'Expired' " +
                      "WHERE UPPER(status) IN ('ACTIVE', 'OPEN', 'PENDING') " +
-                     "AND created_at < DATE_SUB(NOW(), INTERVAL 60 MINUTE)";
+                     "AND created_at < ?";
         try (Connection conn = DBConnection.getConnection();
-             Statement st = conn.createStatement()) {
-            st.executeUpdate(sql);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, cutoff);
+            ps.executeUpdate();
         } catch (Exception ignored) {}
     }
 
     public List<Map<String, Object>> listActive() throws SQLException {
         expireOldRequests();
+        Timestamp cutoff = new Timestamp(System.currentTimeMillis() - 24L * 3600L * 1000L);
         String sql = "SELECT br.*, h.hospital_name, h.city, h.hospital_phone FROM blood_requests br " +
                 "JOIN hospitals h ON br.hospital_id = h.id " +
                 "WHERE UPPER(br.status) IN ('ACTIVE', 'OPEN', 'PENDING', 'ACCEPTED', 'ARRIVED') " +
-                "AND (br.created_at IS NULL OR br.created_at >= NOW() - INTERVAL 60 MINUTE) " +
+                "AND (br.created_at IS NULL OR br.created_at >= ?) " +
                 "ORDER BY br.created_at DESC";
-        return queryList(sql, null);
+        return queryListWithCutoff(sql, cutoff);
     }
 
     public List<Map<String, Object>> listByHospital(int hospitalId) throws SQLException {
@@ -72,8 +188,8 @@ public class BloodRequestDao {
     public List<Map<String, Object>> listForDonor(Double lat, Double lng) throws SQLException {
         List<Map<String, Object>> requests = listActive();
         for (Map<String, Object> request : requests) {
-            Double reqLat = asDouble(request.get("latitude"));
-            Double reqLng = asDouble(request.get("longitude"));
+            Double reqLat = parseDouble(request.get("latitude"));
+            Double reqLng = parseDouble(request.get("longitude"));
             if (lat != null && lng != null && reqLat != null && reqLng != null) {
                 double distance = DistanceCalculator.calculateDistance(lat, lng, reqLat, reqLng);
                 request.put("distanceKm", distance);
@@ -160,13 +276,22 @@ public class BloodRequestDao {
                     list.add(mapRequest(rs));
                 }
             }
-        } catch (SQLException e) {
-            String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
-            if (message.contains("created_at") && sql.contains("created_at")) {
-                String fallback = sql.replace("ORDER BY br.created_at DESC", "ORDER BY br.id DESC");
-                return queryList(fallback, idParam);
+        }
+        return list;
+    }
+
+    private List<Map<String, Object>> queryListWithCutoff(String sql, Timestamp cutoff) throws SQLException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (cutoff != null) {
+                ps.setTimestamp(1, cutoff);
             }
-            throw e;
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRequest(rs));
+                }
+            }
         }
         return list;
     }
@@ -184,7 +309,13 @@ public class BloodRequestDao {
         req.put("units", units);
         String urgency = rs.getString("urgency_level");
         req.put("urgencyLevel", urgency);
-        req.put("urgency", urgency == null ? "high" : urgency.toLowerCase());
+        req.put("urgency_level", urgency);
+        req.put("urgency", urgency == null ? "normal" : urgency.toLowerCase());
+        try {
+            Object nw = rs.getObject("needed_within_mins");
+            req.put("neededWithinMinutes", nw);
+            req.put("neededWithinMins", nw);
+        } catch (SQLException ignored) {}
         Date requiredBefore = rs.getDate("required_before");
         req.put("requiredBefore", requiredBefore == null ? null : requiredBefore.toString());
         String status = rs.getString("status");
@@ -196,7 +327,7 @@ public class BloodRequestDao {
         req.put("phone", rs.getString("hospital_phone"));
         try {
             Object rad = rs.getObject("radius_km");
-            req.put("radiusKm", rad instanceof Number ? ((Number) rad).doubleValue() : 10.0);
+            req.put("radiusKm", rad instanceof Number n ? n.doubleValue() : 10.0);
         } catch (SQLException ignored) {
             req.put("radiusKm", 10.0);
         }
@@ -235,6 +366,7 @@ public class BloodRequestDao {
             Object created = rs.getObject("created_at");
             req.put("time", created == null ? null : created.toString());
             req.put("createdAt", created == null ? null : created.toString());
+            req.put("created_at", created == null ? null : created.toString());
         } catch (SQLException ignored) {
             req.put("time", null);
         }
@@ -251,21 +383,5 @@ public class BloodRequestDao {
             } catch (Exception ignored) {}
         }
         return req;
-    }
-
-    private static void setDouble(PreparedStatement ps, int index, Double value) throws SQLException {
-        if (value == null) {
-            ps.setNull(index, Types.DOUBLE);
-        } else {
-            ps.setDouble(index, value);
-        }
-    }
-
-    private static String str(Object value) {
-        return value == null ? "" : String.valueOf(value);
-    }
-
-    private static Double asDouble(Object value) {
-        return value instanceof Number ? ((Number) value).doubleValue() : null;
     }
 }

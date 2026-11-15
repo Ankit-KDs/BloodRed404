@@ -260,6 +260,10 @@
             if ((d.preferredLanguage || d.preferred_language) && window.RED404_I18N && !localStorage.getItem('red404_lang')) {
               window.RED404_I18N.setLanguage(d.preferredLanguage || d.preferred_language);
             }
+            if (d.eligibility) {
+              donorData.eligibility = d.eligibility;
+              renderMiniEligibility();
+            }
             renderWelcomeBanner();
             initStatusRow();
             renderUpcomingDrives();
@@ -300,6 +304,32 @@
 
     // 7. Evaluate 3D Impact Badges (Locked initially if 0 donations)
     evaluateBadges();
+
+    // Live sync: fetch authoritative donation history & emergency requests from server
+    fetch('/api/donor/donation-history', { credentials: 'include' })
+      .then(r => r.json())
+      .then(json => {
+        if (json && Array.isArray(json.data)) {
+          donorData.donations = json.data;
+          renderDonationHistory(donorData.donations);
+          calculateImpactMetrics();
+          evaluateBadges();
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/donor/blood-requests', { credentials: 'include' })
+      .then(r => r.json())
+      .then(json => {
+        if (json && Array.isArray(json.data)) {
+          donorData.activeAlerts = json.data.filter(r => {
+            const s = (r.status || 'New').toUpperCase();
+            return s === 'NEW' || s === 'NOTIFIED' || s === 'ACCEPTED';
+          });
+          renderAlerts();
+        }
+      })
+      .catch(() => {});
   }
 
   /**
@@ -906,9 +936,9 @@
                 </div>
               </td>
               <td>
-                <span class="badge-component whole-blood">
-                  <i class="fa-solid fa-droplet"></i>
-                  ${bGroup}
+                <span class="blood-group-tag" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; color:#ef4444; font-size:14px; background:rgba(239,68,68,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(239,68,68,0.25);">
+                  <i class="fa-solid fa-droplet" style="font-size:11px;"></i>
+                  <span>${escapeHtml(bGroup)}</span>
                 </span>
               </td>
               <td><strong style="color: #ffffff;">${vol}</strong></td>
@@ -935,7 +965,9 @@
   function calculateImpactMetrics() {
     const totalDonations = donorData.donations ? donorData.donations.length : 0;
     const livesSaved = totalDonations * 3;
-    const totalVolume = totalDonations * 450;
+    const totalVolume = (donorData.donations && donorData.donations.length > 0)
+      ? donorData.donations.reduce((sum, d) => sum + (d.volumeMl || d.volume_ml || (d.volume ? parseInt(d.volume) : 0) || 450), 0)
+      : 0;
 
     const totalEl = document.getElementById('statTotalDonations');
     const livesEl = document.getElementById('statLivesSaved');
@@ -999,7 +1031,7 @@
       strip.className = 'mini-eligibility-strip cooldown';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Next donation possible on ${escapeHtml(formattedDate)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)</span>
+        <span>Next eligible on ${escapeHtml(formattedDate)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})</span>
       `;
     }
   }
@@ -1024,13 +1056,30 @@
           isUnlocked = count >= 1;
           break;
         case 'golden-hour':
-          isUnlocked = donorData.donations.some(d => d.responseTimeMinutes && d.responseTimeMinutes <= 60);
+          isUnlocked = count >= 1 && donorData.donations.some(d => d.responseTimeMinutes && d.responseTimeMinutes <= 60);
           break;
         case 'night-owl':
-          isUnlocked = donorData.donations.some(d => d.isNight || (d.hour !== undefined && (d.hour >= 21 || d.hour < 6)));
+          isUnlocked = count >= 1 && donorData.donations.some(d => {
+            const timeStr = d.createdAt || d.created_at || d.timestamp || d.time;
+            if (!timeStr) return false;
+            try {
+              const dt = new Date(timeStr);
+              if (isNaN(dt.getTime())) return false;
+              // Evaluated in IST (Asia/Kolkata):
+              const hourStr = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Kolkata',
+                hour: 'numeric',
+                hour12: false
+              }).format(dt);
+              const hour = parseInt(hourStr, 10);
+              return (hour >= 21 || hour < 6);
+            } catch (_) {
+              return false;
+            }
+          });
           break;
         case 'rare-vanguard':
-          isUnlocked = (donorData.bloodGroup === 'AB-' || donorData.bloodGroup === 'O-') && count >= 1;
+          isUnlocked = count >= 1 && (donorData.bloodGroup === 'AB-' || donorData.bloodGroup === 'O-');
           break;
         case 'life-giver':
           isUnlocked = count >= 5;

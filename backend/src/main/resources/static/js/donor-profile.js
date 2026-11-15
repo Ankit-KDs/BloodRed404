@@ -614,7 +614,7 @@
           formattedDate = nextDateStr;
         }
       }
-      statusWording = `Next donation possible on ${formattedDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'} left)`;
+      statusWording = `Next eligible on ${formattedDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'})`;
       if (fluidContainer) {
         fluidContainer.style.height = `${progressPct}%`;
       }
@@ -679,14 +679,23 @@
       return urg.includes('CRITICAL') || urg.includes('EMERGENCY');
     });
 
-    // 3. NIGHT OWL (night-owl): Unlocks if any donation timestamp has an hour between 22 (10 PM) and 6 (6 AM)
+    // 3. NIGHT OWL (night-owl): Unlocks only if verified donation was between 9 PM (21:00) and 6 AM (06:00) IST (Asia/Kolkata)
     const isNightOwl = hist.some(d => {
-      const dt = d.donationDate || d.date || d.createdAt || d.timestamp;
+      const dt = d.createdAt || d.timestamp || d.donationDate || d.date;
       if (!dt) return false;
-      const parsed = new Date(dt);
-      if (isNaN(parsed.getTime())) return false;
-      const hour = parsed.getHours();
-      return hour >= 22 || hour <= 6;
+      try {
+        const parsed = new Date(dt);
+        if (isNaN(parsed.getTime())) return false;
+        const istHourStr = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour: 'numeric',
+          hour12: false
+        }).format(parsed);
+        const hour = parseInt(istHourStr, 10);
+        return hour >= 21 || hour < 6;
+      } catch (_) {
+        return false;
+      }
     });
 
     // 4. RARE VANGUARD (rare-vanguard): Unlocks if bloodGroup contains '-' AND donationHistory.length >= 1
@@ -1204,14 +1213,20 @@
           hintEl.innerHTML = '<span style="color: #94a3b8;"><i class="fa-solid fa-circle-info"></i> Self-declared blood group (can be edited)</span>';
         }
       }
-      if (genderInput) genderInput.value = currentDonor.gender || '';
+      if (genderInput) {
+        const g = (currentDonor.gender || '').trim().toLowerCase();
+        if (g.startsWith('m')) genderInput.value = 'Male';
+        else if (g.startsWith('f')) genderInput.value = 'Female';
+        else if (g.startsWith('o')) genderInput.value = 'Other';
+        else genderInput.value = currentDonor.gender || '';
+      }
       if (dobInput) {
         const dob = currentDonor.dob || '';
         dobInput.value = dob === '1998-05-15' ? '' : dob;
       }
       if (weightInput) {
         const wt = currentDonor.weight;
-        weightInput.value = (wt !== null && wt !== undefined && String(wt).trim() !== '') ? wt : '';
+        weightInput.value = (wt !== null && wt !== undefined && String(wt).trim() !== '') ? `${wt} kg` : 'Waiting for hospital check';
       }
       if (phoneInput) {
         phoneInput.value = (currentDonor.phone && currentDonor.phone !== '9876543210') ? currentDonor.phone : '';
@@ -1239,15 +1254,15 @@
 
       if (medsInput) medsInput.value = currentDonor.medications || '';
       if (surgInput) surgInput.value = currentDonor.surgeries || '';
-      if (pulseInput) pulseInput.value = (currentDonor.pulse !== null && currentDonor.pulse !== undefined) ? currentDonor.pulse : '';
-      if (hbInput) hbInput.value = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined) ? currentDonor.hemoglobin : '';
-      if (bpInput) bpInput.value = currentDonor.bloodPressure || '';
-      if (tempInput) tempInput.value = (currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined) ? currentDonor.bodyTemp : '';
+      if (pulseInput) pulseInput.value = (currentDonor.pulse !== null && currentDonor.pulse !== undefined && String(currentDonor.pulse).trim() !== '') ? `${currentDonor.pulse} bpm` : 'Waiting for hospital check';
+      if (hbInput) hbInput.value = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined && String(currentDonor.hemoglobin).trim() !== '') ? `${currentDonor.hemoglobin} g/dL` : 'Waiting for hospital check';
+      if (bpInput) bpInput.value = currentDonor.bloodPressure || 'Waiting for hospital check';
+      if (tempInput) tempInput.value = (currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined && String(currentDonor.bodyTemp).trim() !== '') ? `${currentDonor.bodyTemp} °F` : 'Waiting for hospital check';
       if (lastDonInput) {
         const ld = currentDonor.lastDonationDate || currentDonor.lastDonation || '';
-        lastDonInput.value = ld === '2024-01-10' ? '' : ld;
+        lastDonInput.value = (ld && ld !== '2024-01-10') ? ld : 'None recorded';
       }
-      if (facilityInput) facilityInput.value = currentDonor.verifiedFacility || '';
+      if (facilityInput) facilityInput.value = currentDonor.verifiedFacility || 'None recorded';
 
       const langInput = document.getElementById('editDonorPreferredLanguage');
       const notifSmsInput = document.getElementById('editDonorSmsNotif');
@@ -1380,15 +1395,10 @@
         const submitBtn = document.getElementById('btnSaveDonorProfile');
         if (submitBtn) {
           submitBtn.disabled = true;
-          submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving to MySQL...</span>';
+          submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving changes...</span>';
         }
 
         try {
-          const weightStr = (document.getElementById('editDonorWeight')?.value || '').trim();
-          const pulseStr = (document.getElementById('editDonorPulse')?.value || '').trim();
-          const hbStr = (document.getElementById('editDonorHb')?.value || '').trim();
-          const tempStr = (document.getElementById('editDonorTemp')?.value || '').trim();
-
           // Generate a NEW secure QR token upon every profile edit save.
           // This ensures that the newly displayed QR code points to this fresh state,
           // while any previously opened scan tabs remain frozen to their scan-time snapshot.
@@ -1402,6 +1412,7 @@
             return;
           }
 
+          // Clinical vitals, verified facility and last donation are read-only and omitted from user profile updates (Part 1, Requirement 1 & 5)
           const payload = {
             id: currentDonor.id || 1,
             donorId: currentDonor.id || 1,
@@ -1410,7 +1421,6 @@
             bloodType: (document.getElementById('editDonorBloodType')?.value || '').trim() || currentDonor.bloodType,
             gender: genderChosen,
             dob: (document.getElementById('editDonorDob')?.value || '').trim(),
-            weight: weightStr ? parseFloat(weightStr) : null,
             phone: (document.getElementById('editDonorPhone')?.value || '').trim(),
             email: (document.getElementById('editDonorEmail')?.value || '').trim() || currentDonor.email,
             address: (document.getElementById('editDonorAddress')?.value || '').trim(),
@@ -1421,12 +1431,6 @@
             conditions: (document.getElementById('editDonorConditions')?.value || '').trim(),
             medications: (document.getElementById('editDonorMedications')?.value || '').trim(),
             surgeries: (document.getElementById('editDonorSurgeries')?.value || '').trim(),
-            pulse: pulseStr ? parseInt(pulseStr, 10) : null,
-            hemoglobin: hbStr ? parseFloat(hbStr) : null,
-            bloodPressure: (document.getElementById('editDonorBp')?.value || '').trim(),
-            bodyTemp: tempStr ? parseFloat(tempStr) : null,
-            lastDonationDate: (document.getElementById('editDonorLastDonation')?.value || '').trim(),
-            verifiedFacility: (document.getElementById('editDonorFacility')?.value || '').trim(),
             preferredLanguage: document.getElementById('editDonorPreferredLanguage')?.value || 'en',
             smsNotif: document.getElementById('editDonorSmsNotif')?.checked ?? true,
             emailNotif: document.getElementById('editDonorEmailNotif')?.checked ?? true,
@@ -1542,14 +1546,14 @@
             }
           } catch (_) { }
 
-          showToast('Donor profile successfully updated in MySQL database!', 'success');
+          showToast('Profile updated successfully!', 'success');
         } catch (err) {
           console.error('Save error:', err);
           showToast('Failed to save donor profile. Please try again.', 'error');
         } finally {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Save &amp; Update Database</span>';
+            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Save changes</span>';
           }
         }
       });

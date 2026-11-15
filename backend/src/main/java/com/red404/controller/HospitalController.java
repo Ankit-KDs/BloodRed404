@@ -222,12 +222,24 @@ public class HospitalController {
             Double lat = hosp != null ? asDouble(hosp.get("latitude")) : null;
             Double lng = hosp != null ? asDouble(hosp.get("longitude")) : null;
 
+            String urgencyLevel = JsonUtil.textOrNull(body, "urgencyLevel");
+            if (urgencyLevel == null || urgencyLevel.isBlank()) {
+                urgencyLevel = JsonUtil.textOrNull(body, "urgency");
+            }
+            Integer neededWithinMins = null;
+            if (body.has("neededWithinMins") && !body.get("neededWithinMins").isNull()) {
+                neededWithinMins = body.get("neededWithinMins").asInt();
+            } else if (body.has("neededWithin") && !body.get("neededWithin").isNull()) {
+                neededWithinMins = body.get("neededWithin").asInt();
+            }
+
             Map<String, Object> reqPayload = new HashMap<>();
             reqPayload.put("hospitalId", hospitalId);
             reqPayload.put("patientName", patientName);
             reqPayload.put("bloodType", bloodType != null ? bloodType : "O-");
             reqPayload.put("unitsRequested", units);
-            reqPayload.put("urgencyLevel", "HIGH");
+            reqPayload.put("urgencyLevel", urgencyLevel != null ? urgencyLevel : "Urgent");
+            reqPayload.put("neededWithinMins", neededWithinMins);
             reqPayload.put("latitude", lat);
             reqPayload.put("longitude", lng);
             reqPayload.put("notes", notes);
@@ -285,12 +297,24 @@ public class HospitalController {
             Double lat = hosp != null ? asDouble(hosp.get("latitude")) : null;
             Double lng = hosp != null ? asDouble(hosp.get("longitude")) : null;
 
+            String urgencyLevel = JsonUtil.textOrNull(body, "urgencyLevel");
+            if (urgencyLevel == null || urgencyLevel.isBlank()) {
+                urgencyLevel = JsonUtil.textOrNull(body, "urgency");
+            }
+            Integer neededWithinMins = null;
+            if (body.has("neededWithinMins") && !body.get("neededWithinMins").isNull()) {
+                neededWithinMins = body.get("neededWithinMins").asInt();
+            } else if (body.has("neededWithin") && !body.get("neededWithin").isNull()) {
+                neededWithinMins = body.get("neededWithin").asInt();
+            }
+
             Map<String, Object> reqPayload = new HashMap<>();
             reqPayload.put("hospitalId", hospitalId);
             reqPayload.put("patientName", patientName);
             reqPayload.put("bloodType", bloodType != null ? bloodType : "O-");
             reqPayload.put("unitsRequested", units);
-            reqPayload.put("urgencyLevel", "HIGH");
+            reqPayload.put("urgencyLevel", urgencyLevel != null ? urgencyLevel : "Urgent");
+            reqPayload.put("neededWithinMins", neededWithinMins);
             reqPayload.put("latitude", lat);
             reqPayload.put("longitude", lng);
             reqPayload.put("notes", notes);
@@ -845,6 +869,7 @@ public class HospitalController {
     @GetMapping({"/donors/checkin", "/donors/lookup"})
     public ResponseEntity<ApiResponse> lookupDonorForCheckin(
             @RequestParam(required = false) String smartId,
+            @RequestParam(required = false) String donorId,
             @RequestParam(required = false) String id,
             HttpServletRequest request) {
         try {
@@ -859,7 +884,7 @@ public class HospitalController {
             String vStatus = (String) hosp.get("verificationStatus");
             if (vStatus == null) vStatus = (String) hosp.get("verification_status");
 
-            String queryId = smartId != null ? smartId.trim() : (id != null ? id.trim() : "");
+            String queryId = smartId != null ? smartId.trim() : (donorId != null ? donorId.trim() : (id != null ? id.trim() : ""));
             if (queryId.isBlank()) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Please enter a valid Donor ID or Smart ID."));
             }
@@ -890,8 +915,8 @@ public class HospitalController {
             // Log successful scan
             donorDao.logCheckinScan(hospitalId, hospName, queryId, donorNumId, true, "Lookup successful");
 
-            // Dispatch donor check-in notification
-            if (donorNumId > 0) {
+            // Dispatch donor check-in notification (deduped to one per visit - Part 2, Requirement 5)
+            if (donorNumId > 0 && !donorDao.hasRecentCheckinNotification(donorNumId, hospName)) {
                 donorDao.addDonorNotification(donorNumId, "Checked in at " + hospName,
                         "You have successfully checked in at " + hospName + " for blood donation verification.", "checkin");
             }
@@ -939,6 +964,10 @@ public class HospitalController {
             details.put("medications", donor.get("medications"));
             details.put("surgeries", donor.get("surgeries"));
             details.put("donorType", donor.get("donorType") != null ? donor.get("donorType") : donor.get("donor_type"));
+            details.put("pulse", donor.get("pulse"));
+            details.put("hemoglobin", donor.get("hemoglobin"));
+            details.put("bloodPressure", donor.get("bloodPressure") != null ? donor.get("bloodPressure") : donor.get("blood_pressure"));
+            details.put("bodyTemp", donor.get("bodyTemp") != null ? donor.get("bodyTemp") : donor.get("body_temp"));
 
             // Authoritative Donor Eligibility Service single source of truth
             Map<String, Object> elig = DonorEligibilityService.computeEligibility(donor);
@@ -1218,6 +1247,13 @@ public class HospitalController {
                 } catch (Exception ignored) {}
             }
 
+            // Immediately mark that donor's other open requests as "Withdrawn - not eligible" and stop notifying them (Part 1, Requirement 3)
+            if (donorIntId > 0) {
+                try {
+                    notificationDao.withdrawOpenNotificationsForDonor(donorIntId, reqId > 0 ? reqId : null);
+                } catch (Exception ignored) {}
+            }
+
             // Update donor blood group status to hospital_verified and log audit (Part 5)
             if (existingDonor != null && existingDonor.get("id") != null) {
                 Map<String, Object> hosp = hospitalDao.findById(hospitalId);
@@ -1225,8 +1261,30 @@ public class HospitalController {
                 donorDao.updateBloodGroupHospitalVerified(donorIntId, bloodType, hospitalId, hospName);
                 bloodGroupAuditDao.insertAudit(donorIntId, existingBg, bloodType, "hospital", hospitalId,
                         editReason != null ? editReason.trim() : "Hospital check-in donation verification");
+
+                // Save measured weight and vitals to donor profile with check date (Part 2, Requirement 3)
+                if (body.has("vitals")) {
+                    try {
+                        JsonNode vNode = body.get("vitals");
+                        Double weight = JsonUtil.asDouble(vNode, "weight");
+                        Double hb = JsonUtil.asDouble(vNode, "hemoglobin");
+                        Double systolic = JsonUtil.asDouble(vNode, "systolic");
+                        Double diastolic = JsonUtil.asDouble(vNode, "diastolic");
+                        Integer pulse = vNode.has("pulse") ? vNode.get("pulse").asInt() : null;
+                        Double temp = JsonUtil.asDouble(vNode, "temperature");
+                        String bp = (systolic != null && diastolic != null) ? (int) Math.round(systolic) + "/" + (int) Math.round(diastolic) : null;
+                        donorDao.updateDonorVitalsAndVerification(donorIntId, weight, pulse, hb, bp, temp, hospName);
+                    } catch (Exception ignored) {}
+                }
+
                 // Invalidate one-time QR token upon approved check-in (Part 6)
                 donorDao.invalidateQrToken(donorIntId);
+
+                // Add separate notification after donation approval (Part 2, Requirement 5)
+                try {
+                    donorDao.addDonorNotification(donorIntId, "Donation recorded at " + hospName,
+                            "Your " + volumeMl + " mL blood donation of " + bloodType + " has been recorded and verified at " + hospName + ". Thank you for saving lives!", "donation");
+                } catch (Exception ignored) {}
             }
 
             // Increment inventory (+1 unit)
