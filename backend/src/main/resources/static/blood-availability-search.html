@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RED404 • Real-Time Blood Availability Search</title>
+  <title>RED404 • Public Blood Availability Search</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml"
@@ -28,14 +28,12 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background: #0a0a0f;
-      background-image: 
-        radial-gradient(ellipse at 15% 15%, rgba(230, 57, 70, 0.08) 0%, transparent 45%),
-        radial-gradient(ellipse at 85% 65%, rgba(193, 18, 31, 0.06) 0%, transparent 45%);
+      background: #0f1012;
+      color: #ecebe8;
     }
 
     .search-hero {
-      padding: 7.5rem 0 2rem;
+      padding: 7rem 0 1.5rem;
       text-align: center;
       position: relative;
       z-index: 1;
@@ -45,57 +43,48 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(230, 57, 70, 0.12);
-      border: 1px solid rgba(230, 57, 70, 0.35);
-      color: var(--red-light, #ff6b6b);
-      padding: 0.4rem 1.1rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 0.35rem 1rem;
       border-radius: 9999px;
       font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
     }
 
     .search-hero-title {
-      font-size: clamp(2rem, 4vw, 3rem);
-      font-weight: 800;
-      color: var(--text-primary, #f0f0f8);
+      font-size: clamp(2rem, 3.5vw, 2.75rem);
+      font-weight: 700;
+      color: #f8fafc;
       letter-spacing: -0.02em;
-      line-height: 1.2;
-      margin-bottom: 0.85rem;
-    }
-
-    .search-hero-title span {
-      background: linear-gradient(135deg, #e63946 0%, #ff6b6b 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
     }
 
     .search-hero-subtitle {
       max-width: 680px;
       margin: 0 auto;
-      font-size: 1.05rem;
-      color: var(--text-secondary, #9898b8);
+      font-size: 1rem;
+      color: #94a3b8;
       line-height: 1.6;
     }
 
     /* Search Controls Card */
     .search-controls-card {
-      background: rgba(17, 17, 24, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: var(--radius-xl, 20px);
-      padding: 2rem 2.5rem;
-      margin: 2rem auto;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(230, 57, 70, 0.05);
+      background: #17181b;
+      border: 1px solid #2a2c31;
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      margin: 1.5rem auto 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
 
     .search-form-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr) auto;
-      gap: 1.25rem;
+      grid-template-columns: 180px 1fr 160px auto;
+      gap: 1rem;
       align-items: flex-end;
     }
 
@@ -107,93 +96,107 @@
 
     .form-group-item label {
       font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-secondary, #9898b8);
-      letter-spacing: 0.03em;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.02em;
       display: flex;
       align-items: center;
       gap: 0.4rem;
     }
 
-    .form-group-item label i {
-      color: var(--red-light, #ff6b6b);
-      font-size: 0.75rem;
-    }
-
     .custom-input,
-    .custom-select,
-    .custom-location-badge {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius-md, 10px);
-      padding: 0.75rem 1rem;
-      color: #ffffff;
-      font-size: 0.92rem;
+    .custom-select {
+      background: #1e2024;
+      border: 1px solid #2a2c31;
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      color: #ecebe8;
+      font-size: 0.9rem;
       font-family: inherit;
       outline: none;
-      transition: all 0.25s ease;
+      transition: border-color 0.2s ease, background 0.2s ease;
       width: 100%;
-      height: 44px;
+      height: 42px;
       box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
     }
 
     .custom-input:focus,
-    .custom-select:focus,
-    .custom-location-badge:hover {
-      border-color: var(--red-primary, #e63946);
-      background: rgba(255, 255, 255, 0.07);
-      box-shadow: 0 0 15px rgba(230, 57, 70, 0.25);
+    .custom-select:focus {
+      border-color: #38bdf8;
+      background: #23252a;
     }
 
     .custom-select option {
-      background: #14141e;
-      color: #ffffff;
+      background: #17181b;
+      color: #ecebe8;
     }
 
     .btn-search-trigger {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.6rem;
-      background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+      gap: 0.5rem;
+      background: #e63946;
       color: #ffffff;
-      font-weight: 700;
-      font-size: 0.95rem;
-      padding: 0.75rem 1.6rem;
-      border-radius: var(--radius-md, 10px);
-      border: 1px solid rgba(230, 57, 70, 0.5);
+      font-weight: 600;
+      font-size: 0.92rem;
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      border: 1px solid #e63946;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 20px rgba(230, 57, 70, 0.3);
+      transition: background 0.2s ease, transform 0.15s ease;
       white-space: nowrap;
-      height: 44px;
+      height: 42px;
     }
 
     .btn-search-trigger:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 30px rgba(230, 57, 70, 0.5);
+      background: #d62839;
+    }
+
+    .btn-search-trigger:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-location-gps {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0 0.85rem;
+      border-radius: 8px;
+      background: #1e2024;
+      border: 1px solid #2a2c31;
+      color: #cbd5e1;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 0.85rem;
+      font-weight: 600;
+      height: 42px;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .btn-location-gps:hover {
+      background: #272a30;
+      border-color: #38bdf8;
     }
 
     /* Privacy Banner */
     .privacy-notice-box {
-      background: rgba(230, 57, 70, 0.05);
-      border: 1px dashed rgba(230, 57, 70, 0.3);
-      border-radius: var(--radius-md, 10px);
-      padding: 0.75rem 1.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      font-size: 0.85rem;
-      color: var(--text-secondary, #9898b8);
-      margin-top: 1.25rem;
+      gap: 0.65rem;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-top: 1rem;
     }
 
     .privacy-notice-box i {
-      color: var(--red-light, #ff6b6b);
-      font-size: 1.1rem;
+      color: #22c55e;
+      font-size: 0.95rem;
     }
 
     /* Results Header */
@@ -201,15 +204,15 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 2rem 0 1.25rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      margin: 1.5rem 0 1rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid #2a2c31;
     }
 
-    .results-count {
+    .results-count-title {
       font-size: 1.1rem;
       font-weight: 700;
-      color: var(--text-primary, #f0f0f8);
+      color: #f8fafc;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -219,359 +222,388 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #10b981;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #22c55e;
       padding: 0.25rem 0.65rem;
       border-radius: 9999px;
       font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
 
     .dot-live-pulse {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
-      animation: pulseGreen 1.8s infinite;
+      background: #22c55e;
     }
 
-    @keyframes pulseGreen {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.25); }
-    }
-
-    /* Donor Card List */
-    .donor-list-grid {
+    /* Results Sections */
+    .results-layout {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 2rem;
       margin-bottom: 4rem;
     }
 
-    .donor-search-card {
-      background: rgba(17, 17, 24, 0.65);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-lg, 16px);
-      padding: 1.25rem 1.75rem;
+    .section-title-group {
+      margin-bottom: 1rem;
+    }
+
+    .section-heading {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin: 0 0 0.25rem 0;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      transition: all 0.25s ease;
-      position: relative;
-      overflow: hidden;
+      gap: 0.5rem;
     }
 
-    .donor-search-card:hover {
-      border-color: rgba(230, 57, 70, 0.4);
-      background: rgba(22, 22, 31, 0.85);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+    .section-subheading {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin: 0;
     }
 
-    .donor-search-card::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: linear-gradient(to bottom, #e63946, #c1121f);
-    }
-
-    .donor-card-left {
+    /* Hospital Cards */
+    .hospital-list {
       display: flex;
-      align-items: center;
-      gap: 1.5rem;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    .donor-blood-badge {
-      min-width: 60px;
-      height: 60px;
+    .hospital-card {
+      background: #17181b;
+      border: 1px solid #2a2c31;
       border-radius: 12px;
-      background: linear-gradient(135deg, rgba(230, 57, 70, 0.2) 0%, rgba(193, 18, 31, 0.1) 100%);
-      border: 1px solid rgba(230, 57, 70, 0.45);
+      padding: 1.25rem 1.5rem;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 16px rgba(230, 57, 70, 0.2);
+      gap: 0.9rem;
     }
 
-    .donor-blood-group {
-      font-family: var(--font-brand, 'Orbitron'), monospace;
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #ff6b6b;
-      line-height: 1;
+    .hosp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
-    .donor-blood-rh {
-      font-size: 0.62rem;
-      font-weight: 700;
-      color: var(--text-muted, #7a7a9a);
-      letter-spacing: 0.05em;
-      margin-top: 2px;
-    }
-
-    .donor-info-col {
+    .hosp-info {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.25rem;
     }
 
-    .donor-id-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .donor-code {
-      font-family: var(--font-brand, 'Orbitron'), monospace;
-      font-size: 1rem;
+    .hosp-name {
+      font-size: 1.1rem;
       font-weight: 700;
-      color: var(--text-primary, #ffffff);
-      letter-spacing: 0.04em;
+      color: #ffffff;
+      margin: 0;
     }
 
-    .badge-anon-lock {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      color: var(--text-muted, #7a7a9a);
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
-    }
-
-    .donor-meta-row {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-      font-size: 0.84rem;
-      color: var(--text-secondary, #9898b8);
-    }
-
-    .donor-meta-item {
+    .hosp-area {
+      font-size: 0.85rem;
+      color: #94a3b8;
       display: flex;
       align-items: center;
       gap: 0.4rem;
     }
 
-    .donor-meta-item i {
-      color: var(--red-light, #ff6b6b);
-      font-size: 0.8rem;
-    }
-
-    .donor-status-tag {
-      color: #10b981;
-      font-weight: 600;
+    .distance-pill {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: var(--font-mono, monospace);
     }
 
-    .donor-card-right {
+    .hosp-stock-box {
+      background: #1e2024;
+      border: 1px solid #2a2c31;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
-    .btn-donor-request {
-      display: inline-flex;
-      align-items: center;
+    .hosp-stock-primary {
+      display: flex;
+      align-items: baseline;
       gap: 0.5rem;
-      background: linear-gradient(135deg, rgba(230, 57, 70, 0.18) 0%, rgba(193, 18, 31, 0.12) 100%);
-      border: 1px solid rgba(230, 57, 70, 0.45);
-      color: #ff6b6b;
-      padding: 0.65rem 1.4rem;
-      border-radius: var(--radius-md, 10px);
-      font-size: 0.88rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.25s ease;
     }
 
-    .btn-donor-request:hover {
-      background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
-      color: #ffffff;
-      border-color: #e63946;
-      box-shadow: 0 0 20px rgba(230, 57, 70, 0.4);
-      transform: translateY(-2px);
-    }
-
-    /* Modal Styling */
-    .restriction-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-
-    .restriction-modal-overlay.active {
-      display: flex;
-    }
-
-    .restriction-modal {
-      background: #111118;
-      border: 1px solid rgba(230, 57, 70, 0.4);
-      border-radius: var(--radius-xl, 20px);
-      max-width: 500px;
-      width: 100%;
-      padding: 2.2rem 2.4rem;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(230, 57, 70, 0.2);
-      text-align: center;
-      position: relative;
-      animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes modalPopIn {
-      from { transform: scale(0.92); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .modal-close-btn {
-      position: absolute;
-      top: 1.25rem;
-      right: 1.25rem;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      color: var(--text-secondary, #9898b8);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .modal-close-btn:hover {
-      background: rgba(230, 57, 70, 0.2);
-      color: #ffffff;
-      border-color: #e63946;
-    }
-
-    .modal-shield-icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: rgba(230, 57, 70, 0.12);
-      border: 2px solid rgba(230, 57, 70, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.8rem;
-      color: #ff6b6b;
-      margin: 0 auto 1.25rem;
-      box-shadow: 0 0 25px rgba(230, 57, 70, 0.3);
-    }
-
-    .modal-restricted-title {
+    .hosp-stock-units {
       font-size: 1.35rem;
       font-weight: 800;
       color: #ffffff;
-      margin-bottom: 0.75rem;
-      line-height: 1.3;
+      font-family: var(--font-mono, monospace);
     }
 
-    .modal-restricted-desc {
-      font-size: 0.92rem;
-      color: var(--text-secondary, #9898b8);
-      line-height: 1.6;
-      margin-bottom: 1.75rem;
-    }
-
-    .modal-action-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .btn-hospital-redirect {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 0.98rem;
-      padding: 0.85rem 1.5rem;
-      border-radius: var(--radius-md, 10px);
-      text-decoration: none;
-      box-shadow: 0 0 20px rgba(230, 57, 70, 0.35);
-      transition: all 0.25s ease;
-    }
-
-    .btn-hospital-redirect:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 30px rgba(230, 57, 70, 0.5);
-    }
-
-    .btn-modal-cancel {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: var(--text-secondary, #9898b8);
-      padding: 0.7rem 1.5rem;
-      border-radius: var(--radius-md, 10px);
+    .hosp-stock-label {
       font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+
+    .btn-toggle-compat {
+      background: none;
+      border: 1px solid #2a2c31;
+      color: #94a3b8;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
       transition: all 0.2s ease;
     }
 
-    .btn-modal-cancel:hover {
-      background: rgba(255, 255, 255, 0.05);
+    .btn-toggle-compat:hover {
+      background: #272a30;
       color: #ffffff;
+    }
+
+    .compat-drawer {
+      display: none;
+      padding-top: 0.75rem;
+      border-top: 1px solid #2a2c31;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .compat-drawer.open {
+      display: flex;
+    }
+
+    .compat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      background: #17181b;
+      border: 1px solid #2a2c31;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .compat-pill strong {
+      color: #ffffff;
+    }
+
+    .hosp-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding-top: 0.6rem;
+      border-top: 1px solid #23252a;
+    }
+
+    .hosp-updated {
+      font-size: 0.8rem;
+      color: #64748b;
+      font-family: var(--font-mono, monospace);
+    }
+
+    .hosp-action-btns {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-action-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: #1e2024;
+      border: 1px solid #2a2c31;
+      color: #cbd5e1;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action-outline:hover {
+      background: #272a30;
+      color: #ffffff;
+      border-color: #38bdf8;
+    }
+
+    .btn-emergency-phone {
+      background: rgba(229, 56, 59, 0.12);
+      border-color: rgba(229, 56, 59, 0.3);
+      color: #fca5a5;
+    }
+
+    .btn-emergency-phone:hover {
+      background: rgba(229, 56, 59, 0.22);
+      color: #ffffff;
+      border-color: #e5383b;
+    }
+
+    /* Donor Aggregate Bands */
+    .donor-bands-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .band-card {
+      background: #17181b;
+      border: 1px solid #2a2c31;
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .band-range-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0;
+    }
+
+    .band-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .band-count-badge {
+      font-weight: 700;
+      color: #f8fafc;
+      font-family: var(--font-mono, monospace);
+    }
+
+    .band-count-badge.active-count {
+      color: #22c55e;
+    }
+
+    /* Hospital Notice Banner */
+    .hospital-info-banner {
+      background: #17181b;
+      border: 1px solid #2a2c31;
+      border-radius: 10px;
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.88rem;
+      color: #94a3b8;
+    }
+
+    .hospital-info-banner i {
+      color: #38bdf8;
+      font-size: 1.1rem;
+    }
+
+    .hospital-info-banner a {
+      color: #ff6b6b;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    /* State Boxes */
+    .state-box {
+      background: #17181b;
+      border: 1px solid #2a2c31;
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #94a3b8;
+    }
+
+    .state-box i {
+      font-size: 2.25rem;
+      margin-bottom: 0.85rem;
+      display: inline-block;
+    }
+
+    .state-box h4 {
+      color: #f8fafc;
+      font-size: 1.15rem;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .state-box p {
+      font-size: 0.9rem;
+      margin: 0 auto;
+      max-width: 520px;
+      line-height: 1.5;
+    }
+
+    .btn-retry-action {
+      margin-top: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.35rem;
+      border-radius: 8px;
+      background: #e63946;
+      border: none;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
     }
 
     @media (max-width: 900px) {
       .search-form-grid {
         grid-template-columns: 1fr 1fr;
       }
+      .form-group-item.loc-group {
+        grid-column: span 2;
+      }
       .btn-search-trigger {
         grid-column: span 2;
       }
+      .donor-bands-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 600px) {
       .search-form-grid {
         grid-template-columns: 1fr;
       }
-      .btn-search-trigger {
+      .form-group-item.loc-group {
         grid-column: span 1;
       }
-      .donor-search-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.25rem;
-      }
-      .donor-card-right {
-        width: 100%;
-      }
-      .btn-donor-request {
-        width: 100%;
-        justify-content: center;
+      .btn-search-trigger {
+        grid-column: span 1;
       }
     }
   </style>
 </head>
 <body class="search-page-wrapper">
 
-  <!-- Blood Drop Floating & Particle Elements (Matching Home Page) -->
+  <!-- Floating particles -->
   <div class="particles-container" id="particles"></div>
   <div class="floating-drops" id="floatingDrops"></div>
 
@@ -581,7 +613,6 @@
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
           <i class="fas fa-tint"></i>
-          <div class="pulse-ring"></div>
         </div>
         <span class="logo-text">RED<span class="logo-404">404</span></span>
       </a>
@@ -612,133 +643,99 @@
   </nav>
 
   <!-- ========== MAIN CONTENT ========== -->
-  <main class="container" style="max-width: 1100px; margin: 0 auto; padding: 0 1.5rem;">
+  <main class="container" style="max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; width: 100%; box-sizing: border-box;">
     <!-- Hero Section -->
     <div class="search-hero">
       <div class="search-hero-badge">
-        <i class="fas fa-satellite-dish"></i>
-        <span>Live Blood Search Engine</span>
+        <i class="fas fa-hospital"></i>
+        <span>Public Blood Availability Search</span>
       </div>
       <h1 class="search-hero-title">
-        Real-Time <span>Blood Availability</span>
+        Blood Availability in Your Area
       </h1>
       <p class="search-hero-subtitle">
-        Check real-time blood availability within a 5km to 20km radius. 
-        View active donor counts and basic regional stats instantly without exposing personal identities.
+        Check real-time blood stock across verified partner hospitals and aggregate counts of eligible voluntary donors within 5 km to 20 km.
       </p>
     </div>
 
-    <!-- Search Filters Card -->
+    <!-- Search Controls Card -->
     <div class="search-controls-card">
-      <form id="searchForm" class="search-form-grid" onsubmit="event.preventDefault(); executeDonorSearch();">
-        <!-- Filter 1: Blood Group -->
+      <form id="searchForm" class="search-form-grid" onsubmit="event.preventDefault(); executeAvailabilitySearch();">
+        <!-- 1. Blood Group -->
         <div class="form-group-item">
           <label for="selectBloodGroup"><i class="fas fa-droplet"></i> Blood Group</label>
           <select id="selectBloodGroup" class="custom-select">
             <option value="ALL">All Groups</option>
-            <option value="A+" selected>A+ Positive</option>
-            <option value="A-">A- Negative</option>
-            <option value="B+">B+ Positive</option>
-            <option value="B-">B- Negative</option>
-            <option value="AB+">AB+ Positive</option>
-            <option value="AB-">AB- Negative</option>
-            <option value="O+">O+ Positive</option>
-            <option value="O-">O- Negative</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+" selected>B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
           </select>
         </div>
 
-        <!-- Filter 2: Live Location -->
-        <div class="form-group-item">
-          <label><i class="fas fa-location-crosshairs"></i> Current Location</label>
-          <div class="custom-location-badge" id="btnDetectLocation" title="Click to refresh live GPS position" style="cursor: pointer;">
-            <i class="fas fa-satellite-dish" id="gpsStatusIcon" style="color: #22c55e;"></i>
-            <span id="liveLocationLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem;">Detecting Live GPS...</span>
-            <i class="fas fa-rotate" id="gpsSpinIcon" style="font-size: 0.75rem; color: #9898b8; margin-left: auto;"></i>
+        <!-- 2. Location (Manual City/PIN or Live GPS) -->
+        <div class="form-group-item loc-group">
+          <label for="inputLocation"><i class="fas fa-location-crosshairs"></i> Location</label>
+          <div style="display: flex; gap: 0.5rem; width: 100%;">
+            <input type="text" id="inputLocation" class="custom-input" placeholder="City or 6-digit PIN (e.g. Bhimtal, 263136)" />
+            <button type="button" class="btn-location-gps" id="btnGpsTrigger" title="Detect current GPS coordinates">
+              <i class="fas fa-location-arrow" id="gpsIcon"></i>
+              <span id="gpsBtnLabel">Use GPS</span>
+            </button>
           </div>
+          <span id="locationFeedback" style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;"></span>
         </div>
 
-        <!-- Filter 3: Radial Radius -->
+        <!-- 3. Radius -->
         <div class="form-group-item">
           <label for="selectRadius"><i class="fas fa-circle-notch"></i> Radius</label>
           <select id="selectRadius" class="custom-select">
             <option value="5">Within 5 km</option>
             <option value="10" selected>Within 10 km</option>
-            <option value="15">Within 15 km</option>
             <option value="20">Within 20 km</option>
-          </select>
-        </div>
-
-        <!-- Filter 4: Blood Component -->
-        <div class="form-group-item">
-          <label for="selectBloodType"><i class="fas fa-vial"></i> Blood Type</label>
-          <select id="selectBloodType" class="custom-select">
-            <option value="Whole Blood" selected>Whole Blood</option>
-            <option value="Packed Red Blood Cells">Packed Red Cells</option>
-            <option value="Platelets">Platelets (PRP)</option>
-            <option value="Fresh Frozen Plasma">Plasma</option>
           </select>
         </div>
 
         <!-- Submit Button -->
         <button type="submit" class="btn-search-trigger" id="btnSearch">
           <i class="fas fa-search-location"></i>
-          <span>Search Availability</span>
+          <span>Search</span>
         </button>
       </form>
 
       <div class="privacy-notice-box">
-        <i class="fas fa-user-shield"></i>
-        <span><strong>Anonymity Guarantee:</strong> Personal donor identities, telephone records, and private communications remain completely hidden. Only approximate distance and availability status are checked.</span>
+        <i class="fas fa-shield-halved"></i>
+        <span><strong>Anonymity & Privacy:</strong> Exact donor identities, phone numbers, and coordinates are never returned or logged. Search queries are resolved to ~1 km grid cells.</span>
       </div>
     </div>
 
     <!-- Results Meta Bar -->
-    <div class="results-meta-bar">
-      <div class="results-count">
-        <i class="fas fa-users-viewfinder" style="color: #ff6b6b;"></i>
-        <span id="resultsCountText">Searching nearby donors...</span>
+    <div class="results-meta-bar" id="resultsMetaBar" style="display: none;">
+      <div class="results-count-title">
+        <i class="fas fa-hospital-user" style="color: #38bdf8;"></i>
+        <span id="resultsCountText">Search Results</span>
       </div>
       <div class="results-badge-live">
         <span class="dot-live-pulse"></span>
-        <span>Network Live</span>
+        <span>Aggregates verified</span>
       </div>
     </div>
 
-    <!-- Donor Results List -->
-    <div class="donor-list-grid" id="donorListContainer">
-      <!-- Populated via JavaScript -->
+    <!-- Main Results Container -->
+    <div id="resultsContainer" class="results-layout">
+      <!-- Loading, Results, Empty, or Error states injected by JS -->
+    </div>
+
+    <!-- Hospital Dispatch Only Notice -->
+    <div class="hospital-info-banner" style="margin-bottom: 3.5rem;">
+      <i class="fas fa-circle-info"></i>
+      <span><strong>Medical Notice:</strong> Only hospitals can send requests to donors. If you are authorized hospital staff, please <a href="hospital-login.html">log in to the Hospital Portal</a> to dispatch emergency requests.</span>
     </div>
   </main>
-
-  <!-- ========== ACTION RESTRICTION MODAL ========== -->
-  <div class="restriction-modal-overlay" id="restrictionModal" role="dialog" aria-modal="true">
-    <div class="restriction-modal">
-      <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">
-        <i class="fas fa-times"></i>
-      </button>
-
-      <div class="modal-shield-icon">
-        <i class="fas fa-shield-halved"></i>
-      </div>
-
-      <h3 class="modal-restricted-title">Action Restricted: Only verified hospitals can dispatch SOS requests.</h3>
-      
-      <p class="modal-restricted-desc">
-        Under clinical protocol and voluntary donor privacy standards, direct civilian requests are disabled to avoid unauthorized contact. 
-        Only accredited medical institutions and trauma triage centers can trigger verified emergency SOS dispatches.
-      </p>
-
-      <div class="modal-action-buttons">
-        <a href="hospital-login.html" class="btn-hospital-redirect">
-          <i class="fas fa-hospital-alt"></i>
-          <span>Go to Hospital Login</span>
-        </a>
-        <button type="button" class="btn-modal-cancel" id="btnModalCancel">
-          Dismiss
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- ========== FOOTER ========== -->
   <footer class="footer" id="contact">
@@ -748,7 +745,7 @@
           <i class="fas fa-tint"></i>
           RED<span>404</span>
         </div>
-        <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
+        <p>Real-Time Blood Donation System. Connecting voluntary donors and hospitals safely.</p>
       </div>
 
       <div class="footer-links">
@@ -779,12 +776,8 @@
       <div class="footer-contact">
         <h4>Contact</h4>
         <p id="footerSupportEmailWrap"><i class="fas fa-envelope"></i> <span id="footerSupportEmail">support@red404.org</span></p>
-        <p id="footerTollFreeWrap" style="display: none;"><i class="fas fa-headset"></i> <span id="footerTollFree"></span></p>
+        <p><i class="fas fa-headset"></i> <span>Toll-Free Helpline: <strong>1800-404-BLOOD</strong></span></p>
         <p><i class="fas fa-map-marker-alt"></i> India</p>
-        <div class="emergency-tag" id="footerEmergencyTag" style="display: none;">
-          <i class="fas fa-exclamation-circle"></i>
-          <span>Toll-Free Helpline: <span id="footerHelplineNum"></span></span>
-        </div>
       </div>
     </div>
     <div class="footer-bottom">
@@ -795,270 +788,421 @@
   <script src="js/common.js?v=20261113_v40"></script>
   <script src="js/i18n.js?v=20261115_v1"></script>
 
-  <!-- ========== SCRIPT ========== -->
+  <!-- ========== CLIENT SCRIPT ========== -->
   <script>
-    // Real-Time Blood Availability Search (Strictly Zero Demo Data)
-    function getStoredOrSessionCoords() {
+    let activeGpsCoords = null;
+    let gpsTimer = null;
+
+    function getSessionOrStoredCoords() {
       const lat = sessionStorage.getItem('red404_user_lat');
       const lng = sessionStorage.getItem('red404_user_lng');
       if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
         return { lat: parseFloat(lat), lng: parseFloat(lng) };
       }
-
-      try {
-        const sess = JSON.parse(localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session') || '{}');
-        const u = sess.user || sess;
-        if (u && u.latitude && u.longitude && !isNaN(parseFloat(u.latitude)) && !isNaN(parseFloat(u.longitude))) {
-          sessionStorage.setItem('red404_user_lat', u.latitude);
-          sessionStorage.setItem('red404_user_lng', u.longitude);
-          return { lat: parseFloat(u.latitude), lng: parseFloat(u.longitude) };
-        }
-      } catch (_) {}
       return null;
     }
 
-    function updateLocationBadge(statusText, isLive = true) {
-      const label = document.getElementById('liveLocationLabel');
-      const icon = document.getElementById('gpsStatusIcon');
-      if (label) label.textContent = statusText;
-      if (icon) {
-        icon.className = isLive ? 'fas fa-satellite-dish' : 'fas fa-location-dot';
-        icon.style.color = isLive ? '#22c55e' : '#ff6b6b';
-      }
-    }
+    function initGpsDetector() {
+      const btn = document.getElementById('btnGpsTrigger');
+      const icon = document.getElementById('gpsIcon');
+      const label = document.getElementById('gpsBtnLabel');
+      const feedback = document.getElementById('locationFeedback');
+      const input = document.getElementById('inputLocation');
 
-    function requestUserLocation(forcePrompt = false) {
-      const spinIcon = document.getElementById('gpsSpinIcon');
-      if (spinIcon) spinIcon.classList.add('fa-spin');
-      updateLocationBadge('Detecting Live GPS...', false);
+      if (!btn) return;
 
-      if (!navigator.geolocation) {
-        if (spinIcon) spinIcon.classList.remove('fa-spin');
-        updateLocationBadge('GPS Unsupported', false);
-        executeDonorSearch();
-        return;
-      }
+      btn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          if (feedback) feedback.textContent = 'Geolocation is not supported by your browser. Please enter your city or PIN code.';
+          if (input) input.focus();
+          return;
+        }
 
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (spinIcon) spinIcon.classList.remove('fa-spin');
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          sessionStorage.setItem('red404_user_lat', lat);
-          sessionStorage.setItem('red404_user_lng', lng);
-          updateLocationBadge(`GPS: ${lat.toFixed(2)}°, ${lng.toFixed(2)}°`, true);
-          executeDonorSearch();
-        },
-        (err) => {
-          if (spinIcon) spinIcon.classList.remove('fa-spin');
-          console.warn('Geolocation warning:', err.message);
-          const existing = getStoredOrSessionCoords();
-          if (existing) {
-            updateLocationBadge(`GPS: ${existing.lat.toFixed(2)}°, ${existing.lng.toFixed(2)}°`, true);
-          } else {
-            updateLocationBadge('Location Needed', false);
+        if (icon) icon.className = 'fas fa-spinner fa-spin';
+        if (label) label.textContent = 'Detecting...';
+        if (feedback) feedback.textContent = 'Acquiring location via GPS (times out strictly in 10s)...';
+
+        let didComplete = false;
+        if (gpsTimer) clearTimeout(gpsTimer);
+
+        // Strict 10-second timeout
+        gpsTimer = setTimeout(() => {
+          if (!didComplete) {
+            didComplete = true;
+            if (icon) icon.className = 'fas fa-location-arrow';
+            if (label) label.textContent = 'Use GPS';
+            if (feedback) feedback.textContent = 'GPS detection timed out. Please enter your city or 6-digit PIN code above.';
+            if (input) input.focus();
           }
-          executeDonorSearch();
-        },
-        { enableHighAccuracy: true, timeout: 6000 }
-      );
+        }, 10000);
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (didComplete) return;
+            didComplete = true;
+            clearTimeout(gpsTimer);
+
+            activeGpsCoords = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude
+            };
+            sessionStorage.setItem('red404_user_lat', activeGpsCoords.lat);
+            sessionStorage.setItem('red404_user_lng', activeGpsCoords.lng);
+
+            if (icon) icon.className = 'fas fa-check text-green';
+            if (label) label.textContent = 'GPS Active';
+            if (feedback) feedback.textContent = `Location active: ${activeGpsCoords.lat.toFixed(2)}°, ${activeGpsCoords.lng.toFixed(2)}° (~1 km grid)`;
+            if (input) input.value = '';
+
+            executeAvailabilitySearch();
+          },
+          (err) => {
+            if (didComplete) return;
+            didComplete = true;
+            clearTimeout(gpsTimer);
+
+            if (icon) icon.className = 'fas fa-location-arrow';
+            if (label) label.textContent = 'Use GPS';
+            if (feedback) feedback.textContent = 'GPS permission denied or unavailable. Please enter your city or PIN code above.';
+            if (input) input.focus();
+          },
+          { enableHighAccuracy: true, timeout: 9500 }
+        );
+      });
     }
 
-    async function executeDonorSearch() {
-      const selectedGroup = document.getElementById('selectBloodGroup').value;
-      const maxRadius = parseFloat(document.getElementById('selectRadius').value);
-      const container = document.getElementById('donorListContainer');
+    async function executeAvailabilitySearch() {
+      const bloodGroup = document.getElementById('selectBloodGroup').value;
+      const radius = parseFloat(document.getElementById('selectRadius').value) || 10;
+      const manualLocation = (document.getElementById('inputLocation').value || '').trim();
+      const container = document.getElementById('resultsContainer');
+      const metaBar = document.getElementById('resultsMetaBar');
       const countText = document.getElementById('resultsCountText');
       const btnSearch = document.getElementById('btnSearch');
 
+      // 1. Loading State
       if (btnSearch) {
-        btnSearch.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Searching...</span>';
         btnSearch.disabled = true;
+        btnSearch.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Searching...</span>';
       }
-
-      const coords = getStoredOrSessionCoords();
-      if (!coords) {
-        countText.textContent = `Location Required for Radius Scan`;
-        container.innerHTML = `
-          <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
-            <i class="fas fa-location-crosshairs" style="font-size: 2.5rem; color: #ff6b6b; margin-bottom: 1rem;"></i>
-            <h4 style="color: #ffffff; margin-bottom: 0.5rem;">Live Location Required</h4>
-            <p style="font-size: 0.9rem; margin-bottom: 1.5rem;">To scan for active donors within a 5km to 20km radius of where you are, please allow live GPS location.</p>
-            <button type="button" class="btn-search-trigger" onclick="requestUserLocation(true)" style="margin: 0 auto; display: inline-flex;">
-              <i class="fas fa-satellite-dish"></i> <span>Enable Live GPS</span>
-            </button>
-          </div>
-        `;
-        if (btnSearch) {
-          btnSearch.innerHTML = '<i class="fas fa-search"></i> <span>Search Availability</span>';
-          btnSearch.disabled = false;
-        }
-        return;
-      }
+      if (metaBar) metaBar.style.display = 'none';
 
       container.innerHTML = `
-        <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
-          <i class="fas fa-satellite-dish fa-spin" style="font-size: 2.2rem; color: #ff334b; margin-bottom: 1rem;"></i>
-          <h4 style="color: #ffffff; margin-bottom: 0.5rem;">Searching Nearby Donors...</h4>
-          <p style="font-size: 0.88rem;">Finding active donors within ${maxRadius} km of your location...</p>
+        <div class="state-box">
+          <i class="fas fa-spinner fa-spin" style="color: #38bdf8;"></i>
+          <h4>Checking Verified Blood Availability</h4>
+          <p>Scanning partner hospital reserves and eligible voluntary donor aggregates within ${radius} km...</p>
         </div>
       `;
 
       try {
         const params = new URLSearchParams();
-        if (selectedGroup && selectedGroup !== 'ALL') params.set('bloodGroup', selectedGroup);
-        params.set('radius', maxRadius);
-        params.set('lat', coords.lat);
-        params.set('lng', coords.lng);
+        params.set('bloodGroup', bloodGroup);
+        params.set('radius', radius);
 
-        let res = await fetch(`/api/donors/availability?${params.toString()}`);
-        if (!res.ok) {
-          res = await fetch(`/api/donor/availability?${params.toString()}`);
-        }
-        if (!res.ok) {
-          res = await fetch(`/api/donors/nearby?${params.toString()}`);
-        }
-
-        let donors = [];
-        if (res.ok) {
-          const json = await res.json();
-          if (json && Array.isArray(json.data)) {
-            donors = json.data;
+        if (manualLocation) {
+          params.set('location', manualLocation);
+        } else if (activeGpsCoords) {
+          params.set('lat', activeGpsCoords.lat);
+          params.set('lng', activeGpsCoords.lng);
+        } else {
+          const cached = getSessionOrStoredCoords();
+          if (cached) {
+            params.set('lat', cached.lat);
+            params.set('lng', cached.lng);
+          } else {
+            // No location provided
+            container.innerHTML = `
+              <div class="state-box">
+                <i class="fas fa-location-crosshairs" style="color: #e63946;"></i>
+                <h4>Location Required</h4>
+                <p>Please enter your city, 6-digit PIN code, or click "Use GPS" to check availability within ${radius} km.</p>
+              </div>
+            `;
+            if (btnSearch) {
+              btnSearch.disabled = false;
+              btnSearch.innerHTML = '<i class="fas fa-search-location"></i> <span>Search</span>';
+            }
+            document.getElementById('inputLocation')?.focus();
+            return;
           }
         }
 
-        // Strictly real-time: If no active donors are found, display the clean empty state without fallback demo data!
-        countText.textContent = `Showing ${donors.length} Anonymous Active Donor${donors.length === 1 ? '' : 's'} within ${maxRadius} km`;
-
-        if (donors.length === 0) {
+        const res = await fetch(`/api/donors/availability?${params.toString()}`);
+        
+        if (res.status === 429) {
+          const retrySec = res.headers.get('Retry-After') || '60';
+          const json = await res.json().catch(() => ({}));
           container.innerHTML = `
-            <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
-              <i class="fas fa-radar" style="font-size: 2.5rem; color: #ff6b6b; margin-bottom: 1rem;"></i>
-              <h4 style="color: #ffffff; margin-bottom: 0.5rem;">No Active Donors in this Specific Radial Band</h4>
-              <p style="font-size: 0.9rem;">No real-time registered donors currently matching ${selectedGroup === 'ALL' ? 'any blood group' : selectedGroup} within ${maxRadius}km of your location. Try expanding your search radius to 15km or 20km, or select "All Groups".</p>
+            <div class="state-box">
+              <i class="fas fa-clock-rotate-left" style="color: #f59e0b;"></i>
+              <h4>Rate Limit Active</h4>
+              <p>${json.message || 'Too many requests. Please wait before retrying.'}</p>
+              <button type="button" class="btn-retry-action" onclick="executeAvailabilitySearch()">
+                <i class="fas fa-rotate-right"></i> <span>Retry in ${retrySec}s</span>
+              </button>
             </div>
           `;
           return;
         }
 
-        container.innerHTML = donors.map(donor => {
-          const dId = donor.donorId || donor.donor_id || (typeof donor.id === 'string' && donor.id.startsWith('DNR-') ? donor.id : ('DNR-NODE-' + (donor.id || 'ANON')));
-          const group = donor.group || donor.bloodType || 'A+';
-          const rh = donor.rh || (group.includes('-') ? 'RH-' : 'RH+');
-          const dist = typeof donor.distKm === 'number' ? donor.distKm.toFixed(1) : (typeof donor.distance === 'number' ? donor.distance.toFixed(1) : '—');
-          const status = donor.status || 'Ready to Donate';
-          const lastSeen = donor.lastSeen || 'Recently Active';
-          const maskedName = donor.name || 'Anonymous Donor';
-          const locationText = [donor.city, donor.state].filter(Boolean).join(', ') || 'Registered Donor';
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.message || `Server returned error (${res.status})`);
+        }
 
-          return `
-          <div class="donor-search-card">
-            <!-- Left side: Basic Anonymous Details Only -->
-            <div class="donor-card-left">
-              <div class="donor-blood-badge">
-                <span class="donor-blood-group">${group}</span>
-                <span class="donor-blood-rh">${rh}</span>
-              </div>
-              <div class="donor-info-col">
-                <div class="donor-id-row">
-                  <span class="donor-code">${dId}</span>
-                  <span class="donor-name-masked" style="font-weight: 700; color: #f1f5f9; font-size: 0.95rem;">${maskedName}</span>
-                  <span class="badge-anon-lock"><i class="fas fa-lock"></i> Identity Protected</span>
+        const body = await res.json();
+        const data = body.data || {};
+        const hospitals = Array.isArray(data.hospitals) ? data.hospitals : [];
+        const donorCounts = data.donorCounts || {};
+
+        const totalHospitals = hospitals.length;
+        const totalEligibleDonors = data.totalEligibleDonors || 'None';
+
+        if (metaBar) metaBar.style.display = 'flex';
+        if (countText) {
+          countText.textContent = `Availability within ${radius} km for ${bloodGroup === 'ALL' ? 'All Blood Groups' : bloodGroup}`;
+        }
+
+        // Empty State: No hospitals and 0 donors found
+        if (totalHospitals === 0 && (totalEligibleDonors === 'None' || totalEligibleDonors === '0')) {
+          container.innerHTML = `
+            <div class="state-box">
+              <i class="fas fa-circle-question" style="color: #94a3b8;"></i>
+              <h4>No Current Availability in this Radial Band</h4>
+              <p>No verified partner hospitals or active voluntary donors found within ${radius} km for ${bloodGroup}. Try selecting a wider radius (e.g. 20 km) or entering a neighboring city or PIN code.</p>
+              <button type="button" class="btn-retry-action" onclick="document.getElementById('selectRadius').value = '20'; executeAvailabilitySearch();">
+                <i class="fas fa-expand"></i> <span>Expand to 20 km</span>
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        // Results State: Build Output
+        let html = '';
+
+        // SECTION A: Verified Partner Hospitals
+        html += `
+          <div>
+            <div class="section-title-group">
+              <h3 class="section-heading"><i class="fas fa-hospital" style="color: #e63946;"></i> Verified Partner Hospitals (${totalHospitals})</h3>
+              <p class="section-subheading">Accredited institutions with confirmed blood bank stock within ${radius} km.</p>
+            </div>
+        `;
+
+        if (hospitals.length === 0) {
+          html += `
+            <div style="background: #17181b; border: 1px dashed #2a2c31; border-radius: 10px; padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">
+              No partner hospitals with confirmed stock in this immediate radius. Check neighboring regions below.
+            </div>
+          `;
+        } else {
+          html += `<div class="hospital-list">`;
+          hospitals.forEach((h, idx) => {
+            const compatEntries = Object.entries(h.compatibleStock || {});
+            const hasCompat = compatEntries.length > 0;
+            const reqLabel = bloodGroup === 'ALL' ? 'total on-hand' : `${bloodGroup}`;
+
+            html += `
+              <div class="hospital-card">
+                <div class="hosp-header">
+                  <div class="hosp-info">
+                    <h4 class="hosp-name">${escapeHtml(h.name)}</h4>
+                    <span class="hosp-area"><i class="fas fa-map-pin"></i> ${escapeHtml(h.area)}</span>
+                  </div>
+                  <span class="distance-pill"><i class="fas fa-route"></i> ${h.distanceKm} km away</span>
                 </div>
-                <div class="donor-meta-row">
-                  <div class="donor-meta-item">
-                    <i class="fas fa-location-crosshairs"></i>
-                    <span>${dist} km away</span>
+
+                <div class="hosp-stock-box">
+                  <div class="hosp-stock-primary">
+                    <span class="hosp-stock-units">${h.requestedGroupUnits}</span>
+                    <span class="hosp-stock-label">units of ${reqLabel}</span>
                   </div>
-                  <div class="donor-meta-item">
-                    <i class="fas fa-map-pin"></i>
-                    <span>${locationText}</span>
+
+                  ${hasCompat ? `
+                    <button type="button" class="btn-toggle-compat" onclick="toggleCompatDrawer('compat-${idx}', this)">
+                      <i class="fas fa-layer-group"></i>
+                      <span>Compatible groups (${h.compatibleUnits} units)</span>
+                      <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
+                    </button>
+                  ` : ''}
+                </div>
+
+                ${hasCompat ? `
+                  <div class="compat-drawer" id="compat-${idx}">
+                    ${compatEntries.map(([bg, u]) => `
+                      <span class="compat-pill">
+                        <span class="blood-drop-badge ${u > 0 ? 'ok' : 'low'}" style="width: 22px; height: 26px; font-size: 10px;">
+                          <span class="drop-text">${bg}</span>
+                        </span>
+                        <span>${bg}: <strong>${u} units</strong></span>
+                      </span>
+                    `).join('')}
                   </div>
-                  <div class="donor-meta-item">
-                    <span class="dot-live-pulse" style="width: 6px; height: 6px;"></span>
-                    <span class="donor-status-tag">${status}</span>
+                ` : ''}
+
+                <div class="hosp-footer">
+                  <span class="hosp-updated">Stock updated ${escapeHtml(h.updatedAgo || 'recently')}</span>
+                  <div class="hosp-action-btns">
+                    ${h.directionsUrl ? `
+                      <a href="${h.directionsUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-outline btn-directions">
+                        <i class="fas fa-diamond-turn-right"></i> <span>Directions</span>
+                      </a>
+                    ` : ''}
+                    ${h.emergencyPhone ? `
+                      <a href="tel:${escapeHtml(h.emergencyPhone)}" class="btn-action-outline btn-emergency-phone">
+                        <i class="fas fa-phone"></i> <span>${escapeHtml(h.emergencyPhone)}</span>
+                      </a>
+                    ` : ''}
                   </div>
                 </div>
               </div>
+            `;
+          });
+          html += `</div>`;
+        }
+        html += `</div>`;
+
+        // SECTION B: Eligible Donors Summary (Counts Only per Band)
+        const b0_5 = donorCounts.band_0_5 || {};
+        const b5_10 = donorCounts.band_5_10 || {};
+        const b10_20 = donorCounts.band_10_20 || {};
+
+        html += `
+          <div class="donor-bands-section">
+            <div class="section-title-group">
+              <h3 class="section-heading"><i class="fas fa-users" style="color: #38bdf8;"></i> Nearby Voluntary Donors (Aggregate Counts)</h3>
+              <p class="section-subheading">Active, eligible voluntary donors matching clinical criteria within radial bands.</p>
             </div>
 
-            <!-- Right side: Request via Hospital Button -->
-            <div class="donor-card-right">
-              <button type="button" class="btn-donor-request" onclick="triggerRestrictedAction('${dId}')">
-                <i class="fas fa-hand-holding-medical"></i>
-                <span>Request via Hospital</span>
-              </button>
+            <div class="donor-bands-grid">
+              <!-- Band 1: 0 - 5 km -->
+              <div class="band-card">
+                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 0 – 5 km</h4>
+                <div class="band-row">
+                  <span>Exact Match (${bloodGroup}):</span>
+                  <span class="band-count-badge ${b0_5.exactDisplay !== 'None' ? 'active-count' : ''}">${b0_5.exactDisplay || 'None'}</span>
+                </div>
+                <div class="band-row">
+                  <span>Compatible Groups:</span>
+                  <span class="band-count-badge">${b0_5.compatibleDisplay || 'None'}</span>
+                </div>
+                <div class="band-row" style="border-top: 1px solid #2a2c31; padding-top: 0.5rem; margin-top: 0.25rem;">
+                  <span>Total in Band:</span>
+                  <strong style="color: #f8fafc;">${b0_5.totalDisplay || 'None'}</strong>
+                </div>
+              </div>
+
+              <!-- Band 2: 5 - 10 km -->
+              <div class="band-card">
+                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 5 – 10 km</h4>
+                <div class="band-row">
+                  <span>Exact Match (${bloodGroup}):</span>
+                  <span class="band-count-badge ${b5_10.exactDisplay !== 'None' ? 'active-count' : ''}">${b5_10.exactDisplay || 'None'}</span>
+                </div>
+                <div class="band-row">
+                  <span>Compatible Groups:</span>
+                  <span class="band-count-badge">${b5_10.compatibleDisplay || 'None'}</span>
+                </div>
+                <div class="band-row" style="border-top: 1px solid #2a2c31; padding-top: 0.5rem; margin-top: 0.25rem;">
+                  <span>Total in Band:</span>
+                  <strong style="color: #f8fafc;">${b5_10.totalDisplay || 'None'}</strong>
+                </div>
+              </div>
+
+              <!-- Band 3: 10 - 20 km -->
+              <div class="band-card">
+                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 10 – 20 km</h4>
+                <div class="band-row">
+                  <span>Exact Match (${bloodGroup}):</span>
+                  <span class="band-count-badge ${b10_20.exactDisplay !== 'None' ? 'active-count' : ''}">${b10_20.exactDisplay || 'None'}</span>
+                </div>
+                <div class="band-row">
+                  <span>Compatible Groups:</span>
+                  <span class="band-count-badge">${b10_20.compatibleDisplay || 'None'}</span>
+                </div>
+                <div class="band-row" style="border-top: 1px solid #2a2c31; padding-top: 0.5rem; margin-top: 0.25rem;">
+                  <span>Total in Band:</span>
+                  <strong style="color: #f8fafc;">${b10_20.totalDisplay || 'None'}</strong>
+                </div>
+              </div>
             </div>
           </div>
         `;
-        }).join('');
+
+        container.innerHTML = html;
+
       } catch (err) {
         console.error('Availability search error:', err);
-        countText.textContent = `Showing 0 Anonymous Active Donors within ${maxRadius} km`;
         container.innerHTML = `
-          <div style="background: rgba(17, 17, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 3rem; text-align: center; color: #9898b8;">
-            <i class="fas fa-triangle-exclamation" style="font-size: 2.5rem; color: #ff6b6b; margin-bottom: 1rem;"></i>
-            <h4 style="color: #ffffff; margin-bottom: 0.5rem;">Real-Time Search Standby</h4>
-            <p style="font-size: 0.9rem;">Unable to connect to search network. Please verify your connection and retry.</p>
+          <div class="state-box">
+            <i class="fas fa-triangle-exclamation" style="color: #e63946;"></i>
+            <h4>Unable to Complete Availability Search</h4>
+            <p>${escapeHtml(err.message || 'Network error while querying blood stock. Please retry.')}</p>
+            <button type="button" class="btn-retry-action" onclick="executeAvailabilitySearch()">
+              <i class="fas fa-rotate-right"></i> <span>Retry Search</span>
+            </button>
           </div>
         `;
       } finally {
         if (btnSearch) {
-          btnSearch.innerHTML = '<i class="fas fa-search"></i> <span>Search Availability</span>';
           btnSearch.disabled = false;
+          btnSearch.innerHTML = '<i class="fas fa-search-location"></i> <span>Search</span>';
         }
       }
     }
 
-    // Modal logic
-    const modal = document.getElementById('restrictionModal');
-    const closeBtn = document.getElementById('modalCloseBtn');
-    const cancelBtn = document.getElementById('btnModalCancel');
-
-    function triggerRestrictedAction(donorId) {
-      modal.classList.add('active');
+    function toggleCompatDrawer(id, btn) {
+      const drawer = document.getElementById(id);
+      if (!drawer) return;
+      const isOpen = drawer.classList.contains('open');
+      if (isOpen) {
+        drawer.classList.remove('open');
+        btn.querySelector('.fa-chevron-down')?.classList.replace('fa-chevron-up', 'fa-chevron-down');
+      } else {
+        drawer.classList.add('open');
+        btn.querySelector('.fa-chevron-down')?.classList.replace('fa-chevron-down', 'fa-chevron-up');
+      }
     }
 
-    function closeModal() {
-      modal.classList.remove('active');
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-      });
-    }
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal && modal.classList.contains('active')) closeModal();
-    });
-
-    // Mobile nav toggle
-    const hamburger = document.getElementById('hamburger');
-    const navLinks = document.getElementById('navLinks');
-    if (hamburger && navLinks) {
-      hamburger.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
-      });
-    }
-
-    // Attach click for location detector & initialize
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
-      const locBtn = document.getElementById('btnDetectLocation');
-      if (locBtn) {
-        locBtn.addEventListener('click', () => requestUserLocation(true));
+      initGpsDetector();
+
+      // Check if location already stored from previous session or GPS
+      const stored = getSessionOrStoredCoords();
+      if (stored) {
+        activeGpsCoords = stored;
+        const feedback = document.getElementById('locationFeedback');
+        if (feedback) feedback.textContent = `Location active: ${stored.lat.toFixed(2)}°, ${stored.lng.toFixed(2)}° (~1 km grid)`;
+        executeAvailabilitySearch();
+      } else {
+        // Fallback default: automatically pre-fill Bhimtal or prompt manual entry
+        const input = document.getElementById('inputLocation');
+        if (input) input.value = 'Bhimtal';
+        executeAvailabilitySearch();
       }
 
-      const existing = getStoredOrSessionCoords();
-      if (existing) {
-        updateLocationBadge(`GPS: ${existing.lat.toFixed(2)}°, ${existing.lng.toFixed(2)}°`, true);
-        executeDonorSearch();
-      } else {
-        requestUserLocation(false);
+      // Mobile navbar
+      const hamburger = document.getElementById('hamburger');
+      const navLinks = document.getElementById('navLinks');
+      if (hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+          navLinks.classList.toggle('active');
+        });
       }
     });
   </script>
 </body>
 </html>
-

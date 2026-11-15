@@ -69,28 +69,26 @@ public class BloodRequestController {
     @PostMapping({"", "/", "/dispatch", "/blood-requests"})
     public ResponseEntity<ApiResponse> createRequest(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
-            Integer hospitalId = JsonUtil.asInt(body, "hospitalId", 0);
-            if (hospitalId == 0) {
-                hospitalId = hospitalIdFromSession(request);
-            }
-            if (hospitalId == null || hospitalId == 0) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse(false, "Hospital login required to dispatch a request."));
+            // Strictly require logged-in staff user of a VERIFIED hospital; unauthenticated and donor tokens get 403
+            Integer sessionHospitalId = hospitalIdFromSession(request);
+            if (sessionHospitalId == null || sessionHospitalId <= 0) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Forbidden: Only logged-in staff of a verified hospital can dispatch blood requests."));
             }
 
-            // Gate new blood requests: hospital must have status "Verified"
-            boolean requireVerified = Boolean.parseBoolean(System.getProperty("REQUIRE_VERIFIED_FOR_REQUESTS", "true"));
-            if (requireVerified) {
-                Map<String, Object> hosp = hospitalDao.findById(hospitalId);
-                if (hosp != null) {
-                    String status = (String) hosp.get("verificationStatus");
-                    if (status == null) status = (String) hosp.get("verification_status");
-                    if (status != null && !status.isBlank() && !"Verified".equalsIgnoreCase(status)) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                .body(new ApiResponse(false, "Hospital verification required to broadcast blood requests. Current status: '" + status + "'."));
-                    }
-                }
+            Map<String, Object> hosp = hospitalDao.findById(sessionHospitalId);
+            if (hosp == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Forbidden: Hospital account not found."));
             }
+            String status = (String) hosp.get("verificationStatus");
+            if (status == null) status = (String) hosp.get("verification_status");
+            if (!"Verified".equalsIgnoreCase(status)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Forbidden: Only verified partner hospitals can broadcast blood requests. Current status: '" + status + "'."));
+            }
+
+            int hospitalId = sessionHospitalId;
 
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
             if (bloodType == null) {

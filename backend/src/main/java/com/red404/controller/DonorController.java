@@ -37,7 +37,9 @@ import com.red404.util.PasswordUtil;
 import com.red404.util.UserAgentUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import com.red404.service.PublicSearchService;
 
 @RestController
 @RequestMapping({"/api/donors", "/api/donor"})
@@ -200,17 +202,36 @@ public class DonorController {
     }
 
     @GetMapping({"/availability", "/availability-search", "/public-availability"})
-    public ResponseEntity<ApiResponse> searchPublicAvailability(
+    public ResponseEntity<?> searchPublicAvailability(
             @RequestParam(required = false, defaultValue = "ALL") String bloodGroup,
-            @RequestParam(required = false, defaultValue = "20") double radius,
+            @RequestParam(required = false, defaultValue = "10") double radius,
+            @RequestParam(required = false) String location,
             @RequestParam(required = false) String pincode,
             @RequestParam(required = false) String lat,
-            @RequestParam(required = false) String lng) {
+            @RequestParam(required = false) String lng,
+            HttpServletRequest request,
+            HttpServletResponse response) {
         try {
             Double latD = parseDouble(lat);
             Double lngD = parseDouble(lng);
-            List<Map<String, Object>> list = donorDao.searchPublicAvailability(bloodGroup, radius, pincode, latD, lngD);
-            return ok("Public availability loaded", sanitizePublicDonors(list));
+            String manualLoc = (location != null && !location.isBlank()) ? location : pincode;
+            Map<String, Object> result = PublicSearchService.searchAvailability(bloodGroup, latD, lngD, radius, manualLoc, request, response);
+
+            if (result.containsKey("status") && ((Number) result.get("status")).intValue() == 429) {
+                int retryAfter = ((Number) result.getOrDefault("retryAfter", 60)).intValue();
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .header("Retry-After", String.valueOf(retryAfter))
+                        .body(new ApiResponse(false, (String) result.get("message")));
+            }
+
+            if (Boolean.FALSE.equals(result.get("success"))) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, (String) result.get("message"), result));
+            }
+
+            return ResponseEntity.ok()
+                    .header("Cache-Control", "public, max-age=10")
+                    .body(new ApiResponse(true, "Public blood availability loaded", result));
         } catch (Exception e) {
             return serverError(e);
         }

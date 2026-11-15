@@ -244,6 +244,7 @@ public class StockService {
 
         // Fire cache invalidation & realtime push
         PlatformMetricsService.getInstance().invalidateCache();
+        PublicSearchService.clearCache();
         SystemController.broadcastStockUpdate(null);
 
         Map<String, Object> fresh = getHospitalStock(hospitalId);
