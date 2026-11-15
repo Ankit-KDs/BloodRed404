@@ -1260,7 +1260,9 @@ function initDispatchRadar() {
 
   function drawZoneCircles(lat, lng) {
     if (!leafletMap) return;
-    zoneCircles.forEach(c => leafletMap.removeLayer(c));
+    zoneCircles.forEach(c => {
+      try { leafletMap.removeLayer(c); } catch (_) {}
+    });
     zoneCircles = [];
 
     const selectedRadiusKm = dispRadiusEl ? parseFloat(dispRadiusEl.value) || 10 : 10;
@@ -1269,33 +1271,39 @@ function initDispatchRadar() {
     const z1 = L.circle([lat, lng], {
       radius: 5000,
       color: '#e5383b',
-      weight: selectedRadiusKm === 5 ? 2.8 : 1.4,
+      weight: selectedRadiusKm === 5 ? 3.0 : 1.5,
       dashArray: selectedRadiusKm === 5 ? null : '4, 4',
       fillColor: '#e5383b',
-      fillOpacity: selectedRadiusKm === 5 ? 0.08 : 0.03
+      fillOpacity: selectedRadiusKm === 5 ? 0.12 : 0.03
     }).addTo(leafletMap);
 
     // 10 km zone (amber)
     const z2 = L.circle([lat, lng], {
       radius: 10000,
       color: '#f59e0b',
-      weight: selectedRadiusKm === 10 ? 2.8 : 1.4,
+      weight: selectedRadiusKm === 10 ? 3.0 : 1.5,
       dashArray: selectedRadiusKm === 10 ? null : '4, 4',
       fillColor: '#f59e0b',
-      fillOpacity: selectedRadiusKm === 10 ? 0.07 : 0.02
+      fillOpacity: selectedRadiusKm === 10 ? 0.10 : 0.02
     }).addTo(leafletMap);
 
     // 20 km zone (grey)
     const z3 = L.circle([lat, lng], {
       radius: 20000,
       color: '#71706c',
-      weight: selectedRadiusKm === 20 ? 2.8 : 1.4,
+      weight: selectedRadiusKm === 20 ? 3.0 : 1.5,
       dashArray: selectedRadiusKm === 20 ? null : '4, 4',
       fillColor: '#71706c',
-      fillOpacity: selectedRadiusKm === 20 ? 0.06 : 0.015
+      fillOpacity: selectedRadiusKm === 20 ? 0.08 : 0.015
     }).addTo(leafletMap);
 
     zoneCircles = [z1, z2, z3];
+
+    // Emphasize selected radius and fit map so the selected circle is fully visible
+    const activeCircle = selectedRadiusKm === 5 ? z1 : (selectedRadiusKm === 20 ? z3 : z2);
+    try {
+      leafletMap.fitBounds(activeCircle.getBounds(), { padding: [25, 25] });
+    } catch (_) {}
   }
 
   function initMapIfReady() {
@@ -1382,6 +1390,9 @@ function initDispatchRadar() {
     initMapIfReady();
     if (leafletMap) {
       leafletMap.invalidateSize();
+      if (hospitalCoords) {
+        drawZoneCircles(hospitalCoords.lat, hospitalCoords.lng);
+      }
     }
   };
 
@@ -1648,8 +1659,18 @@ function initDispatchRadar() {
       donorMarkers[d.id] = marker;
     });
 
+    const selectedRadiusKm = dispRadiusEl ? parseFloat(dispRadiusEl.value) || 10 : 10;
+    const activeCircle = zoneCircles.length === 3 ? (selectedRadiusKm === 5 ? zoneCircles[0] : (selectedRadiusKm === 20 ? zoneCircles[2] : zoneCircles[1])) : null;
+    if (activeCircle) {
+      try {
+        const cb = activeCircle.getBounds();
+        boundsLatLngs.push([cb.getNorth(), cb.getEast()]);
+        boundsLatLngs.push([cb.getSouth(), cb.getWest()]);
+      } catch (_) {}
+    }
+
     if (boundsLatLngs.length > 1) {
-      leafletMap.fitBounds(L.latLngBounds(boundsLatLngs), { padding: [40, 40], maxZoom: 14 });
+      leafletMap.fitBounds(L.latLngBounds(boundsLatLngs), { padding: [30, 30] });
     }
   }
 

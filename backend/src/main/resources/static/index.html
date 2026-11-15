@@ -76,18 +76,21 @@
         When emergencies strike and every second counts, we bring life-saving help fast.
       </p>
 
-      <div class="hero-cta">
-        <a href="donor-register.html" class="btn btn-hero-primary">
-          <i class="fas fa-heart"></i>
-          Become a Donor
-          <span class="btn-glow"></span>
-        </a>
-        <div class="hospital-cta-wrap">
-          <a href="hospital-register.html" class="btn btn-hero-secondary">
-            <i class="fas fa-hospital"></i>
-            Register Hospital
+      <div class="hero-cta-wrapper" style="margin-bottom: 2.5rem;">
+        <div class="hero-cta-buttons" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <a href="donor-register.html" class="btn btn-hero-primary" data-i18n="hero.btnBecomeDonor">
+            <i class="fas fa-heart"></i>
+            <span>Become a Donor</span>
+            <span class="btn-glow"></span>
           </a>
-          <span class="hospital-verify-note"><i class="fas fa-shield-alt"></i> Hospitals are verified by our team before they can send requests.</span>
+          <a href="hospital-register.html" class="btn btn-hero-secondary" data-i18n="hero.btnRegisterHospital">
+            <i class="fas fa-hospital"></i>
+            <span>Register Hospital</span>
+          </a>
+        </div>
+        <div class="hospital-verify-note" style="margin-top: 0.65rem; display: flex; align-items: center; gap: 0.35rem; font-size: 0.8125rem; color: #94a3b8;" data-i18n="hero.verificationNotice">
+          <i class="fas fa-shield-alt" style="color: #22c55e;"></i>
+          <span>Hospitals are verified by our team before they can send requests.</span>
         </div>
       </div>
 
@@ -690,7 +693,7 @@
 
   <!-- ========== WHO CAN DONATE SECTION ========== -->
   <section class="who-can-donate-section" id="who-can-donate">
-    <div class="container">
+    <div class="section-container">
       <div class="section-header" style="text-align: center; margin-bottom: 2rem;">
         <span class="section-tag"><i class="fas fa-clipboard-check"></i> Eligibility Criteria</span>
         <h2 class="section-title">Who Can <span class="highlight">Donate</span></h2>
@@ -1012,15 +1015,18 @@
       <div class="cta-content">
         <h2>Ready to Save Lives?</h2>
         <p>Join RED404 today. Every registration counts. Every donation matters.</p>
-        <div class="cta-buttons">
-          <a href="donor-register.html" class="btn btn-cta-primary">
-            <i class="fas fa-heart"></i> Register as Donor
-          </a>
-          <div class="hospital-cta-wrap">
-            <a href="hospital-register.html" class="btn btn-cta-secondary">
-              <i class="fas fa-hospital"></i> Register Hospital
+        <div class="cta-action-wrap" style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-top: 1.5rem;">
+          <div class="cta-buttons" style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+            <a href="donor-register.html" class="btn btn-cta-primary" data-i18n="hero.btnBecomeDonor">
+              <i class="fas fa-heart"></i> <span>Become a Donor</span>
             </a>
-            <span class="hospital-verify-note"><i class="fas fa-shield-alt"></i> Hospitals are verified by our team before they can send requests.</span>
+            <a href="hospital-register.html" class="btn btn-cta-secondary" data-i18n="hero.btnRegisterHospital">
+              <i class="fas fa-hospital"></i> <span>Register Hospital</span>
+            </a>
+          </div>
+          <div class="hospital-verify-note" style="text-align: center; justify-content: center;" data-i18n="hero.verificationNotice">
+            <i class="fas fa-shield-alt" style="color: #22c55e;"></i>
+            <span>Hospitals are verified by our team before they can send requests.</span>
           </div>
         </div>
       </div>
@@ -1065,17 +1071,17 @@
 
       <div class="footer-contact">
         <h4>Contact</h4>
-        <p><i class="fas fa-envelope"></i> support@red404.org</p>
-        <p><i class="fas fa-headset"></i> 1800-404-0404 (Toll-Free)</p>
+        <p id="footerSupportEmailWrap"><i class="fas fa-envelope"></i> <span id="footerSupportEmail">support@red404.org</span></p>
+        <p id="footerTollFreeWrap" style="display: none;"><i class="fas fa-headset"></i> <span id="footerTollFree"></span></p>
         <p><i class="fas fa-map-marker-alt"></i> India</p>
-        <div class="emergency-tag">
+        <div class="emergency-tag" id="footerEmergencyTag" style="display: none;">
           <i class="fas fa-exclamation-circle"></i>
-          Toll-Free Helpline: 1800-404-0404
+          <span>Toll-Free Helpline: <span id="footerHelplineNum"></span></span>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2024 RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save
+      <p>© <span id="footerCurrentYear">2026</span> RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save
         Lives</p>
     </div>
   </footer>

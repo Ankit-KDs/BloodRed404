@@ -600,3 +600,33 @@ function initNationalBloodStockStream() {
   });
 }
 window.initNationalBloodStockStream = initNationalBloodStockStream;
+
+// Compute Footer Current Year & Config-based Toll-Free Support (Group H)
+(function initFooterConfig() {
+  const yrEl = document.getElementById('footerCurrentYear');
+  if (yrEl) {
+    yrEl.textContent = new Date().getFullYear();
+  }
+
+  const tollFreeNum = (window.APP_CONFIG && window.APP_CONFIG.TOLL_FREE_NUMBER) || '';
+  const tollFreeWrap = document.getElementById('footerTollFreeWrap');
+  const tollFreeSpan = document.getElementById('footerTollFree');
+  const emergencyTag = document.getElementById('footerEmergencyTag');
+  const helplineSpan = document.getElementById('footerHelplineNum');
+
+  if (tollFreeNum && tollFreeNum.trim() !== '') {
+    if (tollFreeWrap) tollFreeWrap.style.display = 'block';
+    if (tollFreeSpan) tollFreeSpan.textContent = tollFreeNum + ' (Toll-Free)';
+    if (emergencyTag) emergencyTag.style.display = 'inline-flex';
+    if (helplineSpan) helplineSpan.textContent = tollFreeNum;
+  } else {
+    // Hide invented demo toll-free number and helpline box if not real / unconfigured
+    if (tollFreeWrap) tollFreeWrap.style.display = 'none';
+    if (emergencyTag) emergencyTag.style.display = 'none';
+  }
+
+  const supportEmail = (window.APP_CONFIG && window.APP_CONFIG.SUPPORT_EMAIL) || 'support@red404.org';
+  const emailSpan = document.getElementById('footerSupportEmail');
+  if (emailSpan) emailSpan.textContent = supportEmail;
+})();
+

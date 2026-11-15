@@ -138,12 +138,63 @@
 }
 
 /* ==================== HERO CTA ==================== */
-.hero-cta {
+.hero-cta,
+.hero-cta-wrapper {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.65rem;
   margin-bottom: 3rem;
-  flex-wrap: wrap;
   animation: slideInLeft 0.8s ease 0.45s both;
+}
+
+.hero-cta-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .hero-cta-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+.cta-action-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.cta-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .cta-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .btn-cta-primary,
+  .btn-cta-secondary {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 .btn-hero-primary {
@@ -3167,6 +3218,17 @@
   padding: 4.5rem 0 3.5rem;
   position: relative;
   z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.who-can-donate-section .section-container,
+.who-can-donate-section .container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .eligibility-grid {
@@ -3174,6 +3236,36 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
   margin-top: 2.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .eligibility-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .eligibility-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .who-can-donate-section .section-container,
+  .who-can-donate-section .container {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .who-can-donate-section .section-container,
+  .who-can-donate-section .container {
+    padding: 0 0.75rem;
+  }
+  .eligibility-card {
+    padding: 1.25rem 0.875rem !important;
+  }
 }
 
 .eligibility-card {

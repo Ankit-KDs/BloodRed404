@@ -172,9 +172,9 @@
 
         <!-- Column 3: Registered City & Last Seen -->
         <td>
-          <div class="donor-zone-cell">
-            <span class="donor-city-val" title="Registered City"><i class="fas fa-home" style="font-size: 11px; margin-right: 4px; opacity: 0.7;"></i>${escapeHtml(registeredCity)}</span>
-            <span class="donor-subzone-val" title="Last Seen Location / Zone" style="font-size: 11px; color: #94a3b8;"><i class="fas fa-location-dot" style="font-size: 10px; margin-right: 4px; color: #38bdf8;"></i>${escapeHtml(zoneDisplay)} • ${escapeHtml(lastSeen)}</span>
+          <div class="donor-zone-cell" style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="donor-city-val" style="font-size: 13px; color: #f8fafc;"><strong style="color: #94a3b8; font-size: 11px; text-transform: uppercase;">Registered:</strong> ${escapeHtml(registeredCity)}</span>
+            <span class="donor-subzone-val" style="font-size: 12px; color: #94a3b8;"><strong style="color: #38bdf8; font-size: 11px; text-transform: uppercase;">Last Seen:</strong> ${escapeHtml(zoneDisplay !== 'Location not shared' ? zoneDisplay + ' • ' : '')}${escapeHtml(lastSeen)}</span>
           </div>
         </td>
 
@@ -1243,7 +1243,7 @@
     const logoutBtn = document.getElementById('adminLogoutBtn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
-        showToast('Admin Session Terminated. Exiting Enclave...', 'info', 1000);
+        showToast('Admin session ended. Logging out...', 'info', 1000);
         setTimeout(async () => {
           if (window.Red404Security) {
             await window.Red404Security.logout('ADMIN');
