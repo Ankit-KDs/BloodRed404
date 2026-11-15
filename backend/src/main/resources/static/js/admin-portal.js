@@ -1303,7 +1303,7 @@
     }
   }
 
-  // Refetch live hospital data on window focus and cadence
+  // Refetch live hospital data on window focus and cadence (30s per Part 1)
   window.addEventListener('focus', () => {
     const activeBtn = document.querySelector('.admin-tab-btn.active');
     if (activeBtn && activeBtn.getAttribute('data-tab') === 'tab-hospitals') {
@@ -1315,7 +1315,25 @@
     if (activeBtn && activeBtn.getAttribute('data-tab') === 'tab-hospitals' && document.visibilityState === 'visible') {
       loadHospitals();
     }
-  }, 25000);
+  }, 30000);
+
+  // Manual Sync Button
+  const btnSyncHosp = document.getElementById('btnSyncHospitals');
+  if (btnSyncHosp) {
+    btnSyncHosp.addEventListener('click', async () => {
+      btnSyncHosp.disabled = true;
+      btnSyncHosp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+      try {
+        await loadHospitals();
+        showToast('Hospital inventory & records synced with live database', 'success');
+      } catch (e) {
+        showToast('Failed to sync hospital stock', 'error');
+      } finally {
+        btnSyncHosp.disabled = false;
+        btnSyncHosp.innerHTML = '<i class="fas fa-arrows-rotate"></i> Sync Stock';
+      }
+    });
+  }
 
   function formatTimestamp(ts) {
     if (!ts) return 'N/A';

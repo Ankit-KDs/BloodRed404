@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -250,48 +251,21 @@ public class HospitalDao {
 
     public boolean updateHospitalInventory(int hospitalId, String bloodType, int change, Integer exactUnits) throws SQLException {
         if (bloodType == null || bloodType.isBlank()) return false;
-        String bt = bloodType.trim().toUpperCase();
+        String bt = com.red404.service.StockService.normalizeGroup(bloodType);
         if (exactUnits != null && exactUnits >= 0) {
-            String sql = "INSERT INTO hospital_inventory (hospital_id, blood_type, units) VALUES (?, ?, ?) " +
-                         "ON DUPLICATE KEY UPDATE units = VALUES(units)";
-            try (Connection conn = DBConnection.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, hospitalId);
-                ps.setString(2, bt);
-                ps.setInt(3, exactUnits);
-                return ps.executeUpdate() > 0;
-            }
+            com.red404.service.StockService.setExactStock(hospitalId, bt, exactUnits, "Inventory set to exact units: " + exactUnits, "Hospital Staff");
+            return true;
         } else {
-            String sql = "INSERT INTO hospital_inventory (hospital_id, blood_type, units) VALUES (?, ?, GREATEST(0, ?)) " +
-                         "ON DUPLICATE KEY UPDATE units = GREATEST(0, units + ?)";
-            try (Connection conn = DBConnection.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, hospitalId);
-                ps.setString(2, bt);
-                ps.setInt(3, Math.max(0, change));
-                ps.setInt(4, change);
-                return ps.executeUpdate() > 0;
-            }
+            com.red404.service.StockService.adjustStock(hospitalId, bt, change, "Inventory adjust: " + (change >= 0 ? "+" + change : change), "Hospital Staff");
+            return true;
         }
     }
 
     public Map<String, Integer> getHospitalInventory(int hospitalId) throws SQLException {
-        Map<String, Integer> map = new java.util.LinkedHashMap<>();
-        String sql = "SELECT blood_type, units FROM hospital_inventory WHERE hospital_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, hospitalId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String bt = rs.getString("blood_type");
-                    int u = rs.getInt("units");
-                    if (bt != null) {
-                        map.put(bt.toUpperCase(), Math.max(0, u));
-                    }
-                }
-            }
-        }
-        return map;
+        Map<String, Object> stock = com.red404.service.StockService.getHospitalStock(hospitalId);
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> inv = (Map<String, Integer>) stock.get("inventory");
+        return inv != null ? inv : Collections.emptyMap();
     }
 
     private Map<String, Object> mapHospital(ResultSet rs) throws SQLException {

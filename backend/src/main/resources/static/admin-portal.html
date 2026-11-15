@@ -112,9 +112,14 @@
           <h2 class="admin-panel-title">Partner Hospitals &amp; Blood Banks</h2>
           <span class="admin-count-pill" id="hospital-count-badge">-</span>
         </div>
-        <div class="admin-search-wrap">
-          <i class="fas fa-magnifying-glass"></i>
-          <input type="text" id="hospitalSearchInput" class="admin-search-input" placeholder="Search by Hospital Name, City, License..." />
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="admin-action-btn" id="btnSyncHospitals" title="Sync live inventory across all facilities" style="padding: 7px 12px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-arrows-rotate"></i> Sync Stock
+          </button>
+          <div class="admin-search-wrap">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="text" id="hospitalSearchInput" class="admin-search-input" placeholder="Search by Hospital Name, City, License..." />
+          </div>
         </div>
       </div>
 

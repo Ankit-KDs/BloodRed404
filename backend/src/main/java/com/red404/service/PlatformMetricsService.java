@@ -35,7 +35,7 @@ public class PlatformMetricsService {
 
     public static final int DEFAULT_MIN_HOSPITALS_FOR_PUBLIC_STOCK = 1;
     public static final int DEFAULT_MIN_COMPLETED_REQUESTS_FOR_METRICS = 5;
-    private static final long CACHE_TTL_MS = 60_000L; // 60s cache
+    private static final long CACHE_TTL_MS = 10_000L; // 10s max public aggregate cache
 
     private final Object lock = new Object();
     private volatile Map<String, Object> cachedStats = null;
@@ -366,6 +366,10 @@ public class PlatformMetricsService {
             item.put("activeDonors", d);
             item.put("donors", d);
             item.put("hasDonors", d > 0);
+            item.put("bloodGroup", g);
+            Map<String, String> status = StockService.getStockStatus(g, u);
+            item.put("status", status.get("state"));
+            item.put("statusLabel", status.get("label"));
             dataMap.put(g, item);
         }
 
@@ -378,6 +382,8 @@ public class PlatformMetricsService {
         response.put("totalActiveDonors", totalDonors);
         response.put("data", dataMap);
         response.put("cachedAt", System.currentTimeMillis());
+        response.put("updatedAt", System.currentTimeMillis());
+        response.put("updatedAgo", "Just now");
 
         return response;
     }

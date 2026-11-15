@@ -51,7 +51,9 @@ public class SystemController {
     public ResponseEntity<ApiResponse> getNationalBloodStock() {
         try {
             Map<String, Object> stock = PlatformMetricsService.getInstance().getPublicNationalBloodStock();
-            return ResponseEntity.ok(new ApiResponse(true, "National blood stock loaded", stock));
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=10")
+                    .body(new ApiResponse(true, "National blood stock loaded", stock));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
         }

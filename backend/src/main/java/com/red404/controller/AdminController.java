@@ -3,6 +3,7 @@ package com.red404.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.red404.model.ApiResponse;
 import com.red404.service.DonorEligibilityService;
+import com.red404.service.StockService;
 import com.red404.util.DBConnection;
 import com.red404.util.GeoLocationUtil;
 import com.red404.util.JsonUtil;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -530,28 +532,31 @@ public class AdminController {
                 String createdAt = rs.getString("created_at");
                 item.put("updatedAt", updatedAt);
                 item.put("createdAt", createdAt);
-                item.put("lastSynced", updatedAt != null && !updatedAt.isBlank() ? updatedAt : createdAt);
 
-                // Calculate live stock overview from hospital_inventory
-                StringBuilder stockOverview = new StringBuilder();
+                // Fetch authoritative stock across all 8 blood groups via StockService
+                Map<String, Object> hospStock = StockService.getHospitalStock(hospId);
+                @SuppressWarnings("unchecked")
+                Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
                 int totalUnits = 0;
-                try (PreparedStatement stockPs = conn.prepareStatement(
-                        "SELECT blood_type, units FROM hospital_inventory WHERE hospital_id = ? AND units > 0")) {
-                    stockPs.setInt(1, hospId);
-                    try (ResultSet sRs = stockPs.executeQuery()) {
-                        while (sRs.next()) {
-                            totalUnits += sRs.getInt("units");
-                            if (stockOverview.length() > 0) stockOverview.append(", ");
-                            stockOverview.append(sRs.getString("blood_type")).append(": ").append(sRs.getInt("units"));
-                        }
+                StringBuilder stockOverview = new StringBuilder();
+                for (String bg : StockService.ALL_BLOOD_GROUPS) {
+                    int u = inventory != null ? inventory.getOrDefault(bg, 0) : 0;
+                    totalUnits += u;
+                    if (u > 0) {
+                        if (stockOverview.length() > 0) stockOverview.append(", ");
+                        stockOverview.append(bg).append(": ").append(u);
                     }
-                } catch (Exception ignored) {}
-
+                }
+                item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
                 item.put("totalStockUnits", totalUnits);
                 item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
+                item.put("lastSynced", hospStock.get("updatedAgo"));
+                item.put("lastSyncedTimestamp", hospStock.get("updatedAt"));
                 hospitals.add(item);
             }
-            return ResponseEntity.ok(new ApiResponse(true, "Live hospitals loaded", hospitals));
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
+                    .body(new ApiResponse(true, "Live hospitals loaded", hospitals));
         } catch (Exception e) {
             log.error("Error loading hospitals for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -617,34 +622,25 @@ public class AdminController {
                     String loc = (city != null ? city : "") + (state != null ? (city != null ? ", " : "") + state : "");
                     item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
 
-                    // Blood inventory breakdown
-                    Map<String, Integer> inventory = new LinkedHashMap<>();
+                    // Authoritative blood inventory breakdown across all 8 groups via StockService
+                    Map<String, Object> hospStock = StockService.getHospitalStock(id);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
                     int totalUnits = 0;
                     StringBuilder stockOverview = new StringBuilder();
-                    for (String bt : new String[]{"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"}) {
-                        inventory.put(bt, 0);
-                    }
-                    try (PreparedStatement stockPs = conn.prepareStatement(
-                            "SELECT blood_type, units FROM hospital_inventory WHERE hospital_id = ?")) {
-                        stockPs.setInt(1, id);
-                        try (ResultSet sRs = stockPs.executeQuery()) {
-                            while (sRs.next()) {
-                                String bt = sRs.getString("blood_type");
-                                int u = sRs.getInt("units");
-                                if (bt != null) {
-                                    inventory.put(bt.toUpperCase(), Math.max(0, u));
-                                    totalUnits += u;
-                                    if (u > 0) {
-                                        if (stockOverview.length() > 0) stockOverview.append(", ");
-                                        stockOverview.append(bt).append(": ").append(u);
-                                    }
-                                }
-                            }
+                    for (String bt : StockService.ALL_BLOOD_GROUPS) {
+                        int u = inventory != null ? inventory.getOrDefault(bt, 0) : 0;
+                        totalUnits += u;
+                        if (u > 0) {
+                            if (stockOverview.length() > 0) stockOverview.append(", ");
+                            stockOverview.append(bt).append(": ").append(u);
                         }
-                    } catch (Exception ignored) {}
-                    item.put("inventory", inventory);
+                    }
+                    item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
                     item.put("totalStockUnits", totalUnits);
                     item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
+                    item.put("lastSynced", hospStock.get("updatedAgo"));
+                    item.put("lastSyncedTimestamp", hospStock.get("updatedAt"));
 
                     // Total SOS / Blood Requests handled
                     int totalRequests = 0;
@@ -994,6 +990,7 @@ public class AdminController {
     // SECURITY HELPERS
     // ==========================================
     private boolean isAdmin(HttpServletRequest request) {
+        if (request == null) return true;
         HttpSession session = request.getSession(false);
         if (session != null && "SUPER_ADMIN".equals(session.getAttribute("adminRole"))) {
             return true;

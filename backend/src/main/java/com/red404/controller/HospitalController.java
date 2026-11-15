@@ -11,11 +11,13 @@ import com.red404.dao.DonorDao;
 import com.red404.dao.HospitalDao;
 import com.red404.model.ApiResponse;
 import com.red404.service.DonorEligibilityService;
+import com.red404.service.StockService;
 import com.red404.util.DBConnection;
 import com.red404.util.DistanceCalculator;
 import com.red404.util.JsonUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +34,8 @@ import java.util.Map;
 @RestController
 @RequestMapping({"/api/hospitals", "/api/hospital"})
 public class HospitalController {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HospitalController.class);
 
     private final HospitalDao hospitalDao = new HospitalDao();
     private final DonorDao donorDao = new DonorDao();
@@ -660,8 +664,11 @@ public class HospitalController {
         try {
             Integer hospitalId = getHospitalId(request);
             if (hospitalId == null) hospitalId = 1;
-            Map<String, Integer> inv = hospitalDao.getHospitalInventory(hospitalId);
-            return ok("Hospital inventory loaded", inv);
+            Map<String, Object> inv = StockService.getHospitalStock(hospitalId);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
+                    .header(HttpHeaders.PRAGMA, "no-cache")
+                    .body(new ApiResponse(true, "Hospital inventory loaded", inv));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -676,19 +683,49 @@ public class HospitalController {
             }
             if (hospitalId == null) hospitalId = 1;
 
+            String staffUser = "Hospital Staff";
+            try {
+                HttpSession sess = request.getSession(false);
+                if (sess != null && sess.getAttribute("user") != null) {
+                    staffUser = String.valueOf(sess.getAttribute("user"));
+                }
+            } catch (Exception ignored) {}
+
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
             if (bloodType == null || bloodType.isBlank()) bloodType = "A+";
-            int change = JsonUtil.asInt(body, "change", 0);
+            bloodType = StockService.normalizeGroup(bloodType);
+
+            int change = 0;
+            if (body != null && body.has("delta")) {
+                change = JsonUtil.asInt(body, "delta", 0);
+            } else if (body != null && body.has("change")) {
+                change = JsonUtil.asInt(body, "change", 0);
+            }
+
             Integer exactUnits = (body != null && body.has("units")) ? JsonUtil.asInt(body, "units", -1) : null;
             if (exactUnits != null && exactUnits < 0) exactUnits = null;
 
-            hospitalDao.updateHospitalInventory(hospitalId, bloodType, change, exactUnits);
+            String reason = JsonUtil.textOrNull(body, "reason");
+            if (reason == null || reason.isBlank()) {
+                reason = exactUnits != null ? ("Set exact units to " + exactUnits) : ("Manual adjustment (" + (change >= 0 ? "+" + change : change) + ")");
+            }
 
-            // Fetch live aggregated stock and broadcast to all connected clients in real time
-            Map<String, Object> nationalStock = donorDao.getNationalBloodStock();
-            SystemController.broadcastStockUpdate(nationalStock);
+            Map<String, Object> updatedStock;
+            if (exactUnits != null) {
+                updatedStock = StockService.setExactStock(hospitalId, bloodType, exactUnits, reason, staffUser);
+            } else {
+                updatedStock = StockService.adjustStock(hospitalId, bloodType, change, reason, staffUser);
+            }
 
-            return ok("Inventory updated successfully", nationalStock);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
+                    .header(HttpHeaders.PRAGMA, "no-cache")
+                    .body(new ApiResponse(true, "Inventory updated successfully", updatedStock));
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.badRequest()
+                    .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
+                    .header(HttpHeaders.PRAGMA, "no-cache")
+                    .body(new ApiResponse(false, iae.getMessage()));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -1287,13 +1324,14 @@ public class HospitalController {
                 } catch (Exception ignored) {}
             }
 
-            // Increment inventory (+1 unit)
-            hospitalDao.updateHospitalInventory(hospitalId, bloodType, 1, null);
-
-            // Broadcast live stock update
+            // Increment inventory (+1 unit) via StockService
+            Map<String, Object> newStock = null;
             try {
-                SystemController.broadcastStockUpdate(donorDao.getNationalBloodStock());
-            } catch (Exception ignored) {}
+                newStock = StockService.adjustStock(hospitalId, bloodType, 1,
+                        "Donation verified and approved for donor #" + donorId + " (" + volumeMl + " mL)", staffUser);
+            } catch (Exception ex) {
+                log.warn("Notice adjusting stock on donation approval: {}", ex.getMessage());
+            }
 
             // Audit log
             AdminController.addLog("DONATION_APPROVED", "Donation approved at hospital ID " + hospitalId +
@@ -1304,7 +1342,7 @@ public class HospitalController {
             resp.put("bloodType", bloodType);
             resp.put("volumeMl", volumeMl);
             resp.put("requestId", reqId > 0 ? reqId : null);
-            resp.put("newInventory", hospitalDao.getHospitalInventory(hospitalId));
+            resp.put("newInventory", newStock != null ? newStock : StockService.getHospitalStock(hospitalId));
 
             return ok("Donation verified, recorded, and inventory updated (+1 unit " + bloodType + ").", resp);
         } catch (Exception e) {

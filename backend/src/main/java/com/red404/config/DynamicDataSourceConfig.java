@@ -78,7 +78,7 @@ public class DynamicDataSourceConfig {
                 dataDir.mkdirs();
             }
             String dbPath = new File(dataDir, "red404").getAbsolutePath().replace('\\', '/');
-            String persistentH2Url = "jdbc:h2:file:" + dbPath + ";MODE=MySQL;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1";
+            String persistentH2Url = "jdbc:h2:file:" + dbPath + ";MODE=MySQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1";
             log.info("Starting embedded persistent file database (H2 MySQL-mode) at: {}", persistentH2Url);
 
             HikariConfig h2Config = new HikariConfig();

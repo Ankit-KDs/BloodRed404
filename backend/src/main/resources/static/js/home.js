@@ -565,6 +565,12 @@ function updateAllBloodStock(stockData) {
   if (gatedMsg) gatedMsg.style.display = 'none';
   if (stockGrid) stockGrid.style.display = 'grid';
 
+  const updatedEl = document.getElementById('homeStockUpdatedAgo');
+  if (updatedEl) {
+    const updatedTxt = stockData.updatedAgo || (stockData.updatedAt ? formatRelativeTime(stockData.updatedAt) : 'just now');
+    updatedEl.textContent = `Updated ${updatedTxt}`;
+  }
+
   const payload = stockData.data || stockData;
   const groups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 

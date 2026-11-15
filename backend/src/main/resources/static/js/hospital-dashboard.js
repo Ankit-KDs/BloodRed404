@@ -600,8 +600,142 @@ const STOCK_THRESHOLDS = {
   'A+':  { critical: 3, low: 5 },
   'B-':  { critical: 3, low: 5 },
   'B+':  { critical: 3, low: 5 },
-  'AB-': { critical: 3, low: 5 },
-  'AB+': { critical: 3, low: 5 }
+  'AB-': { critical: 2, low: 4 },
+  'AB+': { critical: 2, low: 4 }
+};
+
+// ============================================================
+// SHARED HOSPITAL STOCK STORE (Part 1 - Single Source of Truth)
+// ============================================================
+window.HospitalStockStore = {
+  data: null, // { inventory: {...}, updatedAt, updatedAgo }
+  isFetching: false,
+  listeners: new Set(),
+  pollTimer: null,
+  eventSource: null,
+
+  subscribe(fn) {
+    this.listeners.add(fn);
+    if (this.data) {
+      try { fn(this.data); } catch (e) { console.warn('Stock listener err:', e); }
+    }
+    return () => this.listeners.delete(fn);
+  },
+
+  notify() {
+    if (!this.data) return;
+    for (const fn of this.listeners) {
+      try { fn(this.data); } catch (e) { console.warn('Stock notify err:', e); }
+    }
+  },
+
+  updateTimestamps() {
+    if (!this.data) return;
+    const txt = `Updated ${this.data.updatedAgo || 'just now'}`;
+    const dashEl = document.getElementById('dashStockUpdatedAgo');
+    if (dashEl) dashEl.textContent = txt;
+    const invEl = document.getElementById('invStockUpdatedAgo');
+    if (invEl) invEl.textContent = txt;
+  },
+
+  async fetch(force = false) {
+    if (this.isFetching && !force) return this.data;
+    this.isFetching = true;
+    try {
+      const res = await fetch('/api/hospital/inventory', {
+        credentials: 'include',
+        headers: { 'Cache-Control': 'no-cache, no-store' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const payload = json.data || {};
+        const inv = payload.inventory || payload;
+        this.data = {
+          inventory: inv,
+          updatedAt: payload.updatedAt || Date.now(),
+          updatedAgo: payload.updatedAgo || 'Just now',
+          raw: payload
+        };
+        this.updateTimestamps();
+        this.notify();
+      }
+    } catch (e) {
+      console.warn('StockStore fetch error:', e);
+    } finally {
+      this.isFetching = false;
+    }
+    return this.data;
+  },
+
+  async adjust(bloodType, delta, reason) {
+    try {
+      const res = await fetch('/api/hospital/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store' },
+        body: JSON.stringify({
+          bloodType,
+          delta,
+          change: delta,
+          reason: reason || `Manual adjustment (${delta >= 0 ? '+' + delta : delta})`
+        }),
+        credentials: 'include'
+      });
+      const json = await res.json();
+      if (!res.ok || json.success === false) {
+        const errMessage = json.message || 'Failed to update stock';
+        showToast(errMessage, 'error', 4000);
+        // Roll back to true server state
+        await this.fetch(true);
+        return false;
+      }
+      const payload = json.data || {};
+      const inv = payload.inventory || payload;
+      this.data = {
+        inventory: inv,
+        updatedAt: payload.updatedAt || Date.now(),
+        updatedAgo: payload.updatedAgo || 'Just now',
+        raw: payload
+      };
+      this.updateTimestamps();
+      this.notify();
+      const sign = delta > 0 ? `+${delta}` : `${delta}`;
+      showToast(`${bloodType} inventory updated (${sign} unit).`, 'success', 2500);
+      return true;
+    } catch (err) {
+      showToast('Network error updating inventory. Rolled back.', 'error', 4000);
+      await this.fetch(true);
+      return false;
+    }
+  },
+
+  init() {
+    this.fetch();
+
+    // 1. Refetch on view activation (hash change)
+    window.addEventListener('hashchange', () => this.fetch(true));
+
+    // 2. Refetch on tab focus
+    window.addEventListener('focus', () => this.fetch(true));
+
+    // 3. Realtime SSE push
+    try {
+      if (window.EventSource && !this.eventSource) {
+        this.eventSource = new EventSource('/api/system/national-blood-stock/stream');
+        this.eventSource.addEventListener('stock-update', () => this.fetch(true));
+      }
+    } catch (e) {
+      console.debug('SSE stock stream notice:', e);
+    }
+
+    // 4. Fallback polling every 15 s while dashboard or inventory is active
+    if (!this.pollTimer) {
+      this.pollTimer = setInterval(() => {
+        if (!document.hidden) {
+          this.fetch();
+        }
+      }, 15000);
+    }
+  }
 };
 
 // Signature blood-drop badge used consistently everywhere
@@ -668,27 +802,14 @@ async function loadDashboardData() {
   let activeRequests = [];
   let historyRequests = [];
 
-  // Fetch Inventory
+  // Fetch Inventory from Shared HospitalStockStore (Part 1 - Single Store)
   try {
-    const invRes = await fetch('/api/hospital/inventory', { credentials: 'include' });
-    if (invRes.ok) {
-      const json = await invRes.json();
-      inventoryMap = json.data || {};
-    } else {
-      throw new Error('Inventory fetch failed');
-    }
+    const stockObj = await window.HospitalStockStore.fetch();
+    inventoryMap = (stockObj && stockObj.inventory) || {};
   } catch (err) {
     console.debug('Inventory fetch error:', err);
-    if (window.location.protocol === 'file:' || !window.location.hostname) {
-      if (window.location.hash.includes('real')) {
-        inventoryMap = { 'O-': 2, 'A-': 2, 'B+': 4, 'A+': 12, 'AB+': 15 };
-      } else {
-        inventoryMap = {}; // Empty brand-new account
-      }
-    } else {
-      if (stockLoading) stockLoading.style.display = 'none';
-      if (stockError) stockError.style.display = 'block';
-    }
+    if (stockLoading) stockLoading.style.display = 'none';
+    if (stockError) stockError.style.display = 'block';
   }
 
   // Fetch Active Requests
@@ -768,6 +889,7 @@ async function loadDashboardData() {
   if (activityLoading) activityLoading.style.display = 'none';
 
   // Process Stock & Render Blood Stock Section
+  window.latestActiveRequestsCount = activeRequests.length;
   if (inventoryMap !== null) {
     renderDashboardStock(inventoryMap, activeRequests.length);
   }
@@ -1993,7 +2115,14 @@ function initDispatchRadar() {
    8. INVENTORY MODULE (REAL BACKEND INVENTORY)
    ============================================================ */
 function initInventory() {
-  loadInventoryTable();
+  window.HospitalStockStore.init();
+  window.HospitalStockStore.subscribe((stockData) => {
+    if (stockData && stockData.inventory) {
+      const activeCount = typeof window.latestActiveRequestsCount === 'number' ? window.latestActiveRequestsCount : 0;
+      renderDashboardStock(stockData.inventory, activeCount);
+      loadInventoryTable();
+    }
+  });
 
   document.querySelectorAll('.comp-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2008,77 +2137,74 @@ async function loadInventoryTable() {
   const bagTbody = document.getElementById('inventoryBagTableBody');
 
   try {
-    const res = await fetch('/api/hospital/inventory', { credentials: 'include' });
-    if (res.ok) {
-      const json = await res.json();
-      const stock = json.data || {};
+    const stockObj = window.HospitalStockStore.data || await window.HospitalStockStore.fetch();
+    const stock = (stockObj && stockObj.inventory) || {};
 
-      if (tbody) {
-        tbody.innerHTML = ALL_BLOOD_GROUPS.map(type => {
-          const hasUnits = type in stock && stock[type] !== null;
-          const units = hasUnits ? Number(stock[type]) : 0;
-          const th = STOCK_THRESHOLDS[type] || { critical: 3, low: 5 };
-          const isCritical = hasUnits && units <= th.critical;
-          const isLow = hasUnits && units <= th.low;
-          const percent = Math.min(100, Math.round((units / 20) * 100));
+    if (tbody) {
+      tbody.innerHTML = ALL_BLOOD_GROUPS.map(type => {
+        const hasUnits = type in stock && stock[type] !== null;
+        const units = hasUnits ? Number(stock[type]) : 0;
+        const th = STOCK_THRESHOLDS[type] || { critical: 3, low: 5 };
+        const isCritical = hasUnits && units <= th.critical;
+        const isLow = hasUnits && units <= th.low;
+        const percent = Math.min(100, Math.round((units / 20) * 100));
 
-          return `
-            <tr>
-              <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  ${getDropBadgeSvg(type, isCritical ? 'critical' : (isLow ? 'low' : ''))}
-                  <strong>${type}</strong>
-                </div>
-              </td>
-              <td><span class="stat-number" style="font-size: 16px;">${hasUnits ? units : '-'}</span> units</td>
-              <td>
-                <span class="chip-status ${hasUnits ? (isCritical ? 'critical' : (isLow ? 'low' : 'available')) : 'pending'}">
-                  ${hasUnits ? (isCritical ? 'Critical deficit' : (isLow ? 'Low stock' : 'Sufficient')) : 'Not set'}
-                </span>
-              </td>
-              <td style="min-width: 140px;">
-                <div class="stock-bar-track" style="margin-bottom: 4px;">
-                  <div class="stock-bar-fill ${isCritical ? 'critical' : (isLow ? 'low' : 'ok')}" style="width: ${hasUnits ? percent : 0}%;"></div>
-                </div>
-                <span style="font-size: 13px; color: var(--hosp-text-muted); font-family: var(--font-mono);">${hasUnits ? `${percent}% capacity` : 'Unconfigured'}</span>
-              </td>
-              <td>
-                <div class="stock-stepper-mini">
-                  <button type="button" class="btn-mini-adjust btn-inv-dec" data-type="${type}" aria-label="Decrease ${type} unit">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 8a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1z"/></svg>
-                  </button>
-                  <button type="button" class="btn-mini-adjust btn-inv-inc" data-type="${type}" aria-label="Increase ${type} unit">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 2a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2H9v4a1 1 0 1 1-2 0V9H3a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z"/></svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        return `
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                ${getDropBadgeSvg(type, isCritical ? 'critical' : (isLow ? 'low' : ''))}
+                <strong>${type}</strong>
+              </div>
+            </td>
+            <td><span class="stat-number" style="font-size: 16px;">${hasUnits ? units : '-'}</span> units</td>
+            <td>
+              <span class="chip-status ${hasUnits ? (isCritical ? 'critical' : (isLow ? 'low' : 'available')) : 'pending'}">
+                ${hasUnits ? (isCritical ? 'Critical deficit' : (isLow ? 'Low stock' : 'Sufficient')) : 'Not set'}
+              </span>
+            </td>
+            <td style="min-width: 140px;">
+              <div class="stock-bar-track" style="margin-bottom: 4px;">
+                <div class="stock-bar-fill ${isCritical ? 'critical' : (isLow ? 'low' : 'ok')}" style="width: ${hasUnits ? percent : 0}%;"></div>
+              </div>
+              <span style="font-size: 13px; color: var(--hosp-text-muted); font-family: var(--font-mono);">${hasUnits ? `${percent}% capacity` : 'Unconfigured'}</span>
+            </td>
+            <td>
+              <div class="stock-stepper-mini">
+                <button type="button" class="btn-mini-adjust btn-inv-dec" data-type="${type}" aria-label="Decrease ${type} unit">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 8a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1z"/></svg>
+                </button>
+                <button type="button" class="btn-mini-adjust btn-inv-inc" data-type="${type}" aria-label="Increase ${type} unit">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 2a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2H9v4a1 1 0 1 1-2 0V9H3a1 1 0 0 1 0-2h4V3a1 1 0 0 1 1-1z"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
 
-        // Wire Stepper on Inventory Page
-        tbody.querySelectorAll('.btn-inv-inc').forEach(b => {
-          b.addEventListener('click', async () => {
-            const t = b.getAttribute('data-type');
-            if (t) {
-              await updateInventoryUnit(t, 1);
-              loadInventoryTable();
-              loadDashboardData();
-            }
-          });
+      // Wire Stepper on Inventory Page via shared HospitalStockStore
+      tbody.querySelectorAll('.btn-inv-inc').forEach(b => {
+        b.addEventListener('click', async () => {
+          const t = b.getAttribute('data-type');
+          if (t) {
+            b.disabled = true;
+            await window.HospitalStockStore.adjust(t, 1);
+            b.disabled = false;
+          }
         });
+      });
 
-        tbody.querySelectorAll('.btn-inv-dec').forEach(b => {
-          b.addEventListener('click', async () => {
-            const t = b.getAttribute('data-type');
-            if (t) {
-              await updateInventoryUnit(t, -1);
-              loadInventoryTable();
-              loadDashboardData();
-            }
-          });
+      tbody.querySelectorAll('.btn-inv-dec').forEach(b => {
+        b.addEventListener('click', async () => {
+          const t = b.getAttribute('data-type');
+          if (t) {
+            b.disabled = true;
+            await window.HospitalStockStore.adjust(t, -1);
+            b.disabled = false;
+          }
         });
-      }
+      });
     }
   } catch (e) {
     console.error('Inventory table load error:', e);
@@ -2097,16 +2223,7 @@ async function loadInventoryTable() {
 }
 
 async function updateInventoryUnit(bloodType, change) {
-  try {
-    await fetch('/api/hospital/inventory', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bloodType, change }),
-      credentials: 'include'
-    });
-  } catch (e) {
-    console.error('Inventory update error:', e);
-  }
+  return window.HospitalStockStore.adjust(bloodType, change);
 }
 
 /* ============================================================
