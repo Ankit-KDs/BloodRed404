@@ -16,12 +16,27 @@ public class DonorEligibilityService {
     public static final int DEFAULT_COOLDOWN_DAYS = 90;
 
     public static int getCooldownDays() {
+        return getCooldownDays(null);
+    }
+
+    public static int getCooldownDays(String gender) {
         try {
-            String prop = System.getProperty("DONOR_COOLDOWN_DAYS");
+            if (gender != null && !gender.isBlank()) {
+                String g = gender.trim().toLowerCase();
+                if (g.startsWith("f") || g.equals("female") || g.equals("woman")) {
+                    String fProp = System.getProperty("ELIGIBILITY_GAP_DAYS_FEMALE");
+                    if (fProp != null && !fProp.isBlank()) return Integer.parseInt(fProp.trim());
+                    String fEnv = System.getenv("ELIGIBILITY_GAP_DAYS_FEMALE");
+                    if (fEnv != null && !fEnv.isBlank()) return Integer.parseInt(fEnv.trim());
+                }
+            }
+            String prop = System.getProperty("ELIGIBILITY_GAP_DAYS");
+            if (prop == null || prop.isBlank()) prop = System.getProperty("DONOR_COOLDOWN_DAYS");
             if (prop != null && !prop.isBlank()) {
                 return Integer.parseInt(prop.trim());
             }
-            String env = System.getenv("DONOR_COOLDOWN_DAYS");
+            String env = System.getenv("ELIGIBILITY_GAP_DAYS");
+            if (env == null || env.isBlank()) env = System.getenv("DONOR_COOLDOWN_DAYS");
             if (env != null && !env.isBlank()) {
                 return Integer.parseInt(env.trim());
             }
@@ -44,7 +59,8 @@ public class DonorEligibilityService {
      */
     public static Map<String, Object> computeEligibility(Map<String, Object> donor) {
         Map<String, Object> res = new LinkedHashMap<>();
-        int cooldown = getCooldownDays();
+        String gender = donor != null && donor.get("gender") != null ? String.valueOf(donor.get("gender")) : null;
+        int cooldown = getCooldownDays(gender);
         LocalDate today = LocalDate.now();
 
         if (donor == null) {

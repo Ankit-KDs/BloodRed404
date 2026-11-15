@@ -63,13 +63,14 @@
     // 1. Authoritative Server-side Eligibility (Single Source of Truth)
     if (user && user.eligibility) {
       const elig = user.eligibility;
+      const hasDonated = (donationRecords && donationRecords.length > 0) || Boolean(user.lastDonation || user.lastDonationDate);
       if (elig.eligible) {
         badge.className = 'status-eligibility-btn eligible-ready';
-        textEl.textContent = 'Status: ELIGIBLE TO DONATE';
+        textEl.textContent = !hasDonated ? "No donation yet. You're ready." : "You can donate. The hospital does a final check before donating.";
       } else {
         const daysLeft = elig.days_until_eligible || 0;
         badge.className = 'status-eligibility-btn recovering';
-        textEl.textContent = `Status: RECOVERY PERIOD • ${daysLeft} ${daysLeft === 1 ? 'Day' : 'Days'} Left`;
+        textEl.textContent = `Next donation possible (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`;
       }
       return;
     }

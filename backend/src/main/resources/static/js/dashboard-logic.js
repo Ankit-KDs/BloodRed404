@@ -967,17 +967,22 @@
     const isEligible = Boolean(elig.eligible);
     const daysLeft = typeof elig.days_until_eligible === 'number' ? elig.days_until_eligible : 0;
 
+    const hasDonated = (donorData.donations && donorData.donations.length > 0) ||
+                       (donorData.totalDonations && donorData.totalDonations > 0) ||
+                       Boolean(donorData.lastDonationDate);
+
     if (isEligible) {
       strip.className = 'mini-eligibility-strip eligible';
+      const msg = !hasDonated ? "No donation yet. You're ready." : "You can donate. The hospital does a final check before donating.";
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ELIGIBLE TO DONATE • Recovery Complete</span>
+        <span>${escapeHtml(msg)}</span>
       `;
     } else {
       strip.className = 'mini-eligibility-strip cooldown';
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Status: ${elig.reason || `ELIGIBLE IN ${daysLeft} DAYS`}</span>
+        <span>Next donation possible in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}</span>
       `;
     }
   }

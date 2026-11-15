@@ -1363,7 +1363,7 @@
           <div class="card-header-row">
             <h2 class="card-title">Medical Eligibility Tracker</h2>
             <span class="card-meta-tag scanner-meta-tag" id="eligibilityMetaTag">
-              <i class="fas fa-check-circle"></i> Recovery period
+              Eligibility
             </span>
           </div>
 
@@ -1375,7 +1375,7 @@
                 <!-- Telemetry Ticks along left side of pillar -->
                 <div class="dna-telemetry-ruler">
                   <div class="telemetry-tick tick-90" style="bottom: 88%;">
-                    <span class="tick-label ready">90d <span class="tag-ready">[READY]</span></span>
+                    <span class="tick-label ready">90d</span>
                     <span class="tick-dash"></span>
                   </div>
                   <div class="telemetry-tick tick-sub" style="bottom: 78%;"><span class="tick-dash sub"></span></div>
@@ -1700,43 +1700,11 @@
               </div>
             </div>
 
-                        <!-- Right: Dynamic Database-Driven Telemetry Readout -->
-            <div class="capsule-telemetry-panel">
-              <!-- Huge Countdown / Status Display -->
-              <div class="telemetry-header">
-                <h1 id="telemetryPrimary" style="color: #10b981;">READY</h1>
-                <h3 id="telemetryPrimaryLabel" style="color: #34d399;">TO DONATE</h3>
-              </div>
-
-              <!-- Live Recovery Percentage -->
-              <div class="telemetry-percentage-box">
-                <h2 id="telemetryPercent">100% READY</h2>
-                <span id="telemetryCaption" class="telemetry-caption">(fully eligible to donate)</span>
-              </div>
-
-              <!-- Pill Status Badge -->
-              <div id="telemetryBadge" class="status-badge eligible-ready">
-                <i class="fa-solid fa-shield-halved"></i> 
-                <span id="badgeText">ELIGIBLE TO DONATE</span>
-              </div>
-
-              <!-- Fine Checklist Details -->
-              <ul class="telemetry-checklist">
-                <li id="checkRecoveryInterval">
-                  <i id="iconRecovery" class="fa-solid fa-check" style="color: #10b981;"></i> 
-                  <span id="textRecovery">Recovery period: complete</span>
-                </li>
-                <li id="checkVitals">
-                  <i id="iconVitals" class="fa-solid fa-circle-check" style="color: #10b981;"></i> 
-                  <span id="textVitals">Ready for donation</span>
-                </li>
-              </ul>
-
-              <!-- Calendar Unlock Info -->
-              <div class="telemetry-calendar">
-                <span class="calendar-label">Next donation:</span>
-                <strong id="dateUnlock">IMMEDIATE / NOW AVAILABLE</strong>
-              </div>
+                        <!-- Right: Dynamic Plain-Text Readout (Group D) -->
+            <div class="capsule-telemetry-panel" style="display: flex; flex-direction: column; justify-content: center; padding: 24px 8px;">
+              <p id="eligibilityStatusMsg" style="font-size: 16px; font-weight: 500; line-height: 1.6; color: #f8fafc; margin: 0;">
+                No donation yet. You're ready.
+              </p>
             </div>
           </div>
         </section>

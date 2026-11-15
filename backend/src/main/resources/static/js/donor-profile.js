@@ -420,58 +420,91 @@
       beLabel.textContent = bloodGroup.includes('-') ? 'NEGATIVE' : 'POSITIVE';
     }
 
-    // 2. Top Meta (Age | Weight | Pulse) — Empty placeholders until hospital logs checkup
-    const ageEl = document.getElementById('vitalAge');
-    const weightEl = document.getElementById('vitalWeight');
-    const pulseEl = document.getElementById('vitalPulse');
-    if (ageEl) ageEl.textContent = (currentDonor.age !== null && currentDonor.age !== undefined) ? currentDonor.age : '--';
-    if (weightEl) weightEl.textContent = (currentDonor.weight !== null && currentDonor.weight !== undefined) ? currentDonor.weight : '--';
-    if (pulseEl) pulseEl.textContent = (currentDonor.pulse !== null && currentDonor.pulse !== undefined) ? currentDonor.pulse : '--';
+    const hasRealVitals = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined && currentDonor.hemoglobin > 0) ||
+                          (Boolean(currentDonor.bloodPressure) && currentDonor.bloodPressure !== '--/--') ||
+                          Boolean(currentDonor.verifiedDate);
 
-    // 3. Verified hospital intake facility & date
+    const vitalsDetailsBox = document.querySelector('.vitals-details-box');
+    const topMeta = document.querySelector('.vitals-top-meta');
     const verifiedSub = document.getElementById('vitalsVerifiedSub');
-    if (verifiedSub) {
-      if (currentDonor.verifiedDate) {
-        verifiedSub.textContent = `Verified on ${formatDate(currentDonor.verifiedDate)}`;
-      } else {
-        verifiedSub.textContent = 'Awaiting Hospital Health Verification';
-      }
+    const vitalRows = document.querySelectorAll('.vitals-details-box .vital-row');
+    const evalBadge = document.getElementById('aiHealthEvalBadge');
+
+    let waitingEl = document.getElementById('vitalsWaitingNotice');
+    if (!waitingEl && vitalsDetailsBox) {
+      waitingEl = document.createElement('div');
+      waitingEl.id = 'vitalsWaitingNotice';
+      waitingEl.style.cssText = 'padding: 16px 0; font-size: 14px; color: #94a3b8; font-style: normal;';
+      vitalsDetailsBox.appendChild(waitingEl);
     }
 
-    // 4. Metrics & Chips (Pending placeholders until hospital logs checkup)
-    const hbVal = document.getElementById('vitalHemoglobin');
-    const hbPill = document.getElementById('hbPill');
-    const hasHb = currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined;
-    if (hbVal) hbVal.textContent = hasHb ? currentDonor.hemoglobin : '--';
-    if (hbPill) {
-      if (hasHb) {
-        const isHbOk = currentDonor.hemoglobin >= 12.5;
-        hbPill.className = `vital-pill ${isHbOk ? 'pill-normal' : 'pill-alert'}`;
-        hbPill.textContent = isHbOk ? 'NORMAL' : 'LOW';
-      } else {
-        hbPill.className = 'vital-pill pill-awaiting';
-        hbPill.textContent = 'PENDING';
+    if (!hasRealVitals) {
+      // Group D.4: Replace repeated "PENDING" chips with one line "Waiting for hospital check"
+      if (waitingEl) {
+        waitingEl.textContent = 'Waiting for hospital check';
+        waitingEl.style.display = 'block';
       }
-    }
-
-    const bpVal = document.getElementById('vitalBP');
-    const bpPill = document.getElementById('bpPill');
-    const hasBp = Boolean(currentDonor.bloodPressure);
-    if (bpVal) bpVal.textContent = hasBp ? currentDonor.bloodPressure : '--/--';
-    if (bpPill) {
-      if (hasBp) {
-        const isBpOk = isBpNormal(currentDonor.bloodPressure);
-        bpPill.className = `vital-pill ${isBpOk ? 'pill-normal' : 'pill-alert'}`;
-        bpPill.textContent = isBpOk ? 'NORMAL' : 'REVIEW';
-      } else {
-        bpPill.className = 'vital-pill pill-awaiting';
-        bpPill.textContent = 'PENDING';
+      if (topMeta) topMeta.style.display = 'none';
+      if (verifiedSub) verifiedSub.style.display = 'none';
+      vitalRows.forEach(r => r.style.display = 'none');
+      if (evalBadge) evalBadge.style.display = 'none';
+    } else {
+      // Real values exist: show real values with check date
+      if (waitingEl) waitingEl.style.display = 'none';
+      if (topMeta) topMeta.style.display = 'block';
+      if (verifiedSub) {
+        verifiedSub.style.display = 'block';
+        if (currentDonor.verifiedDate) {
+          const hospName = currentDonor.verifiedFacility ? ` at ${currentDonor.verifiedFacility}` : '';
+          verifiedSub.textContent = `Checked on ${formatDate(currentDonor.verifiedDate)}${hospName}`;
+        } else {
+          verifiedSub.textContent = 'Verified during hospital intake';
+        }
       }
-    }
+      vitalRows.forEach(r => r.style.display = 'flex');
+      if (evalBadge) evalBadge.style.display = 'flex';
 
-    const tempVal = document.getElementById('vitalTemp');
-    const hasTemp = currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined;
-    if (tempVal) tempVal.textContent = hasTemp ? currentDonor.bodyTemp : '--';
+      const ageEl = document.getElementById('vitalAge');
+      const weightEl = document.getElementById('vitalWeight');
+      const pulseEl = document.getElementById('vitalPulse');
+      if (ageEl) ageEl.textContent = (currentDonor.age !== null && currentDonor.age !== undefined) ? currentDonor.age : '--';
+      if (weightEl) weightEl.textContent = (currentDonor.weight !== null && currentDonor.weight !== undefined) ? currentDonor.weight : '--';
+      if (pulseEl) pulseEl.textContent = (currentDonor.pulse !== null && currentDonor.pulse !== undefined) ? currentDonor.pulse : '--';
+
+      const hbVal = document.getElementById('vitalHemoglobin');
+      const hbPill = document.getElementById('hbPill');
+      const hasHb = currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined;
+      if (hbVal) hbVal.textContent = hasHb ? currentDonor.hemoglobin : '--';
+      if (hbPill) {
+        if (hasHb) {
+          const isHbOk = currentDonor.hemoglobin >= 12.5;
+          hbPill.className = `vital-pill ${isHbOk ? 'pill-normal' : 'pill-alert'}`;
+          hbPill.textContent = isHbOk ? 'NORMAL' : 'LOW';
+          hbPill.style.display = 'inline-block';
+        } else {
+          hbPill.style.display = 'none';
+        }
+      }
+
+      const bpVal = document.getElementById('vitalBP');
+      const bpPill = document.getElementById('bpPill');
+      const hasBp = Boolean(currentDonor.bloodPressure);
+      if (bpVal) bpVal.textContent = hasBp ? currentDonor.bloodPressure : '--/--';
+      if (bpPill) {
+        if (hasBp) {
+          const isBpOk = isBpNormal(currentDonor.bloodPressure);
+          bpPill.className = `vital-pill ${isBpOk ? 'pill-normal' : 'pill-alert'}`;
+          bpPill.textContent = isBpOk ? 'NORMAL' : 'REVIEW';
+          bpPill.style.display = 'inline-block';
+        } else {
+          bpPill.style.display = 'none';
+        }
+      }
+
+      const tempVal = document.getElementById('vitalTemp');
+      const hasTemp = currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined;
+      if (tempVal) tempVal.textContent = hasTemp ? currentDonor.bodyTemp : '--';
+    }
   }
 
   // ======================== AI HEALTH EVALUATION ========================
@@ -521,19 +554,8 @@
 
   // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
   // Real-time animated flowing blood chamber with anatomical human silhouette
-  // ======================== 4. PRECISE TELEMETRY DATA LOGIC ========================
+  // ======================== 4. PRECISE TELEMETRY DATA LOGIC (Group D) ========================
   function renderTelemetryData() {
-    // Check elements
-    const primary = document.getElementById('telemetryPrimary');
-    const label = document.getElementById('telemetryPrimaryLabel');
-    const percent = document.getElementById('telemetryPercent');
-    const caption = document.getElementById('telemetryCaption');
-    const badge = document.getElementById('telemetryBadge');
-    const textRecovery = document.getElementById('textRecovery');
-    const iconRecovery = document.getElementById('iconRecovery');
-    const textVitals = document.getElementById('textVitals');
-    const iconVitals = document.getElementById('iconVitals');
-    const dateUnlock = document.getElementById('dateUnlock');
     const metaTag = document.getElementById('eligibilityMetaTag');
     const fluidContainer = document.getElementById('dnaFluidContainer') || document.getElementById('bloodFluid');
 
@@ -552,119 +574,58 @@
     const progressPct = typeof elig.progress_pct === 'number' ? elig.progress_pct : (isEligible ? 100 : 0);
     const nextDateStr = elig.next_eligible_date;
 
-    // CASE 1: Eligible today (100% Ready)
+    const hasDonated = (currentDonor.totalDonations !== null && currentDonor.totalDonations !== undefined && currentDonor.totalDonations > 0) ||
+                       (currentDonor.donations && currentDonor.donations.length > 0) ||
+                       (currentDonor.lastDonationDate !== null && currentDonor.lastDonationDate !== undefined && currentDonor.lastDonationDate !== '');
+
+    let statusWording = '';
     if (isEligible) {
-      if (primary) {
-        primary.innerText = "READY";
-        primary.style.color = "#10b981";
+      if (!hasDonated) {
+        statusWording = "No donation yet. You're ready.";
+      } else {
+        statusWording = "You can donate. The hospital does a final check before donating.";
       }
-      if (label) {
-        label.innerText = "TO DONATE";
-        label.style.color = "#34d399";
-      }
-      if (percent) {
-        percent.innerText = "100% READY";
-        percent.style.color = "#cbd5e1";
-      }
-      if (caption) {
-        caption.innerText = "(eligible to donate whole blood)";
-      }
-
-      if (badge) {
-        badge.className = "status-badge eligible-ready";
-        badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span id="badgeText">ELIGIBLE TO DONATE</span>`;
-      }
-
-      if (iconRecovery) {
-        iconRecovery.className = "fa-solid fa-check";
-        iconRecovery.style.color = "#10b981";
-      }
-      if (textRecovery) {
-        textRecovery.innerText = "Recovery period: complete";
-      }
-
-      if (iconVitals) {
-        iconVitals.className = "fa-solid fa-circle-check";
-        iconVitals.style.color = "#10b981";
-      }
-      if (textVitals) {
-        textVitals.innerText = "Ready for donation";
-      }
-
-      if (dateUnlock) {
-        dateUnlock.innerText = "IMMEDIATE / NOW AVAILABLE";
-        dateUnlock.style.color = "#10b981";
-      }
-
-      if (metaTag) {
-        metaTag.className = "card-meta-tag scanner-meta-tag tag-ready";
-        metaTag.innerHTML = `<i class="fas fa-check-circle"></i> Ready to Donate`;
-      }
-
       if (fluidContainer) {
         fluidContainer.style.height = '100%';
       }
     } else {
-      // CASE 2: Active Recovery Period
-      if (primary) {
-        primary.innerText = `${daysUntil} ${daysUntil === 1 ? 'DAY' : 'DAYS'}`;
-        primary.style.color = "#f8fafc";
-      }
-      if (label) {
-        label.innerText = "UNTIL ELIGIBLE";
-        label.style.color = "#64748b";
-      }
-      if (percent) {
-        percent.innerText = `${progressPct}% RECOVERED`;
-        percent.style.color = "#cbd5e1";
-      }
-      if (caption) {
-        caption.innerText = "(recovery period in progress)";
-      }
-
-      if (badge) {
-        badge.className = "status-badge cooldown-active";
-        badge.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> <span id="badgeText">${elig.reason || 'Recovery in Progress'}</span>`;
-      }
-
-      if (iconRecovery) {
-        iconRecovery.className = "fa-solid fa-hourglass";
-        iconRecovery.style.color = "#f59e0b";
-      }
-      if (textRecovery) {
-        textRecovery.innerText = `Recovery period: ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'} left`;
-      }
-
-      if (iconVitals) {
-        iconVitals.className = "fa-solid fa-check";
-        iconVitals.style.color = "#10b981";
-      }
-      if (textVitals) {
-        textVitals.innerText = "Normal recovery in progress";
-      }
-
-      if (dateUnlock) {
-        if (nextDateStr) {
-          try {
-            const nextD = new Date(nextDateStr);
-            const options = { day: 'numeric', month: 'short', year: 'numeric' };
-            dateUnlock.innerText = !isNaN(nextD.getTime()) ? nextD.toLocaleDateString('en-GB', options) : nextDateStr;
-          } catch (_) {
-            dateUnlock.innerText = nextDateStr;
+      let formattedDate = 'soon';
+      if (nextDateStr) {
+        try {
+          const nextD = new Date(nextDateStr);
+          if (!isNaN(nextD.getTime())) {
+            formattedDate = nextD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          } else {
+            formattedDate = nextDateStr;
           }
-        } else {
-          dateUnlock.innerText = "Soon";
+        } catch (_) {
+          formattedDate = nextDateStr;
         }
-        dateUnlock.style.color = "#cbd5e1";
       }
-
-      if (metaTag) {
-        metaTag.className = "card-meta-tag scanner-meta-tag tag-cooldown";
-        metaTag.innerHTML = `<i class="fas fa-hourglass-half"></i> Recovery in Progress`;
-      }
-
+      statusWording = `Next donation possible on ${formattedDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'} left)`;
       if (fluidContainer) {
         fluidContainer.style.height = `${progressPct}%`;
+      }
+    }
+
+    if (metaTag) {
+      metaTag.textContent = 'Eligibility';
+    }
+
+    // Render plain text into the telemetry panel (Group D: plain text only, keep capsule graphic)
+    const statusMsgEl = document.getElementById('eligibilityStatusMsg');
+    if (statusMsgEl) {
+      statusMsgEl.textContent = statusWording;
+    } else {
+      const panel = document.querySelector('.capsule-telemetry-panel');
+      if (panel) {
+        panel.innerHTML = `
+          <div style="padding: 24px 8px; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+            <p id="eligibilityStatusMsg" style="font-size: 16px; font-weight: 500; line-height: 1.6; color: #f8fafc; margin: 0;">
+              ${escapeHtml(statusWording)}
+            </p>
+          </div>
+        `;
       }
     }
   }
