@@ -57,7 +57,7 @@
       'stats.noData': 'No data yet',
 
       // Blood Stock
-      'stock.title': 'Blood available across partner hospitals',
+      'stock.title': 'Blood available at partner hospitals',
       'stock.subtitle': 'Real-time inventory aggregated from verified hospitals across our network.',
       'stock.empty': 'Live stock appears here once more hospitals join.',
 
@@ -357,7 +357,8 @@
     'Avg. Response (min)': 'औसत प्रतिक्रिया (मिनट)',
     '% Success Rate': '% सफलता दर',
     'No data yet': 'अभी कोई डेटा नहीं',
-    'Blood available across partner hospitals': 'साझेदार अस्पतालों में उपलब्ध रक्त',
+    'Blood available across partner hospitals': 'सहयोगी अस्पतालों में उपलब्ध रक्त',
+    'Blood available at partner hospitals': 'सहयोगी अस्पतालों में उपलब्ध रक्त',
     'Real-time inventory aggregated from verified hospitals across our network.': 'हमारे नेटवर्क के सत्यापित अस्पतालों से संकलित लाइव स्टॉक।',
     'Live stock appears here once more hospitals join.': 'अधिक अस्पतालों के जुड़ने पर लाइव स्टॉक यहां दिखाई देगा।',
     'Who Can Donate Blood': 'रक्तदान कौन कर सकता है',

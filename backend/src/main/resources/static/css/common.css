@@ -2911,16 +2911,18 @@ body.bento-dashboard-body::after,
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
-  width: 34px !important;
-  height: 40px !important;
+  width: 36px !important;
+  height: 42px !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   color: var(--hosp-text, #ecebe8) !important;
-  font-family: var(--font-heading) !important;
+  font-family: var(--font-heading, inherit) !important;
   font-weight: 700 !important;
   font-size: 13px !important;
+  line-height: 1 !important;
   flex-shrink: 0 !important;
+  isolation: isolate !important;
 }
 
 .blood-drop-badge::before,
@@ -2937,17 +2939,17 @@ body.bento-dashboard-body::after,
 }
 
 .blood-drop-badge.critical::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(229,56,59,0.12)' stroke='%23e5383b' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(229,56,59,0.14)' stroke='%23e5383b' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
   background-size: contain !important;
 }
 
 .blood-drop-badge.low::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(245,165,36,0.12)' stroke='%23f5a524' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(245,165,36,0.14)' stroke='%23f5a524' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
   background-size: contain !important;
 }
 
 .blood-drop-badge.ok::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(62,207,142,0.12)' stroke='%233ecf8e' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 38'%3E%3Cpath d='M16 3 C16 3 4 17 4 25 A12 12 0 0 0 28 25 C28 17 16 3 16 3 Z' fill='rgba(62,207,142,0.14)' stroke='%233ecf8e' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat center center !important;
   background-size: contain !important;
 }
 
@@ -2955,10 +2957,46 @@ body.bento-dashboard-body::after,
 .blood-group-badge > *,
 .blood-chip > *,
 .user-blood-badge > *,
-.smc-top .blood-group-badge > * {
+.smc-top .blood-group-badge > *,
+.drop-text,
+.badge-text {
   position: relative !important;
-  z-index: 1 !important;
-  padding-top: 3px !important;
+  z-index: 2 !important;
+  padding-top: 4px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Explicit text status pill (Low/OK/Critical) - text, not colour only */
+.stock-status-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.02em !important;
+}
+
+.stock-status-pill.status-critical {
+  color: #fca5a5 !important;
+  background: rgba(229, 56, 59, 0.16) !important;
+  border: 1px solid rgba(229, 56, 59, 0.35) !important;
+}
+
+.stock-status-pill.status-low {
+  color: #fde047 !important;
+  background: rgba(245, 165, 36, 0.16) !important;
+  border: 1px solid rgba(245, 165, 36, 0.35) !important;
+}
+
+.stock-status-pill.status-ok {
+  color: #86efac !important;
+  background: rgba(62, 207, 142, 0.16) !important;
+  border: 1px solid rgba(62, 207, 142, 0.35) !important;
 }
 
 /* 6. Subtle blood-drop background flow (3-5% opacity, hero only, off with prefers-reduced-motion) */

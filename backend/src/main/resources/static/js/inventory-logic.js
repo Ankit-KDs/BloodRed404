@@ -868,7 +868,18 @@
     ]
   };
 
-  const BLOOD_TYPES_ORDER = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+  const BLOOD_TYPES_ORDER = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+  const STOCK_THRESHOLDS = {
+    'O-':  { critical: 4, low: 8 },
+    'O+':  { critical: 4, low: 8 },
+    'A-':  { critical: 3, low: 5 },
+    'A+':  { critical: 3, low: 5 },
+    'B-':  { critical: 3, low: 5 },
+    'B+':  { critical: 3, low: 5 },
+    'AB-': { critical: 2, low: 4 },
+    'AB+': { critical: 2, low: 4 }
+  };
 
   // ============================================================
   // 2. ZERO DEMO DATA: DYNAMIC REGISTERED HOSPITALS REPOSITORY
@@ -1283,15 +1294,28 @@
       const tilesHtml = BLOOD_TYPES_ORDER.map(bt => {
         const units = (h.stock && h.stock[bt] !== undefined) ? Number(h.stock[bt]) : 0;
         const isHighlighted = hasHighlight && bt.toUpperCase() === activeBloodType.toUpperCase();
-        let tileClasses = ['stock-tile'];
+        const th = STOCK_THRESHOLDS[bt] || { critical: 3, low: 5 };
+        let statusState = 'ok';
+        let statusLabel = 'OK';
+        if (units <= th.critical) {
+          statusState = 'critical';
+          statusLabel = 'Critical';
+        } else if (units <= th.low) {
+          statusState = 'low';
+          statusLabel = 'Low';
+        }
+        let tileClasses = ['stock-tile', statusState];
         if (isHighlighted) tileClasses.push('highlighted-type');
-        if (units <= 3) tileClasses.push('critical');
-        else if (units >= 20) tileClasses.push('plentiful');
 
         return `
-          <div class="${tileClasses.join(' ')}" title="${bt}: ${units} Units available">
-            <span class="stock-tile-type">${bt}</span>
-            <span class="stock-tile-units">${units} <small style="font-size:0.65rem; opacity:0.8;">units</small></span>
+          <div class="${tileClasses.join(' ')}" title="${bt}: ${units} Units (${statusLabel})">
+            <span class="blood-drop-badge ${statusState}" aria-label="Blood group ${bt}">
+              <span class="drop-text">${bt}</span>
+            </span>
+            <div class="stock-tile-body">
+              <span class="stock-tile-units">${units} <small style="font-size:0.65rem; opacity:0.8;">units</small></span>
+              <span class="stock-status-pill status-${statusState}">${statusLabel}</span>
+            </div>
           </div>
         `;
       }).join('');

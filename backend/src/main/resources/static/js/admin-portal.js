@@ -721,19 +721,53 @@
     setSpan('modal-hosp-total-units', `${Number(hosp.totalStockUnits || 0)} Units in Reserve`);
     setSpan('modal-hosp-total-requests', `${Number(hosp.totalRequests || 0)} SOS Requests Broadcasted`);
 
-    // Stock Breakdown Grid
+    // Stock Breakdown Grid (Fixed canonical order: A+, A-, B+, B-, AB+, AB-, O+, O-)
     const stockGrid = document.getElementById('modal-hosp-stock-grid');
     if (stockGrid) {
       stockGrid.innerHTML = '';
-      const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+      const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+      const ADMIN_STOCK_THRESHOLDS = {
+        'O-':  { critical: 4, low: 8 },
+        'O+':  { critical: 4, low: 8 },
+        'A-':  { critical: 3, low: 5 },
+        'A+':  { critical: 3, low: 5 },
+        'B-':  { critical: 3, low: 5 },
+        'B+':  { critical: 3, low: 5 },
+        'AB-': { critical: 2, low: 4 },
+        'AB+': { critical: 2, low: 4 }
+      };
       const inv = hosp.inventory || {};
       bloodTypes.forEach(bt => {
         const units = Number(inv[bt] || 0);
+        const th = ADMIN_STOCK_THRESHOLDS[bt] || { critical: 3, low: 5 };
+        let statusState = 'ok';
+        let statusLabel = 'OK';
+        if (units <= th.critical) {
+          statusState = 'critical';
+          statusLabel = 'Critical';
+        } else if (units <= th.low) {
+          statusState = 'low';
+          statusLabel = 'Low';
+        }
+
         const item = document.createElement('div');
-        item.className = 'modal-stock-item';
+        item.className = `modal-stock-item ${statusState}`;
+        item.style.display = 'flex';
+        item.style.flexDirection = 'column';
+        item.style.alignItems = 'center';
+        item.style.gap = '4px';
+        item.style.padding = '8px';
+        item.style.borderRadius = '8px';
+        item.style.background = 'rgba(255, 255, 255, 0.03)';
+        item.style.border = '1px solid rgba(255, 255, 255, 0.08)';
         item.innerHTML = `
-          <div class="modal-stock-type">${bt}</div>
-          <div class="modal-stock-qty ${units === 0 ? 'zero' : ''}">${units} <span style="font-size: 10px; font-weight: normal; opacity: 0.8;">Units</span></div>
+          <span class="blood-drop-badge ${statusState}" aria-label="Blood group ${bt}">
+            <span class="drop-text">${bt}</span>
+          </span>
+          <div class="modal-stock-qty ${units === 0 ? 'zero' : ''}" style="font-weight: 700; font-size: 14px; color: #f8fafc;">
+            ${units} <span style="font-size: 10px; font-weight: normal; opacity: 0.8;">Units</span>
+          </div>
+          <span class="stock-status-pill status-${statusState}">${statusLabel}</span>
         `;
         stockGrid.appendChild(item);
       });

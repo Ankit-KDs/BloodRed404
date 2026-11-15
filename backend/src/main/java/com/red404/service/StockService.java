@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class StockService {
 
-    public static final String[] ALL_BLOOD_GROUPS = {"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"};
+    public static final String[] ALL_BLOOD_GROUPS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"};
 
     // Shared threshold configuration (O+/O-: crit 4 / low 8, A/B: crit 3 / low 5, AB: crit 2 / low 4)
     public static final Map<String, int[]> THRESHOLDS;

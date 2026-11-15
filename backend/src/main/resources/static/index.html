@@ -818,8 +818,8 @@
               <span class="live-pulse-text">LIVE</span>
             </span>
           </div>
-          <h2 class="stock-card-title">
-            Blood Available across <span class="highlight-text">Partner Hospitals</span>
+          <h2 class="stock-card-title" data-i18n="stock.title">
+            Blood available at partner hospitals
           </h2>
           <p class="stock-card-subtitle">
             Real-time aggregated units across verified partner hospitals. • <span id="homeStockUpdatedAgo" style="color: #94a3b8; font-size: 13px; font-family: monospace;">Updated just now</span>
@@ -831,125 +831,117 @@
           <p style="margin: 0; color: #94a3b8; font-size: 15px; font-weight: 500;">Live stock appears here once more hospitals join.</p>
         </div>
 
-        <!-- 8 Blood Group Mini-Cards Grid (4 cols desktop, 2 cols mobile) -->
+        <!-- 8 Blood Group Mini-Cards Grid (Fixed order: A+, A-, B+, B-, AB+, AB-, O+, O-) -->
         <div class="national-stock-grid">
           <!-- Card 1: A+ -->
           <div class="stock-mini-card" data-blood-group="A+">
             <div class="smc-top">
-              <span class="blood-group-badge">A+</span>
+              <span class="blood-group-badge" aria-label="Blood group A+"><span class="drop-text">A+</span></span>
             </div>
             <div class="smc-middle">
               <span id="total-units-A-pos" class="live-data">-</span>
               <span class="unit-label">Units</span>
             </div>
             <div class="smc-bottom">
-              <span id="active-donors-A-pos" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
+              <span id="status-label-A-pos" class="stock-status-pill status-ok">OK</span>
             </div>
           </div>
 
           <!-- Card 2: A- -->
           <div class="stock-mini-card" data-blood-group="A-">
             <div class="smc-top">
-              <span class="blood-group-badge">A-</span>
+              <span class="blood-group-badge" aria-label="Blood group A-"><span class="drop-text">A-</span></span>
             </div>
             <div class="smc-middle">
               <span id="total-units-A-neg" class="live-data">-</span>
               <span class="unit-label">Units</span>
             </div>
             <div class="smc-bottom">
-              <span id="active-donors-A-neg" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
+              <span id="status-label-A-neg" class="stock-status-pill status-ok">OK</span>
             </div>
           </div>
 
           <!-- Card 3: B+ -->
           <div class="stock-mini-card" data-blood-group="B+">
             <div class="smc-top">
-              <span class="blood-group-badge">B+</span>
+              <span class="blood-group-badge" aria-label="Blood group B+"><span class="drop-text">B+</span></span>
             </div>
             <div class="smc-middle">
               <span id="total-units-B-pos" class="live-data">-</span>
               <span class="unit-label">Units</span>
             </div>
             <div class="smc-bottom">
-              <span id="active-donors-B-pos" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
+              <span id="status-label-B-pos" class="stock-status-pill status-ok">OK</span>
             </div>
           </div>
 
           <!-- Card 4: B- -->
           <div class="stock-mini-card" data-blood-group="B-">
             <div class="smc-top">
-              <span class="blood-group-badge">B-</span>
+              <span class="blood-group-badge" aria-label="Blood group B-"><span class="drop-text">B-</span></span>
             </div>
             <div class="smc-middle">
               <span id="total-units-B-neg" class="live-data">-</span>
               <span class="unit-label">Units</span>
             </div>
             <div class="smc-bottom">
-              <span id="active-donors-B-neg" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
+              <span id="status-label-B-neg" class="stock-status-pill status-ok">OK</span>
             </div>
           </div>
 
-          <!-- Card 5: O+ -->
-          <div class="stock-mini-card" data-blood-group="O+">
-            <div class="smc-top">
-              <span class="blood-group-badge">O+</span>
-            </div>
-            <div class="smc-middle">
-              <span id="total-units-O-pos" class="live-data">-</span>
-              <span class="unit-label">Units</span>
-            </div>
-            <div class="smc-bottom">
-              <span id="active-donors-O-pos" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
-            </div>
-          </div>
-
-          <!-- Card 6: O- -->
-          <div class="stock-mini-card" data-blood-group="O-">
-            <div class="smc-top">
-              <span class="blood-group-badge">O-</span>
-            </div>
-            <div class="smc-middle">
-              <span id="total-units-O-neg" class="live-data">-</span>
-              <span class="unit-label">Units</span>
-            </div>
-            <div class="smc-bottom">
-              <span id="active-donors-O-neg" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
-            </div>
-          </div>
-
-          <!-- Card 7: AB+ -->
+          <!-- Card 5: AB+ -->
           <div class="stock-mini-card" data-blood-group="AB+">
             <div class="smc-top">
-              <span class="blood-group-badge">AB+</span>
+              <span class="blood-group-badge" aria-label="Blood group AB+"><span class="drop-text">AB+</span></span>
             </div>
             <div class="smc-middle">
               <span id="total-units-AB-pos" class="live-data">-</span>
               <span class="unit-label">Units</span>
             </div>
             <div class="smc-bottom">
-              <span id="active-donors-AB-pos" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
+              <span id="status-label-AB-pos" class="stock-status-pill status-ok">OK</span>
             </div>
           </div>
 
-          <!-- Card 8: AB- -->
+          <!-- Card 6: AB- -->
           <div class="stock-mini-card" data-blood-group="AB-">
             <div class="smc-top">
-              <span class="blood-group-badge">AB-</span>
+              <span class="blood-group-badge" aria-label="Blood group AB-"><span class="drop-text">AB-</span></span>
             </div>
             <div class="smc-middle">
               <span id="total-units-AB-neg" class="live-data">-</span>
               <span class="unit-label">Units</span>
             </div>
             <div class="smc-bottom">
-              <span id="active-donors-AB-neg" class="live-data">-</span>
-              <span class="donor-label">Active Donors</span>
+              <span id="status-label-AB-neg" class="stock-status-pill status-ok">OK</span>
+            </div>
+          </div>
+
+          <!-- Card 7: O+ -->
+          <div class="stock-mini-card" data-blood-group="O+">
+            <div class="smc-top">
+              <span class="blood-group-badge" aria-label="Blood group O+"><span class="drop-text">O+</span></span>
+            </div>
+            <div class="smc-middle">
+              <span id="total-units-O-pos" class="live-data">-</span>
+              <span class="unit-label">Units</span>
+            </div>
+            <div class="smc-bottom">
+              <span id="status-label-O-pos" class="stock-status-pill status-ok">OK</span>
+            </div>
+          </div>
+
+          <!-- Card 8: O- -->
+          <div class="stock-mini-card" data-blood-group="O-">
+            <div class="smc-top">
+              <span class="blood-group-badge" aria-label="Blood group O-"><span class="drop-text">O-</span></span>
+            </div>
+            <div class="smc-middle">
+              <span id="total-units-O-neg" class="live-data">-</span>
+              <span class="unit-label">Units</span>
+            </div>
+            <div class="smc-bottom">
+              <span id="status-label-O-neg" class="stock-status-pill status-ok">OK</span>
             </div>
           </div>
         </div>

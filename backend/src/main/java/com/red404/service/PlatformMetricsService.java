@@ -18,9 +18,12 @@ import java.util.*;
  * - Admin panel health & metrics
  *
  * Enforces:
- * 1. Only Verified hospitals contribute to public stock & partner hospital counts.
- * 2. Privacy gating: Public stock appears ONLY when >= MIN_HOSPITALS_FOR_PUBLIC_STOCK (default 2) verified hospitals exist.
- * 3. Real requests data gating: Avg. response and % success rate appear ONLY when >= MIN_COMPLETED_REQUESTS (default 5).
+ * 1. Only Verified hospitals contribute to public stock & partner hospital
+ * counts.
+ * 2. Privacy gating: Public stock appears ONLY when >=
+ * MIN_HOSPITALS_FOR_PUBLIC_STOCK (default 2) verified hospitals exist.
+ * 3. Real requests data gating: Avg. response and % success rate appear ONLY
+ * when >= MIN_COMPLETED_REQUESTS (default 5).
  * 4. Active donors: Only non-paused active donors.
  * 5. Caching for at most 60 seconds.
  */
@@ -46,18 +49,26 @@ public class PlatformMetricsService {
 
     public int getMinHospitalsForPublicStock() {
         String prop = System.getProperty("MIN_HOSPITALS_FOR_PUBLIC_STOCK");
-        if (prop == null || prop.isBlank()) prop = System.getenv("MIN_HOSPITALS_FOR_PUBLIC_STOCK");
+        if (prop == null || prop.isBlank())
+            prop = System.getenv("MIN_HOSPITALS_FOR_PUBLIC_STOCK");
         if (prop != null && !prop.isBlank()) {
-            try { return Integer.parseInt(prop.trim()); } catch (Exception ignored) {}
+            try {
+                return Integer.parseInt(prop.trim());
+            } catch (Exception ignored) {
+            }
         }
         return DEFAULT_MIN_HOSPITALS_FOR_PUBLIC_STOCK;
     }
 
     public int getMinCompletedRequestsForMetrics() {
         String prop = System.getProperty("MIN_COMPLETED_REQUESTS_FOR_METRICS");
-        if (prop == null || prop.isBlank()) prop = System.getenv("MIN_COMPLETED_REQUESTS_FOR_METRICS");
+        if (prop == null || prop.isBlank())
+            prop = System.getenv("MIN_COMPLETED_REQUESTS_FOR_METRICS");
         if (prop != null && !prop.isBlank()) {
-            try { return Integer.parseInt(prop.trim()); } catch (Exception ignored) {}
+            try {
+                return Integer.parseInt(prop.trim());
+            } catch (Exception ignored) {
+            }
         }
         return DEFAULT_MIN_COMPLETED_REQUESTS_FOR_METRICS;
     }
@@ -112,9 +123,10 @@ public class PlatformMetricsService {
         int minCompletedRequests = getMinCompletedRequestsForMetrics();
 
         try (Connection conn = DBConnection.getConnection()) {
-            // 1. Registered Donors & Active Eligible Donors (Step 1 requirement 2: Authoritative DonorEligibilityService.isEligible)
+            // 1. Registered Donors & Active Eligible Donors (Step 1 requirement 2:
+            // Authoritative DonorEligibilityService.isEligible)
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
+                    ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
                 while (rs.next()) {
                     totalDonors++;
                     Map<String, Object> d = mapDonorRow(rs);
@@ -128,11 +140,12 @@ public class PlatformMetricsService {
 
             // 2. Partner Hospitals (strictly VERIFIED and not soft-deleted)
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT " +
-                         "SUM(CASE WHEN LOWER(COALESCE(verification_status, '')) = 'verified' AND deleted_at IS NULL THEN 1 ELSE 0 END), " +
-                         "SUM(CASE WHEN deleted_at IS NULL THEN 1 ELSE 0 END) " +
-                         "FROM hospitals")) {
+                    ResultSet rs = st.executeQuery(
+                            "SELECT " +
+                                    "SUM(CASE WHEN LOWER(COALESCE(verification_status, '')) = 'verified' AND deleted_at IS NULL THEN 1 ELSE 0 END), "
+                                    +
+                                    "SUM(CASE WHEN deleted_at IS NULL THEN 1 ELSE 0 END) " +
+                                    "FROM hospitals")) {
                 if (rs.next()) {
                     partnerHospitals = rs.getInt(1);
                     totalHospitals = rs.getInt(2);
@@ -140,49 +153,55 @@ public class PlatformMetricsService {
             } catch (Exception e) {
                 // Fallback if deleted_at not yet present
                 try (Statement st = conn.createStatement();
-                     ResultSet rs = st.executeQuery(
-                             "SELECT " +
-                             "SUM(CASE WHEN LOWER(COALESCE(verification_status, '')) = 'verified' THEN 1 ELSE 0 END), " +
-                             "COUNT(*) " +
-                             "FROM hospitals")) {
+                        ResultSet rs = st.executeQuery(
+                                "SELECT " +
+                                        "SUM(CASE WHEN LOWER(COALESCE(verification_status, '')) = 'verified' THEN 1 ELSE 0 END), "
+                                        +
+                                        "COUNT(*) " +
+                                        "FROM hospitals")) {
                     if (rs.next()) {
                         partnerHospitals = rs.getInt(1);
                         totalHospitals = rs.getInt(2);
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
 
             // 3. Verified Donations & Lives Saved
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT COUNT(*) FROM donations WHERE status IN ('Fulfilled', 'VERIFIED_INTAKE', 'Approved', 'Completed', 'COMPLETED')")) {
+                    ResultSet rs = st.executeQuery(
+                            "SELECT COUNT(*) FROM donations WHERE status IN ('Fulfilled', 'VERIFIED_INTAKE', 'Approved', 'Completed', 'COMPLETED')")) {
                 if (rs.next()) {
                     verifiedDonations = rs.getInt(1);
                     livesSaved = verifiedDonations;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             // 4. Blood Requests & Completed Requests
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT COUNT(*), " +
-                         "SUM(CASE WHEN status IN ('Fulfilled', 'Completed', 'COMPLETED') THEN 1 ELSE 0 END) " +
-                         "FROM blood_requests")) {
+                    ResultSet rs = st.executeQuery(
+                            "SELECT COUNT(*), " +
+                                    "SUM(CASE WHEN status IN ('Fulfilled', 'Completed', 'COMPLETED') THEN 1 ELSE 0 END) "
+                                    +
+                                    "FROM blood_requests")) {
                 if (rs.next()) {
                     totalRequests = rs.getInt(1);
                     completedRequests = rs.getInt(2);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             // 5. Avg. Response Time (only if >= minCompletedRequests)
             if (completedRequests >= minCompletedRequests) {
                 try (Statement st = conn.createStatement();
-                     ResultSet rs = st.executeQuery(
-                             "SELECT AVG(response_time) FROM donations WHERE response_time IS NOT NULL AND response_time > 0")) {
+                        ResultSet rs = st.executeQuery(
+                                "SELECT AVG(response_time) FROM donations WHERE response_time IS NOT NULL AND response_time > 0")) {
                     if (rs.next() && rs.getObject(1) != null) {
                         avgResponseMin = Math.max(1, (int) Math.round(rs.getDouble(1)));
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
 
             // 6. Success Rate (only if >= minCompletedRequests)
@@ -192,16 +211,18 @@ public class PlatformMetricsService {
 
             // 7. Active Zones (distinct donor zones + verified hospital districts)
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT COUNT(DISTINCT zone) FROM (" +
-                         "SELECT zone FROM donors WHERE zone IS NOT NULL AND zone <> '' " +
-                         "UNION " +
-                         "SELECT district FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified' " +
-                         "AND district IS NOT NULL AND district <> '') AS t")) {
+                    ResultSet rs = st.executeQuery(
+                            "SELECT COUNT(DISTINCT zone) FROM (" +
+                                    "SELECT zone FROM donors WHERE zone IS NOT NULL AND zone <> '' " +
+                                    "UNION " +
+                                    "SELECT district FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified' "
+                                    +
+                                    "AND district IS NOT NULL AND district <> '') AS t")) {
                 if (rs.next()) {
                     activeZones = rs.getInt(1);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             if (activeZones == 0 && (totalDonors > 0 || partnerHospitals > 0)) {
                 activeZones = 1;
@@ -259,7 +280,7 @@ public class PlatformMetricsService {
     }
 
     private Map<String, Object> computeFreshNationalBloodStock() {
-        String[] standardGroups = {"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"};
+        String[] standardGroups = StockService.ALL_BLOOD_GROUPS;
         Map<String, Integer> unitsMap = new LinkedHashMap<>();
         Map<String, Integer> donorsMap = new LinkedHashMap<>();
 
@@ -274,22 +295,25 @@ public class PlatformMetricsService {
         try (Connection conn = DBConnection.getConnection()) {
             // Check count of verified partner hospitals
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT COUNT(*) FROM hospitals " +
-                         "WHERE LOWER(COALESCE(verification_status, '')) = 'verified' " +
-                         "AND (deleted_at IS NULL)")) {
+                    ResultSet rs = st.executeQuery(
+                            "SELECT COUNT(*) FROM hospitals " +
+                                    "WHERE LOWER(COALESCE(verification_status, '')) = 'verified' " +
+                                    "AND (deleted_at IS NULL)")) {
                 if (rs.next()) {
                     verifiedHospitals = rs.getInt(1);
                 }
             } catch (Exception e) {
                 try (Statement st = conn.createStatement();
-                     ResultSet rs = st.executeQuery(
-                             "SELECT COUNT(*) FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified'")) {
-                    if (rs.next()) verifiedHospitals = rs.getInt(1);
-                } catch (Exception ignored) {}
+                        ResultSet rs = st.executeQuery(
+                                "SELECT COUNT(*) FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified'")) {
+                    if (rs.next())
+                        verifiedHospitals = rs.getInt(1);
+                } catch (Exception ignored) {
+                }
             }
 
-            // Gating Rule: Privacy requirement - only show live stock if >= MIN_HOSPITALS_FOR_PUBLIC_STOCK verified hospitals exist
+            // Gating Rule: Privacy requirement - only show live stock if >=
+            // MIN_HOSPITALS_FOR_PUBLIC_STOCK verified hospitals exist
             if (verifiedHospitals < minHospitalsForStock) {
                 Map<String, Object> gated = new LinkedHashMap<>();
                 gated.put("available", false);
@@ -305,13 +329,13 @@ public class PlatformMetricsService {
 
             // 1. Aggregated Live Inventory from VERIFIED partner hospitals only
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery(
-                         "SELECT hi.blood_type, SUM(hi.units) " +
-                         "FROM hospital_inventory hi " +
-                         "JOIN hospitals h ON hi.hospital_id = h.id " +
-                         "WHERE LOWER(COALESCE(h.verification_status, '')) = 'verified' " +
-                         "AND (h.deleted_at IS NULL) " +
-                         "GROUP BY hi.blood_type")) {
+                    ResultSet rs = st.executeQuery(
+                            "SELECT hi.blood_type, SUM(hi.units) " +
+                                    "FROM hospital_inventory hi " +
+                                    "JOIN hospitals h ON hi.hospital_id = h.id " +
+                                    "WHERE LOWER(COALESCE(h.verification_status, '')) = 'verified' " +
+                                    "AND (h.deleted_at IS NULL) " +
+                                    "GROUP BY hi.blood_type")) {
                 while (rs.next()) {
                     String bt = rs.getString(1);
                     int u = rs.getInt(2);
@@ -326,9 +350,10 @@ public class PlatformMetricsService {
                 log.warn("Notice querying verified hospital inventory: {}", e.getMessage());
             }
 
-            // 2. Real Active Eligible Donors by blood group (Authoritative DonorEligibilityService.isEligible)
+            // 2. Real Active Eligible Donors by blood group (Authoritative
+            // DonorEligibilityService.isEligible)
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
+                    ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
                 while (rs.next()) {
                     Map<String, Object> d = mapDonorRow(rs);
                     if (DonorEligibilityService.isEligible(d)) {
@@ -396,7 +421,8 @@ public class PlatformMetricsService {
                 String col = meta.getColumnLabel(i);
                 d.put(col, rs.getObject(i));
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return d;
     }
 }

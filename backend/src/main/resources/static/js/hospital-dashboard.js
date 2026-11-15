@@ -555,7 +555,7 @@ function initHospitalLogout() {
 /* ============================================================
    4. CENTRAL CONFIGURATION & HELPERS
    ============================================================ */
-const ALL_BLOOD_GROUPS = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+const ALL_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 /**
  * RED404 Core Shared Blood Compatibility Engine.
@@ -1053,6 +1053,7 @@ function renderDashboardStock(inventoryMap, activeCount) {
           <div class="stock-ok-pill">
             ${getDropBadgeSvg(item.type, 'ok')}
             <span class="stock-ok-units">${item.units} units</span>
+            <span class="stock-status-pill status-ok" style="font-size:11px;font-weight:600;color:#34d399;margin-left:4px;">OK</span>
           </div>
         `).join('');
       }

@@ -470,20 +470,31 @@ function normalizeBloodGroupId(groupId) {
   return map[s] || s.replace('+', '-pos').replace('-', '-neg');
 }
 
+const HOME_STOCK_THRESHOLDS = {
+  'O-':  { critical: 4, low: 8 },
+  'O+':  { critical: 4, low: 8 },
+  'A-':  { critical: 3, low: 5 },
+  'A+':  { critical: 3, low: 5 },
+  'B-':  { critical: 3, low: 5 },
+  'B+':  { critical: 3, low: 5 },
+  'AB-': { critical: 2, low: 4 },
+  'AB+': { critical: 2, low: 4 }
+};
+
 /**
  * Real-time JavaScript Scaffolding function
- * Dynamically updates stock units & active donors for a blood group with visual flash effects
+ * Dynamically updates stock units & Low/OK label for a blood group with visual flash effects
  *
  * @param {string} groupId Blood group ('A+', 'A-pos', 'O-', etc.)
  * @param {number|string} newUnitCount Aggregated units in registered hospitals
- * @param {number|string} newDonorCount Active donors in network
+ * @param {object|null} statusInfo Optional status info { status, statusLabel }
  */
-function updateBloodStock(groupId, newUnitCount, newDonorCount) {
+function updateBloodStock(groupId, newUnitCount, statusInfo) {
   const key = normalizeBloodGroupId(groupId);
   if (!key) return;
 
   const unitEl = document.getElementById(`total-units-${key}`);
-  const donorEl = document.getElementById(`active-donors-${key}`);
+  const statusEl = document.getElementById(`status-label-${key}`);
 
   function applyValueWithFlash(el, nextVal) {
     if (!el || nextVal === undefined || nextVal === null) return;
@@ -522,21 +533,38 @@ function updateBloodStock(groupId, newUnitCount, newDonorCount) {
       badge.className = 'blood-group-badge';
       top.prepend(badge);
     }
-    if (badge && (!badge.textContent || badge.textContent.trim() === '')) {
-      badge.textContent = groupId;
+    badge.setAttribute('aria-label', `Blood group ${groupId}`);
+    badge.innerHTML = `<span class="drop-text">${groupId}</span>`;
+  }
+
+  const units = (newUnitCount !== undefined && newUnitCount !== null && !isNaN(Number(newUnitCount))) ? Number(newUnitCount) : 0;
+  if (unitEl) {
+    applyValueWithFlash(unitEl, units);
+  }
+
+  // Determine Low/OK text label (text, not colour only)
+  let statusState = 'ok';
+  let statusLabel = 'OK';
+  if (statusInfo && statusInfo.status && statusInfo.statusLabel) {
+    statusState = statusInfo.status.toLowerCase();
+    statusLabel = statusInfo.statusLabel;
+  } else {
+    const th = HOME_STOCK_THRESHOLDS[groupId] || { critical: 3, low: 5 };
+    if (units <= th.critical) {
+      statusState = 'critical';
+      statusLabel = 'Critical';
+    } else if (units <= th.low) {
+      statusState = 'low';
+      statusLabel = 'Low';
+    } else {
+      statusState = 'ok';
+      statusLabel = 'OK';
     }
   }
 
-  if (newUnitCount !== undefined && newUnitCount !== null) {
-    applyValueWithFlash(unitEl, newUnitCount);
-  }
-  if (donorEl) {
-    const bottomRow = donorEl.closest('.smc-bottom');
-    if (bottomRow) {
-      bottomRow.style.display = 'flex'; // Consistent across all tiles
-    }
-    const donorCount = (newDonorCount !== undefined && newDonorCount !== null) ? Number(newDonorCount) : 0;
-    applyValueWithFlash(donorEl, donorCount);
+  if (statusEl) {
+    statusEl.className = `stock-status-pill status-${statusState}`;
+    statusEl.textContent = statusLabel;
   }
 }
 
@@ -572,14 +600,14 @@ function updateAllBloodStock(stockData) {
   }
 
   const payload = stockData.data || stockData;
-  const groups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+  // Fixed canonical order: A+, A-, B+, B-, AB+, AB-, O+, O-
+  const groups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   groups.forEach(bg => {
     const item = payload[bg];
     if (item && typeof item === 'object') {
       const units = item.units !== undefined ? item.units : item.totalUnits;
-      const donors = item.activeDonors !== undefined ? item.activeDonors : (item.donors !== undefined ? item.donors : item.count);
-      updateBloodStock(bg, units, donors);
+      updateBloodStock(bg, units, { status: item.status, statusLabel: item.statusLabel });
     } else if (typeof item === 'number') {
       updateBloodStock(bg, item, null);
     }
