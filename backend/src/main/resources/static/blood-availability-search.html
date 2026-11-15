@@ -940,6 +940,8 @@
           const dist = typeof donor.distKm === 'number' ? donor.distKm.toFixed(1) : (typeof donor.distance === 'number' ? donor.distance.toFixed(1) : '—');
           const status = donor.status || 'Ready to Donate';
           const lastSeen = donor.lastSeen || 'Telemetry Active';
+          const maskedName = donor.name || 'Anonymous Donor';
+          const locationText = [donor.city, donor.state].filter(Boolean).join(', ') || 'Registered Donor';
 
           return `
           <div class="donor-search-card">
@@ -952,30 +954,31 @@
               <div class="donor-info-col">
                 <div class="donor-id-row">
                   <span class="donor-code">${dId}</span>
+                  <span class="donor-name-masked" style="font-weight: 700; color: #f1f5f9; font-size: 0.95rem;">${maskedName}</span>
                   <span class="badge-anon-lock"><i class="fas fa-lock"></i> Identity Protected</span>
                 </div>
                 <div class="donor-meta-row">
                   <div class="donor-meta-item">
                     <i class="fas fa-location-crosshairs"></i>
-                    <span>${dist} km away (Haversine)</span>
+                    <span>${dist} km away</span>
+                  </div>
+                  <div class="donor-meta-item">
+                    <i class="fas fa-map-pin"></i>
+                    <span>${locationText}</span>
                   </div>
                   <div class="donor-meta-item">
                     <span class="dot-live-pulse" style="width: 6px; height: 6px;"></span>
                     <span class="donor-status-tag">${status}</span>
                   </div>
-                  <div class="donor-meta-item" style="color: #5a5a7a;">
-                    <i class="fas fa-clock" style="color: #5a5a7a;"></i>
-                    <span>${lastSeen}</span>
-                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Right side: Request Button -->
+            <!-- Right side: Request via Hospital Button -->
             <div class="donor-card-right">
               <button type="button" class="btn-donor-request" onclick="triggerRestrictedAction('${dId}')">
                 <i class="fas fa-hand-holding-medical"></i>
-                <span>Request</span>
+                <span>Request via Hospital</span>
               </button>
             </div>
           </div>

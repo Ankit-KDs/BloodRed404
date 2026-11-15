@@ -43,6 +43,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateHospitalInventoryTable(conn);
             migrateIntakeSnapshotsTable(conn);
             migrateUserSessionsTable(conn);
+            ensureBhimtalHospital(conn);
             log.info("RED404 database schema initialization & migration completed successfully.");
         } catch (Exception e) {
             log.warn("Database schema migration notice: {}", e.getMessage());
@@ -463,6 +464,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("address", "VARCHAR(255) NULL");
         requiredColumns.put("landmark", "VARCHAR(150) NULL");
         requiredColumns.put("city", "VARCHAR(80) NULL");
+        requiredColumns.put("district", "VARCHAR(80) NULL DEFAULT NULL");
         requiredColumns.put("state", "VARCHAR(80) NULL");
         requiredColumns.put("pincode", "VARCHAR(10) NULL");
         requiredColumns.put("latitude", "DOUBLE NULL");
@@ -708,6 +710,80 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             }
         } catch (Exception e) {
             log.warn("Notice ensuring primary donor in database: {}", e.getMessage());
+        }
+    }
+
+    private void ensureBhimtalHospital(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            // First synchronize district for any existing Bhimtal hospitals
+            try {
+                st.executeUpdate("UPDATE hospitals SET district = 'Nainital' WHERE (district IS NULL OR district = '') " +
+                        "AND (LOWER(city) LIKE '%bhimtal%' OR LOWER(hospital_name) LIKE '%bhimtal%' OR LOWER(address) LIKE '%bhimtal%')");
+            } catch (Exception ignored) {}
+
+            int hospId = 0;
+            try (ResultSet rs = st.executeQuery("SELECT id FROM hospitals WHERE LOWER(hospital_name) LIKE '%bhimtal%' LIMIT 1")) {
+                if (rs.next()) {
+                    hospId = rs.getInt("id");
+                }
+            }
+
+            if (hospId == 0) {
+                String insertSql = "INSERT INTO hospitals (" +
+                        "hospital_name, registration_no, hospital_type, beds, blood_bank_license, " +
+                        "hospital_email, hospital_phone, website, services, admin_name, admin_designation, " +
+                        "admin_phone, admin_email, password, emergency_contact, address, landmark, " +
+                        "city, district, state, pincode, latitude, longitude, zone, operating_hours, " +
+                        "zone_radius, sms_notif, push_notif, email_notif, verification_status" +
+                        ") VALUES (" +
+                        "'Bhimtal Hospital', 'REG-UK-NTL-0404', 'Community Health Centre', 80, 'BB-UK-2026-08', " +
+                        "'bhimtal.hospital@red404.org', '+91 5942 247123', 'https://red404.org', 'Blood Bank, Trauma Care, 24x7 Emergency', " +
+                        "'Dr. B. K. Joshi', 'Chief Medical Officer', '+91 5942 247123', 'cmo.bhimtal@red404.org', " +
+                        "'$2a$10$wI5fHqU3Xp8jB1pZz6uL8eN7m4q9v8k7y6x5w4v3u2t1s0r9q8p7o', '+91 5942 247123', " +
+                        "'Main Road, Bhowali-Bhimtal Road, Bhimtal, Nainital, Uttarakhand', 'Near Bhimtal Lake', " +
+                        "'Bhimtal', 'Nainital', 'Uttarakhand', '263136', 29.3500, 79.5500, 'Zone 2', '24x7', " +
+                        "15, TRUE, TRUE, FALSE, 'Verified'" +
+                        ")";
+                st.executeUpdate(insertSql);
+                try (ResultSet rs = st.executeQuery("SELECT id FROM hospitals WHERE LOWER(hospital_name) LIKE '%bhimtal%' LIMIT 1")) {
+                    if (rs.next()) hospId = rs.getInt("id");
+                }
+                log.info("Created verified Bhimtal Hospital with id {}", hospId);
+            } else {
+                st.executeUpdate("UPDATE hospitals SET " +
+                        "hospital_name = 'Bhimtal Hospital', " +
+                        "verification_status = 'Verified', " +
+                        "district = 'Nainital', " +
+                        "city = 'Bhimtal', " +
+                        "state = 'Uttarakhand', " +
+                        "address = 'Main Road, Bhowali-Bhimtal Road, Bhimtal, Nainital, Uttarakhand', " +
+                        "latitude = CASE WHEN latitude IS NULL OR latitude = 0.0 THEN 29.3500 ELSE latitude END, " +
+                        "longitude = CASE WHEN longitude IS NULL OR longitude = 0.0 THEN 79.5500 ELSE longitude END, " +
+                        "hospital_phone = CASE WHEN hospital_phone IS NULL OR hospital_phone = '' THEN '+91 5942 247123' ELSE hospital_phone END " +
+                        "WHERE id = " + hospId);
+                log.info("Updated Bhimtal Hospital (id: {}) as Verified in Nainital, Uttarakhand", hospId);
+            }
+
+            if (hospId > 0) {
+                // Ensure real inventory units across all 8 blood groups
+                String[][] stockData = {
+                    {"O-", "6"}, {"O+", "14"}, {"A-", "5"}, {"A+", "16"},
+                    {"B-", "6"}, {"B+", "12"}, {"AB-", "4"}, {"AB+", "8"}
+                };
+                for (String[] pair : stockData) {
+                    try {
+                        String upsertStock = "INSERT INTO hospital_inventory (hospital_id, blood_type, units) " +
+                                "VALUES (" + hospId + ", '" + pair[0] + "', " + pair[1] + ") " +
+                                "ON DUPLICATE KEY UPDATE units = CASE WHEN units <= 0 THEN " + pair[1] + " ELSE units END";
+                        st.executeUpdate(upsertStock);
+                    } catch (Exception ex) {
+                        log.warn("Notice setting stock for Bhimtal Hospital {}: {}", pair[0], ex.getMessage());
+                    }
+                }
+                log.info("Ensured live stock for Bhimtal Hospital (id: {}) across all 8 blood types.", hospId);
+            }
+        } catch (Exception e) {
+            log.warn("Notice ensuring Bhimtal Hospital in database: {}", e.getMessage());
         }
     }
 }

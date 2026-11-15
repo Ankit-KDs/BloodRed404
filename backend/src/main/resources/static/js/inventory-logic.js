@@ -877,9 +877,20 @@
   let registeredHospitals = [];
 
   // DOM Elements
-  let stateSelect, districtSelect, bloodTypeSelect, componentSelect, searchBtn, resetBtn;
+  let stateSelect, districtSelect, bloodTypeSelect, componentSelect, sortBySelect, searchBtn, resetBtn;
   let resultsContainer, resultsCountEl, summaryTextEl;
   let totalUnitsEl, totalNodesEl, totalCriticalEl;
+
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
 
   /**
    * Main Initialization
@@ -889,6 +900,7 @@
     districtSelect = document.getElementById('filterDistrict');
     bloodTypeSelect = document.getElementById('filterBloodType');
     componentSelect = document.getElementById('filterComponent');
+    sortBySelect = document.getElementById('filterSortBy');
     searchBtn = document.getElementById('filterSearchBtn');
     resetBtn = document.getElementById('filterResetBtn');
 
@@ -911,6 +923,7 @@
     if (bloodTypeSelect) bloodTypeSelect.addEventListener('change', executeInventorySearch);
     if (componentSelect) componentSelect.addEventListener('change', executeInventorySearch);
     if (districtSelect) districtSelect.addEventListener('change', executeInventorySearch);
+    if (sortBySelect) sortBySelect.addEventListener('change', executeInventorySearch);
     if (resetBtn) resetBtn.addEventListener('click', resetFilters);
 
     // Initial Empty State before user selects parameters
@@ -926,9 +939,16 @@
   async function loadRegisteredHospitals() {
     registeredHospitals = [];
 
+    const uLat = parseFloat(sessionStorage.getItem('red404_user_lat'));
+    const uLng = parseFloat(sessionStorage.getItem('red404_user_lng'));
+    let url = '/api/hospitals/directory';
+    if (!isNaN(uLat) && !isNaN(uLng)) {
+      url += `?lat=${uLat}&lng=${uLng}`;
+    }
+
     // 1. Fetch from server endpoint (/api/hospitals/directory or /api/hospitals)
     try {
-      const res = await fetch('/api/hospitals/directory');
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
@@ -994,14 +1014,41 @@
     const regNo = raw.registrationNo || raw.registration_no || raw.bloodBankLicense || 'RED-AUTH-REG';
     const callSign = raw.callSign || ('RED-' + (raw.city || raw.state || 'NODE').toUpperCase().replace(/[^A-Z]/g, '').substr(0, 5) + '-' + (raw.id || '01'));
     const state = raw.state || (raw.location && raw.location.state) || '';
-    const district = raw.city || raw.district || (raw.location && (raw.location.district || raw.location.city)) || '';
-    const address = raw.address || (raw.location && raw.location.address) || `${district}, ${state}`;
-    const contact = raw.hospitalPhone || raw.phone || raw.contact || raw.adminPhone || raw.emergencyContact || 'Emergency Contact Unavailable';
+    const city = raw.city || (raw.location && raw.location.city) || '';
+    let district = raw.district || (raw.location && raw.location.district) || '';
+    const address = raw.address || (raw.location && raw.location.address) || `${city || district}, ${state}`;
+    const contact = raw.hospitalPhone || raw.phone || raw.contact || raw.adminPhone || raw.emergencyContact || '';
+    const lat = raw.latitude != null ? parseFloat(raw.latitude) : (raw.lat != null ? parseFloat(raw.lat) : null);
+    const lng = raw.longitude != null ? parseFloat(raw.longitude) : (raw.lng != null ? parseFloat(raw.lng) : null);
+
+    // Resolve district from city or hospital name or address if empty (e.g. Bhimtal is in Nainital district)
+    if (!district || district.trim() === '') {
+      const lowerName = name.toLowerCase();
+      const lowerCity = city.toLowerCase();
+      const lowerAddr = address.toLowerCase();
+      if (lowerName.includes('bhimtal') || lowerCity.includes('bhimtal') || lowerAddr.includes('bhimtal')) {
+        district = 'Nainital';
+      } else {
+        district = city;
+      }
+    }
+
+    // Distance calculation
+    let distKm = raw.distanceKm != null ? parseFloat(raw.distanceKm) : null;
+    if (distKm == null && lat != null && lng != null) {
+      const userLat = parseFloat(sessionStorage.getItem('red404_user_lat'));
+      const userLng = parseFloat(sessionStorage.getItem('red404_user_lng'));
+      if (!isNaN(userLat) && !isNaN(userLng)) {
+        distKm = Math.round(calculateDistance(userLat, userLng, lat, lng) * 10) / 10;
+      }
+    }
 
     // Extract live stock
     let stock = {};
     if (raw.stock && typeof raw.stock === 'object') {
       stock = { ...raw.stock };
+    } else if (raw.inventory && typeof raw.inventory === 'object') {
+      stock = { ...raw.inventory };
     } else if (raw.bloodInventory && typeof raw.bloodInventory === 'object') {
       stock = { ...raw.bloodInventory };
     }
@@ -1017,8 +1064,12 @@
       location: {
         state,
         district,
+        city,
         address
       },
+      latitude: lat,
+      longitude: lng,
+      distanceKm: distKm,
       contact,
       lastUpdated: raw.lastUpdated || raw.createdAt || raw.created_at || new Date().toISOString(),
       stock
@@ -1109,6 +1160,7 @@
     const selectedDistrict = districtSelect ? districtSelect.value.trim() : '';
     const selectedBloodType = bloodTypeSelect ? bloodTypeSelect.value : 'ALL';
     const selectedComponent = componentSelect ? componentSelect.value : 'ALL';
+    const selectedSortBy = sortBySelect ? sortBySelect.value : (document.getElementById('filterSortBy')?.value || 'distance');
 
     // 1. If no state is selected yet, show default guidance
     if (!selectedState) {
@@ -1126,20 +1178,32 @@
     const cleanSelDist = cleanToken(selectedDistrict);
 
     // 2. Filter registered hospitals strictly by location and criteria
-    const results = registeredHospitals.filter(h => {
+    let results = registeredHospitals.filter(h => {
       const hState = cleanToken(h.location?.state || h.state);
-      const hDist = cleanToken(h.location?.district || h.city || h.district);
+      const hDist = cleanToken(h.location?.district || h.district);
+      const hCity = cleanToken(h.location?.city || h.city);
+      const hAddr = cleanToken(h.location?.address || h.address);
+      const hName = cleanToken(h.name);
 
       // Match State
-      const matchState = hState.includes(cleanSelState) || cleanSelState.includes(hState);
+      const matchState = (selectedState === 'ALL') || hState.includes(cleanSelState) || cleanSelState.includes(hState);
 
-      // Match District
+      // Match District / City
       let matchDist = true;
       if (selectedDistrict && selectedDistrict !== 'ALL') {
-        matchDist = hDist.includes(cleanSelDist) || cleanSelDist.includes(hDist);
+        matchDist = hDist.includes(cleanSelDist) || cleanSelDist.includes(hDist) ||
+                    hCity.includes(cleanSelDist) || cleanSelDist.includes(hCity) ||
+                    hAddr.includes(cleanSelDist) || hName.includes(cleanSelDist);
+
+        // Special regional relationship: Nainital district encompasses Bhimtal
+        if (!matchDist && cleanSelDist.includes('nainital')) {
+          if (hDist.includes('bhimtal') || hCity.includes('bhimtal') || hAddr.includes('bhimtal') || hName.includes('bhimtal')) {
+            matchDist = true;
+          }
+        }
       }
 
-      // Match Blood Type
+      // Match Blood Type: If a blood group is selected in the filter, show only hospitals having that group in stock
       let matchType = true;
       if (selectedBloodType !== 'ALL' && selectedBloodType) {
         const units = (h.stock && h.stock[selectedBloodType]) ? Number(h.stock[selectedBloodType]) : 0;
@@ -1149,19 +1213,40 @@
       return matchState && matchDist && matchType;
     });
 
-    // 3. Update filter summary text
+    // 3. Sort results by Distance or Stock
+    results.sort((a, b) => {
+      if (selectedSortBy === 'stock') {
+        const stockA = (selectedBloodType !== 'ALL' && selectedBloodType)
+          ? (Number(a.stock?.[selectedBloodType]) || 0)
+          : Object.values(a.stock || {}).reduce((sum, u) => sum + (Number(u) || 0), 0);
+        const stockB = (selectedBloodType !== 'ALL' && selectedBloodType)
+          ? (Number(b.stock?.[selectedBloodType]) || 0)
+          : Object.values(b.stock || {}).reduce((sum, u) => sum + (Number(u) || 0), 0);
+        return stockB - stockA;
+      } else {
+        // Distance sorting (closest first)
+        const dA = a.distanceKm != null ? parseFloat(a.distanceKm) : 999999;
+        const dB = b.distanceKm != null ? parseFloat(b.distanceKm) : 999999;
+        if (dA !== dB) return dA - dB;
+        return (a.name || '').localeCompare(b.name || '');
+      }
+    });
+
+    // 4. Update filter summary text
     if (summaryTextEl) {
       let desc = `Showing results for <strong>${selectedDistrict === 'ALL' || !selectedDistrict ? 'All Districts' : selectedDistrict}, ${selectedState}</strong>`;
       if (selectedBloodType !== 'ALL') {
-        desc += ` • Blood Type: <strong>${selectedBloodType}</strong>`;
+        desc += ` • Blood Type: <strong>${selectedBloodType}</strong> (In Stock Only)`;
       }
-      if (selectedComponent !== 'ALL') {
-        desc += ` • Component: <strong>${selectedComponent}</strong>`;
+      if (selectedSortBy === 'stock') {
+        desc += ` • Sorted by: <strong>Total Stock</strong>`;
+      } else {
+        desc += ` • Sorted by: <strong>Distance</strong>`;
       }
       summaryTextEl.innerHTML = desc;
     }
 
-    // 4. Render results or dynamic empty state
+    // 5. Render results or dynamic empty state
     if (results.length === 0) {
       renderEmptyState("No verified clinical inventory found for these parameters. Only authorized hospitals registered on RED404 will appear here.");
       if (resultsCountEl) resultsCountEl.textContent = "0 Facilities Verified";
@@ -1212,6 +1297,11 @@
       }).join('');
 
       const updatedTimeStr = formatRelativeTime(h.lastUpdated);
+      const mapsQuery = (h.latitude && h.longitude) 
+        ? `${h.latitude},${h.longitude}` 
+        : encodeURIComponent(`${h.name}, ${h.location.address}`);
+      const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`;
+      const cleanPhone = (h.contact || '').replace(/[^\d+]/g, '');
 
       return `
         <div class="hospital-card" data-hospital-id="${h.id}">
@@ -1220,11 +1310,14 @@
             <div class="hosp-title-group">
               <div class="hosp-name-row">
                 <h3 class="hosp-name">${h.name}</h3>
-                ${h.verified ? `<span class="hosp-verified-badge"><i class="fa-solid fa-circle-check"></i> VERIFIED</span>` : ''}
+                <span class="hosp-verified-badge"><i class="fa-solid fa-circle-check"></i> VERIFIED</span>
               </div>
               <span class="hosp-callsign">${h.callSign} // CLINICAL NODE</span>
             </div>
-            <span class="hosp-distance-pill"><i class="fa-solid fa-location-arrow"></i> Active Node</span>
+            <span class="hosp-distance-pill">
+              <i class="fa-solid ${h.distanceKm != null ? 'fa-location-arrow' : 'fa-map-pin'}"></i>
+              ${h.distanceKm != null ? `${h.distanceKm} km away` : (h.location.district || h.location.state || 'Verified Node')}
+            </span>
           </div>
 
           <!-- Metadata -->
@@ -1233,16 +1326,17 @@
               <i class="fa-solid fa-map-pin"></i>
               <span>${h.location.address}</span>
             </div>
+            ${h.contact ? `
             <div class="hosp-meta-item">
               <i class="fa-solid fa-phone"></i>
-              <a href="tel:${h.contact.replace(/\s+/g, '')}">${h.contact}</a>
-            </div>
+              <a href="tel:${cleanPhone}">${h.contact}</a>
+            </div>` : ''}
           </div>
 
           <!-- Blood Stock Mini-Dashboard -->
           <div class="stock-dashboard-wrap">
             <div class="stock-dashboard-header">
-              <span>Component Stock Reserves (Whole Blood &amp; PRBC)</span>
+              <span>Blood Units Available</span>
               <span class="stock-updated-indicator">
                 <i class="fa-solid fa-circle"></i>
                 Updated ${updatedTimeStr}
@@ -1255,14 +1349,15 @@
 
           <!-- Card Actions -->
           <div class="hosp-footer-actions">
-            <a href="tel:${h.contact.replace(/\s+/g, '')}" class="btn-hosp-call">
+            ${h.contact ? `
+            <a href="tel:${cleanPhone}" class="btn-hosp-call">
               <i class="fa-solid fa-phone"></i>
-              <span>Call Facility</span>
+              <span>Call Hospital</span>
+            </a>` : ''}
+            <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" class="btn-hosp-directions" title="Get directions on Google Maps">
+              <i class="fa-solid fa-diamond-turn-right"></i>
+              <span>Directions</span>
             </a>
-            <button class="btn-hosp-reserve" onclick="window.requestHospitalAllocation('${h.name.replace(/'/g, "\\'")}', '${h.callSign}')">
-              <i class="fa-solid fa-truck-medical"></i>
-              <span>Emergency Allocation</span>
-            </button>
           </div>
         </div>
       `;
@@ -1284,6 +1379,7 @@
     if (districtSelect) districtSelect.innerHTML = '<option value="">Select District</option>';
     if (bloodTypeSelect) bloodTypeSelect.value = 'ALL';
     if (componentSelect) componentSelect.value = 'ALL';
+    if (sortBySelect) sortBySelect.value = 'distance';
     executeInventorySearch();
   }
 

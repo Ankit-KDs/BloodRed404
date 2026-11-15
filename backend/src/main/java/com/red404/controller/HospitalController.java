@@ -12,6 +12,7 @@ import com.red404.dao.HospitalDao;
 import com.red404.model.ApiResponse;
 import com.red404.service.DonorEligibilityService;
 import com.red404.util.DBConnection;
+import com.red404.util.DistanceCalculator;
 import com.red404.util.JsonUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -59,7 +60,9 @@ public class HospitalController {
     public ResponseEntity<ApiResponse> getRegisteredHospitals(
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String city,
-            @RequestParam(required = false) String district) {
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng) {
         try {
             List<Map<String, Object>> allHospitals = hospitalDao.listAll();
             List<Map<String, Object>> filtered = new ArrayList<>();
@@ -73,15 +76,49 @@ public class HospitalController {
 
                 String hState = (String) h.get("state");
                 String hCity = (String) h.get("city");
-                boolean matchesState = (state == null || state.isBlank() || (hState != null && hState.equalsIgnoreCase(state.trim())));
+                String hDistrict = (String) h.get("district");
+                String hAddress = (String) h.get("address");
+                String hName = (String) h.get("name");
+
+                boolean matchesState = (state == null || state.isBlank() || state.equalsIgnoreCase("ALL") || 
+                        (hState != null && hState.equalsIgnoreCase(state.trim())));
+
                 String targetDistrict = (district != null && !district.isBlank()) ? district : city;
-                boolean matchesDistrict = (targetDistrict == null || targetDistrict.isBlank() || targetDistrict.equalsIgnoreCase("ALL") || 
-                        (hCity != null && (hCity.equalsIgnoreCase(targetDistrict.trim()) || hCity.toLowerCase().contains(targetDistrict.toLowerCase()))));
+                boolean matchesDistrict = (targetDistrict == null || targetDistrict.isBlank() || targetDistrict.equalsIgnoreCase("ALL"));
+                
+                if (!matchesDistrict && targetDistrict != null) {
+                    String cleanTarget = targetDistrict.trim().toLowerCase();
+                    boolean dMatch = (hDistrict != null && (hDistrict.equalsIgnoreCase(targetDistrict) || hDistrict.toLowerCase().contains(cleanTarget) || cleanTarget.contains(hDistrict.toLowerCase())));
+                    boolean cMatch = (hCity != null && (hCity.equalsIgnoreCase(targetDistrict) || hCity.toLowerCase().contains(cleanTarget) || cleanTarget.contains(hCity.toLowerCase())));
+                    boolean aMatch = (hAddress != null && hAddress.toLowerCase().contains(cleanTarget));
+                    boolean nMatch = (hName != null && hName.toLowerCase().contains(cleanTarget));
+                    boolean isNainitalBhimtal = (cleanTarget.contains("nainital") && (
+                            (hCity != null && hCity.toLowerCase().contains("bhimtal")) ||
+                            (hAddress != null && hAddress.toLowerCase().contains("bhimtal")) ||
+                            (hName != null && hName.toLowerCase().contains("bhimtal"))
+                    ));
+                    matchesDistrict = dMatch || cMatch || aMatch || nMatch || isNainitalBhimtal;
+                }
+
                 if (matchesState && matchesDistrict) {
                     try {
                         int hid = ((Number) h.get("id")).intValue();
-                        h.put("inventory", hospitalDao.getHospitalInventory(hid));
+                        Map<String, Integer> inv = hospitalDao.getHospitalInventory(hid);
+                        h.put("inventory", inv);
+                        int total = 0;
+                        for (int u : inv.values()) total += u;
+                        h.put("totalStock", total);
                     } catch (Exception ignored) {}
+
+                    // Compute distance if coordinates provided
+                    if (lat != null && lng != null && h.get("latitude") != null && h.get("longitude") != null) {
+                        try {
+                            double hLat = ((Number) h.get("latitude")).doubleValue();
+                            double hLng = ((Number) h.get("longitude")).doubleValue();
+                            double d = DistanceCalculator.calculateDistance(lat, lng, hLat, hLng);
+                            h.put("distanceKm", Math.round(d * 10.0) / 10.0);
+                        } catch (Exception ignored) {}
+                    }
                     filtered.add(h);
                 }
             }

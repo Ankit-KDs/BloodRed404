@@ -1117,7 +1117,7 @@ public class DonorDao {
             return results;
         }
 
-        String sql = "SELECT donor_id, blood_type, latitude, longitude, pincode, city, state, zone, availability, created_at, last_donation FROM donors WHERE (availability IS NULL OR LOWER(availability) <> 'unavailable')";
+        String sql = "SELECT donor_id, name, blood_type, latitude, longitude, pincode, city, state, zone, availability, created_at, last_donation FROM donors WHERE (availability IS NULL OR LOWER(availability) <> 'unavailable')";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -1156,11 +1156,20 @@ public class DonorDao {
                     donorId = "DNR-0101-D" + (100 + rowIdx);
                 }
 
+                String rawName = rs.getString("name");
+                String maskedName = com.red404.dao.BloodRequestNotificationDao.maskDonorName(rawName);
+
                 Map<String, Object> item = new HashMap<>();
                 item.put("id", donorId);
+                item.put("donorId", donorId);
+                item.put("name", maskedName);
                 item.put("group", bType);
+                item.put("bloodType", bType);
                 item.put("rh", bType.contains("-") ? "RH-" : "RH+");
                 item.put("distKm", Math.round(distance * 10.0) / 10.0);
+                item.put("city", rs.getString("city"));
+                item.put("state", rs.getString("state"));
+                item.put("zone", rs.getString("zone"));
                 item.put("status", "Ready to Donate");
                 item.put("lastSeen", "Telemetry Active");
                 results.add(item);

@@ -163,8 +163,28 @@
 
     const matched = hospitalsList.filter(h => {
       const stateMatch = selectedState === 'ALL' || (h.state && h.state.toLowerCase() === selectedState.toLowerCase());
-      const distMatch = selectedDistrict === 'ALL' || (h.district && h.district.toLowerCase() === selectedDistrict.toLowerCase());
-      return stateMatch && distMatch;
+      let distMatch = selectedDistrict === 'ALL';
+      if (!distMatch && selectedDistrict) {
+        const cleanSel = selectedDistrict.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanDist = (h.district || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanCity = (h.city || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanAddr = (h.address || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanName = (h.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        distMatch = cleanDist.includes(cleanSel) || cleanSel.includes(cleanDist) ||
+                    cleanCity.includes(cleanSel) || cleanSel.includes(cleanCity) ||
+                    cleanAddr.includes(cleanSel) || cleanName.includes(cleanSel);
+        if (!distMatch && cleanSel.includes('nainital')) {
+          if (cleanDist.includes('bhimtal') || cleanCity.includes('bhimtal') || cleanAddr.includes('bhimtal') || cleanName.includes('bhimtal')) {
+            distMatch = true;
+          }
+        }
+      }
+      let typeMatch = true;
+      if (selectedBloodType !== 'ALL' && selectedBloodType) {
+        const units = (h.stock && h.stock[selectedBloodType]) ? (h.stock[selectedBloodType].units || 0) : 0;
+        typeMatch = units > 0;
+      }
+      return stateMatch && distMatch && typeMatch;
     });
 
     if (activeFilterTextEl) {
@@ -258,10 +278,14 @@
 
           <div class="hosp-footer-actions">
             ${h.phone ? `
-            <a href="tel:${h.phone.replace(/\\s+/g, '')}" class="btn-hosp-call">
+            <a href="tel:${h.phone.replace(/\s+/g, '')}" class="btn-hosp-call">
               <i class="fa-solid fa-phone"></i>
               <span>Call Hospital</span>
             </a>` : ''}
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((h.latitude && h.longitude) ? `${h.latitude},${h.longitude}` : h.name + ', ' + h.address)}" target="_blank" rel="noopener noreferrer" class="btn-hosp-directions" title="Get directions on Google Maps">
+              <i class="fa-solid fa-diamond-turn-right"></i>
+              <span>Directions</span>
+            </a>
           </div>
         </div>
       `;

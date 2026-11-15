@@ -172,8 +172,8 @@ body.availability-body {
 
 .filter-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr) auto;
-  gap: 16px;
+  grid-template-columns: repeat(5, 1fr) auto;
+  gap: 14px;
   align-items: flex-end;
 }
 
@@ -583,6 +583,30 @@ body.availability-body {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.25);
   color: #38bdf8;
+}
+
+.btn-hosp-directions {
+  flex: 1;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-hosp-directions:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .btn-hosp-reserve {

@@ -273,11 +273,22 @@
           </label>
           <div class="filter-select-wrapper">
             <select class="filter-select" id="filterComponent">
-              <option value="ALL" selected>All Components</option>
-              <option value="Whole Blood">Whole Blood (WB)</option>
-              <option value="PRBC">Packed Red Blood Cells (PRBC)</option>
-              <option value="Platelets">Platelets (RDP / SDP)</option>
-              <option value="Plasma">Fresh Frozen Plasma (FFP)</option>
+              <option value="Whole Blood" selected>Whole Blood (WB)</option>
+            </select>
+            <i class="fa-solid fa-chevron-down filter-select-icon"></i>
+          </div>
+        </div>
+
+        <!-- Filter 5: Sort By -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterSortBy">
+            <i class="fa-solid fa-arrow-down-wide-short"></i>
+            Sort By
+          </label>
+          <div class="filter-select-wrapper">
+            <select class="filter-select" id="filterSortBy">
+              <option value="distance" selected>Distance (Closest)</option>
+              <option value="stock">Total Stock (Highest)</option>
             </select>
             <i class="fa-solid fa-chevron-down filter-select-icon"></i>
           </div>

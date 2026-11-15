@@ -182,7 +182,7 @@ public class HospitalDao {
 
         String[] allowed = {
             "hospital_name", "hospital_type", "registration_no", "blood_bank_license",
-            "address", "city", "state", "pincode", "hospital_phone", "emergency_contact",
+            "address", "city", "district", "state", "pincode", "hospital_phone", "emergency_contact",
             "admin_name", "admin_designation", "operating_hours", "verification_status"
         };
         for (String col : allowed) {
@@ -305,6 +305,11 @@ public class HospitalDao {
         hospital.put("phone", rs.getString("hospital_phone"));
         hospital.put("hospitalPhone", rs.getString("hospital_phone"));
         hospital.put("city", rs.getString("city"));
+        try {
+            hospital.put("district", rs.getString("district"));
+        } catch (SQLException ignored) {
+            hospital.put("district", null);
+        }
         hospital.put("state", rs.getString("state"));
         hospital.put("zone", rs.getString("zone"));
         hospital.put("radius", rs.getInt("zone_radius"));

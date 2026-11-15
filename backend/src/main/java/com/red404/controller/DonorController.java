@@ -180,7 +180,8 @@ public class DonorController {
         try {
             Double latD = parseDouble(lat);
             Double lngD = parseDouble(lng);
-            return ok("Nearby donors loaded", donorDao.findNearby(latD, lngD, radius, bloodType));
+            List<Map<String, Object>> list = donorDao.findNearby(latD, lngD, radius, bloodType);
+            return ok("Nearby donors loaded", sanitizePublicDonors(list));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -196,10 +197,52 @@ public class DonorController {
         try {
             Double latD = parseDouble(lat);
             Double lngD = parseDouble(lng);
-            return ok("Public availability loaded", donorDao.searchPublicAvailability(bloodGroup, radius, pincode, latD, lngD));
+            List<Map<String, Object>> list = donorDao.searchPublicAvailability(bloodGroup, radius, pincode, latD, lngD);
+            return ok("Public availability loaded", sanitizePublicDonors(list));
         } catch (Exception e) {
             return serverError(e);
         }
+    }
+
+    private List<Map<String, Object>> sanitizePublicDonors(List<Map<String, Object>> rawList) {
+        if (rawList == null) return Collections.emptyList();
+        List<Map<String, Object>> safe = new ArrayList<>();
+        for (Map<String, Object> d : rawList) {
+            if (d == null) continue;
+            Map<String, Object> item = new HashMap<>();
+            String donorId = (String) d.get("donorId");
+            if (donorId == null) donorId = (String) d.get("donor_id");
+            if (donorId == null && d.get("id") != null) donorId = "DNR-ANON-" + d.get("id");
+            item.put("id", donorId);
+            item.put("donorId", donorId);
+
+            String rawName = (String) d.get("name");
+            if (rawName == null) rawName = (String) d.get("fullName");
+            item.put("name", com.red404.dao.BloodRequestNotificationDao.maskDonorName(rawName));
+
+            String bType = (String) d.get("bloodType");
+            if (bType == null) bType = (String) d.get("blood_type");
+            if (bType == null) bType = (String) d.get("group");
+            item.put("bloodType", bType);
+            item.put("group", bType);
+            item.put("rh", (bType != null && bType.contains("-")) ? "RH-" : "RH+");
+
+            Object dist = d.get("distKm");
+            if (dist == null) dist = d.get("distance");
+            item.put("distKm", dist);
+            item.put("distance", dist);
+
+            // Geographic presence: city and state/zone only, NEVER street address
+            item.put("city", d.get("city"));
+            item.put("state", d.get("state"));
+            item.put("zone", d.get("zone"));
+            item.put("status", d.getOrDefault("status", "Ready to Donate"));
+            item.put("lastSeen", d.getOrDefault("lastSeen", "Telemetry Active"));
+
+            // Strictly enforce privacy: remove phone, email, password, address, vitals
+            safe.add(item);
+        }
+        return safe;
     }
 
     @GetMapping({"/platform-stats", "/system-stats"})
