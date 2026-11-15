@@ -327,7 +327,7 @@
     'Privacy & Security': 'गोपनीयता और सुरक्षा',
     'Process Flow': 'कार्य प्रक्रिया',
     'Live Impact': 'लाइव प्रभाव',
-    'Emergency: 1800-RED-404': 'आपातकालीन: 1800-RED-404',
+    'National Emergency: 112': 'राष्ट्रीय आपातकाल: 112',
     'Toll-Free Helpline:': 'टोल-फ्री हेल्पलाइन:',
 
     // Home Hero & Marketing

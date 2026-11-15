@@ -140,7 +140,7 @@
           <!-- Emergency quick-access notice -->
           <div class="emergency-notice">
             <i class="fas fa-exclamation-triangle"></i>
-            <span>Emergency? Call <strong>1800-RED-404</strong> for instant support.</span>
+            <span>Emergency? National Helpline: <strong>112</strong> • Support: <strong>support@red404.org</strong></span>
           </div>
 
         </form>
@@ -157,7 +157,57 @@
 
   </div><!-- /auth-page-container -->
 
+  <!-- ========== SHARED FOOTER ========== -->
+  <footer class="footer" id="contact">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <i class="fas fa-tint"></i>
+          RED<span>404</span>
+        </div>
+        <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
+      </div>
 
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="donor-register.html"><i class="fas fa-chevron-right"></i> Donor Register</a></li>
+          <li><a href="donor-login.html"><i class="fas fa-chevron-right"></i> Donor Login</a></li>
+          <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
+          <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
+          <li><a href="blood-availability-search.html"><i class="fas fa-chevron-right"></i> Donor Search</a></li>
+          <li><a href="blood-availability.html?portal=public"><i class="fas fa-chevron-right"></i> Blood Banks</a></li>
+          <li><a href="eligibility-checker.html"><i class="fas fa-chevron-right"></i> Eligibility</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4>Explore &amp; Legal</h4>
+        <ul>
+          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="index.html#process-flow"><i class="fas fa-chevron-right"></i> Process Flow</a></li>
+          <li><a href="index.html#stats"><i class="fas fa-chevron-right"></i> Live Impact</a></li>
+          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('help')"><i class="fas fa-chevron-right"></i> Help &amp; Support</a></li>
+          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('report')"><i class="fas fa-chevron-right"></i> Report Issue</a></li>
+          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')"><i class="fas fa-chevron-right"></i> Privacy &amp; Policy</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h4>Contact</h4>
+        <p id="footerSupportEmailWrap"><i class="fas fa-envelope"></i> <span id="footerSupportEmail">support@red404.org</span></p>
+        <p id="footerTollFreeWrap" style="display: none;"><i class="fas fa-headset"></i> <span id="footerTollFree"></span></p>
+        <p><i class="fas fa-map-marker-alt"></i> India</p>
+        <div class="emergency-tag" id="footerEmergencyTag" style="display: none;">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>Toll-Free Helpline: <span id="footerHelplineNum"></span></span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span class="footer-current-year" id="footerCurrentYear">2026</span> RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
+    </div>
+  </footer>
 
   <!-- Forgot Password Modal -->
   <div class="modal-overlay" id="hospForgotModal" style="display:none;">

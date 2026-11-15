@@ -402,6 +402,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initStatBarAnimations();
   initTooltips();
   initSmoothScroll();
+
+  // Dynamic Current Year for Footers
+  const curYear = new Date().getFullYear();
+  document.querySelectorAll('.footer-current-year, #footerCurrentYear').forEach(el => {
+    el.textContent = curYear;
+  });
 });
 
 /* ==================== NAVBAR ==================== */
@@ -491,6 +497,23 @@ function initNavbar() {
     );
     sections.forEach(s => sectionObserver.observe(s));
   }
+
+  // Highlight active nav-link based on current file/page name
+  try {
+    const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+    if (navLinks) {
+      navLinks.querySelectorAll('.nav-link').forEach(link => {
+        const href = (link.getAttribute('href') || '').split('?')[0];
+        if (href === currentPath || (currentPath === 'index.html' && (href === 'index.html' || href === 'index.html#home' || href === '#home'))) {
+          link.classList.add('active');
+        } else if (currentPath !== 'index.html' && href.endsWith(currentPath)) {
+          link.classList.add('active');
+        } else if (!href.startsWith('#')) {
+          link.classList.remove('active');
+        }
+      });
+    }
+  } catch (_) {}
 }
 
 /* ==================== PARTICLES ==================== */
@@ -979,9 +1002,9 @@ function openMiniFooterModal(topic) {
             Need urgent assistance with SOS dispatch, finding nearby blood banks, or managing your donor profile? Our team is available round the clock.
           </p>
           <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
-            <div style="color:#f87171;font-weight:700;margin-bottom:4px;font-size:0.92rem;">📞 24/7 Emergency Helpline</div>
+            <div style="color:#f87171;font-weight:700;margin-bottom:4px;font-size:0.92rem;">🚨 Emergency Support</div>
             <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.98rem;font-weight:700;color:#ffffff;letter-spacing:0.2px;">
-              +91-1800-RED-404 &nbsp; | &nbsp; National Emergency: 112
+              National Emergency: 112
             </div>
           </div>
           <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:12px 14px;">

@@ -419,6 +419,10 @@ async function loadDynamicPlatformStats() {
     });
   } catch (err) {
     console.warn('Could not load dynamic platform stats:', err);
+    const sResp = document.getElementById('statAvgResponse');
+    if (sResp) { sResp.dataset.target = 'none'; sResp.textContent = 'No data yet'; sResp.style.fontSize = '18px'; }
+    const sRate = document.getElementById('statSuccessRate');
+    if (sRate) { sRate.dataset.target = 'none'; sRate.textContent = 'No data yet'; sRate.style.fontSize = '18px'; }
   }
 }
 
@@ -508,18 +512,31 @@ function updateBloodStock(groupId, newUnitCount, newDonorCount) {
     el.textContent = String(nextNum);
   }
 
+  // Ensure blood group badge is explicitly present and prominently showing groupId
+  const card = (unitEl && unitEl.closest('.stock-mini-card')) || document.querySelector(`.stock-mini-card[data-blood-group="${groupId}"]`);
+  if (card) {
+    let badge = card.querySelector('.blood-group-badge');
+    if (!badge) {
+      const top = card.querySelector('.smc-top') || card;
+      badge = document.createElement('span');
+      badge.className = 'blood-group-badge';
+      top.prepend(badge);
+    }
+    if (badge && (!badge.textContent || badge.textContent.trim() === '')) {
+      badge.textContent = groupId;
+    }
+  }
+
   if (newUnitCount !== undefined && newUnitCount !== null) {
     applyValueWithFlash(unitEl, newUnitCount);
   }
   if (donorEl) {
     const bottomRow = donorEl.closest('.smc-bottom');
-    if (newDonorCount !== undefined && newDonorCount !== null && Number(newDonorCount) > 0) {
-      if (bottomRow) bottomRow.style.display = 'flex';
-      applyValueWithFlash(donorEl, newDonorCount);
-    } else {
-      // Rule: if a count is not available hide that line; remove empty icons
-      if (bottomRow) bottomRow.style.display = 'none';
+    if (bottomRow) {
+      bottomRow.style.display = 'flex'; // Consistent across all tiles
     }
+    const donorCount = (newDonorCount !== undefined && newDonorCount !== null) ? Number(newDonorCount) : 0;
+    applyValueWithFlash(donorEl, donorCount);
   }
 }
 

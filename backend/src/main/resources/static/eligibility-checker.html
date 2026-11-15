@@ -449,6 +449,8 @@
         <li><a href="index.html#home" class="nav-link">Home</a></li>
         <li><a href="about.html" class="nav-link">About Us</a></li>
         <li><a href="blood-availability-search.html" class="nav-link">Donor Search</a></li>
+        <li><a href="blood-availability.html?portal=public" class="nav-link">Blood Banks</a></li>
+        <li><a href="eligibility-checker.html" class="nav-link active">Eligibility</a></li>
         <li><a href="index.html#contact" class="nav-link">Contact</a></li>
       </ul>
 
@@ -473,14 +475,14 @@
     <!-- Hero Header -->
     <div class="screening-hero">
       <div class="screening-badge">
-        <i class="fas fa-robot"></i>
-        <span>AI Clinical Health Screening Chatbot</span>
+        <i class="fas fa-heart-pulse"></i>
+        <span>Donor Health Self-Check</span>
       </div>
       <h1 class="screening-title">
-        Interactive <span>Donor Eligibility</span>
+        Check if you <span>can donate</span>
       </h1>
       <p class="screening-subtitle">
-        Chat with Dr. Aria, our virtual AI Clinical Screener. Verify your physiological donation readiness in under 60 seconds according to WHO and NBTC clinical standards.
+        This is a self-check, not medical advice. The hospital makes the final decision.
       </p>
     </div>
 
@@ -490,12 +492,12 @@
       <div class="chat-header">
         <div class="chat-header-profile">
           <div class="chat-avatar-box">
-            <i class="fas fa-user-doctor"></i>
+            <i class="fas fa-clipboard-check"></i>
             <span class="chat-online-dot"></span>
           </div>
           <div class="chat-header-info">
-            <h4>Dr. Aria • AI Clinical Screener</h4>
-            <p><i class="fas fa-shield-heart"></i> WHO / NBTC Standards Active</p>
+            <h4>Eligibility Self-Check</h4>
+            <p><i class="fas fa-shield-halved"></i> Quick questionnaire • Private &amp; Instant</p>
           </div>
         </div>
 
@@ -529,7 +531,7 @@
     </div>
   </main>
 
-  <!-- ========== FOOTER (IDENTICAL TO HOME PAGE) ========== -->
+  <!-- ========== FOOTER ========== -->
   <footer class="footer" id="contact">
     <div class="footer-container">
       <div class="footer-brand">
@@ -538,12 +540,6 @@
           RED<span>404</span>
         </div>
         <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
-        <div class="footer-social">
-          <a href="#"><i class="fab fa-twitter"></i></a>
-          <a href="#"><i class="fab fa-instagram"></i></a>
-          <a href="#"><i class="fab fa-linkedin"></i></a>
-          <a href="#"><i class="fab fa-github"></i></a>
-        </div>
       </div>
 
       <div class="footer-links">
@@ -553,31 +549,37 @@
           <li><a href="donor-login.html"><i class="fas fa-chevron-right"></i> Donor Login</a></li>
           <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
           <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
+          <li><a href="blood-availability-search.html"><i class="fas fa-chevron-right"></i> Donor Search</a></li>
+          <li><a href="blood-availability.html?portal=public"><i class="fas fa-chevron-right"></i> Blood Banks</a></li>
+          <li><a href="eligibility-checker.html"><i class="fas fa-chevron-right"></i> Eligibility</a></li>
         </ul>
       </div>
 
       <div class="footer-links">
-        <h4>Explore</h4>
+        <h4>Explore &amp; Legal</h4>
         <ul>
           <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
           <li><a href="index.html#process-flow"><i class="fas fa-chevron-right"></i> Process Flow</a></li>
           <li><a href="index.html#stats"><i class="fas fa-chevron-right"></i> Live Impact</a></li>
+          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('help')"><i class="fas fa-chevron-right"></i> Help &amp; Support</a></li>
+          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('report')"><i class="fas fa-chevron-right"></i> Report Issue</a></li>
+          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')"><i class="fas fa-chevron-right"></i> Privacy &amp; Policy</a></li>
         </ul>
       </div>
 
       <div class="footer-contact">
         <h4>Contact</h4>
-        <p><i class="fas fa-envelope"></i> support@red404.org</p>
-        <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+        <p id="footerSupportEmailWrap"><i class="fas fa-envelope"></i> <span id="footerSupportEmail">support@red404.org</span></p>
+        <p id="footerTollFreeWrap" style="display: none;"><i class="fas fa-headset"></i> <span id="footerTollFree"></span></p>
         <p><i class="fas fa-map-marker-alt"></i> India</p>
-        <div class="emergency-tag">
+        <div class="emergency-tag" id="footerEmergencyTag" style="display: none;">
           <i class="fas fa-exclamation-circle"></i>
-          Emergency: 1800-RED-404
+          <span>Toll-Free Helpline: <span id="footerHelplineNum"></span></span>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2024 RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
+      <p>© <span class="footer-current-year" id="footerCurrentYear">2026</span> RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
     </div>
   </footer>
 
@@ -586,69 +588,82 @@
 
   <!-- ========== CHATBOT SCRIPT ========== -->
   <script>
-    // Comprehensive clinical screening questions
+    let gapMale = 90;
+    let gapFemale = 120;
+    try {
+      fetch('/api/system/donation-gaps')
+        .then(r => r.json())
+        .then(res => {
+          if (res && res.data) {
+            gapMale = res.data.gapMaleDays || 90;
+            gapFemale = res.data.gapFemaleDays || 120;
+          }
+        }).catch(() => {});
+    } catch (_) {}
+
+    // Health self-check screening questions
     const SCREENING_STEPS = [
       {
         id: "intro",
-        botText: "Hello! I am Dr. Aria, your AI Clinical Screener for RED404. I will ask you 7 quick health & physiological questions to verify if you can safely donate blood today. Ready to begin?",
+        botText: "Welcome to the RED404 eligibility self-check. Answer 7 quick questions to check if you are ready to donate whole blood. This is a self-check, not medical advice. The hospital makes the final decision.",
         options: [
-          { label: "Yes, Let's Begin", value: "start", type: "positive", icon: "fa-play" }
+          { label: "Start Self-Check", value: "start", type: "positive", icon: "fa-play" }
         ]
       },
       {
         id: "age",
-        botText: "Question 1 of 7: What is your current age? Clinical blood transfusion standards require voluntary donors to be between 18 and 65 years old.",
+        botText: "Question 1 of 7: What is your current age? Donors must be between 18 and 65 years old.",
         options: [
-          { label: "Yes, 18 - 65 Years", value: true, type: "positive", icon: "fa-check" },
-          { label: "No, Under 18 or 65+", value: false, type: "negative", icon: "fa-times" }
+          { label: "18 - 65 Years", value: true, type: "positive", icon: "fa-check" },
+          { label: "Under 18 or 65+", value: false, type: "negative", icon: "fa-times" }
         ]
       },
       {
         id: "weight",
-        botText: "Question 2 of 7: Do you weigh at least 50 kg (110 lbs)? Safe physiological blood volume extraction requires a minimum body weight of 50 kg.",
+        botText: "Question 2 of 7: Do you weigh at least 45 kg? Standard whole blood donation requires a minimum body weight of 45 kg.",
         options: [
-          { label: "Yes, 50 kg or More", value: true, type: "positive", icon: "fa-weight-scale" },
-          { label: "No, Under 50 kg", value: false, type: "negative", icon: "fa-times" }
+          { label: "45 kg or More", value: true, type: "positive", icon: "fa-weight-scale" },
+          { label: "Under 45 kg", value: false, type: "negative", icon: "fa-times" }
         ]
       },
       {
         id: "interval",
-        botText: "Question 3 of 7: Has it been at least 90 days (3 months) since your last whole blood donation? If this is your first time donating, select 'First Time'.",
+        botText: "Question 3 of 7: Has sufficient time passed since your last blood donation? The standard gap is 90 days for men and 120 days for women. Select 'First time or eligible gap' if this applies.",
         options: [
-          { label: "Over 90 Days / First Time", value: true, type: "positive", icon: "fa-clock-rotate-left" },
-          { label: "Within the Past 90 Days", value: false, type: "negative", icon: "fa-times" }
+          { label: "First time or eligible gap (90d men / 120d women)", value: true, type: "positive", icon: "fa-clock-rotate-left" },
+          { label: "Donated recently within waiting period", value: false, type: "negative", icon: "fa-times" }
         ]
       },
       {
         id: "health",
         botText: "Question 4 of 7: How is your health today? Are you feeling completely well and free from fever, cough, flu, or sore throat?",
         options: [
-          { label: "Feeling Great & Symptom-Free", value: true, type: "positive", icon: "fa-heart-pulse" },
-          { label: "Currently Experiencing Symptoms", value: false, type: "negative", icon: "fa-times" }
+          { label: "Feeling well & symptom-free", value: true, type: "positive", icon: "fa-heart-pulse" },
+          { label: "Currently unwell or have symptoms", value: false, type: "negative", icon: "fa-times" }
         ]
       },
       {
         id: "antibiotics",
         botText: "Question 5 of 7: Have you taken any antibiotics or medications for an active infection in the last 7 days?",
         options: [
-          { label: "No Antibiotics in Past 7 Days", value: true, type: "positive", icon: "fa-pills" },
-          { label: "Yes, Currently on Antibiotics", value: false, type: "negative", icon: "fa-times" }
+          { label: "No antibiotics in past 7 days", value: true, type: "positive", icon: "fa-pills" },
+          { label: "Yes, currently taking antibiotics", value: false, type: "negative", icon: "fa-times" }
         ]
       },
       {
         id: "procedures",
         botText: "Question 6 of 7: Have you had any tattoos, body piercings, acupuncture, or major surgeries within the last 6 months?",
         options: [
-          { label: "No Procedures in Last 6 Months", value: true, type: "positive", icon: "fa-shield-virus" },
-          { label: "Yes, within Last 6 Months", value: false, type: "negative", icon: "fa-times" }
+          { label: "No procedures in last 6 months", value: true, type: "positive", icon: "fa-shield-virus" },
+          { label: "Yes, within last 6 months", value: false, type: "negative", icon: "fa-times" }
         ]
       },
       {
         id: "chronic",
         botText: "Question 7 of 7: Do you have any known history of heart conditions, hepatitis B/C, HIV, or uncontrolled chronic illnesses?",
         options: [
-          { label: "No Chronic Conditions", value: true, type: "positive", icon: "fa-shield-halved" },
-          { label: "Yes, Medical History Present", value: false, type: "negative", icon: "fa-times" }
+          { label: "No chronic conditions", value: true, type: "positive", icon: "fa-shield-halved" },
+          { label: "Yes, medical history present", value: false, type: "negative", icon: "fa-times" }
         ]
       }
     ];
@@ -756,18 +771,22 @@
           appendMessage('bot', `
             <div class="chat-result-card eligible">
               <div class="result-badge-row eligible">
-                <i class="fas fa-shield-check"></i>
-                <span>VERIFIED ELIGIBLE TO DONATE</span>
+                <i class="fas fa-check-circle"></i>
+                <span>LIKELY READY TO DONATE</span>
               </div>
+              <p class="result-card-desc" style="font-weight: 600; color: #f1f5f9; margin-bottom: 6px;">
+                This is a self-check, not medical advice. The hospital makes the final decision.
+              </p>
               <p class="result-card-desc">
-                Congratulations! You meet all physiological and safety requirements for voluntary whole blood donation. Your donation can save up to 3 lives today.
+                Based on your answers, you meet the preliminary requirements for voluntary whole blood donation.
               </p>
               <div class="result-card-list">
-                <div class="result-item"><i class="fas fa-check-circle ok"></i> Age Criteria Satisfied (18 - 65 Yrs)</div>
-                <div class="result-item"><i class="fas fa-check-circle ok"></i> Body Weight Requirement Cleared (&ge; 50 kg)</div>
-                <div class="result-item"><i class="fas fa-check-circle ok"></i> 90-Day Biological Recovery Completed</div>
-                <div class="result-item"><i class="fas fa-check-circle ok"></i> Free from Acute Infections &amp; Antibiotics</div>
-                <div class="result-item"><i class="fas fa-check-circle ok"></i> Zero In-Window Cosmetic/Surgical Procedures</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Age criteria satisfied (18 - 65 years)</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Body weight requirement cleared (&ge; 45 kg)</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Recovery gap satisfied (90 days for men, 120 days for women)</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> Free from acute symptoms &amp; recent antibiotics</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> No recent tattoos, piercings, or surgery</div>
+                <div class="result-item"><i class="fas fa-check-circle ok"></i> No disqualifying chronic conditions declared</div>
               </div>
               <div class="result-card-actions">
                 <a href="donor-register.html" class="btn btn-service-primary" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
@@ -776,29 +795,32 @@
                 </a>
                 <a href="blood-availability-search.html" class="btn btn-service-outline" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
                   <i class="fas fa-search-location"></i>
-                  <span>Explore Donors Network</span>
+                  <span>Search Blood Availability</span>
                 </a>
               </div>
             </div>
           `, true);
         } else {
           let deferrals = [];
-          if (!isAge) deferrals.push("Must be between 18 and 65 years old.");
-          if (!isWeight) deferrals.push("Must weigh at least 50 kg to ensure safe blood draw volume.");
-          if (!isInterval) deferrals.push("Mandatory 90-day waiting period between whole blood donations.");
-          if (!isHealth) deferrals.push("Please wait until acute cold, fever, or illness is 100% resolved.");
-          if (!isAntibiotics) deferrals.push("Wait 7 days after completing your full antibiotic course.");
-          if (!isProcedures) deferrals.push("A 6-month deferral is required after tattoos, piercings, or surgery.");
-          if (!isChronic) deferrals.push("Chronic conditions or blood-borne histories require clinical doctor clearance.");
+          if (!isAge) deferrals.push("Age: Must be between 18 and 65 years old.");
+          if (!isWeight) deferrals.push("Weight: Must weigh at least 45 kg for safe whole blood donation.");
+          if (!isInterval) deferrals.push("Donation Gap: Mandatory waiting period between donations (90 days for men, 120 days for women).");
+          if (!isHealth) deferrals.push("Health: Please wait until any acute cold, fever, or illness is fully resolved.");
+          if (!isAntibiotics) deferrals.push("Antibiotics: Wait at least 7 days after completing an antibiotic course.");
+          if (!isProcedures) deferrals.push("Procedures: A 6-month deferral is required after tattoos, piercings, or major surgery.");
+          if (!isChronic) deferrals.push("Medical History: Certain conditions require clinical evaluation by hospital staff.");
 
           appendMessage('bot', `
             <div class="chat-result-card deferred">
               <div class="result-badge-row deferred">
                 <i class="fas fa-triangle-exclamation"></i>
-                <span>TEMPORARY DEFERRAL RECOMMENDED</span>
+                <span>POSTPONEMENT RECOMMENDED</span>
               </div>
+              <p class="result-card-desc" style="font-weight: 600; color: #f87171; margin-bottom: 6px;">
+                This is a self-check, not medical advice. The hospital makes the final decision.
+              </p>
               <p class="result-card-desc">
-                Based on your answers, you should postpone blood donation at this time. Most deferrals are temporary and protect both your health and the recipient's safety.
+                Based on your answers, you should postpone blood donation at this time. Here are the specific reasons:
               </p>
               <div class="result-card-list">
                 ${deferrals.map(d => `<div class="result-item"><i class="fas fa-circle-exclamation warn"></i> ${d}</div>`).join('')}
@@ -806,11 +828,11 @@
               <div class="result-card-actions">
                 <button type="button" class="btn btn-service-primary" onclick="restartChatbot()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
                   <i class="fas fa-rotate-left"></i>
-                  <span>Retake Health Screening</span>
+                  <span>Retake Self-Check</span>
                 </button>
-                <a href="blood-availability.html" class="btn btn-service-outline" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+                <a href="blood-availability.html?portal=public" class="btn btn-service-outline" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
                   <i class="fas fa-hospital"></i>
-                  <span>Explore Blood Bank Directory</span>
+                  <span>Explore Blood Banks</span>
                 </a>
               </div>
             </div>
