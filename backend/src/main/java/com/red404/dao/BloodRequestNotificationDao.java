@@ -210,11 +210,11 @@ public class BloodRequestNotificationDao {
                      "n.units_requested, n.patient_name, n.notes as hosp_notes, n.blood_type as notif_blood_type, " +
                      "br.hospital_id, br.hospital_name, br.hospital_address, br.latitude as hosp_lat, br.longitude as hosp_lng, " +
                      "br.urgency_level, br.status as req_status, br.created_at as req_created_at, " +
-                     "h.address as h_address, h.name as h_name " +
+                     "h.address as h_address, h.name as h_name, h.hospital_phone as h_phone, h.emergency_contact as h_emergency_contact " +
                      "FROM blood_request_notifications n " +
                      "JOIN blood_requests br ON n.request_id = br.id " +
                      "LEFT JOIN hospitals h ON br.hospital_id = h.id " +
-                     "WHERE n.donor_id = ? AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED') " +
+                     "WHERE n.donor_id = ? AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'FULFILLED') " +
                      "ORDER BY n.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -260,7 +260,17 @@ public class BloodRequestNotificationDao {
                     map.put("id", reqId);
                     map.put("notifId", notifId);
                     map.put("requestId", reqId);
-                    map.put("status", capitalize(status));
+                    String hospPhone = rs.getString("h_phone");
+                    if (hospPhone == null || hospPhone.isBlank()) hospPhone = rs.getString("h_emergency_contact");
+                    if (hospPhone == null || hospPhone.isBlank()) hospPhone = "+91 108";
+                    map.put("phone", hospPhone);
+
+                    String displayStatus = "New";
+                    if ("ACCEPTED".equalsIgnoreCase(status)) displayStatus = "Accepted";
+                    else if ("DECLINED".equalsIgnoreCase(status)) displayStatus = "Declined";
+                    else if ("EXPIRED".equalsIgnoreCase(status)) displayStatus = "Expired";
+                    else if ("FULFILLED".equalsIgnoreCase(status)) displayStatus = "Fulfilled";
+                    map.put("status", displayStatus);
                     map.put("bloodType", bType != null ? bType : "O-");
                     map.put("unitsNeeded", units > 0 ? units : 1);
                     map.put("units", units > 0 ? units : 1);

@@ -44,10 +44,48 @@
       box-sizing: border-box !important;
       min-height: auto !important;
     }
+    .hub-main-feed {
+      overflow-y: visible !important;
+      max-height: none !important;
+    }
+    .hub-main-feed::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+    }
+    .hub-radar-panel {
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 16px !important;
+      overflow: hidden !important;
+      border-left: none !important;
+    }
+    .radar-panel-header {
+      flex-wrap: nowrap !important;
+    }
+    .rph-title {
+      white-space: nowrap !important;
+    }
+    .rsc-zone1-lbl {
+      top: -10px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+    }
+    .rsc-zone2-lbl {
+      bottom: -10px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+    }
+    .rsc-zone3-lbl {
+      top: 50% !important;
+      right: -10px !important;
+      transform: translateY(-50%) !important;
+    }
     @media (max-width: 1080px) {
       .hub-layout {
         grid-template-columns: 1fr !important;
         padding: 10px 14px 40px !important;
+      }
+      .radar-panel-header {
+        flex-wrap: wrap !important;
       }
     }
   </style>
@@ -188,7 +226,7 @@
           <span class="rph-title">LIVE RADAR PROXIMITY MAP</span>
           <div class="rph-sub">Real-Time Google Maps Engine</div>
         </div>
-        <span class="rph-badge" id="radarActiveBadge">RADAR SCANNING: 0 ACTIVE ALERTS</span>
+        <span class="rph-badge" id="radarActiveBadge">No active requests</span>
       </div>
 
       <!-- Map Layer Switcher: Google Dark / Roads / Satellite / OSM -->
