@@ -1444,8 +1444,7 @@
           <!-- Right Verified Vitals Details (Empty by default, auto-filled by hospital dashboard) -->
           <div class="vitals-details-box">
             <div class="vitals-top-meta" style="display:none;">
-              Age: <b id="vitalAge">--</b> &nbsp;|&nbsp; Weight: <b id="vitalWeight">--</b> kg &nbsp;|&nbsp; Pulse: <b
-                id="vitalPulse">--</b> bpm
+              Age: <b id="vitalAge">--</b>
             </div>
             <div class="vitals-verified-sub" id="vitalsVerifiedSub" style="display:none;">
               Waiting for hospital check
@@ -1455,24 +1454,42 @@
               Waiting for hospital check
             </div>
 
-            <div class="vital-row" style="display:none;">
+            <div class="vital-row vital-row-weight" style="display:none;">
+              <span class="vr-label">Weight:</span>
+              <b class="vr-val"><span id="vitalWeight">--</span> kg</b>
+              <span class="vr-dot">•</span>
+              <span class="vital-pill pill-awaiting" id="weightPill" style="display:none;">PENDING</span>
+            </div>
+
+            <div class="vital-row vital-row-pulse" style="display:none;">
+              <span class="vr-label">Pulse:</span>
+              <b class="vr-val"><span id="vitalPulse">--</span> bpm</b>
+              <span class="vr-dot">•</span>
+              <span class="vital-pill pill-awaiting" id="pulsePill" style="display:none;">PENDING</span>
+            </div>
+
+            <div class="vital-row vital-row-hb" style="display:none;">
               <span class="vr-label">Hemoglobin:</span>
               <b class="vr-val"><span id="vitalHemoglobin">--</span> g/dL</b>
               <span class="vr-dot">•</span>
               <span class="vital-pill pill-awaiting" id="hbPill" style="display:none;">PENDING</span>
             </div>
 
-            <div class="vital-row" style="display:none;">
+            <div class="vital-row vital-row-bp" style="display:none;">
               <span class="vr-label">Blood Pressure:</span>
               <b class="vr-val"><span id="vitalBP">--/--</span> mmHg</b>
               <span class="vr-dot">•</span>
               <span class="vital-pill pill-awaiting" id="bpPill" style="display:none;">PENDING</span>
             </div>
 
-            <div class="vital-row" style="display:none;">
+            <div class="vital-row vital-row-temp" style="display:none;">
               <span class="vr-label">Body Temperature:</span>
               <b class="vr-val"><span id="vitalTemp">--</span>° F</b>
+              <span class="vr-dot">•</span>
+              <span class="vital-pill pill-awaiting" id="tempPill" style="display:none;">PENDING</span>
             </div>
+
+            <p id="vitalsHealthStatusLine" style="font-size: 12px; color: #9b9a96; margin: 8px 0 0 0; display: none;"></p>
 
             <!-- Automated AI Health Evaluation Banner -->
             <div class="health-eval-badge badge-awaiting" id="aiHealthEvalBadge" role="button"
@@ -1481,6 +1498,29 @@
               <span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- CARD 1B: HEALTH CHECK HISTORY (Last 5 records) -->
+      <section class="profile-card" id="healthCheckHistoryCard" style="display:none;">
+        <div class="card-header-row">
+          <h2 class="card-title">Health Check History</h2>
+          <span class="card-meta-tag scanner-meta-tag" id="healthCheckHistoryCount">
+            Last 5 Records
+          </span>
+        </div>
+        <div style="margin-top: 14px; overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid #2a2c31;">
+                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Date</th>
+                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Hospital</th>
+                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Outcome</th>
+                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Vitals & Status</th>
+              </tr>
+            </thead>
+            <tbody id="healthCheckHistoryTableBody"></tbody>
+          </table>
         </div>
       </section>
 

@@ -37,7 +37,9 @@
     conditions: null,
     medications: null,
     surgeries: null,
-    qrToken: null
+    qrToken: null,
+    healthChecks: [],
+    healthStatus: null
   };
 
   let donationHistory = [];
@@ -348,6 +350,9 @@
           if (d.smsNotif !== undefined) currentDonor.smsNotif = d.smsNotif;
           if (d.emailNotif !== undefined) currentDonor.emailNotif = d.emailNotif;
           if (d.pushNotif !== undefined) currentDonor.pushNotif = d.pushNotif;
+          // Step 2: healthChecks history (only returned when authenticated as self)
+          if (Array.isArray(d.healthChecks)) currentDonor.healthChecks = d.healthChecks;
+          if (d.healthStatus) currentDonor.healthStatus = d.healthStatus;
         }
       }
     } catch (e) {
@@ -408,6 +413,7 @@
     renderAIHealthSuggestion();
     renderMedicalEligibilityTracker();
     evaluateAndRenderMilestones();
+    renderHealthCheckHistory();
   }
 
   function isBpNormal(bpStr) {
@@ -431,6 +437,7 @@
 
     const hasRealVitals = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined && currentDonor.hemoglobin > 0) ||
                           (Boolean(currentDonor.bloodPressure) && currentDonor.bloodPressure !== '--/--') ||
+                          (currentDonor.weight !== null && currentDonor.weight !== undefined && currentDonor.weight > 0) ||
                           Boolean(currentDonor.verifiedDate);
 
     const vitalsDetailsBox = document.querySelector('.vitals-details-box');
@@ -438,6 +445,7 @@
     const verifiedSub = document.getElementById('vitalsVerifiedSub');
     const vitalRows = document.querySelectorAll('.vitals-details-box .vital-row');
     const evalBadge = document.getElementById('aiHealthEvalBadge');
+    const statusLineEl = document.getElementById('vitalsHealthStatusLine');
 
     let waitingEl = document.getElementById('vitalsWaitingNotice');
     if (!waitingEl && vitalsDetailsBox) {
@@ -457,10 +465,11 @@
       if (verifiedSub) verifiedSub.style.display = 'none';
       vitalRows.forEach(r => r.style.display = 'none');
       if (evalBadge) evalBadge.style.display = 'none';
+      if (statusLineEl) statusLineEl.style.display = 'none';
     } else {
-      // Real values exist: show real values with check date
+      // Real values exist: show real values with check date and hospital name
       if (waitingEl) waitingEl.style.display = 'none';
-      if (topMeta) topMeta.style.display = 'block';
+      if (topMeta) topMeta.style.display = (currentDonor.age !== null && currentDonor.age !== undefined) ? 'block' : 'none';
       if (verifiedSub) {
         verifiedSub.style.display = 'block';
         if (currentDonor.verifiedDate) {
@@ -474,45 +483,80 @@
       if (evalBadge) evalBadge.style.display = 'flex';
 
       const ageEl = document.getElementById('vitalAge');
-      const weightEl = document.getElementById('vitalWeight');
-      const pulseEl = document.getElementById('vitalPulse');
       if (ageEl) ageEl.textContent = (currentDonor.age !== null && currentDonor.age !== undefined) ? currentDonor.age : '--';
-      if (weightEl) weightEl.textContent = (currentDonor.weight !== null && currentDonor.weight !== undefined) ? currentDonor.weight : '--';
-      if (pulseEl) pulseEl.textContent = (currentDonor.pulse !== null && currentDonor.pulse !== undefined) ? currentDonor.pulse : '--';
 
+      // Latest health check evaluations (SAME ranges config as Check-in)
+      const latestCheck = (Array.isArray(currentDonor.healthChecks) && currentDonor.healthChecks.length > 0)
+        ? currentDonor.healthChecks[0]
+        : null;
+      const evals = latestCheck ? (latestCheck.evaluations || {}) : {};
+
+      const evalWeight = evals.weight || (currentDonor.weight != null
+        ? (currentDonor.weight >= 45.0 && currentDonor.weight <= 200.0 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+        : null);
+      const evalPulse = evals.pulse || (currentDonor.pulse != null
+        ? (currentDonor.pulse >= 50 && currentDonor.pulse <= 100 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+        : null);
+      const evalHb = evals.hemoglobin || (currentDonor.hemoglobin != null
+        ? (currentDonor.hemoglobin >= 12.5 && currentDonor.hemoglobin <= 20.0 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+        : null);
+      let evalBp = evals.bloodPressure;
+      if (!evalBp && currentDonor.bloodPressure) {
+        const parts = currentDonor.bloodPressure.split('/');
+        if (parts.length === 2) {
+          const sys = parseInt(parts[0].trim(), 10);
+          const dia = parseInt(parts[1].trim(), 10);
+          evalBp = (sys >= 100 && sys <= 180 && dia >= 50 && dia <= 100) ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor';
+        }
+      }
+      const evalTemp = evals.temperature || (currentDonor.bodyTemp != null
+        ? (currentDonor.bodyTemp >= 95.0 && currentDonor.bodyTemp <= 99.5 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+        : null);
+
+      function setVitalPill(pillId, text) {
+        const pill = document.getElementById(pillId);
+        if (!pill) return;
+        if (!text) {
+          pill.style.display = 'none';
+          return;
+        }
+        const isOk = text.includes('Within');
+        pill.className = `vital-pill ${isOk ? 'pill-normal' : 'pill-alert'}`;
+        pill.textContent = text;
+        pill.style.display = 'inline-block';
+      }
+
+      // 1. Weight
+      const weightEl = document.getElementById('vitalWeight');
+      if (weightEl) weightEl.textContent = (currentDonor.weight != null) ? currentDonor.weight : '--';
+      setVitalPill('weightPill', evalWeight);
+
+      // 2. Pulse
+      const pulseEl = document.getElementById('vitalPulse');
+      if (pulseEl) pulseEl.textContent = (currentDonor.pulse != null) ? currentDonor.pulse : '--';
+      setVitalPill('pulsePill', evalPulse);
+
+      // 3. Hemoglobin
       const hbVal = document.getElementById('vitalHemoglobin');
-      const hbPill = document.getElementById('hbPill');
-      const hasHb = currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined;
-      if (hbVal) hbVal.textContent = hasHb ? currentDonor.hemoglobin : '--';
-      if (hbPill) {
-        if (hasHb) {
-          const isHbOk = currentDonor.hemoglobin >= 12.5;
-          hbPill.className = `vital-pill ${isHbOk ? 'pill-normal' : 'pill-alert'}`;
-          hbPill.textContent = isHbOk ? 'NORMAL' : 'LOW';
-          hbPill.style.display = 'inline-block';
-        } else {
-          hbPill.style.display = 'none';
-        }
-      }
+      if (hbVal) hbVal.textContent = (currentDonor.hemoglobin != null) ? currentDonor.hemoglobin : '--';
+      setVitalPill('hbPill', evalHb);
 
+      // 4. Blood Pressure
       const bpVal = document.getElementById('vitalBP');
-      const bpPill = document.getElementById('bpPill');
-      const hasBp = Boolean(currentDonor.bloodPressure);
-      if (bpVal) bpVal.textContent = hasBp ? currentDonor.bloodPressure : '--/--';
-      if (bpPill) {
-        if (hasBp) {
-          const isBpOk = isBpNormal(currentDonor.bloodPressure);
-          bpPill.className = `vital-pill ${isBpOk ? 'pill-normal' : 'pill-alert'}`;
-          bpPill.textContent = isBpOk ? 'NORMAL' : 'REVIEW';
-          bpPill.style.display = 'inline-block';
-        } else {
-          bpPill.style.display = 'none';
-        }
-      }
+      if (bpVal) bpVal.textContent = currentDonor.bloodPressure || '--/--';
+      setVitalPill('bpPill', evalBp);
 
+      // 5. Body Temperature
       const tempVal = document.getElementById('vitalTemp');
-      const hasTemp = currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined;
-      if (tempVal) tempVal.textContent = hasTemp ? currentDonor.bodyTemp : '--';
+      if (tempVal) tempVal.textContent = (currentDonor.bodyTemp != null) ? currentDonor.bodyTemp : '--';
+      setVitalPill('tempPill', evalTemp);
+
+      // Health status line
+      if (statusLineEl) {
+        statusLineEl.textContent = currentDonor.healthStatus ||
+          (currentDonor.verifiedFacility && currentDonor.verifiedDate ? `Checked at ${currentDonor.verifiedFacility} on ${formatDate(currentDonor.verifiedDate)}` : '');
+        statusLineEl.style.display = statusLineEl.textContent ? 'block' : 'none';
+      }
     }
   }
 
@@ -650,6 +694,58 @@
 
   function renderMedicalEligibilityTracker() {
     renderTelemetryData();
+  }
+
+  // ======================== HEALTH CHECK HISTORY ========================
+  function renderHealthCheckHistory() {
+    const checks = currentDonor.healthChecks;
+    const card = document.getElementById('healthCheckHistoryCard');
+    const tbody = document.getElementById('healthCheckHistoryTableBody');
+    const countTag = document.getElementById('healthCheckHistoryCount');
+
+    if (!card || !tbody) return;
+
+    if (!Array.isArray(checks) || checks.length === 0) {
+      card.style.display = 'none';
+      tbody.innerHTML = '';
+      return;
+    }
+
+    card.style.display = 'block';
+    if (countTag) {
+      countTag.textContent = `${Math.min(checks.length, 5)} Record${Math.min(checks.length, 5) > 1 ? 's' : ''}`;
+    }
+
+    const rows = checks.slice(0, 5).map(c => {
+      const isDeferred = c.outcome === 'Deferred';
+      const hasWarning = c.evaluations && Object.values(c.evaluations).some(v => v && v.includes('Outside'));
+      const outcomeColor = isDeferred ? '#f5a524' : '#3ecf8e';
+      const vitalsStr = [
+        c.hemoglobin != null ? `Hb ${c.hemoglobin} g/dL` : null,
+        c.bloodPressure ? `BP ${c.bloodPressure}` : null,
+        c.pulse != null ? `Pulse ${c.pulse} bpm` : null,
+        c.temperature != null ? `Temp ${c.temperature}°F` : null,
+        c.weight != null ? `Wt ${c.weight} kg` : null
+      ].filter(Boolean).join(' · ');
+      const deferNote = isDeferred && c.deferReasonCategory
+        ? `<div style="font-size:11px;color:#9b9a96;margin-top:2px;">Reason: ${escapeHtml(c.deferReasonCategory)}</div>` : '';
+      const warnBadge = hasWarning
+        ? `<div style="font-size:11px;color:#f5a524;margin-top:2px;">⚠ Outside usual range — speak to the hospital doctor</div>` : '';
+      return `<tr>
+        <td style="padding:10px;font-size:13px;color:#ecebe8;border-bottom:1px solid #2a2c31;">${escapeHtml(c.date || c.checkedAt || '')}</td>
+        <td style="padding:10px;font-size:13px;color:#ecebe8;border-bottom:1px solid #2a2c31;">${escapeHtml(c.hospitalName || '')}</td>
+        <td style="padding:10px;font-size:13px;font-weight:600;color:${outcomeColor};border-bottom:1px solid #2a2c31;">
+          ${escapeHtml(c.outcome || '')}
+          ${deferNote}
+        </td>
+        <td style="padding:10px;font-size:12px;color:#9b9a96;border-bottom:1px solid #2a2c31;">
+          ${escapeHtml(vitalsStr)}
+          ${warnBadge}
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.innerHTML = rows;
   }
 
   // ======================== 4. DYNAMIC DONOR BADGES EVALUATION ========================
@@ -886,6 +982,28 @@
     // Part 6.1: QR contains ONLY the opaque signed token, NO personal info (name, phone, blood group, DOB)
     const qrPayload = `RED404:${secureToken}`;
     renderIntakeQRCode(qrPayload);
+
+    // Add "Medically verified" line to QR card if hospital data exists
+    let qrVerifiedEl = document.getElementById('qrCardVerifiedLine');
+    if (!qrVerifiedEl) {
+      const qrCardFooter = document.querySelector('.qr-card-footer') ||
+                           document.querySelector('.donor-id-card-bottom') ||
+                           document.getElementById('donor-qr-token')?.parentElement;
+      if (qrCardFooter) {
+        qrVerifiedEl = document.createElement('p');
+        qrVerifiedEl.id = 'qrCardVerifiedLine';
+        qrVerifiedEl.style.cssText = 'font-size:11px;color:#9b9a96;margin:4px 0 0 0;';
+        qrCardFooter.appendChild(qrVerifiedEl);
+      }
+    }
+    if (qrVerifiedEl) {
+      if (currentDonor.verifiedFacility && currentDonor.verifiedDate) {
+        qrVerifiedEl.textContent = `Medically verified at ${currentDonor.verifiedFacility} on ${formatDate(currentDonor.verifiedDate)}`;
+        qrVerifiedEl.style.display = 'block';
+      } else {
+        qrVerifiedEl.style.display = 'none';
+      }
+    }
 
     // Also bind quick inspection links in the UI
     const viewScanFormLink = document.getElementById('viewScanFormLink');
@@ -1226,7 +1344,22 @@
       }
       if (weightInput) {
         const wt = currentDonor.weight;
-        weightInput.value = (wt !== null && wt !== undefined && String(wt).trim() !== '') ? `${wt} kg` : 'Waiting for hospital check';
+        const hasWt = wt !== null && wt !== undefined && String(wt).trim() !== '';
+        weightInput.value = hasWt ? `${wt} kg` : 'Waiting for hospital check';
+        // Hint below weight
+        let wtHint = document.getElementById('editWeightCheckedHint');
+        if (!wtHint) {
+          wtHint = document.createElement('small');
+          wtHint.id = 'editWeightCheckedHint';
+          wtHint.style.cssText = 'display:block;font-size:11px;color:#9b9a96;margin-top:3px;';
+          weightInput.parentNode && weightInput.parentNode.appendChild(wtHint);
+        }
+        if (hasWt && currentDonor.verifiedFacility && currentDonor.verifiedDate) {
+          wtHint.textContent = `Last checked at ${currentDonor.verifiedFacility} on ${formatDate(currentDonor.verifiedDate)}`;
+          wtHint.style.display = 'block';
+        } else {
+          wtHint.style.display = 'none';
+        }
       }
       if (phoneInput) {
         phoneInput.value = (currentDonor.phone && currentDonor.phone !== '9876543210') ? currentDonor.phone : '';
@@ -1254,15 +1387,39 @@
 
       if (medsInput) medsInput.value = currentDonor.medications || '';
       if (surgInput) surgInput.value = currentDonor.surgeries || '';
-      if (pulseInput) pulseInput.value = (currentDonor.pulse !== null && currentDonor.pulse !== undefined && String(currentDonor.pulse).trim() !== '') ? `${currentDonor.pulse} bpm` : 'Waiting for hospital check';
-      if (hbInput) hbInput.value = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined && String(currentDonor.hemoglobin).trim() !== '') ? `${currentDonor.hemoglobin} g/dL` : 'Waiting for hospital check';
-      if (bpInput) bpInput.value = currentDonor.bloodPressure || 'Waiting for hospital check';
-      if (tempInput) tempInput.value = (currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined && String(currentDonor.bodyTemp).trim() !== '') ? `${currentDonor.bodyTemp} °F` : 'Waiting for hospital check';
+      const checkedAtHint = (currentDonor.verifiedFacility && currentDonor.verifiedDate)
+        ? `Checked at ${currentDonor.verifiedFacility}, ${formatDate(currentDonor.verifiedDate)}`
+        : null;
+
+      const checkedAtSuffix = checkedAtHint ? ` (${checkedAtHint})` : '';
+
+      if (pulseInput) pulseInput.value = (currentDonor.pulse !== null && currentDonor.pulse !== undefined && String(currentDonor.pulse).trim() !== '') ? `${currentDonor.pulse} bpm${checkedAtSuffix}` : 'Waiting for hospital check';
+      if (hbInput) hbInput.value = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined && String(currentDonor.hemoglobin).trim() !== '') ? `${currentDonor.hemoglobin} g/dL${checkedAtSuffix}` : 'Waiting for hospital check';
+      if (bpInput) bpInput.value = (currentDonor.bloodPressure && currentDonor.bloodPressure !== '--/--') ? `${currentDonor.bloodPressure} mmHg${checkedAtSuffix}` : 'Waiting for hospital check';
+      if (tempInput) tempInput.value = (currentDonor.bodyTemp !== null && currentDonor.bodyTemp !== undefined && String(currentDonor.bodyTemp).trim() !== '') ? `${currentDonor.bodyTemp} °F${checkedAtSuffix}` : 'Waiting for hospital check';
+
+      // Attach "Checked at" placeholder/hint to all read-only vital inputs
+      [pulseInput, hbInput, bpInput, tempInput].forEach(inp => {
+        if (!inp) return;
+        let hint = inp.parentNode && inp.parentNode.querySelector('.modal-vital-hint');
+        if (!hint && inp.parentNode) {
+          hint = document.createElement('small');
+          hint.className = 'modal-vital-hint';
+          hint.style.cssText = 'display:block;font-size:11px;color:#9b9a96;margin-top:2px;';
+          inp.parentNode.appendChild(hint);
+        }
+        if (hint) {
+          hint.textContent = checkedAtHint || '';
+          hint.style.display = checkedAtHint ? 'block' : 'none';
+        }
+      });
       if (lastDonInput) {
         const ld = currentDonor.lastDonationDate || currentDonor.lastDonation || '';
         lastDonInput.value = (ld && ld !== '2024-01-10') ? ld : 'None recorded';
       }
-      if (facilityInput) facilityInput.value = currentDonor.verifiedFacility || 'None recorded';
+      if (facilityInput) {
+        facilityInput.value = currentDonor.verifiedFacility || 'None recorded';
+      }
 
       const langInput = document.getElementById('editDonorPreferredLanguage');
       const notifSmsInput = document.getElementById('editDonorSmsNotif');

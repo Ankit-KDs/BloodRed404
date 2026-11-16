@@ -113,6 +113,32 @@ function renderDonorProfileData(d) {
   setIfExists('pil-joined', d.memberSince || d.createdAt ? formatDate(d.memberSince || d.createdAt) : 'Recently');
   setIfExists('pil-avail', capitalize(d.availability || 'Available'));
 
+  // Show health status from latest hospital check
+  let healthStatusEl = document.getElementById('dashHealthStatus');
+  if (!healthStatusEl) {
+    const statsSection = document.querySelector('.stats-section') ||
+                         document.querySelector('.dashboard-stats') ||
+                         document.querySelector('.pil-info-block') ||
+                         document.getElementById('profileInfoList');
+    if (statsSection) {
+      healthStatusEl = document.createElement('p');
+      healthStatusEl.id = 'dashHealthStatus';
+      healthStatusEl.style.cssText = 'font-size:12px;color:#9b9a96;margin:8px 0 0 0;';
+      statsSection.appendChild(healthStatusEl);
+    }
+  }
+  if (healthStatusEl) {
+    if (d.healthStatus) {
+      healthStatusEl.textContent = `Last health check: ${d.healthStatus}`;
+      healthStatusEl.style.display = 'block';
+    } else if (d.verifiedFacility && d.verifiedDate) {
+      healthStatusEl.textContent = `Last health check: ${d.verifiedFacility}, ${formatDate(d.verifiedDate)}`;
+      healthStatusEl.style.display = 'block';
+    } else {
+      healthStatusEl.style.display = 'none';
+    }
+  }
+
   const availBtn = document.getElementById('availabilityToggle');
   const availLabel = document.getElementById('availabilityLabel');
   if (availBtn && availLabel) {
@@ -216,16 +242,34 @@ async function loadDonationHistory() {
     document.getElementById('historyCount').textContent = '0';
     return;
   }
-  const rows = res.data.map(d => `
+  const rows = res.data.map(d => {
+    let vitalsSummary = '';
+    if (d.vitalsJson) {
+      try {
+        const v = typeof d.vitalsJson === 'string' ? JSON.parse(d.vitalsJson) : d.vitalsJson;
+        const parts = [];
+        if (v.hb || v.hemoglobin) parts.push(`Hb ${v.hb || v.hemoglobin} g/dL`);
+        if (v.bp || v.bloodPressure) parts.push(`BP ${v.bp || v.bloodPressure}`);
+        if (v.pulse) parts.push(`Pulse ${v.pulse} bpm`);
+        if (v.temp || v.temperature) parts.push(`Temp ${v.temp || v.temperature}°F`);
+        if (v.weight) parts.push(`Wt ${v.weight} kg`);
+        if (parts.length > 0) vitalsSummary = parts.join(' · ');
+      } catch (_) {}
+    }
+    return `
     <tr>
       <td>#${d.donationId}</td>
       <td>${formatDate(d.donationDate)}</td>
-      <td>${d.hospitalName}</td>
+      <td>
+        ${d.hospitalName}
+        ${vitalsSummary ? `<div style="font-size:11px;color:#9b9a96;margin-top:2px;">${vitalsSummary}</div>` : ''}
+      </td>
       <td><span class="blood-tag o-pos">${d.bloodType}</span></td>
       <td>${d.units}</td>
       <td><span class="badge badge-${d.status === 'COMPLETED' ? 'green' : 'orange'}">${d.status}</span></td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
   tbody.innerHTML = rows;
   document.getElementById('historyCount').textContent = res.data.length;
 }

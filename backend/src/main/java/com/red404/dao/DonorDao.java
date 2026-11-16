@@ -1305,7 +1305,7 @@ public class DonorDao {
         List<Map<String, Object>> rows = new ArrayList<>();
         if (donorId == null || donorId.isBlank()) return rows;
         String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, d.created_at AS createdAt, h.hospital_name AS hospitalName, " +
-                "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status, d.request_id AS requestId FROM donations d " +
+                "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status, d.request_id AS requestId, d.vitals_json AS vitalsJson FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
                 "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
@@ -1363,6 +1363,12 @@ public class DonorDao {
                             row.put("request_id", rId);
                         }
                     } catch (SQLException ignored) {}
+                    try {
+                        String vJson = rs.getString("vitalsJson");
+                        if (vJson != null && !vJson.isBlank()) {
+                            row.put("vitalsJson", vJson);
+                        }
+                    } catch (SQLException ignored) {}
                     rows.add(row);
                 }
             }
@@ -1383,7 +1389,7 @@ public class DonorDao {
         ensureDonationsTableCols();
         List<Map<String, Object>> rows = new ArrayList<>();
         String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, d.created_at AS createdAt, h.hospital_name AS hospitalName, " +
-                "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status FROM donations d " +
+                "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status, d.vitals_json AS vitalsJson FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
                 "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
@@ -1434,6 +1440,12 @@ public class DonorDao {
                     row.put("donationType", "Whole Blood");
                     String status = rs.getString("status");
                     row.put("status", status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+                    try {
+                        String vJson = rs.getString("vitalsJson");
+                        if (vJson != null && !vJson.isBlank()) {
+                            row.put("vitalsJson", vJson);
+                        }
+                    } catch (SQLException ignored) {}
                     rows.add(row);
                 }
             }

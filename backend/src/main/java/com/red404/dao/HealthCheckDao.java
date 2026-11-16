@@ -370,6 +370,22 @@ public class HealthCheckDao {
                     ps.executeUpdate();
                     log.info("Synchronized Chinmay Joshi's profile with verified Bhimtal Hospital health data.");
                 }
+
+                // Ensure notification per visit exists for Chinmay Joshi (Part 6 Step 2.4)
+                try {
+                    boolean hasNotif = false;
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "SELECT id FROM donor_notifications WHERE donor_id = ? AND title LIKE '%Health check recorded%' LIMIT 1")) {
+                        ps.setInt(1, donorIntId);
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) hasNotif = true;
+                        }
+                    }
+                    if (!hasNotif) {
+                        new DonorDao().addDonorNotification(donorIntId, "Health check recorded at Bhimtal Hospital",
+                                "Health check recorded at Bhimtal Hospital on 2026-11-15. Your 450 mL donation of O+ has been verified. Thank you for saving lives!", "checkin");
+                    }
+                } catch (Exception ignored) {}
             }
         } catch (Exception e) {
             log.warn("Notice ensuring Chinmay Joshi health record: {}", e.getMessage());

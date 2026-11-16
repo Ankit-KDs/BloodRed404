@@ -264,6 +264,10 @@
               donorData.eligibility = d.eligibility;
               renderMiniEligibility();
             }
+            if (d.healthStatus) donorData.healthStatus = d.healthStatus;
+            if (d.verifiedFacility) donorData.verifiedFacility = d.verifiedFacility;
+            if (d.verifiedDate) donorData.verifiedDate = d.verifiedDate;
+            if (d.weight) donorData.weight = d.weight;
             renderWelcomeBanner();
             initStatusRow();
             renderUpcomingDrives();
@@ -432,6 +436,19 @@
       userLocationEl.textContent = locStr;
     }
     if (userDonorIdEl) userDonorIdEl.textContent = donorData.donorId || 'DNR-0811-A404';
+
+    // Health Status Pill (Part 6 Step 2)
+    const userHealthPill = document.getElementById('user-health-pill');
+    const userHealthStatusEl = document.getElementById('user-health-status');
+    if (userHealthPill && userHealthStatusEl) {
+      const hStatus = donorData.healthStatus || (donorData.verifiedFacility && donorData.verifiedDate ? `Checked at ${donorData.verifiedFacility} on ${donorData.verifiedDate}` : null);
+      if (hStatus) {
+        userHealthStatusEl.textContent = hStatus;
+        userHealthPill.style.display = 'inline-flex';
+      } else {
+        userHealthPill.style.display = 'none';
+      }
+    }
 
     // Top command nav avatar fallback
     const navName = document.getElementById('dropdownUserName');

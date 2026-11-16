@@ -612,9 +612,10 @@ body.donor-profile-body {
   border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: 6px;
   padding: 2px 8px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
   font-family: var(--font-main);
 }
 
@@ -624,9 +625,10 @@ body.donor-profile-body {
   border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 6px;
   padding: 2px 8px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
   font-family: var(--font-main);
 }
 

@@ -222,6 +222,20 @@
       const hosp = rec.hospital || rec.hospitalName || 'Verified Partner Hospital';
       const dDate = rec.date || rec.donationDate || 'Recent';
 
+      let vitalsSummary = '';
+      if (rec.vitalsJson) {
+        try {
+          const v = typeof rec.vitalsJson === 'string' ? JSON.parse(rec.vitalsJson) : rec.vitalsJson;
+          const parts = [];
+          if (v.hb || v.hemoglobin) parts.push(`Hb ${v.hb || v.hemoglobin} g/dL`);
+          if (v.bp || v.bloodPressure) parts.push(`BP ${v.bp || v.bloodPressure}`);
+          if (v.pulse) parts.push(`Pulse ${v.pulse} bpm`);
+          if (v.temp || v.temperature) parts.push(`Temp ${v.temp || v.temperature}°F`);
+          if (v.weight) parts.push(`Wt ${v.weight} kg`);
+          if (parts.length > 0) vitalsSummary = parts.join(' · ');
+        } catch (_) {}
+      }
+
       return `
         <tr>
           <td>
@@ -231,6 +245,7 @@
             <div class="hosp-info-cell">
               <span class="hosp-info-name">${hosp}</span>
               ${rec.location ? `<span class="hosp-info-loc"><i class="fa-solid fa-location-dot" style="font-size:0.7rem;margin-right:4px;"></i>${rec.location}</span>` : ''}
+              ${vitalsSummary ? `<div class="hosp-info-vitals" style="font-size:11px;color:#9b9a96;margin-top:3px;"><i class="fa-solid fa-heart-pulse" style="font-size:10px;margin-right:4px;color:#3ecf8e;"></i>${escapeHtml(vitalsSummary)}</div>` : ''}
             </div>
           </td>
           <td>
