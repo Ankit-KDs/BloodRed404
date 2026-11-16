@@ -194,6 +194,35 @@ public class HealthCheckDao {
     }
 
     /**
+     * Retrieve the very latest health check record for a donor, regardless of whether vitals were logged (e.g. for deferral checks).
+     */
+    public Map<String, Object> getLatestHealthCheckAny(String donorId) {
+        if (donorId == null || donorId.isBlank()) return null;
+        String trimmed = donorId.trim();
+        String sql = "SELECT hc.*, h.hospital_name FROM health_checks hc " +
+                "LEFT JOIN hospitals h ON hc.hospital_id = h.id " +
+                "WHERE (hc.donor_id = ? OR hc.donor_id IN (SELECT donor_id FROM donors WHERE donor_id = ? OR CAST(id AS CHAR) = ?) " +
+                "   OR hc.donor_id IN (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? OR CAST(id AS CHAR) = ?)) " +
+                "ORDER BY hc.checked_at DESC, hc.id DESC LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, trimmed);
+            ps.setString(2, trimmed);
+            ps.setString(3, trimmed);
+            ps.setString(4, trimmed);
+            ps.setString(5, trimmed);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapHealthCheckRow(rs);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice querying latest health check any: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * Retrieve health check history for a donor (last 5 records).
      */
     public List<Map<String, Object>> getHealthCheckHistory(String donorId, int limit) {

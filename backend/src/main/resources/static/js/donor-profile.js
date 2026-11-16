@@ -658,7 +658,16 @@
           formattedDate = nextDateStr;
         }
       }
-      statusWording = `Next eligible on ${formattedDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'})`;
+      const isDeferred = Boolean(currentDonor.isDeferred || elig.deferred);
+      if (isDeferred) {
+        if (nextDateStr || currentDonor.deferUntil || currentDonor.deferredUntil) {
+          statusWording = `Deferred by hospital. Next eligible on ${formattedDate}${daysUntil > 0 ? ` (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'})` : ''}`;
+        } else {
+          statusWording = "Deferred by hospital. Please check with the facility";
+        }
+      } else {
+        statusWording = `Next eligible on ${formattedDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'})`;
+      }
       if (fluidContainer) {
         fluidContainer.style.height = `${progressPct}%`;
       }
@@ -727,8 +736,8 @@
         c.temperature != null ? `Temp ${c.temperature}°F` : null,
         c.weight != null ? `Wt ${c.weight} kg` : null
       ].filter(Boolean).join(' · ');
-      const deferNote = isDeferred && c.deferReasonCategory
-        ? `<div style="font-size:11px;color:#9b9a96;margin-top:2px;">Reason: ${escapeHtml(c.deferReasonCategory)}</div>` : '';
+      const deferNote = isDeferred && c.deferUntil
+        ? `<div style="font-size:11px;color:#9b9a96;margin-top:2px;">Next eligible: ${escapeHtml(c.deferUntil)}</div>` : '';
       const warnBadge = hasWarning
         ? `<div style="font-size:11px;color:#f5a524;margin-top:2px;">⚠ Outside usual range — speak to the hospital doctor</div>` : '';
       return `<tr>

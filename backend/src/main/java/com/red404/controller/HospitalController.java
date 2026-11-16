@@ -1424,15 +1424,13 @@ public class HospitalController {
             if (hosp == null) hosp = hospitalDao.findById(hospitalId);
             String hospName = (hosp != null && hosp.get("hospital_name") != null) ? hosp.get("hospital_name").toString() : "Verified Hospital";
 
-            int linkedDonationId = -1;
             try (Connection conn = DBConnection.getConnection()) {
                 conn.setAutoCommit(false);
                 try {
-                    linkedDonationId = donorDao.recordDonationWithId(conn, donorId, hospitalId, null, 0, 0, vitalsJson, staffUser, "DEFERRED", reason, null);
-
-                    // Part 6 Step 1: Write ONE health_checks row on every Defer in same transaction
+                    // Part 6 Step 3: Defer creates NO donation record and does not change donor.last_donation_date or next_eligible_date.
+                    // Write ONE health_checks row on every Defer in same transaction.
                     healthCheckDao.recordHealthCheck(conn, donorId, hospitalId, staffUser,
-                            "deferred", weight, hb, systolic, diastolic, pulse, temp, reason, deferUntil, linkedDonationId > 0 ? linkedDonationId : null);
+                            "deferred", weight, hb, systolic, diastolic, pulse, temp, reason, deferUntil, null);
 
                     // Sync donor's current clinical values if vitals measured
                     if (weight != null || hb != null || systolic != null || pulse != null || temp != null) {
@@ -1451,8 +1449,9 @@ public class HospitalController {
                 int defNumId = ((Number) defDonor.get("id")).intValue();
                 donorDao.invalidateQrToken(defNumId);
                 String todayStr = java.time.LocalDate.now().toString();
+                // Deferral reason is confidential to hospital; notification states check-in recorded
                 donorDao.addDonorNotification(defNumId, "Health check recorded at " + hospName,
-                        "Health check recorded at " + hospName + " on " + todayStr + ". Donation deferred: " + reason, "checkin");
+                        "Health check recorded at " + hospName + " on " + todayStr + ".", "checkin");
             }
             AdminController.addLog("DONATION_DEFERRED", "Donor " + donorId + " deferred at hospital ID " + hospitalId + ": " + reason);
 

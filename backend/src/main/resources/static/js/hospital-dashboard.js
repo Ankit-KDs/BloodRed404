@@ -3899,12 +3899,14 @@ function initDonorCheckin() {
   // Defer donor modal handling (Part 6)
   const deferModal = document.getElementById('deferralReasonModal');
   const deferReasonInput = document.getElementById('deferralReasonInput');
+  const deferUntilInput = document.getElementById('deferUntilInput');
   const btnConfirmDeferral = document.getElementById('btnConfirmDeferral');
   const btnCancelDeferral = document.getElementById('btnCancelDeferral');
 
   if (btnDeferDonation) {
     btnDeferDonation.addEventListener('click', () => {
       if (!currentLoadedDonor) return;
+      if (deferUntilInput) deferUntilInput.value = '';
       if (deferReasonInput) {
         let reason = '';
         if (!currentLoadedDonor.isEligible) {
@@ -3924,6 +3926,7 @@ function initDonorCheckin() {
   if (btnCancelDeferral) {
     btnCancelDeferral.addEventListener('click', () => {
       if (deferModal) deferModal.style.display = 'none';
+      if (deferUntilInput) deferUntilInput.value = '';
     });
   }
 
@@ -3952,6 +3955,8 @@ function initDonorCheckin() {
         if (vitPulse && vitPulse.value) vitalsData.pulse = parseInt(vitPulse.value, 10);
         if (vitTemp && vitTemp.value) vitalsData.temperature = parseFloat(vitTemp.value);
 
+        const deferUntilVal = (deferUntilInput && deferUntilInput.value) ? deferUntilInput.value.trim() : null;
+
         const res = await fetch('/api/hospital/donors/defer', {
           method: 'POST',
           headers,
@@ -3959,6 +3964,7 @@ function initDonorCheckin() {
             donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
             reason: reason,
             staffUser: staffName,
+            deferUntil: deferUntilVal,
             vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
           }),
           credentials: 'include'

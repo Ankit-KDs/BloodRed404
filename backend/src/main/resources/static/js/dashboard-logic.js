@@ -1046,9 +1046,20 @@
         }
       }
       strip.className = 'mini-eligibility-strip cooldown';
+      const isDeferred = Boolean(donorData.isDeferred || elig.deferred);
+      let textMsg = '';
+      if (isDeferred) {
+        if (nextDateStr || donorData.deferUntil || donorData.deferredUntil) {
+          textMsg = `Deferred by hospital. Next eligible on ${formattedDate}${daysLeft > 0 ? ` (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})` : ''}`;
+        } else {
+          textMsg = 'Deferred by hospital. Please check with the facility';
+        }
+      } else {
+        textMsg = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
+      }
       strip.innerHTML = `
         <span class="strip-pulse-dot"></span>
-        <span>Next eligible on ${escapeHtml(formattedDate)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})</span>
+        <span>${escapeHtml(textMsg)}</span>
       `;
     }
   }

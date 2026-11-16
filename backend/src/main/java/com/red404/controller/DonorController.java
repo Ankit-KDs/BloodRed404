@@ -114,10 +114,17 @@ public class DonorController {
             }
             if (isSelf) {
                 String dCode = donorProfile.get("donorId") != null ? donorProfile.get("donorId").toString() : donorProfile.get("id").toString();
-                donorProfile.put("healthChecks", new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5));
+                List<Map<String, Object>> checks = new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5);
+                if (checks != null) {
+                    for (Map<String, Object> c : checks) {
+                        c.remove("deferReasonCategory");
+                    }
+                }
+                donorProfile.put("healthChecks", checks);
             } else {
                 donorProfile.remove("healthChecks");
             }
+            donorProfile.remove("deferReasonCategory");
 
             return ok("Profile loaded", donorProfile);
         } catch (Exception e) {
@@ -132,6 +139,11 @@ public class DonorController {
             if (donor == null) return unauthorized();
             String dCode = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
             List<Map<String, Object>> history = new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5);
+            if (history != null) {
+                for (Map<String, Object> c : history) {
+                    c.remove("deferReasonCategory");
+                }
+            }
             return ok("Health check history loaded", history);
         } catch (Exception e) {
             return serverError(e);

@@ -1770,7 +1770,9 @@ public class DonorDao {
             String dCode = rs.getString("donor_id");
             int dId = rs.getInt("id");
             HealthCheckDao hcDao = new HealthCheckDao();
-            Map<String, Object> latestCheck = hcDao.getLatestHealthCheck(dCode != null && !dCode.isBlank() ? dCode : String.valueOf(dId));
+            String queryId = dCode != null && !dCode.isBlank() ? dCode : String.valueOf(dId);
+            // 1. Latest check with vitals populates clinical fields
+            Map<String, Object> latestCheck = hcDao.getLatestHealthCheck(queryId);
             if (latestCheck != null) {
                 if (latestCheck.get("weight") != null) donor.put("weight", latestCheck.get("weight"));
                 if (latestCheck.get("pulse") != null) donor.put("pulse", latestCheck.get("pulse"));
@@ -1787,6 +1789,38 @@ public class DonorDao {
                     donor.put("healthStatus", "Checked at " + latestCheck.get("hospitalName") + " on " + latestCheck.get("date"));
                 }
             }
+
+            // 2. Latest check overall (any outcome) determines active deferral state
+            Map<String, Object> latestAny = hcDao.getLatestHealthCheckAny(queryId);
+            if (latestAny != null) {
+                String outcome = String.valueOf(latestAny.get("outcome"));
+                if ("deferred".equalsIgnoreCase(outcome)) {
+                    Object defUntil = latestAny.get("deferUntil");
+                    if (defUntil != null) {
+                        java.time.LocalDate defDate = null;
+                        try {
+                            defDate = java.time.LocalDate.parse(defUntil.toString().substring(0, 10));
+                        } catch (Exception ignored) {}
+                        if (defDate != null && defDate.isAfter(java.time.LocalDate.now())) {
+                            donor.put("isDeferred", true);
+                            donor.put("deferUntil", defUntil);
+                            donor.put("deferredUntil", defUntil);
+                            donor.put("deferral_until", defUntil);
+                            donor.put("deferred_until", defUntil);
+                        } else {
+                            // Deferral period has expired, normal rules take over
+                            donor.put("isDeferred", false);
+                        }
+                    } else {
+                        // Indefinite deferral
+                        donor.put("isDeferred", true);
+                    }
+                } else {
+                    donor.put("isDeferred", false);
+                }
+            }
+            // Deferral reason is confidential to hospital - ensure it's not exposed in donor object
+            donor.remove("deferReasonCategory");
         } catch (Exception ignored) {}
         try {
             java.sql.Timestamp createdAt = rs.getTimestamp("created_at");

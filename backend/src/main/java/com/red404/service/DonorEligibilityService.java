@@ -160,19 +160,37 @@ public class DonorEligibilityService {
             }
         }
 
-        // 3. No temporary deferral in force (deferred_until, deferral_until, deferredUntil)
+        // 3. No temporary or indefinite deferral in force (deferred_until, deferral_until, deferredUntil, deferUntil, isDeferred)
         LocalDate deferralUntil = parseDate(donor.get("deferred_until"));
         if (deferralUntil == null) deferralUntil = parseDate(donor.get("deferral_until"));
         if (deferralUntil == null) deferralUntil = parseDate(donor.get("deferredUntil"));
+        if (deferralUntil == null) deferralUntil = parseDate(donor.get("deferUntil"));
+
+        Object isDefObj = donor.get("isDeferred");
+        if (isDefObj == null) isDefObj = donor.get("deferred");
+        boolean isDef = (isDefObj instanceof Boolean b && b) || (isDefObj instanceof String s && "true".equalsIgnoreCase(s));
+
         if (deferralUntil != null && deferralUntil.isAfter(today)) {
             int daysUntil = (int) ChronoUnit.DAYS.between(today, deferralUntil);
             res.put("eligible", false);
+            res.put("deferred", true);
             res.put("days_until_eligible", Math.max(0, daysUntil));
             res.put("last_donation_date", null);
             res.put("next_eligible_date", deferralUntil.toString());
             res.put("progress_pct", 0);
             res.put("cooldown_days", cooldown);
-            res.put("reason", "Temporary medical deferral until " + deferralUntil);
+            res.put("reason", "Deferred by hospital. Next eligible on " + deferralUntil);
+            addAliases(res);
+            return res;
+        } else if (isDef && deferralUntil == null) {
+            res.put("eligible", false);
+            res.put("deferred", true);
+            res.put("days_until_eligible", cooldown);
+            res.put("last_donation_date", null);
+            res.put("next_eligible_date", null);
+            res.put("progress_pct", 0);
+            res.put("cooldown_days", cooldown);
+            res.put("reason", "Deferred by hospital. Please check with the facility");
             addAliases(res);
             return res;
         }
@@ -302,6 +320,10 @@ public class DonorEligibilityService {
         donor.put("progressPct", elig.get("progress_pct"));
         donor.put("cooldown_days", elig.get("cooldown_days"));
         donor.put("eligibilityReason", elig.get("reason"));
+        if (Boolean.TRUE.equals(elig.get("deferred"))) {
+            donor.put("deferred", true);
+            donor.put("isDeferred", true);
+        }
         return donor;
     }
 

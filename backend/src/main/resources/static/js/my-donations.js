@@ -107,12 +107,8 @@
         badge.className = 'status-eligibility-btn eligible-ready';
         textEl.textContent = !hasDonated ? "No donation yet. You're ready." : "You can donate. The hospital does a final check before donating.";
       } else {
-        if (elig.reason && elig.reason.startsWith('Next eligible on')) {
-          badge.className = 'status-eligibility-btn recovering';
-          textEl.textContent = elig.reason;
-          return;
-        }
-        const nextDate = elig.next_eligible_date || elig.nextEligibleDate || '';
+        const isDeferred = Boolean(user.isDeferred || elig.deferred);
+        const nextDate = elig.next_eligible_date || elig.nextEligibleDate || user.deferUntil || user.deferredUntil || '';
         const daysLeft = elig.days_until_eligible || 0;
         let formattedDate = nextDate;
         try {
@@ -121,8 +117,17 @@
             formattedDate = nextD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           }
         } catch (_) {}
+
         badge.className = 'status-eligibility-btn recovering';
-        textEl.textContent = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
+        if (isDeferred) {
+          if (nextDate) {
+            textEl.textContent = `Deferred by hospital. Next eligible on ${formattedDate}${daysLeft > 0 ? ` (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})` : ''}`;
+          } else {
+            textEl.textContent = "Deferred by hospital. Please check with the facility";
+          }
+        } else {
+          textEl.textContent = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
+        }
       }
       return;
     }
