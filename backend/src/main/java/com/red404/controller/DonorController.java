@@ -1141,6 +1141,17 @@ public class DonorController {
                 }
             }
 
+            if (body.has("publicSearchOptIn") || body.has("public_search_opt_in")) {
+                boolean optIn = body.has("publicSearchOptIn") ? JsonUtil.asBoolean(body, "publicSearchOptIn", false) : JsonUtil.asBoolean(body, "public_search_opt_in", false);
+                fields.put("public_search_opt_in", optIn);
+                com.red404.service.PublicSearchService.clearCache();
+            }
+            if (body.has("publicDisplayName") || body.has("public_display_name")) {
+                String dName = JsonUtil.textOrNull(body, "publicDisplayName") != null ? JsonUtil.text(body, "publicDisplayName") : JsonUtil.textOrNull(body, "public_display_name");
+                fields.put("public_display_name", (dName != null && !dName.isBlank()) ? dName.trim() : null);
+                com.red404.service.PublicSearchService.clearCache();
+            }
+
             // Clinical last_donation is written ONLY upon hospital check-in / verified donation completion.
             // Direct profile edits cannot arbitrarily modify last_donation.
 
@@ -1324,6 +1335,37 @@ public class DonorController {
                     "availability", available ? "Available" : "Paused",
                     "pausedUntil", pausedUntil != null ? pausedUntil.toString() : null
             ));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/public-search-opt-in", "/opt-in"})
+    public ResponseEntity<ApiResponse> togglePublicSearchOptIn(@RequestBody JsonNode body, HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null || donor.get("id") == null) return unauthorized();
+            int donorId = ((Number) donor.get("id")).intValue();
+
+            boolean optIn = body.has("optIn") ? JsonUtil.asBoolean(body, "optIn", false)
+                    : (body.has("publicSearchOptIn") ? JsonUtil.asBoolean(body, "publicSearchOptIn", false) : false);
+            String displayName = body.has("displayName") ? JsonUtil.textOrNull(body, "displayName")
+                    : (body.has("publicDisplayName") ? JsonUtil.textOrNull(body, "publicDisplayName") : null);
+
+            Map<String, Object> fields = new HashMap<>();
+            fields.put("public_search_opt_in", optIn);
+            if (displayName != null) {
+                fields.put("public_display_name", displayName.trim().isEmpty() ? null : displayName.trim());
+            }
+            donorDao.updateProfile(donorId, fields);
+            com.red404.service.PublicSearchService.clearCache();
+
+            Map<String, Object> fresh = donorDao.findById(donorId);
+            Map<String, Object> res = new HashMap<>();
+            res.put("publicSearchOptIn", optIn);
+            res.put("publicDisplayName", fresh != null ? fresh.get("publicDisplayName") : displayName);
+            res.put("publicConsentAt", fresh != null ? fresh.get("publicConsentAt") : null);
+            return ok("Public search opt-in updated successfully", res);
         } catch (Exception e) {
             return serverError(e);
         }

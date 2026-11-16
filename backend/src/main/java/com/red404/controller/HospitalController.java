@@ -533,8 +533,20 @@ public class HospitalController {
     public ResponseEntity<ApiResponse> createRequest(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) {
-                hospitalId = JsonUtil.asInt(body, "hospitalId", 0);
+            if (hospitalId == null || hospitalId <= 0) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Forbidden: Only logged-in staff of a verified hospital can dispatch blood requests."));
+            }
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            if (hosp == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Forbidden: Hospital account not found."));
+            }
+            String vStatus = (String) hosp.get("verificationStatus");
+            if (vStatus == null) vStatus = (String) hosp.get("verification_status");
+            if (!"Verified".equalsIgnoreCase(vStatus)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Forbidden: Only verified partner hospitals can broadcast blood requests."));
             }
             Map<String, Object> payload = new HashMap<>();
             payload.put("hospitalId", hospitalId != null && hospitalId > 0 ? hospitalId : 1);
@@ -1320,7 +1332,16 @@ public class HospitalController {
 
                     // Part 6 Step 1: Write ONE health_checks row on every Approve in same transaction
                     healthCheckDao.recordHealthCheck(conn, donorId, hospitalId, staffUser,
-                            "donated", weight, hb, systolic, diastolic, pulse, temp, null, null, linkedDonationId);
+                            "APPROVED", weight, hb, systolic, diastolic, pulse, temp, null, null, linkedDonationId);
+
+                    // Clear any previous deferral / paused_until and ensure Available status
+                    try (PreparedStatement psUpd = conn.prepareStatement(
+                            "UPDATE donors SET paused_until = NULL, availability = 'Available' WHERE id = ? OR donor_id = ? OR CAST(id AS CHAR) = ?")) {
+                        psUpd.setInt(1, donorIntId);
+                        psUpd.setString(2, donorId.trim());
+                        psUpd.setString(3, donorId.trim());
+                        psUpd.executeUpdate();
+                    }
 
                     // Sync donor's current values (weight, vitals, facility, health_status) in donors table
                     healthCheckDao.syncDonorHealth(conn, donorId, hospName, weight, hb, systolic, diastolic, pulse, temp, new java.sql.Timestamp(System.currentTimeMillis()));
@@ -1430,23 +1451,44 @@ public class HospitalController {
             }
 
             java.sql.Date deferUntil = null;
-            if (body.has("deferUntil") && !body.get("deferUntil").isNull()) {
+            if (body.has("deferUntil") && !body.get("deferUntil").isNull() && !body.get("deferUntil").asText().isBlank()) {
                 try {
                     deferUntil = java.sql.Date.valueOf(body.get("deferUntil").asText().substring(0, 10));
                 } catch (Exception ignored) {}
+            }
+            if (deferUntil == null) {
+                int durationDays = JsonUtil.asInt(body, "durationDays", 0);
+                if (durationDays <= 0 && body.has("deferDuration")) {
+                    durationDays = JsonUtil.asInt(body, "deferDuration", 0);
+                }
+                if (durationDays <= 0) durationDays = 14;
+                deferUntil = java.sql.Date.valueOf(java.time.LocalDate.now().plusDays(durationDays));
             }
 
             Map<String, Object> hosp = getHospitalFromSession(request);
             if (hosp == null) hosp = hospitalDao.findById(hospitalId);
             String hospName = (hosp != null && hosp.get("hospital_name") != null) ? hosp.get("hospital_name").toString() : "Verified Hospital";
 
+            Map<String, Object> defDonor = donorDao.findByIdOrDonorId(donorId);
+            int defNumId = (defDonor != null && defDonor.get("id") != null) ? ((Number) defDonor.get("id")).intValue() : 0;
+
             try (Connection conn = DBConnection.getConnection()) {
                 conn.setAutoCommit(false);
                 try {
                     // Part 6 Step 3: Defer creates NO donation record and does not change donor.last_donation_date or next_eligible_date.
-                    // Write ONE health_checks row on every Defer in same transaction.
+                    // Write ONE health_checks row on every Defer in same transaction with outcome = 'DEFERRED'.
                     healthCheckDao.recordHealthCheck(conn, donorId, hospitalId, staffUser,
-                            "deferred", weight, hb, systolic, diastolic, pulse, temp, reason, deferUntil, null);
+                            "DEFERRED", weight, hb, systolic, diastolic, pulse, temp, reason, deferUntil, null);
+
+                    // Sets donor's paused_until = now + duration and availability = 'paused' in the same transaction
+                    try (PreparedStatement psUpd = conn.prepareStatement(
+                            "UPDATE donors SET paused_until = ?, availability = 'paused' WHERE id = ? OR donor_id = ? OR CAST(id AS CHAR) = ?")) {
+                        psUpd.setDate(1, deferUntil);
+                        psUpd.setInt(2, defNumId);
+                        psUpd.setString(3, donorId.trim());
+                        psUpd.setString(4, donorId.trim());
+                        psUpd.executeUpdate();
+                    }
 
                     // Sync donor's current clinical values if vitals measured
                     if (weight != null || hb != null || systolic != null || pulse != null || temp != null) {
@@ -1460,9 +1502,7 @@ public class HospitalController {
                 }
             }
 
-            Map<String, Object> defDonor = donorDao.findByIdOrDonorId(donorId);
             if (defDonor != null && defDonor.get("id") != null) {
-                int defNumId = ((Number) defDonor.get("id")).intValue();
                 donorDao.invalidateQrToken(defNumId);
                 String todayStr = java.time.LocalDate.now().toString();
                 // Part 6 Step 3: Deferral reason is confidential to hospital; donor sees generic message with date

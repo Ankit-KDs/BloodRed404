@@ -319,99 +319,17 @@ public class PublicSearchService {
 
     private static Map<String, Object> executeAggregateQuery(String bloodGroup, double gridLat, double gridLng,
             double radiusKm, String gridCell) {
-        List<Map<String, Object>> hospitalsList = new ArrayList<>();
 
-        // 1. Query Verified Partner Hospitals within Radius
-        String hospSql = "SELECT id, hospital_name, city, state, address, pincode, latitude, longitude, emergency_contact, hospital_phone "
-                +
-                "FROM hospitals " +
-                "WHERE LOWER(COALESCE(verification_status, '')) = 'verified' " +
-                "AND (deleted_at IS NULL) " +
-                "AND latitude IS NOT NULL AND longitude IS NOT NULL";
-
-        try (Connection conn = DBConnection.getConnection();
-                Statement st = conn.createStatement();
-                ResultSet rs = st.executeQuery(hospSql)) {
-
-            while (rs.next()) {
-                double hLat = rs.getDouble("latitude");
-                double hLng = rs.getDouble("longitude");
-                if (hLat == 0.0 && hLng == 0.0)
-                    continue;
-
-                double dist = DistanceCalculator.calculateDistance(gridLat, gridLng, hLat, hLng);
-                if (dist > radiusKm)
-                    continue;
-
-                int hospId = rs.getInt("id");
-                String hName = rs.getString("hospital_name");
-                String city = rs.getString("city");
-                String state = rs.getString("state");
-                String address = rs.getString("address");
-                String pincode = rs.getString("pincode");
-                String emergencyContact = rs.getString("emergency_contact");
-                String hospitalPhone = rs.getString("hospital_phone");
-
-                String area = formatHospitalArea(city, state, address, pincode);
-                String publicPhone = (emergencyContact != null && !emergencyContact.isBlank()) ? emergencyContact.trim()
-                        : ((hospitalPhone != null && !hospitalPhone.isBlank()) ? hospitalPhone.trim() : null);
-
-                // Fetch stock for this verified hospital
-                Map<String, Integer> stockMap = getHospitalStock(conn, hospId);
-                int requestedUnits = 0;
-                int totalCompatibleUnits = 0;
-                Map<String, Integer> compatibleBreakdown = new LinkedHashMap<>();
-
-                if ("ALL".equals(bloodGroup)) {
-                    for (String bg : StockService.ALL_BLOOD_GROUPS) {
-                        int u = stockMap.getOrDefault(bg, 0);
-                        requestedUnits += u;
-                        compatibleBreakdown.put(bg, u);
-                    }
-                    totalCompatibleUnits = requestedUnits;
-                } else {
-                    requestedUnits = stockMap.getOrDefault(bloodGroup, 0);
-                    List<String> compatGroups = BloodCompatibilityUtil.getCompatibleDonorGroups(bloodGroup);
-                    for (String cg : compatGroups) {
-                        int u = stockMap.getOrDefault(cg, 0);
-                        compatibleBreakdown.put(cg, u);
-                        totalCompatibleUnits += u;
-                    }
-                }
-
-                Map<String, Object> hItem = new LinkedHashMap<>();
-                hItem.put("name", hName);
-                hItem.put("area", area);
-                hItem.put("distanceKm", Math.round(dist * 10.0) / 10.0);
-                hItem.put("requestedGroupUnits", requestedUnits);
-                hItem.put("compatibleUnits", totalCompatibleUnits);
-                hItem.put("compatibleStock", compatibleBreakdown);
-                hItem.put("updatedAgo", getHospitalStockUpdatedAgo(conn, hospId));
-                hItem.put("directionsUrl", String.format(Locale.US,
-                        "https://www.google.com/maps/dir/?api=1&destination=%.4f,%.4f", hLat, hLng));
-                hItem.put("emergencyPhone", publicPhone);
-
-                hospitalsList.add(hItem);
-            }
-        } catch (Exception e) {
-            log.error("Error querying verified hospitals in radius: {}", e.getMessage());
-        }
-
-        // Sort hospitals by distance ascending
-        hospitalsList.sort(Comparator.comparingDouble(h -> ((Number) h.get("distanceKm")).doubleValue()));
-
-        // 2. Query Eligible Donors as COUNTS ONLY per band (0-5, 5-10, 10-20 km)
-        int exact0_5 = 0;
-        int comp0_5 = 0;
-        int exact5_10 = 0;
-        int comp5_10 = 0;
-        int exact10_20 = 0;
-        int comp10_20 = 0;
+        // 1. Query Eligible Matching Donors in Radius
+        List<Map<String, Object>> optedInDonors = new ArrayList<>();
+        int totalEligibleInRadius = 0;
 
         int freshnessHours = getFreshnessHours();
         long freshnessCutoff = System.currentTimeMillis() - (freshnessHours * 3600_000L);
 
-        String donorSql = "SELECT * FROM donors WHERE (availability IS NULL OR (LOWER(availability) NOT IN ('unavailable', 'busy', 'paused') AND (paused_until IS NULL OR paused_until <= CURRENT_DATE)))";
+        String donorSql = "SELECT d.*, " +
+                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'VERIFIED', 'APPROVED')) AS total_donations " +
+                "FROM donors d WHERE (d.availability IS NULL OR (LOWER(d.availability) NOT IN ('unavailable', 'busy', 'paused') AND (d.paused_until IS NULL OR d.paused_until <= CURRENT_DATE)))";
 
         try (Connection conn = DBConnection.getConnection();
                 Statement st = conn.createStatement();
@@ -425,30 +343,39 @@ public class PublicSearchService {
                     continue;
                 }
 
-                Object latObj = donorMap.get("latitude");
-                Object lngObj = donorMap.get("longitude");
+                Object latObj = getVal(donorMap, "latitude", "LATITUDE");
+                Object lngObj = getVal(donorMap, "longitude", "LONGITUDE");
                 if (!(latObj instanceof Number) || !(lngObj instanceof Number))
                     continue;
                 double dLat = ((Number) latObj).doubleValue();
                 double dLng = ((Number) lngObj).doubleValue();
-                if (dLat == 0.0 && dLng == 0.0)
+                if ((dLat == 0.0 && dLng == 0.0) || dLat < -90.0 || dLat > 90.0 || dLng < -180.0 || dLng > 180.0)
                     continue;
 
                 // Location Freshness Check
-                Timestamp locUpdated = (Timestamp) donorMap.get("location_updated_at");
-                if (locUpdated == null)
-                    locUpdated = (Timestamp) donorMap.get("created_at");
+                Timestamp locUpdated = null;
+                Object locObj = getVal(donorMap, "location_updated_at", "LOCATION_UPDATED_AT");
+                if (locObj instanceof Timestamp) locUpdated = (Timestamp) locObj;
+                if (locUpdated == null) {
+                    Object crObj = getVal(donorMap, "created_at", "CREATED_AT");
+                    if (crObj instanceof Timestamp) locUpdated = (Timestamp) crObj;
+                }
                 if (locUpdated != null && locUpdated.getTime() < freshnessCutoff) {
                     continue; // Stale location
                 }
 
-                double dist = DistanceCalculator.calculateDistance(gridLat, gridLng, dLat, dLng);
-                if (dist > radiusKm || dist > 20.0)
+                // 1 km grid-rounded position of the donor
+                double donorGridLat = Math.round(dLat * 100.0) / 100.0;
+                double donorGridLng = Math.round(dLng * 100.0) / 100.0;
+
+                // Grid-to-grid distance
+                double dist = DistanceCalculator.calculateDistance(gridLat, gridLng, donorGridLat, donorGridLng);
+                if (dist > radiusKm)
                     continue;
 
-                String donorBlood = (String) donorMap.get("blood_type");
-                if (donorBlood == null)
-                    donorBlood = (String) donorMap.get("bloodType");
+                // Blood group compatibility check
+                String donorBlood = (String) getVal(donorMap, "blood_type", "BLOOD_TYPE");
+                if (donorBlood == null) donorBlood = (String) getVal(donorMap, "bloodType", "bloodGroup");
                 if (donorBlood == null)
                     continue;
                 donorBlood = donorBlood.trim().toUpperCase();
@@ -460,51 +387,109 @@ public class PublicSearchService {
                     continue;
                 }
 
-                // Increment band count
-                if (dist < 5.0) {
-                    if (isExact)
-                        exact0_5++;
-                    else
-                        comp0_5++;
-                } else if (dist < 10.0) {
-                    if (isExact)
-                        exact5_10++;
-                    else
-                        comp5_10++;
-                } else {
-                    if (isExact)
-                        exact10_20++;
-                    else
-                        comp10_20++;
+                // Donor is eligible, active, matching, and within radius
+                totalEligibleInRadius++;
+
+                // Opt-in check for public listing
+                Object optInObj = getVal(donorMap, "public_search_opt_in", "PUBLIC_SEARCH_OPT_IN");
+                boolean isOptedIn = Boolean.TRUE.equals(optInObj) || "true".equalsIgnoreCase(String.valueOf(optInObj));
+                if (!isOptedIn) {
+                    continue; // Only opted-in donors are displayed in results
                 }
+
+                // Privacy: display name is custom or derived (first name + last initial)
+                String rawName = (String) getVal(donorMap, "name", "NAME");
+                String customName = (String) getVal(donorMap, "public_display_name", "PUBLIC_DISPLAY_NAME");
+                String displayName = (customName != null && !customName.isBlank()) ? customName.trim() : deriveDisplayName(rawName);
+
+                // Privacy: approximate distance "~N km" (computed from 1 km grid-rounded positions of both sides, rounded up)
+                int roundedUpKm = (int) Math.ceil(dist);
+                if (roundedUpKm < 1) roundedUpKm = 1;
+                String distanceDisplay = "~" + roundedUpKm + " km";
+
+                // Donation count
+                int donations = 0;
+                Object donCountObj = getVal(donorMap, "total_donations", "TOTAL_DONATIONS");
+                if (donCountObj instanceof Number) {
+                    donations = ((Number) donCountObj).intValue();
+                }
+                String donationsDisplay = donations == 1 ? "1 donation" : (donations + " donations");
+
+                // Strictly whitelist allowed public fields:
+                // NEVER: phone, email, address, exact coordinates, age, gender, last donation date, IDs, map pins
+                Map<String, Object> donorItem = new LinkedHashMap<>();
+                donorItem.put("displayName", displayName);
+                donorItem.put("bloodGroup", donorBlood);
+                donorItem.put("isExact", isExact);
+                donorItem.put("compatibilityLabel", isExact ? "Exact Match" : ("Compatible with " + bloodGroup));
+                donorItem.put("distanceDisplay", distanceDisplay);
+                donorItem.put("distanceKm", roundedUpKm);
+                donorItem.put("rawDistance", dist);
+                donorItem.put("donationCount", donations);
+                donorItem.put("donationsDisplay", donationsDisplay);
+
+                optedInDonors.add(donorItem);
             }
         } catch (Exception e) {
-            log.error("Error aggregating eligible donors in radius: {}", e.getMessage());
+            log.error("Error searching eligible donors in radius: {}", e.getMessage());
         }
 
-        // Build Masked Count Representations: 0 -> "None", 1-2 -> "Fewer than 3", >=3
-        // -> raw count
-        Map<String, Object> donorBands = new LinkedHashMap<>();
-        donorBands.put("band_0_5", createBandSummary("0 - 5 km", exact0_5, comp0_5));
-        donorBands.put("band_5_10", createBandSummary("5 - 10 km", exact5_10, comp5_10));
-        donorBands.put("band_10_20", createBandSummary("10 - 20 km", exact10_20, comp10_20));
+        // Sort: Exact match first, then compatible groups, then by distance ascending
+        optedInDonors.sort((a, b) -> {
+            boolean exactA = Boolean.TRUE.equals(a.get("isExact"));
+            boolean exactB = Boolean.TRUE.equals(b.get("isExact"));
+            if (exactA != exactB) return exactA ? -1 : 1;
+            double distA = ((Number) a.get("rawDistance")).doubleValue();
+            double distB = ((Number) b.get("rawDistance")).doubleValue();
+            return Double.compare(distA, distB);
+        });
 
-        int totalDonorsFound = exact0_5 + comp0_5 + exact5_10 + comp5_10 + exact10_20 + comp10_20;
-        String totalDonorsDisplay = maskCount(totalDonorsFound);
+        // Max 20 results
+        if (optedInDonors.size() > 20) {
+            optedInDonors = new ArrayList<>(optedInDonors.subList(0, 20));
+        }
+
+        // Summary line applying "Fewer than 3" rule to totalEligibleInRadius
+        String maskedCount = maskCount(totalEligibleInRadius);
+        String summaryLine;
+        if ("None".equals(maskedCount) || totalEligibleInRadius == 0) {
+            summaryLine = "No eligible donors found within " + (int) radiusKm + " km.";
+        } else if ("Fewer than 3".equals(maskedCount)) {
+            summaryLine = "Fewer than 3 eligible donors within " + (int) radiusKm + " km. Donors who chose to be listed are shown below.";
+        } else {
+            summaryLine = totalEligibleInRadius + " eligible donors within " + (int) radiusKm + " km. Donors who chose to be listed are shown below.";
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("success", true);
         result.put("bloodGroup", bloodGroup);
         result.put("radiusKm", radiusKm);
         result.put("gridCell", gridCell);
-        result.put("hospitals", hospitalsList);
-        result.put("totalHospitals", hospitalsList.size());
-        result.put("donorCounts", donorBands);
-        result.put("totalEligibleDonors", totalDonorsDisplay);
-        result.put("infoLine", "Only hospitals can send requests to donors.");
+        result.put("locationNotice", "Your location is approximate.");
+        result.put("totalEligibleCount", totalEligibleInRadius);
+        result.put("totalEligibleDisplay", maskedCount);
+        result.put("summaryLine", summaryLine);
+        result.put("donors", optedInDonors);
+        result.put("infoLine", "Only hospitals can send blood requests.");
         result.put("timestamp", Instant.now().toString());
 
         return result;
+    }
+
+    private static Object getVal(Map<String, Object> map, String key1, String key2) {
+        if (map.containsKey(key1)) return map.get(key1);
+        if (map.containsKey(key2)) return map.get(key2);
+        return null;
+    }
+
+    public static String deriveDisplayName(String fullName) {
+        if (fullName == null || fullName.isBlank()) return "Anonymous Donor";
+        String trimmed = fullName.trim();
+        String[] parts = trimmed.split("\\s+");
+        if (parts.length == 1) return parts[0];
+        String last = parts[parts.length - 1];
+        if (last.isEmpty()) return parts[0];
+        return parts[0] + " " + Character.toUpperCase(last.charAt(0)) + ".";
     }
 
     private static Map<String, Object> createBandSummary(String label, int exact, int compatible) {

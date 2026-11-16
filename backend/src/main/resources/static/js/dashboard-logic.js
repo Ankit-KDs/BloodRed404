@@ -769,6 +769,61 @@
       });
     }
 
+    // 4. Public Search Opt-in Toggle
+    const btnPublicSearch = document.getElementById('btnTogglePublicSearch');
+    const statusPublicSearchText = document.getElementById('statusPublicSearchText');
+
+    function updatePublicSearchUI() {
+      const isOpted = donorData.publicSearchOptIn === true || donorData.public_search_opt_in === true;
+      if (statusPublicSearchText) {
+        statusPublicSearchText.textContent = isOpted ? 'On' : 'Off';
+      }
+      if (btnPublicSearch) {
+        if (isOpted) {
+          btnPublicSearch.style.background = 'rgba(34, 197, 94, 0.15)';
+          btnPublicSearch.style.borderColor = '#22c55e';
+          btnPublicSearch.style.color = '#22c55e';
+        } else {
+          btnPublicSearch.style.background = 'rgba(255, 255, 255, 0.06)';
+          btnPublicSearch.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          btnPublicSearch.style.color = '#94a3b8';
+        }
+      }
+    }
+
+    updatePublicSearchUI();
+
+    if (btnPublicSearch && !btnPublicSearch.dataset.bound) {
+      btnPublicSearch.dataset.bound = 'true';
+      btnPublicSearch.addEventListener('click', async () => {
+        const currentOpt = donorData.publicSearchOptIn === true || donorData.public_search_opt_in === true;
+        const nextOpt = !currentOpt;
+        try {
+          let res = await fetch('/api/donors/public-search-opt-in', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ optIn: nextOpt })
+          });
+          if (!res.ok) {
+            res = await fetch('/api/donors/profile', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ publicSearchOptIn: nextOpt })
+            });
+          }
+          if (res.ok) {
+            donorData.publicSearchOptIn = nextOpt;
+            donorData.public_search_opt_in = nextOpt;
+            updatePublicSearchUI();
+          }
+        } catch (e) {
+          console.error('Public search opt-in toggle error:', e);
+        }
+      });
+    }
+
     if (btnPauseDate && !btnPauseDate.dataset.bound) {
       btnPauseDate.dataset.bound = 'true';
       btnPauseDate.addEventListener('click', async () => {

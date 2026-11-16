@@ -183,6 +183,10 @@ public class DynamicDataSourceConfig {
             ensureColumn(conn, "donors", "donor_type", "VARCHAR(80) NULL DEFAULT NULL");
             ensureColumn(conn, "donors", "qr_token", "VARCHAR(100) NULL DEFAULT NULL");
             ensureColumn(conn, "donors", "last_donation", "DATE NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "paused_until", "DATE NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "public_search_opt_in", "BOOLEAN DEFAULT FALSE");
+            ensureColumn(conn, "donors", "public_display_name", "VARCHAR(100) NULL DEFAULT NULL");
+            ensureColumn(conn, "donors", "public_consent_at", "TIMESTAMP NULL DEFAULT NULL");
         } catch (Exception e) {
             log.warn("Notice during ensureDonorColumns: {}", e.getMessage());
         }

@@ -1187,12 +1187,31 @@
         Document the clinical reason for donor deferral. The donation gap will not reset and QR token will be closed.
       </p>
       <div style="margin-bottom: 14px;">
-        <label class="form-label">Deferral Reason *</label>
-        <textarea id="deferralReasonInput" rows="3" class="form-input" placeholder="e.g. Low hemoglobin (11.8 g/dL), advised dietary iron and re-screen in 14 days" style="width: 100%;"></textarea>
+        <label class="form-label" for="deferralReasonSelect">Deferral Reason *</label>
+        <select id="deferralReasonSelect" class="form-input" style="width: 100%;">
+          <option value="Low Hemoglobin">Low Hemoglobin</option>
+          <option value="High/Low BP">High/Low BP</option>
+          <option value="Underweight">Underweight</option>
+          <option value="High Temp">High Temp</option>
+          <option value="Pulse Abnormal">Pulse Abnormal</option>
+          <option value="Staff Discretion">Staff Discretion</option>
+        </select>
       </div>
       <div style="margin-bottom: 14px;">
-        <label class="form-label" style="font-size: 12px; color: var(--hosp-text-muted);">Deferred Until (optional)</label>
-        <input type="date" id="deferUntilInput" class="form-input" style="width: 100%;">
+        <label class="form-label" for="deferDurationSelect">Deferral Duration *</label>
+        <select id="deferDurationSelect" class="form-input" style="width: 100%;">
+          <option value="14" selected>14 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+          <option value="custom">Custom date</option>
+        </select>
+        <div id="deferCustomDateWrap" style="display: none; margin-top: 8px;">
+          <input type="date" id="deferUntilInput" class="form-input" style="width: 100%;">
+        </div>
+      </div>
+      <div style="margin-bottom: 14px;">
+        <label class="form-label" for="deferralReasonInput" style="font-size: 12px; color: var(--hosp-text-muted);">Clinical Notes / Details (Optional)</label>
+        <textarea id="deferralReasonInput" rows="2" class="form-input" placeholder="e.g. Advised dietary iron supplementation" style="width: 100%;"></textarea>
       </div>
       <div style="display: flex; gap: 8px; justify-content: flex-end;">
         <button type="button" class="btn-secondary" id="btnCancelDeferral">Cancel</button>

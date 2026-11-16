@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS donors (
     sms_notif BOOLEAN DEFAULT TRUE,
     push_notif BOOLEAN DEFAULT TRUE,
     email_notif BOOLEAN DEFAULT FALSE,
+    public_search_opt_in BOOLEAN DEFAULT FALSE,
+    public_display_name VARCHAR(100) NULL DEFAULT NULL,
+    public_consent_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -70,6 +73,9 @@ CREATE TABLE IF NOT EXISTS hospitals (
     sms_notif BOOLEAN DEFAULT TRUE,
     push_notif BOOLEAN DEFAULT TRUE,
     email_notif BOOLEAN DEFAULT FALSE,
+    public_search_opt_in BOOLEAN DEFAULT FALSE,
+    public_display_name VARCHAR(100) NULL DEFAULT NULL,
+    public_consent_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

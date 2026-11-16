@@ -94,7 +94,9 @@ public class HealthCheckDao {
             ps.setString(1, canonicalId);
             ps.setInt(2, hospitalId);
             ps.setString(3, staffId != null && !staffId.isBlank() ? staffId.trim() : "Hospital Staff");
-            ps.setString(4, outcome != null ? outcome.trim().toLowerCase() : "donated");
+            String cleanOutcome = outcome != null ? outcome.trim().toUpperCase() : "APPROVED";
+            if ("DONATED".equalsIgnoreCase(cleanOutcome)) cleanOutcome = "APPROVED";
+            ps.setString(4, cleanOutcome);
 
             if (weight != null && weight > 0) ps.setDouble(5, weight); else ps.setNull(5, Types.DOUBLE);
             if (hb != null && hb > 0) ps.setDouble(6, hb); else ps.setNull(6, Types.DOUBLE);
@@ -304,7 +306,8 @@ public class HealthCheckDao {
         map.put("date", ts != null ? ts.toString().substring(0, 10) : null);
 
         String outcome = rs.getString("outcome");
-        map.put("outcome", (outcome != null && outcome.equalsIgnoreCase("donated")) ? "Donated" : "Deferred");
+        boolean isApproved = (outcome != null && (outcome.equalsIgnoreCase("donated") || outcome.equalsIgnoreCase("approved")));
+        map.put("outcome", isApproved ? "Approved" : "Deferred");
 
         Double weight = rs.getObject("weight") != null ? rs.getDouble("weight") : null;
         Double hb = rs.getObject("hemoglobin") != null ? rs.getDouble("hemoglobin") : null;

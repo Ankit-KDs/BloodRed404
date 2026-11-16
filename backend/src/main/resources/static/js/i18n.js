@@ -69,7 +69,7 @@
       // Blood Stock
       'stock.live': 'LIVE',
       'stock.title': 'Blood available at partner hospitals',
-      'stock.subtitle': 'Real-time aggregated units across verified partner hospitals.',
+      'stock.subtitle': 'Units recorded by verified partner hospitals.',
       'stock.empty': 'Live stock appears here once more hospitals join.',
       'stock.units': 'Units',
       'stock.ok': 'OK',
@@ -80,8 +80,10 @@
 
       // Public Availability Search
       'search.heroBadge': 'Public Blood Availability Search',
-      'search.heroTitle': 'Blood Availability in Your Area',
-      'search.heroSubtitle': 'Check real-time blood stock across verified partner hospitals and aggregate counts of eligible voluntary donors within 5 km to 20 km.',
+      'search.heroTitle': 'Find Voluntary Donors',
+      'search.heroSubtitle': 'Looking for hospital stock? See the blood bank directory.',
+      'search.lookingForStock': 'Looking for hospital stock? See the',
+      'search.bloodBankDir': 'blood bank directory',
       'search.labelBloodGroup': 'Blood Group',
       'search.labelLocation': 'Location',
       'search.labelRadius': 'Radius',
@@ -91,8 +93,11 @@
       'search.btnGpsActive': 'Location on',
       'search.btnSubmit': 'Search',
       'search.btnSearching': 'Searching...',
-      'search.privacyNotice': 'We never show donor names, phone numbers or exact locations. Counts are approximate. Queries are resolved to ~1 km grid cells.',
-      'search.medicalNotice': 'Only hospitals can send blood requests. For an urgent need, contact a hospital from the list below.',
+      'search.privacyNotice': 'Your location is approximate. Only donors who have chosen to appear in public search are listed.',
+      'search.infoLine': 'Only hospitals can send blood requests.',
+      'search.hospitalLogin': 'Hospital login',
+      'search.becomeDonor': 'Become a donor',
+      'search.medicalNotice': 'Only hospitals can send blood requests.',
       'search.hospitalsHeading': 'Verified Partner Hospitals',
       'search.hospitalsSub': 'Accredited institutions with confirmed blood bank stock within {radius} km.',
       'search.noHospitals': 'No partner hospitals with confirmed stock in this immediate radius.',
@@ -231,7 +236,33 @@
       'profile.existingConditions': 'Existing Medical Conditions',
       'profile.currentMedications': 'Current Medications',
       'profile.previousSurgeries': 'Previous Surgeries (< 12 mos)',
-      'profile.noneRecorded': 'None recorded'
+      'profile.noneRecorded': 'None recorded',
+
+      // About Page (Part 6)
+      'about.h1': 'Helping hospitals find blood donors nearby',
+      'about.intro': 'RED404 is a voluntary community project that connects registered blood donors with verified hospitals in the same area. When a hospital needs blood for a patient, it can reach eligible donors nearby in minutes instead of calling people one by one.',
+      'about.whyTitle': 'Why we built it',
+      'about.whyDesc': 'Finding the right blood group in time often depends on phone calls, messages and luck. Donors want to help but rarely know when they are needed. Hospitals know what they need but cannot see who is nearby and able to donate. RED404 puts both sides in one place.',
+      'about.forDonorsTitle': 'For donors',
+      'about.forDonorsDesc': 'You register with your blood group and location. A hospital confirms your details when you visit. You are notified only when your blood group is needed nearby and you are eligible. You can accept or decline, get directions, and pause your availability whenever you like. After a donation you see it in your history, can download a certificate and see when you can donate again.',
+      'about.forHospitalsTitle': 'For hospitals',
+      'about.forHospitalsDesc': 'A hospital registers and is verified by our team before it can send requests. You keep your blood stock up to date, search for eligible donors by blood group and distance, send a request, and record each donation when the donor arrives.',
+      'about.verifiedByTitle': 'Verified by whom?',
+      'about.verifiedByDesc': 'Hospitals are reviewed and verified by our platform team before they can broadcast requests.',
+      'about.privacyTitle': 'Your privacy',
+      'about.privacyDesc': 'Hospitals see your phone number only after you accept their request. Public pages never show your phone, address or exact location. Donors appear in public search only if they choose to. Your location is used only to find requests near you. You can ask us to delete your account.',
+      'about.safetyTitle': 'Safety and medical decisions',
+      'about.safetyDesc': 'Basic eligibility guidelines (age, weight, hemoglobin and the gap between donations) are shown on the site. They are a guide, not medical advice. A hospital doctor makes the final decision, and health measurements come from the hospital, not from the donor.',
+      'about.notServiceTitle': 'What RED404 is not',
+      'about.notServiceDesc': 'RED404 is not an ambulance or emergency service. In a medical emergency call 112. It is not a blood bank itself; stock figures are entered by each hospital and may be a few minutes old.',
+      'about.questionsTitle': 'Questions or feedback',
+      'about.questionsPrefix': 'If you have questions, feedback or need assistance, visit our',
+      'about.contactLink': 'Contact',
+      'about.questionsOr': 'section or',
+      'about.faqLink': 'FAQ',
+      'about.questionsEmail': 'or email us at',
+      'about.btnBecomeDonor': 'Become a donor',
+      'about.btnRegisterHospital': 'Register your hospital'
     },
 
     hi: {
@@ -290,7 +321,7 @@
       // Blood Stock
       'stock.live': 'लाइव',
       'stock.title': 'साझेदार अस्पतालों में उपलब्ध रक्त',
-      'stock.subtitle': 'सत्यापित सहयोगी अस्पतालों में वास्तविक समय का कुल रक्त स्टॉक।',
+      'stock.subtitle': 'सत्यापित सहयोगी अस्पतालों द्वारा दर्ज की गई रक्त इकाइयाँ।',
       'stock.empty': 'अधिक अस्पतालों के जुड़ने पर लाइव स्टॉक यहां दिखाई देगा।',
       'stock.units': 'यूनिट',
       'stock.ok': 'उपलब्ध',
@@ -300,9 +331,11 @@
       'stock.updatedJustNow': 'अभी-अभी अपडेट किया गया',
 
       // Public Availability Search
-      'search.heroBadge': 'सार्वजनिक रक्त उपलब्धता खोज',
-      'search.heroTitle': 'आपके क्षेत्र में रक्त उपलब्धता',
-      'search.heroSubtitle': '5 किमी से 20 किमी के भीतर सत्यापित अस्पतालों में रक्त स्टॉक और पात्र स्वैच्छिक रक्तदाताओं की कुल संख्या देखें।',
+      'search.heroBadge': 'सार्वजनिक रक्तदाता खोज',
+      'search.heroTitle': 'स्वैच्छिक रक्तदाता खोजें',
+      'search.heroSubtitle': 'अस्पताल रक्त बैंक स्टॉक देखना चाहते हैं? रक्त बैंक निर्देशिका देखें।',
+      'search.lookingForStock': 'अस्पताल रक्त बैंक स्टॉक देखना चाहते हैं? देखें',
+      'search.bloodBankDir': 'रक्त बैंक निर्देशिका',
       'search.labelBloodGroup': 'रक्त समूह',
       'search.labelLocation': 'स्थान',
       'search.labelRadius': 'दायरा',
@@ -312,8 +345,11 @@
       'search.btnGpsActive': 'स्थान सक्रिय',
       'search.btnSubmit': 'खोजें',
       'search.btnSearching': 'खोज रहे हैं...',
-      'search.privacyNotice': 'हम रक्तदाताओं के नाम, फोन नंबर या सटीक स्थान कभी नहीं दिखाते। संख्याएं अनुमानित हैं। प्रश्न ~1 किमी ग्रिड पर हल किए जाते हैं।',
-      'search.medicalNotice': 'केवल अस्पताल ही रक्त अनुरोध भेज सकते हैं। आपातकालीन आवश्यकता के लिए नीचे दी गई सूची से अस्पताल से संपर्क करें।',
+      'search.privacyNotice': 'आपका स्थान अनुमानित है। केवल वे रक्तदाता दिखाए जाते हैं जिन्होंने सार्वजनिक खोज में शामिल होने का विकल्प चुना है।',
+      'search.infoLine': 'केवल अस्पताल ही रक्त अनुरोध भेज सकते हैं।',
+      'search.hospitalLogin': 'अस्पताल लॉगिन',
+      'search.becomeDonor': 'रक्तदाता बनें',
+      'search.medicalNotice': 'केवल अस्पताल ही रक्त अनुरोध भेज सकते हैं।',
       'search.hospitalsHeading': 'सत्यापित साझेदार अस्पताल',
       'search.hospitalsSub': 'इस {radius} किमी दायरे में उपलब्ध रक्त बैंक स्टॉक वाले मान्यता प्राप्त अस्पताल।',
       'search.noHospitals': 'इस तत्काल दायरे में पुष्ट स्टॉक वाला कोई साझेदार अस्पताल नहीं मिला।',
@@ -452,7 +488,33 @@
       'profile.existingConditions': 'मौजूदा चिकित्सा स्थितियां',
       'profile.currentMedications': 'वर्तमान दवाएं',
       'profile.previousSurgeries': 'पिछली सर्जरी (< 12 महीने)',
-      'profile.noneRecorded': 'कोई दर्ज नहीं'
+      'profile.noneRecorded': 'कोई दर्ज नहीं',
+
+      // About Page (Part 6)
+      'about.h1': 'आस-पास के रक्तदाताओं को खोजने में अस्पतालों की मदद',
+      'about.intro': 'RED404 एक स्वैच्छिक सामुदायिक पहल है जो एक ही क्षेत्र के पंजीकृत रक्तदाताओं को सत्यापित अस्पतालों से जोड़ती है। जब किसी अस्पताल को मरीज के लिए रक्त की आवश्यकता होती है, तो वह एक-एक करके फोन करने के बजाय कुछ ही मिनटों में नजदीकी पात्र रक्तदाताओं तक पहुंच सकता है।',
+      'about.whyTitle': 'हमने इसे क्यों बनाया',
+      'about.whyDesc': 'समय पर सही ब्लड ग्रुप मिलना अक्सर फोन कॉल, संदेशों और किस्मत पर निर्भर करता है। रक्तदाता मदद करना चाहते हैं लेकिन उन्हें शायद ही कभी पता चलता है कि उनकी आवश्यकता कब है। अस्पतालों को पता होता है कि उन्हें क्या चाहिए, लेकिन वे यह नहीं देख पाते कि कौन पास में है और रक्तदान कर सकता है। RED404 दोनों पक्षों को एक जगह लाता है।',
+      'about.forDonorsTitle': 'रक्तदाताओं के लिए',
+      'about.forDonorsDesc': 'आप अपने ब्लड ग्रुप और स्थान के साथ पंजीकरण करते हैं। जब आप अस्पताल जाते हैं तो अस्पताल आपके विवरण की पुष्टि करता है। आपको केवल तभी सूचित किया जाता है जब आपके आस-पास आपके ब्लड ग्रुप की आवश्यकता होती है और आप पात्र होते हैं। आप स्वीकार या अस्वीकार कर सकते हैं, दिशा-निर्देश प्राप्त कर सकते हैं, और जब चाहें अपनी उपलब्धता को रोक सकते हैं। रक्तदान के बाद आप इसे अपने इतिहास में देख सकते हैं, प्रमाणपत्र डाउनलोड कर सकते हैं और देख सकते हैं कि आप दोबारा कब रक्तदान कर सकते हैं।',
+      'about.forHospitalsTitle': 'अस्पतालों के लिए',
+      'about.forHospitalsDesc': 'एक अस्पताल पंजीकरण करता है और अनुरोध भेजने से पहले हमारी टीम द्वारा सत्यापित किया जाता है। आप अपने रक्त स्टॉक को अद्यतित रखते हैं, ब्लड ग्रुप और दूरी के आधार पर पात्र रक्तदाताओं की खोज करते हैं, अनुरोध भेजते हैं, और रक्तदाता के आने पर प्रत्येक रक्तदान दर्ज करते हैं।',
+      'about.verifiedByTitle': 'किसके द्वारा सत्यापित?',
+      'about.verifiedByDesc': 'अनुरोध भेजने से पहले अस्पतालों की समीक्षा और सत्यापन हमारी टीम द्वारा किया जाता है।',
+      'about.privacyTitle': 'आपकी गोपनीयता',
+      'about.privacyDesc': 'आपके द्वारा उनके अनुरोध को स्वीकार करने के बाद ही अस्पताल आपका फोन नंबर देख सकते हैं। सार्वजनिक पृष्ठ कभी भी आपका फोन, पता या सटीक स्थान नहीं दिखाते हैं। रक्तदाता केवल तभी सार्वजनिक खोज में दिखाई देते हैं जब वे ऐसा चुनते हैं। आपके स्थान का उपयोग केवल आपके आस-पास के अनुरोधों को खोजने के लिए किया जाता है। आप किसी भी समय अपना खाता हटाने का अनुरोध कर सकते हैं।',
+      'about.safetyTitle': 'सुरक्षा और चिकित्सीय निर्णय',
+      'about.safetyDesc': 'बुनियादी पात्रता दिशानिर्देश (आयु, वजन, हीमोग्लोबिन और रक्तदान के बीच का अंतराल) साइट पर दिखाए गए हैं। वे केवल एक मार्गदर्शन हैं, चिकित्सीय सलाह नहीं। अस्पताल का डॉक्टर अंतिम निर्णय लेता है, और स्वास्थ्य माप अस्पताल द्वारा लिए जाते हैं, रक्तदाता द्वारा नहीं।',
+      'about.notServiceTitle': 'RED404 क्या नहीं है',
+      'about.notServiceDesc': 'RED404 कोई एम्बुलेंस या आपातकालीन सेवा नहीं है। आपातकालीन स्थिति में 112 पर कॉल करें। यह स्वयं कोई रक्त बैंक नहीं है; स्टॉक के आंकड़े प्रत्येक अस्पताल द्वारा दर्ज किए जाते हैं और कुछ मिनट पुराने हो सकते हैं।',
+      'about.questionsTitle': 'सवाल या प्रतिक्रिया',
+      'about.questionsPrefix': 'यदि आपके पास प्रश्न, प्रतिक्रिया हैं या सहायता की आवश्यकता है, तो हमारे',
+      'about.contactLink': 'संपर्क',
+      'about.questionsOr': 'अनुभाग या',
+      'about.faqLink': 'FAQ',
+      'about.questionsEmail': 'पर जाएं, या हमें',
+      'about.btnBecomeDonor': 'रक्तदाता बनें',
+      'about.btnRegisterHospital': 'अस्पताल पंजीकृत करें'
     }
   };
 
@@ -857,11 +919,20 @@
   let isApplying = false;
 
   function initI18n() {
-    // 1. Resolve initial language from localStorage or session
+    // 1. Resolve initial language from URL search params, localStorage, or session
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLang = (urlParams.get('lang') || '').toLowerCase();
+      if (urlLang === 'en' || urlLang === 'hi') {
+        currentLang = urlLang;
+        localStorage.setItem('red404_lang', urlLang);
+      }
+    } catch (_) {}
+
     const saved = localStorage.getItem('red404_lang');
-    if (saved && (saved === 'en' || saved === 'hi')) {
+    if (!currentLang && saved && (saved === 'en' || saved === 'hi')) {
       currentLang = saved;
-    } else {
+    } else if (!currentLang) {
       try {
         const sess = JSON.parse(localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || '{}');
         const u = sess.user || sess;

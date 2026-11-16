@@ -2987,10 +2987,10 @@ body.bento-dashboard-body::after,
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 0.72rem !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
-  line-height: 1 !important;
-  padding: 3px 8px !important;
+  line-height: 1.2 !important;
+  padding: 4px 9px !important;
   border-radius: 4px !important;
   letter-spacing: 0.02em !important;
 }
@@ -3527,4 +3527,45 @@ html[lang="hi"] .dropdown-item {
   overflow: visible !important;
   white-space: normal !important;
   text-align: center !important;
+}
+
+/* ============================================================
+   PART 7 — GLOBAL AI-LOOK CLEANUP (NO GLOW, CALM TOKENS, 14px NAV,
+   VERTICALLY CENTERED NAV LINKS IN EN & HI, >= 13px TEXT)
+   ============================================================ */
+.nav-links {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.nav-links li,
+.nav-links a,
+.nav-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+/* Remove eyebrow pills, glow borders, glow circles, and technical mono chips */
+.pane-badge,
+.about-hero-badge,
+.eyebrow-pill,
+.pulse-ring,
+.z-visual-glow,
+.z-visual-art {
+  display: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Ensure no text element is below 13px */
+.stat-label,
+.stock-status-pill,
+.blood-group-badge,
+.badge,
+.btn-sm,
+small {
+  font-size: 13px !important;
 }

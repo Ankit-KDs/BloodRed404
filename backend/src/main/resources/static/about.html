@@ -6,19 +6,172 @@
   <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>About RED404 - Real-Time Emergency Blood Network</title>
-  <link rel="stylesheet" href="css/common.css?v=20261113_v41"/>
-  <link rel="stylesheet" href="css/home.css?v=20261113_v41"/>
+  <title>About RED404 - Helping Hospitals Find Blood Donors</title>
+  <link rel="stylesheet" href="css/common.css?v=20261116_v45"/>
+  <link rel="stylesheet" href="css/home.css?v=20261116_v45"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* Part 6 & Part 7: Clean Editorial Single-Column About Layout */
+    .about-page-body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #0f1012;
+      color: #ecebe8;
+      font-family: 'Poppins', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .about-main-container {
+      flex: 1 0 auto;
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3.5rem 1.25rem 4.5rem;
+      box-sizing: border-box;
+      overflow-wrap: break-word;
+      word-break: normal;
+    }
+
+    .about-main-container h1 {
+      font-size: clamp(1.85rem, 3.6vw, 2.35rem);
+      font-weight: 700;
+      color: #ecebe8;
+      line-height: 1.3;
+      letter-spacing: -0.015em;
+      margin: 0 0 1.25rem 0;
+    }
+
+    .about-intro-text {
+      font-size: 16px;
+      line-height: 1.65;
+      color: #d1d0cb;
+      margin: 0 0 2.25rem 0;
+    }
+
+    .about-text-block {
+      margin-bottom: 2rem;
+    }
+
+    .about-text-block h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #ecebe8;
+      line-height: 1.35;
+      margin: 0 0 0.6rem 0;
+    }
+
+    .about-text-block h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #ecebe8;
+      line-height: 1.35;
+      margin: 0.75rem 0 0.4rem 0;
+    }
+
+    .about-text-block p {
+      font-size: 16px;
+      line-height: 1.65;
+      color: #9b9a96;
+      margin: 0 0 0.75rem 0;
+    }
+
+    .about-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2.75rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid #2a2c31;
+    }
+
+    .about-cta-row .btn {
+      font-size: 15px;
+      font-weight: 600;
+      padding: 0.75rem 1.65rem;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .about-cta-row .btn-primary {
+      background: #e5383b;
+      color: #ffffff;
+      border: 1px solid #e5383b;
+    }
+    .about-cta-row .btn-primary:hover {
+      background: #cf2226;
+      border-color: #cf2226;
+    }
+
+    .about-cta-row .btn-outline {
+      background: transparent;
+      color: #ecebe8;
+      border: 1px solid #2a2c31;
+    }
+    .about-cta-row .btn-outline:hover {
+      background: #1d1f24;
+      border-color: #3b3d44;
+      color: #ffffff;
+    }
+
+    .about-link {
+      color: #e5383b;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .about-link:hover {
+      color: #ff6b6b;
+    }
+
+    /* Hindi Language typography tuning */
+    html[lang="hi"] .about-main-container h1,
+    html[lang="hi"] .about-text-block h2,
+    html[lang="hi"] .about-text-block h3 {
+      line-height: 1.5;
+      letter-spacing: 0;
+    }
+    html[lang="hi"] .about-intro-text,
+    html[lang="hi"] .about-text-block p {
+      line-height: 1.7;
+      letter-spacing: 0;
+    }
+
+    @media (max-width: 640px) {
+      html, body {
+        width: 100%;
+        max-width: 360px;
+        margin: 0 auto;
+        overflow-x: hidden;
+      }
+      .about-main-container {
+        padding: 2rem 14px 3rem;
+        width: 100%;
+        max-width: 360px;
+        box-sizing: border-box;
+      }
+      .about-main-container h1 {
+        font-size: 1.55rem;
+        line-height: 1.35;
+      }
+      .about-cta-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      .about-cta-row .btn {
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+      }
+    }
+  </style>
 </head>
 <body class="about-page-body">
-
-  <!-- Animated Background Particles -->
-  <div class="particles-container" id="particles"></div>
-
-  <!-- Blood Drop Floating Elements -->
-  <div class="floating-drops" id="floatingDrops"></div>
 
   <!-- ========== NAVBAR ========== -->
   <nav class="navbar" id="navbar">
@@ -26,7 +179,6 @@
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
           <i class="fas fa-tint"></i>
-          <div class="pulse-ring"></div>
         </div>
         <span class="logo-text">RED<span class="logo-404">404</span></span>
       </a>
@@ -46,8 +198,8 @@
           <span style="opacity: 0.4;">|</span>
           <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px;">हिन्दी</button>
         </div>
-        <a href="donor-login.html" class="btn btn-outline">Donor Login</a>
-        <a href="hospital-login.html" class="btn btn-primary">Hospital Login</a>
+        <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
+        <a href="hospital-login.html" class="btn btn-primary" data-i18n="nav.hospitalLogin">Hospital Login</a>
       </div>
 
       <div class="hamburger" id="hamburger">
@@ -56,96 +208,77 @@
     </div>
   </nav>
 
-  <!-- ========== TOP SECTION: CENTERED HERO ========== -->
-  <section class="about-page-hero">
-    <div class="about-hero-badge">ABOUT THE COMPANY</div>
-    <h1 class="about-hero-title">
-      The Real-Time Response Network <br>
-      For <span style="color: #e63946">Life-Saving Emergencies.</span>
-    </h1>
-    <p class="about-hero-narrative">
-      We are engineering the future of emergency healthcare logistics. RED404 is a real-time emergency blood network built to eliminate critical delays in blood procurement. By directly connecting verified hospitals with nearby eligible donors, we ensure that no medical crisis is ever lost to time.
+  <!-- ========== MAIN EDITORIAL CONTENT (Single Column, Max 720px) ========== -->
+  <main class="about-main-container">
+    <h1 data-i18n="about.h1">Helping hospitals find blood donors nearby</h1>
+    
+    <p class="about-intro-text" data-i18n="about.intro">
+      RED404 is a voluntary community project that connects registered blood donors with verified hospitals in the same area. When a hospital needs blood for a patient, it can reach eligible donors nearby in minutes instead of calling people one by one.
     </p>
-  </section>
 
-  <!-- ========== THE VERTICAL DEEP-DIVE (Z-PATTERN, BORDERLESS) ========== -->
-  <section class="about-deepdive-container">
+    <section class="about-text-block">
+      <h2 data-i18n="about.whyTitle">Why we built it</h2>
+      <p data-i18n="about.whyDesc">
+        Finding the right blood group in time often depends on phone calls, messages and luck. Donors want to help but rarely know when they are needed. Hospitals know what they need but cannot see who is nearby and able to donate. RED404 puts both sides in one place.
+      </p>
+    </section>
 
-    <!-- Row 1 (Text Left, Map/Radar Icon Right) -->
-    <div class="z-row">
-      <div class="z-content">
-        <div class="z-subheading">1. Precision &amp; Speed</div>
-        <h2 class="z-title">Fast Nearby Donor Matching</h2>
-        <p class="z-paragraph">
-          Time is the ultimate currency in a crisis. Our network instantly locates eligible donors within a 5km to 20km radius. When a hospital triggers an emergency request, only the closest, compatible individuals are notified—cutting response times from hours to mere minutes.
-        </p>
-      </div>
-      <div class="z-visual">
-        <div class="z-visual-art">
-          <div class="z-visual-glow"></div>
-          <div class="z-visual-ring-outer"></div>
-          <div class="z-visual-ring-inner"></div>
-          <div class="z-visual-icon-core">
-            <i class="fas fa-satellite-dish"></i>
-          </div>
-        </div>
-      </div>
+    <section class="about-text-block">
+      <h2 data-i18n="about.forDonorsTitle">For donors</h2>
+      <p data-i18n="about.forDonorsDesc">
+        You register with your blood group and location. A hospital confirms your details when you visit. You are notified only when your blood group is needed nearby and you are eligible. You can accept or decline, get directions, and pause your availability whenever you like. After a donation you see it in your history, can download a certificate and see when you can donate again.
+      </p>
+    </section>
+
+    <section class="about-text-block">
+      <h2 data-i18n="about.forHospitalsTitle">For hospitals</h2>
+      <p data-i18n="about.forHospitalsDesc">
+        A hospital registers and is verified by our team before it can send requests. You keep your blood stock up to date, search for eligible donors by blood group and distance, send a request, and record each donation when the donor arrives.
+      </p>
+      <h3 data-i18n="about.verifiedByTitle">Verified by whom?</h3>
+      <p data-i18n="about.verifiedByDesc">
+        Hospitals are reviewed and verified by our platform team before they can broadcast requests.
+      </p>
+    </section>
+
+    <section class="about-text-block">
+      <h2 data-i18n="about.privacyTitle">Your privacy</h2>
+      <p data-i18n="about.privacyDesc">
+        Hospitals see your phone number only after you accept their request. Public pages never show your phone, address or exact location. Donors appear in public search only if they choose to. Your location is used only to find requests near you. You can ask us to delete your account.
+      </p>
+    </section>
+
+    <section class="about-text-block">
+      <h2 data-i18n="about.safetyTitle">Safety and medical decisions</h2>
+      <p data-i18n="about.safetyDesc">
+        Basic eligibility guidelines (age, weight, hemoglobin and the gap between donations) are shown on the site. They are a guide, not medical advice. A hospital doctor makes the final decision, and health measurements come from the hospital, not from the donor.
+      </p>
+    </section>
+
+    <section class="about-text-block">
+      <h2 data-i18n="about.notServiceTitle">What RED404 is not</h2>
+      <p data-i18n="about.notServiceDesc">
+        RED404 is not an ambulance or emergency service. In a medical emergency call 112. It is not a blood bank itself; stock figures are entered by each hospital and may be a few minutes old.
+      </p>
+    </section>
+
+    <section class="about-text-block">
+      <h2 data-i18n="about.questionsTitle">Questions or feedback</h2>
+      <p>
+        <span data-i18n="about.questionsPrefix">If you have questions, feedback or need assistance, visit our</span>
+        <a href="index.html#contact" class="about-link" data-i18n="about.contactLink">Contact</a>
+        <span data-i18n="about.questionsOr">section or</span>
+        <a href="index.html#faq" class="about-link" data-i18n="about.faqLink">FAQ</a>,
+        <span data-i18n="about.questionsEmail">or email us at</span>
+        <a href="mailto:support@red404.org" class="about-link" id="aboutSupportEmail">support@red404.org</a>.
+      </p>
+    </section>
+
+    <div class="about-cta-row">
+      <a href="donor-register.html" class="btn btn-primary" data-i18n="about.btnBecomeDonor">Become a donor</a>
+      <a href="hospital-register.html" class="btn btn-outline" data-i18n="about.btnRegisterHospital">Register your hospital</a>
     </div>
-
-    <!-- Row 2 (ID Badge Icon Left, Text Right) -->
-    <div class="z-row reverse">
-      <div class="z-content">
-        <div class="z-subheading">2. Total Data Security</div>
-        <h2 class="z-title">Complete Privacy &amp; Identity Protection</h2>
-        <p class="z-paragraph">
-          Medical privacy is non-negotiable. Every donor is assigned a secure digital ID upon onboarding. When an account is deleted, personal records are permanently erased from the system. No phone numbers are revealed without explicit request acceptance, ensuring absolute privacy.
-        </p>
-      </div>
-      <div class="z-visual">
-        <div class="z-visual-art">
-          <div class="z-visual-glow"></div>
-          <div class="z-visual-ring-outer"></div>
-          <div class="z-visual-ring-inner"></div>
-          <div class="z-visual-icon-core">
-            <i class="fas fa-id-badge"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Row 3 (Text Left, Hospital Icon Right) -->
-    <div class="z-row">
-      <div class="z-content">
-        <div class="z-subheading">3. Seamless Infrastructure</div>
-        <h2 class="z-title">Direct Hospital Integration</h2>
-        <p class="z-paragraph">
-          We empower medical frontline workers with direct-access portals to broadcast high-priority blood requests instantly. The platform handles the complex logistics—from real-time donor matching to automated navigation routing—allowing healthcare professionals to focus entirely on saving lives.
-        </p>
-      </div>
-      <div class="z-visual">
-        <div class="z-visual-art">
-          <div class="z-visual-glow"></div>
-          <div class="z-visual-ring-outer"></div>
-          <div class="z-visual-ring-inner"></div>
-          <div class="z-visual-icon-core">
-            <i class="fas fa-hospital-user"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Utility Footnotes (Centered below Row 3) -->
-    <div class="about-utility-footnotes">
-      <span>⚡ Instant Alerts</span>
-      <span class="dot-sep">•</span>
-      <span>📍 Real-Time Radius Search</span>
-      <span class="dot-sep">•</span>
-      <span>🔒 Strict Donor Privacy</span>
-      <span class="dot-sep">•</span>
-      <span>🏥 Verified Hospital Portals</span>
-    </div>
-
-  </section>
+  </main>
 
   <!-- ========== FOOTER ========== -->
   <footer class="footer" id="contact">
@@ -199,9 +332,8 @@
     </div>
   </footer>
 
-  <script src="js/common.js?v=20261113_v41"></script>
-  <script src="js/i18n.js?v=20261115_v1"></script>
-  <script src="js/home.js?v=20261113_v41"></script>
+  <script src="js/common.js?v=20261116_v45"></script>
+  <script src="js/i18n.js?v=20261116_v45"></script>
+  <script src="js/home.js?v=20261116_v45"></script>
 </body>
 </html>
-

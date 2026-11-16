@@ -62,10 +62,10 @@ public class RoleSessionManager {
         if (r != null) return r;
 
         // 3. URI path matching
-        if (uriLower.startsWith("/api/hospital/") || uriLower.contains("/hospital-") || uriLower.contains("hospital.html")) {
+        if (uriLower.startsWith("/api/hospital") || uriLower.contains("/hospital-") || uriLower.contains("hospital.html")) {
             return Role.HOSPITAL;
         }
-        if (uriLower.startsWith("/api/admin/") || uriLower.contains("/admin-") || uriLower.contains("admin.html")) {
+        if (uriLower.startsWith("/api/admin") || uriLower.contains("/admin-") || uriLower.contains("admin.html")) {
             return Role.ADMIN;
         }
         if (uriLower.startsWith("/api/donor/") || uriLower.startsWith("/api/donors/") || uriLower.startsWith("/api/settings/")

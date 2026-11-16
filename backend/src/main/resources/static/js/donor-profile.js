@@ -1432,6 +1432,19 @@
       if (notifEmailInput) notifEmailInput.checked = currentDonor.emailNotif !== false;
       if (notifPushInput) notifPushInput.checked = currentDonor.pushNotif !== false;
 
+      const optInInput = document.getElementById('editPublicSearchOptIn');
+      const dispNameInput = document.getElementById('editPublicDisplayName');
+      const dispWrapper = document.getElementById('publicDisplayNameWrapper');
+      const isOpted = currentDonor.publicSearchOptIn === true || currentDonor.public_search_opt_in === true;
+      if (optInInput) {
+        optInInput.checked = isOpted;
+        optInInput.onchange = () => {
+          if (dispWrapper) dispWrapper.style.display = optInInput.checked ? 'block' : 'none';
+        };
+      }
+      if (dispWrapper) dispWrapper.style.display = isOpted ? 'block' : 'none';
+      if (dispNameInput) dispNameInput.value = currentDonor.publicDisplayName || currentDonor.public_display_name || '';
+
       editModal.style.display = 'flex';
       editModal.classList.add('active');
       editModal.setAttribute('aria-hidden', 'false');
@@ -1594,6 +1607,8 @@
             smsNotif: document.getElementById('editDonorSmsNotif')?.checked ?? true,
             emailNotif: document.getElementById('editDonorEmailNotif')?.checked ?? true,
             pushNotif: document.getElementById('editDonorPushNotif')?.checked ?? true,
+            publicSearchOptIn: document.getElementById('editPublicSearchOptIn')?.checked ?? false,
+            publicDisplayName: (document.getElementById('editPublicDisplayName')?.value || '').trim() || null,
             latitude: currentDonor.latitude,
             longitude: currentDonor.longitude,
             qrToken: newToken

@@ -533,6 +533,21 @@ public class DonorDao {
             params.add(fields.get("longitude"));
             setClauses.add("location_updated_at = CURRENT_TIMESTAMP");
         }
+        if (fields.containsKey("public_search_opt_in") || fields.containsKey("publicSearchOptIn")) {
+            setClauses.add("public_search_opt_in = ?");
+            Object b = fields.get(fields.containsKey("public_search_opt_in") ? "public_search_opt_in" : "publicSearchOptIn");
+            boolean optIn = b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b));
+            params.add(optIn);
+            if (optIn) {
+                setClauses.add("public_consent_at = CURRENT_TIMESTAMP");
+            } else {
+                setClauses.add("public_consent_at = NULL");
+            }
+        }
+        if (fields.containsKey("public_display_name") || fields.containsKey("publicDisplayName")) {
+            setClauses.add("public_display_name = ?");
+            params.add(emptyToNull(str(fields.get(fields.containsKey("public_display_name") ? "public_display_name" : "publicDisplayName"))));
+        }
 
         if (setClauses.isEmpty()) return true;
 
@@ -669,6 +684,9 @@ public class DonorDao {
             ensureCol(conn, "sms_notif", "BOOLEAN DEFAULT TRUE");
             ensureCol(conn, "email_notif", "BOOLEAN DEFAULT TRUE");
             ensureCol(conn, "push_notif", "BOOLEAN DEFAULT TRUE");
+            ensureCol(conn, "public_search_opt_in", "BOOLEAN DEFAULT FALSE");
+            ensureCol(conn, "public_display_name", "VARCHAR(100) NULL DEFAULT NULL");
+            ensureCol(conn, "public_consent_at", "TIMESTAMP NULL DEFAULT NULL");
 
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name LIKE '%Rajesh%'");
@@ -1763,6 +1781,30 @@ public class DonorDao {
             donor.put("healthStatus", rs.getString("health_status"));
         } catch (SQLException ignored) {
             donor.put("healthStatus", null);
+        }
+        try {
+            boolean optIn = rs.getBoolean("public_search_opt_in");
+            donor.put("publicSearchOptIn", optIn);
+            donor.put("public_search_opt_in", optIn);
+        } catch (SQLException ignored) {
+            donor.put("publicSearchOptIn", false);
+            donor.put("public_search_opt_in", false);
+        }
+        try {
+            String pName = rs.getString("public_display_name");
+            donor.put("publicDisplayName", pName);
+            donor.put("public_display_name", pName);
+        } catch (SQLException ignored) {
+            donor.put("publicDisplayName", null);
+            donor.put("public_display_name", null);
+        }
+        try {
+            Timestamp consent = rs.getTimestamp("public_consent_at");
+            donor.put("publicConsentAt", consent != null ? consent.toString() : null);
+            donor.put("public_consent_at", consent != null ? consent.toString() : null);
+        } catch (SQLException ignored) {
+            donor.put("publicConsentAt", null);
+            donor.put("public_consent_at", null);
         }
 
         // Part 6: Donor's current values = the latest health_check that has values

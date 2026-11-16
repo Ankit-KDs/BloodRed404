@@ -4031,7 +4031,7 @@ body.donor-profile-body {
 .timeline-marker-label {
   position: absolute;
   top: 16px;
-  font-size: 10.5px;
+  font-size: 13px;
   font-weight: 600;
   color: #9b9a96;
   white-space: nowrap;
@@ -4041,7 +4041,7 @@ body.donor-profile-body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11.5px;
+  font-size: 13px;
   color: #9b9a96;
   padding-top: 14px;
 }
@@ -4076,6 +4076,43 @@ body.donor-profile-body {
     min-width: auto;
   }
   .timeline-axis-labels {
-    font-size: 10.5px;
+    font-size: 13px;
   }
+}
+
+/* ============================================================
+   PART 7 — ELIMINATE REMAINING AI LOOK (NO GLOW, NO TINY TEXT, 
+   NO MONO CHIPS, CALM RESTRAINED TYPOGRAPHY)
+   ============================================================ */
+.nav-link, .hub-nav-item, .navbar a {
+  font-size: 14px !important;
+}
+
+/* Ensure no text element in public search, about, home, and donor profile is under 13px */
+.amp-pill,
+.dic-label,
+.dic-code,
+.dic-bb-label,
+.hdw-sub,
+.hes-sub,
+.card-donor-submeta,
+.gps-coords-txt,
+.hospital-intake-note {
+  font-size: 13px !important;
+  font-family: var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* Strip all remaining glow borders, shadows and neon effects */
+.hub-logo-icon,
+.hub-logo-text .hl-red,
+.gps-sync-capsule,
+.hub-nav-item.active,
+.hub-nav-item.active i,
+.blood-emblem-box,
+.milestone-badge-tile {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
 }

@@ -2215,6 +2215,27 @@
               <input type="text" id="editDonorSurgeries" name="surgeries"
                 placeholder="Previous surgeries or leave blank" />
             </div>
+
+            <!-- Section 4: Public Donor Search (Opt-in) -->
+            <div class="form-section-title" style="margin-top: 1.25rem; border-top: 1px solid #2a2c31; padding-top: 1rem;">
+              <i class="fa-solid fa-user-shield" style="color: #3ecf8e; margin-right: 6px;"></i>
+              <span>Public Donor Search (Opt-in)</span>
+            </div>
+            <div class="form-field-group full-width" style="background: rgba(255, 255, 255, 0.02); border: 1px solid #2a2c31; border-radius: 8px; padding: 1rem; margin-top: 0.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                <label for="editPublicSearchOptIn" style="font-weight: 600; color: #ecebe8; margin: 0; cursor: pointer; font-size: 14px;">
+                  Show me in public donor search
+                </label>
+                <input type="checkbox" id="editPublicSearchOptIn" name="publicSearchOptIn" style="width: 18px; height: 18px; cursor: pointer; accent-color: #3ecf8e;" />
+              </div>
+              <p style="font-size: 13px; color: #9b9a96; line-height: 1.5; margin: 0.5rem 0 0.75rem;">
+                Others can see your first name and last initial, blood group, approximate distance and number of donations. Your phone, address, exact location and health details are never shown. You can turn this off any time.
+              </p>
+              <div id="publicDisplayNameWrapper" style="display: none; margin-top: 0.5rem;">
+                <label for="editPublicDisplayName" style="font-size: 13px; color: #9b9a96; margin-bottom: 4px;">Display Name (Optional, defaults to first name + last initial):</label>
+                <input type="text" id="editPublicDisplayName" name="publicDisplayName" placeholder="e.g. Chinmay J." maxlength="50" style="padding: 8px 12px; font-size: 13px; border-radius: 6px; background: #17181b; border: 1px solid #2a2c31; color: #ecebe8; width: 100%; box-sizing: border-box;" />
+              </div>
+            </div>
           </div>
         </div>
 
