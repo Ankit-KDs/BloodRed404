@@ -96,7 +96,43 @@ public class DonorController {
                 }
             }
             DonorEligibilityService.attachEligibility(donorProfile);
+
+            // Step 2 Requirement 3: Add "Health check history" (last 5).
+            // The API returns this only to the donor himself, never to other donors, public pages, or the admin directory.
+            Map<String, Object> loggedDonor = requireDonor(request);
+            boolean isSelf = false;
+            if (loggedDonor != null && donorProfile != null) {
+                Object pId = donorProfile.get("id");
+                Object lId = loggedDonor.get("id");
+                Object pCode = donorProfile.get("donorId");
+                Object lCode = loggedDonor.get("donorId");
+                if (pId != null && pId.toString().equals(String.valueOf(lId))) isSelf = true;
+                else if (pCode != null && pCode.toString().equalsIgnoreCase(String.valueOf(lCode))) isSelf = true;
+            }
+            if ((donorId == null || donorId.isBlank()) && (email == null || email.isBlank()) && loggedDonor != null) {
+                isSelf = true;
+            }
+            if (isSelf) {
+                String dCode = donorProfile.get("donorId") != null ? donorProfile.get("donorId").toString() : donorProfile.get("id").toString();
+                donorProfile.put("healthChecks", new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5));
+            } else {
+                donorProfile.remove("healthChecks");
+            }
+
             return ok("Profile loaded", donorProfile);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping({"/health-checks", "/health-check-history"})
+    public ResponseEntity<ApiResponse> getHealthCheckHistory(HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null) return unauthorized();
+            String dCode = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+            List<Map<String, Object>> history = new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5);
+            return ok("Health check history loaded", history);
         } catch (Exception e) {
             return serverError(e);
         }

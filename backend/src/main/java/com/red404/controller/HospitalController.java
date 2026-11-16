@@ -43,6 +43,7 @@ public class HospitalController {
     private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
     private final com.red404.dao.BloodRequestNotificationDao notificationDao = new com.red404.dao.BloodRequestNotificationDao();
     private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
+    private final com.red404.dao.HealthCheckDao healthCheckDao = new com.red404.dao.HealthCheckDao();
 
     private static final Map<Integer, List<Long>> LOOKUP_RATE_LIMITS = new java.util.concurrent.ConcurrentHashMap<>();
     private static final int MAX_LOOKUPS_PER_MINUTE = 30;
@@ -1270,10 +1271,49 @@ public class HospitalController {
                 reqId = notificationDao.getActiveRequestIdForDonorAndHospital(donorIntId, hospitalId);
             }
 
-            boolean recorded = donorDao.recordDonation(donorId, hospitalId, bloodType, 1, volumeMl, vitalsJson, staffUser, "COMPLETED", null, reqId > 0 ? reqId : null);
-            if (!recorded) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new ApiResponse(false, "Failed to record donation in database."));
+            // Extract measured vitals (if provided)
+            Double weight = null;
+            Double hb = null;
+            Double systolic = null;
+            Double diastolic = null;
+            Integer pulse = null;
+            Double temp = null;
+            if (body.has("vitals") && !body.get("vitals").isNull()) {
+                JsonNode vNode = body.get("vitals");
+                weight = JsonUtil.asDouble(vNode, "weight");
+                hb = JsonUtil.asDouble(vNode, "hemoglobin");
+                systolic = JsonUtil.asDouble(vNode, "systolic");
+                diastolic = JsonUtil.asDouble(vNode, "diastolic");
+                pulse = vNode.has("pulse") && !vNode.get("pulse").isNull() ? vNode.get("pulse").asInt() : null;
+                temp = JsonUtil.asDouble(vNode, "temperature");
+            }
+
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            String hospName = (hosp != null && hosp.get("hospital_name") != null) ? (String) hosp.get("hospital_name") : "Verified Hospital";
+
+            int linkedDonationId = -1;
+            try (Connection conn = DBConnection.getConnection()) {
+                conn.setAutoCommit(false);
+                try {
+                    linkedDonationId = donorDao.recordDonationWithId(conn, donorId, hospitalId, bloodType, 1, volumeMl, vitalsJson, staffUser, "COMPLETED", null, reqId > 0 ? reqId : null);
+                    if (linkedDonationId <= 0) {
+                        conn.rollback();
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse(false, "Failed to record donation in database."));
+                    }
+
+                    // Part 6 Step 1: Write ONE health_checks row on every Approve in same transaction
+                    healthCheckDao.recordHealthCheck(conn, donorId, hospitalId, staffUser,
+                            "donated", weight, hb, systolic, diastolic, pulse, temp, null, null, linkedDonationId);
+
+                    // Sync donor's current values (weight, vitals, facility, health_status) in donors table
+                    healthCheckDao.syncDonorHealth(conn, donorId, hospName, weight, hb, systolic, diastolic, pulse, temp, new java.sql.Timestamp(System.currentTimeMillis()));
+
+                    conn.commit();
+                } catch (Exception ex) {
+                    conn.rollback();
+                    throw ex;
+                }
             }
 
             // If linked to active blood request, update donor status to DONATED and increment request fulfillment
@@ -1293,34 +1333,18 @@ public class HospitalController {
 
             // Update donor blood group status to hospital_verified and log audit (Part 5)
             if (existingDonor != null && existingDonor.get("id") != null) {
-                Map<String, Object> hosp = hospitalDao.findById(hospitalId);
-                String hospName = (hosp != null && hosp.get("hospital_name") != null) ? (String) hosp.get("hospital_name") : "Verified Hospital";
                 donorDao.updateBloodGroupHospitalVerified(donorIntId, bloodType, hospitalId, hospName);
                 bloodGroupAuditDao.insertAudit(donorIntId, existingBg, bloodType, "hospital", hospitalId,
                         editReason != null ? editReason.trim() : "Hospital check-in donation verification");
 
-                // Save measured weight and vitals to donor profile with check date (Part 2, Requirement 3)
-                if (body.has("vitals")) {
-                    try {
-                        JsonNode vNode = body.get("vitals");
-                        Double weight = JsonUtil.asDouble(vNode, "weight");
-                        Double hb = JsonUtil.asDouble(vNode, "hemoglobin");
-                        Double systolic = JsonUtil.asDouble(vNode, "systolic");
-                        Double diastolic = JsonUtil.asDouble(vNode, "diastolic");
-                        Integer pulse = vNode.has("pulse") ? vNode.get("pulse").asInt() : null;
-                        Double temp = JsonUtil.asDouble(vNode, "temperature");
-                        String bp = (systolic != null && diastolic != null) ? (int) Math.round(systolic) + "/" + (int) Math.round(diastolic) : null;
-                        donorDao.updateDonorVitalsAndVerification(donorIntId, weight, pulse, hb, bp, temp, hospName);
-                    } catch (Exception ignored) {}
-                }
-
                 // Invalidate one-time QR token upon approved check-in (Part 6)
                 donorDao.invalidateQrToken(donorIntId);
 
-                // Add separate notification after donation approval (Part 2, Requirement 5)
+                // Notification per visit (Part 6 Step 2.4)
                 try {
-                    donorDao.addDonorNotification(donorIntId, "Donation recorded at " + hospName,
-                            "Your " + volumeMl + " mL blood donation of " + bloodType + " has been recorded and verified at " + hospName + ". Thank you for saving lives!", "donation");
+                    String todayStr = java.time.LocalDate.now().toString();
+                    donorDao.addDonorNotification(donorIntId, "Health check recorded at " + hospName,
+                            "Health check recorded at " + hospName + " on " + todayStr + ". Your " + volumeMl + " mL donation of " + bloodType + " has been verified. Thank you for saving lives!", "checkin");
                 } catch (Exception ignored) {}
             }
 
@@ -1370,15 +1394,65 @@ public class HospitalController {
             String staffUser = JsonUtil.textOrNull(body, "staffUser");
             if (staffUser == null) staffUser = "Hospital Staff";
 
-            donorDao.recordDonation(donorId, hospitalId, null, 0, 0, null, staffUser, "DEFERRED", reason);
+            // Extract measured vitals (if provided during deferral)
+            Double weight = null;
+            Double hb = null;
+            Double systolic = null;
+            Double diastolic = null;
+            Integer pulse = null;
+            Double temp = null;
+            String vitalsJson = null;
+            if (body.has("vitals") && !body.get("vitals").isNull()) {
+                JsonNode vNode = body.get("vitals");
+                vitalsJson = vNode.toString();
+                weight = JsonUtil.asDouble(vNode, "weight");
+                hb = JsonUtil.asDouble(vNode, "hemoglobin");
+                systolic = JsonUtil.asDouble(vNode, "systolic");
+                diastolic = JsonUtil.asDouble(vNode, "diastolic");
+                pulse = vNode.has("pulse") && !vNode.get("pulse").isNull() ? vNode.get("pulse").asInt() : null;
+                temp = JsonUtil.asDouble(vNode, "temperature");
+            }
+
+            java.sql.Date deferUntil = null;
+            if (body.has("deferUntil") && !body.get("deferUntil").isNull()) {
+                try {
+                    deferUntil = java.sql.Date.valueOf(body.get("deferUntil").asText().substring(0, 10));
+                } catch (Exception ignored) {}
+            }
+
+            Map<String, Object> hosp = getHospitalFromSession(request);
+            if (hosp == null) hosp = hospitalDao.findById(hospitalId);
+            String hospName = (hosp != null && hosp.get("hospital_name") != null) ? hosp.get("hospital_name").toString() : "Verified Hospital";
+
+            int linkedDonationId = -1;
+            try (Connection conn = DBConnection.getConnection()) {
+                conn.setAutoCommit(false);
+                try {
+                    linkedDonationId = donorDao.recordDonationWithId(conn, donorId, hospitalId, null, 0, 0, vitalsJson, staffUser, "DEFERRED", reason, null);
+
+                    // Part 6 Step 1: Write ONE health_checks row on every Defer in same transaction
+                    healthCheckDao.recordHealthCheck(conn, donorId, hospitalId, staffUser,
+                            "deferred", weight, hb, systolic, diastolic, pulse, temp, reason, deferUntil, linkedDonationId > 0 ? linkedDonationId : null);
+
+                    // Sync donor's current clinical values if vitals measured
+                    if (weight != null || hb != null || systolic != null || pulse != null || temp != null) {
+                        healthCheckDao.syncDonorHealth(conn, donorId, hospName, weight, hb, systolic, diastolic, pulse, temp, new java.sql.Timestamp(System.currentTimeMillis()));
+                    }
+
+                    conn.commit();
+                } catch (Exception ex) {
+                    conn.rollback();
+                    throw ex;
+                }
+            }
+
             Map<String, Object> defDonor = donorDao.findByIdOrDonorId(donorId);
             if (defDonor != null && defDonor.get("id") != null) {
                 int defNumId = ((Number) defDonor.get("id")).intValue();
                 donorDao.invalidateQrToken(defNumId);
-                Map<String, Object> hosp = getHospitalFromSession(request);
-                String hospName = (hosp != null && hosp.get("hospital_name") != null) ? hosp.get("hospital_name").toString() : "Hospital";
-                donorDao.addDonorNotification(defNumId, "Donation Deferred",
-                        "Your blood donation was deferred by " + hospName + ". Reason: " + reason, "deferral");
+                String todayStr = java.time.LocalDate.now().toString();
+                donorDao.addDonorNotification(defNumId, "Health check recorded at " + hospName,
+                        "Health check recorded at " + hospName + " on " + todayStr + ". Donation deferred: " + reason, "checkin");
             }
             AdminController.addLog("DONATION_DEFERRED", "Donor " + donorId + " deferred at hospital ID " + hospitalId + ": " + reason);
 

@@ -43,7 +43,9 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateHospitalInventoryTable(conn);
             migrateIntakeSnapshotsTable(conn);
             migrateUserSessionsTable(conn);
+            migrateHealthChecksTable(conn);
             ensureBhimtalHospital(conn);
+            new com.red404.dao.HealthCheckDao().ensureChinmayJoshiHealthRecord(conn);
             log.info("RED404 database schema initialization & migration completed successfully.");
         } catch (Exception e) {
             log.warn("Database schema migration notice: {}", e.getMessage());
@@ -241,6 +243,24 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             "    type VARCHAR(50) DEFAULT 'general'," +
             "    read_status BOOLEAN DEFAULT FALSE," +
             "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")",
+
+            "CREATE TABLE IF NOT EXISTS health_checks (" +
+            "    id INT AUTO_INCREMENT PRIMARY KEY," +
+            "    donor_id VARCHAR(30) NOT NULL," +
+            "    hospital_id INT NOT NULL," +
+            "    staff_id VARCHAR(100) NULL," +
+            "    checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+            "    outcome VARCHAR(20) NOT NULL," +
+            "    weight DOUBLE NULL," +
+            "    hemoglobin DOUBLE NULL," +
+            "    bp_sys DOUBLE NULL," +
+            "    bp_dia DOUBLE NULL," +
+            "    pulse INT NULL," +
+            "    temperature DOUBLE NULL," +
+            "    defer_reason_category VARCHAR(100) NULL," +
+            "    defer_until DATE NULL," +
+            "    linked_donation_id INT NULL" +
             ")"
         };
 
@@ -318,6 +338,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("donor_type", "VARCHAR(80) NULL DEFAULT NULL");
         requiredColumns.put("blood_group_status", "VARCHAR(40) DEFAULT 'self_declared'");
         requiredColumns.put("blood_group_verified_by_hospital_id", "INT NULL DEFAULT NULL");
+        requiredColumns.put("health_status", "VARCHAR(255) NULL DEFAULT NULL");
         requiredColumns.put("blood_group_verified_by_hospital_name", "VARCHAR(180) NULL DEFAULT NULL");
         requiredColumns.put("blood_group_verified_at", "TIMESTAMP NULL DEFAULT NULL");
         requiredColumns.put("blood_group_edit_count", "INT DEFAULT 0");
@@ -349,17 +370,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name = 'Rajesh Kumar' OR father_name LIKE '%Rajesh%'");
             st.executeUpdate("UPDATE donors SET address = NULL WHERE address LIKE '%Near Subharti%' OR address LIKE '%Delhi Road%'");
             st.executeUpdate("UPDATE donors SET last_donation = NULL WHERE last_donation = '2024-01-10'");
-            st.executeUpdate("UPDATE donors SET pulse = NULL WHERE pulse = 72");
-            st.executeUpdate("UPDATE donors SET hemoglobin = NULL WHERE hemoglobin = 14.8");
-            st.executeUpdate("UPDATE donors SET blood_pressure = NULL WHERE blood_pressure = '120/80'");
-            st.executeUpdate("UPDATE donors SET body_temp = NULL WHERE body_temp = 98.6");
             st.executeUpdate("UPDATE donors SET verified_facility = NULL WHERE verified_facility LIKE '%City General%'");
             st.executeUpdate("UPDATE donors SET allergies = NULL WHERE allergies LIKE '%No Known Drug%' OR allergies LIKE '%NKDA%'");
             st.executeUpdate("UPDATE donors SET conditions = NULL WHERE conditions LIKE '%Normal Screening%' OR conditions LIKE '%None Reported%'");
             st.executeUpdate("UPDATE donors SET medications = NULL WHERE medications LIKE '%Unrestricted%' OR medications LIKE 'None%'");
             st.executeUpdate("UPDATE donors SET surgeries = NULL WHERE surgeries LIKE '%None Reported%' OR surgeries LIKE '%< 12%'");
             st.executeUpdate("UPDATE donors SET donor_type = NULL WHERE donor_type LIKE '%Voluntary%'");
-            st.executeUpdate("UPDATE donors SET weight = NULL WHERE weight = 68.0");
         } catch (Exception ignored) {}
 
         // Ensure Smart Donor IDs are assigned to any legacy donors without a donor_id
@@ -615,6 +631,35 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             log.info("burned_donor_ids table verified/created in database.");
         } catch (Exception e) {
             log.warn("Notice checking burned_donor_ids table: {}", e.getMessage());
+        }
+    }
+
+    private void migrateHealthChecksTable(Connection conn) {
+        try (Statement st = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS health_checks (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "donor_id VARCHAR(30) NOT NULL, " +
+                    "hospital_id INT NOT NULL, " +
+                    "staff_id VARCHAR(100) NULL, " +
+                    "checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "outcome VARCHAR(20) NOT NULL, " +
+                    "weight DOUBLE NULL, " +
+                    "hemoglobin DOUBLE NULL, " +
+                    "bp_sys DOUBLE NULL, " +
+                    "bp_dia DOUBLE NULL, " +
+                    "pulse INT NULL, " +
+                    "temperature DOUBLE NULL, " +
+                    "defer_reason_category VARCHAR(100) NULL, " +
+                    "defer_until DATE NULL, " +
+                    "linked_donation_id INT NULL" +
+                    ")";
+            st.executeUpdate(sql);
+            try {
+                st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_hc_donor ON health_checks (donor_id, checked_at)");
+            } catch (Exception ignored) {}
+            log.info("health_checks table verified/created in database.");
+        } catch (Exception e) {
+            log.warn("Notice checking health_checks table: {}", e.getMessage());
         }
     }
 

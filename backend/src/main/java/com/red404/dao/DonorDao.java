@@ -418,6 +418,8 @@ public class DonorDao {
         fields.remove("verifiedFacility");
         fields.remove("verified_date");
         fields.remove("verifiedDate");
+        fields.remove("health_status");
+        fields.remove("healthStatus");
 
         List<String> setClauses = new ArrayList<>();
         List<Object> params = new ArrayList<>();
@@ -1487,6 +1489,46 @@ public class DonorDao {
         return recordDonation(donorId, hospitalId, bloodType, units, volumeMl, vitalsJson, staffUser, status, deferralReason, null);
     }
 
+    public int recordDonationWithId(Connection conn, String donorId, Integer hospitalId, String bloodType, int units, int volumeMl, String vitalsJson, String staffUser, String status, String deferralReason, Integer requestId) throws SQLException {
+        ensureDonationsTableCols();
+        String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason, request_id, created_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?, CURRENT_TIMESTAMP)";
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, donorId != null ? donorId.trim() : "DNR-0101-D1");
+            if (hospitalId == null || hospitalId <= 0) {
+                ps.setNull(2, Types.INTEGER);
+            } else {
+                ps.setInt(2, hospitalId);
+            }
+            ps.setString(3, bloodType != null && !bloodType.isBlank() ? bloodType : "O-");
+            ps.setInt(4, units > 0 ? units : 1);
+            ps.setInt(5, volumeMl > 0 ? volumeMl : 450);
+            ps.setString(6, vitalsJson);
+            ps.setString(7, staffUser != null ? staffUser : "Staff");
+            ps.setString(8, status != null && !status.isBlank() ? status.toUpperCase() : "COMPLETED");
+            ps.setString(9, deferralReason);
+            if (requestId == null || requestId <= 0) {
+                ps.setNull(10, Types.INTEGER);
+            } else {
+                ps.setInt(10, requestId);
+            }
+            int affected = ps.executeUpdate();
+            if (affected > 0 && !"DEFERRED".equalsIgnoreCase(status)) {
+                try (PreparedStatement upd = conn.prepareStatement("UPDATE donors SET last_donation = CURRENT_DATE WHERE donor_id = ? OR CAST(id AS CHAR) = ?")) {
+                    upd.setString(1, donorId);
+                    upd.setString(2, donorId);
+                    upd.executeUpdate();
+                } catch (SQLException ignored) {}
+            }
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+            return affected > 0 ? 1 : -1;
+        }
+    }
+
     public boolean recordDonation(String donorId, Integer hospitalId, String bloodType, int units, int volumeMl, String vitalsJson, String staffUser, String status, String deferralReason, Integer requestId) throws SQLException {
         ensureDonationsTableCols();
         String sql = "INSERT INTO donations (donor_id, hospital_id, blood_type, units, volume_ml, vitals_json, staff_user, donation_date, status, deferral_reason, request_id, created_at) " +
@@ -1705,6 +1747,35 @@ public class DonorDao {
             donor.put("verifiedFacility", null);
             donor.put("verifiedDate", null);
         }
+        try {
+            donor.put("healthStatus", rs.getString("health_status"));
+        } catch (SQLException ignored) {
+            donor.put("healthStatus", null);
+        }
+
+        // Part 6: Donor's current values = the latest health_check that has values
+        try {
+            String dCode = rs.getString("donor_id");
+            int dId = rs.getInt("id");
+            HealthCheckDao hcDao = new HealthCheckDao();
+            Map<String, Object> latestCheck = hcDao.getLatestHealthCheck(dCode != null && !dCode.isBlank() ? dCode : String.valueOf(dId));
+            if (latestCheck != null) {
+                if (latestCheck.get("weight") != null) donor.put("weight", latestCheck.get("weight"));
+                if (latestCheck.get("pulse") != null) donor.put("pulse", latestCheck.get("pulse"));
+                if (latestCheck.get("hemoglobin") != null) donor.put("hemoglobin", latestCheck.get("hemoglobin"));
+                if (latestCheck.get("bloodPressure") != null) donor.put("bloodPressure", latestCheck.get("bloodPressure"));
+                if (latestCheck.get("temperature") != null) donor.put("bodyTemp", latestCheck.get("temperature"));
+                if (latestCheck.get("hospitalName") != null) {
+                    donor.put("verifiedFacility", latestCheck.get("hospitalName"));
+                }
+                if (latestCheck.get("date") != null) {
+                    donor.put("verifiedDate", latestCheck.get("date"));
+                }
+                if (latestCheck.get("hospitalName") != null && latestCheck.get("date") != null) {
+                    donor.put("healthStatus", "Checked at " + latestCheck.get("hospitalName") + " on " + latestCheck.get("date"));
+                }
+            }
+        } catch (Exception ignored) {}
         try {
             java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
             if (createdAt != null) {

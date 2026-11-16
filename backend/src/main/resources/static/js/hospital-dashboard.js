@@ -3944,13 +3944,22 @@ function initDonorCheckin() {
         const staffNameInput = document.getElementById('vitStaffName');
         const staffName = (staffNameInput && staffNameInput.value.trim()) || getLoggedInStaffName();
 
+        const vitalsData = {};
+        if (vitWeight && vitWeight.value) vitalsData.weight = parseFloat(vitWeight.value);
+        if (vitHb && vitHb.value) vitalsData.hemoglobin = parseFloat(vitHb.value);
+        if (vitBpSystolic && vitBpSystolic.value) vitalsData.systolic = parseFloat(vitBpSystolic.value);
+        if (vitBpDiastolic && vitBpDiastolic.value) vitalsData.diastolic = parseFloat(vitBpDiastolic.value);
+        if (vitPulse && vitPulse.value) vitalsData.pulse = parseInt(vitPulse.value, 10);
+        if (vitTemp && vitTemp.value) vitalsData.temperature = parseFloat(vitTemp.value);
+
         const res = await fetch('/api/hospital/donors/defer', {
           method: 'POST',
           headers,
           body: JSON.stringify({
             donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
             reason: reason,
-            staffUser: staffName
+            staffUser: staffName,
+            vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
           }),
           credentials: 'include'
         });
