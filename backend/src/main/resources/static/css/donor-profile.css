@@ -2136,15 +2136,48 @@ body.donor-profile-body {
 /* ==================== 1. EQUAL CARD HEIGHTS & MATCHED BACKGROUND ==================== */
 .profile-grid {
   display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
+  grid-template-columns: 1fr !important;
   gap: 1.5rem !important;
-  align-items: stretch !important; /* Forces both cards to always match height */
+  align-items: stretch !important;
 }
 
-@media (max-width: 1200px) {
-  .profile-grid {
+/* Shared 2-column grid container for Donor Profile & Medical Eligibility */
+.donor-health-top-grid {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  margin-bottom: 20px !important;
+}
+
+.donor-health-top-grid #donorVitalsCard.profile-card,
+.donor-health-top-grid #donorVitalsCard {
+  grid-column: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+.donor-health-top-grid #eligibilityTrackerCard.profile-card,
+.donor-health-top-grid #eligibilityTrackerCard {
+  grid-column: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 991px) {
+  .donor-health-top-grid {
     grid-template-columns: 1fr !important;
-    align-items: stretch !important;
+    gap: 16px !important;
   }
 }
 

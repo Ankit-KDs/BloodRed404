@@ -155,8 +155,8 @@
   <section class="services-section" id="our-services">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Our <span class="highlight">Services</span></h2>
-        <p class="section-subtitle">
+        <h2 class="section-title"><span data-i18n="services.titlePre">Our</span> <span class="highlight" data-i18n="services.titleHighlight">Services</span></h2>
+        <p class="section-subtitle" data-i18n="services.subtitle">
           Connecting voluntary donors with nearby hospitals when emergency blood is needed.
         </p>
       </div>
@@ -167,7 +167,7 @@
           aria-controls="tab-search">
           <div class="stc-icon"><i class="fas fa-satellite-dish"></i></div>
           <div class="stc-content">
-            <span class="stc-title">Blood Availability Search</span>
+            <span class="stc-title" data-i18n="services.tab1">Blood Availability Search</span>
           </div>
         </button>
 
@@ -175,7 +175,7 @@
           aria-controls="tab-directory">
           <div class="stc-icon"><i class="fas fa-hospital-user"></i></div>
           <div class="stc-content">
-            <span class="stc-title">Blood Bank Directory</span>
+            <span class="stc-title" data-i18n="services.tab2">Blood Bank Directory</span>
           </div>
         </button>
 
@@ -183,7 +183,7 @@
           aria-controls="tab-screening">
           <div class="stc-icon"><i class="fas fa-heart-pulse"></i></div>
           <div class="stc-content">
-            <span class="stc-title">Health Screening</span>
+            <span class="stc-title" data-i18n="services.tab3">Health Screening</span>
           </div>
         </button>
 
@@ -191,7 +191,7 @@
           aria-controls="tab-portals">
           <div class="stc-icon"><i class="fas fa-shield-halved"></i></div>
           <div class="stc-content">
-            <span class="stc-title">Portal Access</span>
+            <span class="stc-title" data-i18n="services.tab4">Portal Access</span>
           </div>
         </button>
 
@@ -199,7 +199,7 @@
           aria-controls="tab-campaigns">
           <div class="stc-icon"><i class="fas fa-calendar-check"></i></div>
           <div class="stc-content">
-            <span class="stc-title">Donation Drives</span>
+            <span class="stc-title" data-i18n="services.tab5">Donation Drives</span>
           </div>
         </button>
       </div>
@@ -210,18 +210,18 @@
         <div class="service-pane active" id="tab-search" role="tabpanel">
           <div class="pane-grid">
             <div class="pane-left">
-              <h3 class="pane-heading">Real-Time Blood Availability Search</h3>
-              <p class="pane-text">
+              <h3 class="pane-heading" data-i18n="services.pane1.heading">Real-Time Blood Availability Search</h3>
+              <p class="pane-text" data-i18n="services.pane1.text">
                 Check blood availability within 5km to 20km. See available donors and regional stock without sharing personal identities.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> 5km to 20km radius search</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Private and secure: donor personal details stay anonymous.</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Fast alerts directly to matching donors</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane1.feat1">5km to 20km radius search</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane1.feat2">Private and secure: donor personal details stay anonymous.</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane1.feat3">Fast alerts directly to matching donors</span></div>
               </div>
               <div class="pane-actions">
                 <a href="blood-availability-search.html" class="btn btn-service-primary">
-                  <span>Search Availability</span>
+                  <span data-i18n="services.pane1.btn">Search Availability</span>
                   <i class="fas fa-search-location"></i>
                 </a>
               </div>
@@ -239,18 +239,18 @@
         <div class="service-pane" id="tab-directory" role="tabpanel">
           <div class="pane-grid">
             <div class="pane-left">
-              <h3 class="pane-heading">Blood Bank Directory</h3>
-              <p class="pane-text">
+              <h3 class="pane-heading" data-i18n="services.pane2.heading">Blood Bank Directory</h3>
+              <p class="pane-text" data-i18n="services.pane2.text">
                 Find verified hospital blood banks and blood storage centres. Look up contact numbers and available blood units.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Verified partner hospitals</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Direct phone and contact details</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Blood units by group, updated by each hospital</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane2.feat1">Verified partner hospitals</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane2.feat2">Direct phone and contact details</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane2.feat3">Blood units by group, updated by each hospital</span></div>
               </div>
               <div class="pane-actions">
                 <a href="blood-banks.html" class="btn btn-service-primary">
-                  <span>View Directory</span>
+                  <span data-i18n="services.pane2.btn">View Directory</span>
                   <i class="fas fa-hospital"></i>
                 </a>
               </div>
@@ -268,19 +268,19 @@
         <div class="service-pane" id="tab-screening" role="tabpanel">
           <div class="pane-grid">
             <div class="pane-left">
-              <h3 class="pane-heading">Interactive Health Screening</h3>
-              <p class="pane-text">
+              <h3 class="pane-heading" data-i18n="services.pane3.heading">Interactive Health Screening</h3>
+              <p class="pane-text" data-i18n="services.pane3.text">
                 Not sure if you are eligible to donate today? Take our quick interactive health screening to instantly
                 verify your status based on age, weight, and recent medical history.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Adheres to WHO & NBTC donor standards</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Interactive questionnaire for rapid eligibility check</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Clear guidance on recovery times and donation gaps</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane3.feat1">Adheres to WHO & NBTC donor standards</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane3.feat2">Interactive questionnaire for rapid eligibility check</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane3.feat3">Clear guidance on recovery times and donation gaps</span></div>
               </div>
               <div class="pane-actions">
                 <a href="eligibility-checker.html" class="btn btn-service-primary">
-                  <span>Start Health Screening</span>
+                  <span data-i18n="services.pane3.btn">Start Health Screening</span>
                   <i class="fas fa-stethoscope"></i>
                 </a>
               </div>
@@ -298,23 +298,23 @@
         <div class="service-pane" id="tab-portals" role="tabpanel">
           <div class="pane-grid">
             <div class="pane-left">
-              <h3 class="pane-heading">Secure Portal Access</h3>
-              <p class="pane-text">
+              <h3 class="pane-heading" data-i18n="services.pane4.heading">Secure Portal Access</h3>
+              <p class="pane-text" data-i18n="services.pane4.text">
                 Dedicated portals for registered voluntary donors and verified hospitals to manage requests and donations.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Donor Portal: track donations, eligibility and requests</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Hospital Portal: request blood and update inventory</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Secure authentication and verified accounts</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane4.feat1">Donor Portal: track donations, eligibility and requests</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane4.feat2">Hospital Portal: request blood and update inventory</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane4.feat3">Secure authentication and verified accounts</span></div>
               </div>
               <div class="pane-actions dual-actions">
                 <a href="donor-login.html" class="btn btn-service-primary">
                   <i class="fas fa-user-circle"></i>
-                  <span>Donor Login</span>
+                  <span data-i18n="services.pane4.btnDonor">Donor Login</span>
                 </a>
                 <a href="hospital-login.html" class="btn btn-service-outline">
                   <i class="fas fa-hospital-alt"></i>
-                  <span>Hospital Login</span>
+                  <span data-i18n="services.pane4.btnHospital">Hospital Login</span>
                 </a>
               </div>
             </div>
@@ -331,18 +331,18 @@
         <div class="service-pane" id="tab-campaigns" role="tabpanel">
           <div class="pane-grid">
             <div class="pane-left">
-              <h3 class="pane-heading">Donation Drives</h3>
-              <p class="pane-text">
+              <h3 class="pane-heading" data-i18n="services.pane5.heading">Donation Drives</h3>
+              <p class="pane-text" data-i18n="services.pane5.text">
                 Verified partner hospitals organize blood donation drives. Registered voluntary donors receive invitations and can RSVP directly.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Verified blood donation camps</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Location, date and organizer details</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Easy RSVP and directions</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane5.feat1">Verified blood donation camps</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane5.feat2">Location, date and organizer details</span></div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane5.feat3">Easy RSVP and directions</span></div>
               </div>
               <div class="pane-actions">
                 <a href="donor-register.html" class="btn btn-service-primary">
-                  <span>Register to Participate</span>
+                  <span data-i18n="services.pane5.btn">Register to Participate</span>
                   <i class="fas fa-calendar-plus"></i>
                 </a>
               </div>
@@ -364,19 +364,19 @@
           <button type="button" class="service-acc-header" aria-expanded="true">
             <span class="sah-title">
               <i class="fas fa-satellite-dish"></i>
-              Blood Availability Search
+              <span data-i18n="services.tab1">Blood Availability Search</span>
             </span>
             <i class="fas fa-minus sah-icon"></i>
           </button>
           <div class="service-acc-collapse">
             <div class="service-acc-body">
-              <p class="acc-text">Check blood availability within 5km to 20km without sharing personal details.</p>
+              <p class="acc-text" data-i18n="services.pane1.accText">Check blood availability within 5km to 20km without sharing personal details.</p>
               <div class="acc-features">
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> 5km to 20km radius search
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane1.feat1">5km to 20km radius search</span>
                 </div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Private and secure: donor personal details stay anonymous.
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane1.feat2">Private and secure: donor personal details stay anonymous.</span>
                 </div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Fast alerts directly to matching donors
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane1.feat3">Fast alerts directly to matching donors</span>
                 </div>
               </div>
               <div class="acc-img-wrap">
@@ -384,7 +384,7 @@
               </div>
               <div class="acc-actions">
                 <a href="blood-availability-search.html" class="btn btn-service-primary">
-                  <span>Search Availability</span>
+                  <span data-i18n="services.pane1.btn">Search Availability</span>
                   <i class="fas fa-search-location"></i>
                 </a>
               </div>
@@ -397,25 +397,25 @@
           <button type="button" class="service-acc-header" aria-expanded="false">
             <span class="sah-title">
               <i class="fas fa-hospital-user"></i>
-              Blood Bank Directory
+              <span data-i18n="services.tab2">Blood Bank Directory</span>
             </span>
             <i class="fas fa-plus sah-icon"></i>
           </button>
           <div class="service-acc-collapse">
             <div class="service-acc-body">
-              <p class="acc-text">Find verified hospital blood banks and blood storage centres near you.</p>
+              <p class="acc-text" data-i18n="services.pane2.accText">Find verified hospital blood banks and blood storage centres near you.</p>
               <div class="acc-features">
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Verified government & partner hospitals</div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Direct phone and contact details
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane2.feat1Mob">Verified government & partner hospitals</span></div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane2.feat2">Direct phone and contact details</span>
                 </div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Blood units by group, updated by each hospital</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane2.feat3">Blood units by group, updated by each hospital</span></div>
               </div>
               <div class="acc-img-wrap">
                 <img src="images/services/service-directory.svg" alt="Blood Bank Directory" class="acc-static-img" />
               </div>
               <div class="acc-actions">
                 <a href="blood-banks.html" class="btn btn-service-primary">
-                  <span>View Directory</span>
+                  <span data-i18n="services.pane2.btn">View Directory</span>
                   <i class="fas fa-hospital"></i>
                 </a>
               </div>
@@ -428,24 +428,24 @@
           <button type="button" class="service-acc-header" aria-expanded="false">
             <span class="sah-title">
               <i class="fas fa-heart-pulse"></i>
-              Health Screening
+              <span data-i18n="services.tab3">Health Screening</span>
             </span>
             <i class="fas fa-plus sah-icon"></i>
           </button>
           <div class="service-acc-collapse">
             <div class="service-acc-body">
-              <p class="acc-text">Check your eligibility to donate blood with our quick screening questions.</p>
+              <p class="acc-text" data-i18n="services.pane3.accText">Check your eligibility to donate blood with our quick screening questions.</p>
               <div class="acc-features">
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Adheres to WHO & NBTC donor standards</div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Interactive questionnaire for rapid eligibility check</div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Clear guidance on recovery times and donation gaps</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane3.feat1">Adheres to WHO & NBTC donor standards</span></div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane3.feat2">Interactive questionnaire for rapid eligibility check</span></div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane3.feat3">Clear guidance on recovery times and donation gaps</span></div>
               </div>
               <div class="acc-img-wrap">
                 <img src="images/services/service-screening.svg" alt="Health Screening" class="acc-static-img" />
               </div>
               <div class="acc-actions">
                 <a href="eligibility-checker.html" class="btn btn-service-primary">
-                  <span>Start Health Screening</span>
+                  <span data-i18n="services.pane3.btn">Start Health Screening</span>
                   <i class="fas fa-stethoscope"></i>
                 </a>
               </div>
@@ -458,17 +458,17 @@
           <button type="button" class="service-acc-header" aria-expanded="false">
             <span class="sah-title">
               <i class="fas fa-shield-halved"></i>
-              Portal Access
+              <span data-i18n="services.tab4">Portal Access</span>
             </span>
             <i class="fas fa-plus sah-icon"></i>
           </button>
           <div class="service-acc-collapse">
             <div class="service-acc-body">
-              <p class="acc-text">Dedicated portals for registered voluntary donors and verified hospitals.</p>
+              <p class="acc-text" data-i18n="services.pane4.accText">Dedicated portals for registered voluntary donors and verified hospitals.</p>
               <div class="acc-features">
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Donor Portal: track donations, eligibility and requests</div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Hospital Portal: request blood and update inventory</div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Secure authentication and verified accounts</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane4.feat1">Donor Portal: track donations, eligibility and requests</span></div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane4.feat2">Hospital Portal: request blood and update inventory</span></div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane4.feat3">Secure authentication and verified accounts</span></div>
               </div>
               <div class="acc-img-wrap">
                 <img src="images/services/service-portals.svg" alt="Portals" class="acc-static-img" />
@@ -476,11 +476,11 @@
               <div class="acc-actions dual-actions">
                 <a href="donor-login.html" class="btn btn-service-primary">
                   <i class="fas fa-user-circle"></i>
-                  <span>Donor Login</span>
+                  <span data-i18n="services.pane4.btnDonor">Donor Login</span>
                 </a>
                 <a href="hospital-login.html" class="btn btn-service-outline">
                   <i class="fas fa-hospital-alt"></i>
-                  <span>Hospital Login</span>
+                  <span data-i18n="services.pane4.btnHospital">Hospital Login</span>
                 </a>
               </div>
             </div>
@@ -492,24 +492,24 @@
           <button type="button" class="service-acc-header" aria-expanded="false">
             <span class="sah-title">
               <i class="fas fa-calendar-check"></i>
-              Donation Drives
+              <span data-i18n="services.tab5">Donation Drives</span>
             </span>
             <i class="fas fa-plus sah-icon"></i>
           </button>
           <div class="service-acc-collapse">
             <div class="service-acc-body">
-              <p class="acc-text">Find upcoming blood donation drives and camps organized near you.</p>
+              <p class="acc-text" data-i18n="services.pane5.accText">Find upcoming blood donation drives and camps organized near you.</p>
               <div class="acc-features">
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Verified blood donation camps</div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Location, date and organizer details</div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Easy RSVP and directions</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane5.feat1">Verified blood donation camps</span></div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane5.feat2">Location, date and organizer details</span></div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> <span data-i18n="services.pane5.feat3">Easy RSVP and directions</span></div>
               </div>
               <div class="acc-img-wrap">
                 <img src="images/services/service-campaigns.svg" alt="Campaigns" class="acc-static-img" />
               </div>
               <div class="acc-actions">
                 <a href="donor-register.html" class="btn btn-service-primary">
-                  <span>Explore Campaigns</span>
+                  <span data-i18n="services.pane5.btnMob">Explore Campaigns</span>
                   <i class="fas fa-calendar-plus"></i>
                 </a>
               </div>

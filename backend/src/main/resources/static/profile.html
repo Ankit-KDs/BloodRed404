@@ -308,15 +308,48 @@
 /* ==================== 1. EQUAL CARD HEIGHTS & MATCHED BACKGROUND ==================== */
 .profile-grid {
   display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
+  grid-template-columns: 1fr !important;
   gap: 1.5rem !important;
-  align-items: stretch !important; /* Forces both cards to always match height */
+  align-items: stretch !important;
 }
 
-@media (max-width: 1200px) {
-  .profile-grid {
+/* Shared 2-column grid container for Donor Profile & Medical Eligibility */
+.donor-health-top-grid {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  margin-bottom: 20px !important;
+}
+
+.donor-health-top-grid #donorVitalsCard.profile-card,
+.donor-health-top-grid #donorVitalsCard {
+  grid-column: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+.donor-health-top-grid #eligibilityTrackerCard.profile-card,
+.donor-health-top-grid #eligibilityTrackerCard {
+  grid-column: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 991px) {
+  .donor-health-top-grid {
     grid-template-columns: 1fr !important;
-    align-items: stretch !important;
+    gap: 16px !important;
   }
 }
 
@@ -1254,6 +1287,8 @@
   <main class="profile-workspace-unified">
     <div class="profile-grid">
 
+      <!-- TOP 2-COLUMN GRID: DONOR PROFILE & MEDICAL ELIGIBILITY (SIDE-BY-SIDE ON DESKTOP) -->
+      <div class="donor-health-top-grid">
         <!-- CARD 1: DONOR PROFILE & VITAL HEALTH STATS (Hospital-Fed + AI Check) -->
         <section class="profile-card" id="donorVitalsCard">
           <div class="card-header-row">
@@ -1718,6 +1753,7 @@
             </div>
           </div>
         </section>
+      </div>
 
         <!-- CARD 3: DONOR IMPACT MILESTONES (3x2 3D Glassmorphic Grid) -->
         <section class="profile-card" id="milestonesCard">
