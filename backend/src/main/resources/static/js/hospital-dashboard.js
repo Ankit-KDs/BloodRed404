@@ -3335,6 +3335,38 @@ function initDonorCheckin() {
       healthEl.style.color = (d.healthStatus && d.healthStatus.startsWith('Verified by')) ? '#22c55e' : '#94a3b8';
     }
 
+    // Part 6 Step 4: Check-in lookup card shows donor's last check (date, hospital, hemoglobin, weight)
+    const prevCheckCard = document.getElementById('dlcPreviousCheckContent');
+    if (prevCheckCard) {
+      const hc = d.lastHealthCheck;
+      if (hc && (hc.date || hc.checkedAt)) {
+        const checkDate = hc.date || hc.checkedAt;
+        const hospName = hc.hospitalName || 'Verified Facility';
+        const hbStr = hc.hemoglobin != null ? `${hc.hemoglobin} g/dL` : 'Not recorded';
+        const wtStr = hc.weight != null ? `${hc.weight} kg` : 'Not recorded';
+        const outcome = hc.outcome || 'Donated';
+        const outcomeColor = (outcome === 'Deferred' || outcome === 'deferred') ? '#f5a524' : '#3ecf8e';
+        prevCheckCard.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
+            <span><strong style="color: #fff;">${escapeHtml(checkDate)}</strong> at ${escapeHtml(hospName)}</span>
+            <span style="font-weight: 600; font-size: 11px; color: ${outcomeColor}; text-transform: uppercase;">${escapeHtml(outcome)}</span>
+          </div>
+          <div style="color: var(--hosp-text-muted); font-size: 12px;">
+            Hemoglobin: <strong style="color: #fff;">${escapeHtml(hbStr)}</strong> · Weight: <strong style="color: #fff;">${escapeHtml(wtStr)}</strong>
+          </div>
+        `;
+      } else {
+        prevCheckCard.textContent = 'No previous hospital checks recorded';
+      }
+    }
+
+    // Toggle Clear Deferral button visibility
+    const clearDefWrap = document.getElementById('dlcClearDeferralWrap');
+    if (clearDefWrap) {
+      const isDef = Boolean(d.isDeferred || (d.eligibility && d.eligibility.deferred));
+      clearDefWrap.style.display = isDef ? 'block' : 'none';
+    }
+
     // Populate registration health answers (Group B.5)
     const regAnsWeight = document.getElementById('regAnsWeight');
     const regAnsAllergies = document.getElementById('regAnsAllergies');
@@ -3986,6 +4018,49 @@ function initDonorCheckin() {
       } catch (e) {
         if (deferModal) deferModal.style.display = 'none';
         alert('Network error while documenting deferral.');
+      }
+    });
+  }
+
+  // Part 6 Step 3 Item 4: Clear donor deferral handler
+  const btnClearDonorDeferral = document.getElementById('btnClearDonorDeferral');
+  if (btnClearDonorDeferral) {
+    btnClearDonorDeferral.addEventListener('click', async () => {
+      if (!currentLoadedDonor) return;
+      const donorName = currentLoadedDonor.name || 'this donor';
+      if (!confirm(`Are you sure you want to lift the hospital deferral for ${donorName}?`)) return;
+
+      try {
+        const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const staffName = getLoggedInStaffName();
+        const res = await fetch('/api/hospital/donors/clear-deferral', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            donorId: currentLoadedDonor.donorId || currentLoadedDonor.id,
+            staffUser: staffName
+          }),
+          credentials: 'include'
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          if (typeof showToast === 'function') {
+            showToast(`Deferral lifted for ${donorName}. Donor notified.`, 'success');
+          } else {
+            alert(`Deferral lifted for ${donorName}. Donor has been notified.`);
+          }
+          // Refresh check-in lookup
+          const qId = currentLoadedDonor.donorId || currentLoadedDonor.id;
+          fetchDonorDetails(qId);
+        } else {
+          alert('Failed to clear deferral: ' + (data.message || 'Server error'));
+        }
+      } catch (err) {
+        alert('Network error clearing deferral: ' + err.message);
       }
     });
   }

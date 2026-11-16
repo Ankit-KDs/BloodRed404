@@ -1047,6 +1047,11 @@ public class HospitalController {
             details.put("bloodGroupEditCount", donor.get("bloodGroupEditCount"));
             details.put("bloodGroupAuditTrail", bloodGroupAuditDao.listByDonor(donorNumId));
 
+            // Part 6 Step 4: Check-in lookup card shows donor's last check (date, hospital, hemoglobin, weight)
+            Map<String, Object> lastCheck = healthCheckDao.getLatestHealthCheck(matchedDonorId);
+            details.put("lastHealthCheck", lastCheck);
+            AdminController.addLog("DONOR_LOOKUP", "Verified hospital " + hospName + " (ID: " + hospitalId + ") looked up donor " + matchedDonorId);
+
             return ok("Donor details retrieved", details);
         } catch (Exception e) {
             return serverError(e);
@@ -1449,13 +1454,59 @@ public class HospitalController {
                 int defNumId = ((Number) defDonor.get("id")).intValue();
                 donorDao.invalidateQrToken(defNumId);
                 String todayStr = java.time.LocalDate.now().toString();
-                // Deferral reason is confidential to hospital; notification states check-in recorded
-                donorDao.addDonorNotification(defNumId, "Health check recorded at " + hospName,
-                        "Health check recorded at " + hospName + " on " + todayStr + ".", "checkin");
+                // Part 6 Step 3: Deferral reason is confidential to hospital; donor sees generic message with date
+                String notifMsg = "The hospital could not accept your donation on " + todayStr + ". Please speak to the hospital.";
+                if (deferUntil != null) {
+                    notifMsg += " You can try again on " + deferUntil + ".";
+                }
+                donorDao.addDonorNotification(defNumId, "Health check recorded at " + hospName, notifMsg, "checkin");
             }
             AdminController.addLog("DONATION_DEFERRED", "Donor " + donorId + " deferred at hospital ID " + hospitalId + ": " + reason);
 
             return ok("Donor has been deferred with documented reason.", Map.of("donorId", donorId, "reason", reason));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/donors/clear-deferral")
+    public ResponseEntity<ApiResponse> clearDonorDeferral(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+            Map<String, Object> hosp = getHospitalFromSession(request);
+            if (hosp == null) hosp = hospitalDao.findById(hospitalId);
+            String verificationStatus = hosp != null ? (String) hosp.get("verificationStatus") : null;
+            if (verificationStatus == null && hosp != null) verificationStatus = (String) hosp.get("verification_status");
+            if (verificationStatus == null || !"Verified".equalsIgnoreCase(verificationStatus.trim())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ApiResponse(false, "Access denied: Only verified hospitals can clear donor deferrals."));
+            }
+
+            String donorId = JsonUtil.textOrNull(body, "donorId");
+            if (donorId == null || donorId.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Donor ID is required."));
+            }
+            String staffUser = JsonUtil.textOrNull(body, "staffUser");
+            if (staffUser == null) staffUser = "Hospital Staff";
+            String hospName = hosp != null && hosp.get("hospital_name") != null ? hosp.get("hospital_name").toString() : "Verified Hospital";
+
+            boolean cleared = healthCheckDao.clearDonorDeferral(donorId);
+            if (!cleared) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "No active deferral found to clear for donor " + donorId));
+            }
+
+            Map<String, Object> donor = donorDao.findByIdOrDonorId(donorId);
+            if (donor != null && donor.get("id") != null) {
+                int defNumId = ((Number) donor.get("id")).intValue();
+                donorDao.addDonorNotification(defNumId, "Deferral lifted by " + hospName,
+                        "Your deferral has been lifted by " + hospName + ". You are now eligible to donate subject to standard donation intervals.", "checkin");
+            }
+            AdminController.addLog("DEFERRAL_CLEARED", "Staff " + staffUser + " at hospital " + hospName + " (ID: " + hospitalId + ") cleared deferral for donor " + donorId);
+
+            return ok("Deferral cleared successfully. Donor has been notified.", Map.of("donorId", donorId));
         } catch (Exception e) {
             return serverError(e);
         }

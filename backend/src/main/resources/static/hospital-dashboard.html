@@ -860,6 +860,22 @@
               <div>Eligibility: <strong id="dlcEligibility">-</strong></div>
               <div style="grid-column: span 2;">Health Status: <strong style="color: #94a3b8;" id="dlcHealthStatus">Not yet verified by a hospital</strong></div>
             </div>
+
+            <!-- Part 6 Step 4: Check-in lookup card shows donor's last check (date, hospital, hemoglobin, weight) -->
+            <div id="dlcPreviousCheckContainer" style="margin-top: 14px; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--hosp-border); border-radius: 8px;">
+              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--hosp-text-muted); letter-spacing: 0.5px;">Previous Clinical Check</div>
+              <div id="dlcPreviousCheckContent" style="margin-top: 4px; font-size: 12.5px; color: #ecebe8; line-height: 1.4;">
+                No previous hospital checks recorded
+              </div>
+            </div>
+
+            <!-- Part 6 Step 3 Item 4: Clear Deferral Action -->
+            <div id="dlcClearDeferralWrap" style="display: none; margin-top: 10px;">
+              <button type="button" class="btn-secondary" id="btnClearDonorDeferral" style="width: 100%; justify-content: center; border-color: rgba(62, 207, 142, 0.4); color: #3ecf8e; font-size: 12px; padding: 6px 12px;">
+                <span>Clear Hospital Deferral</span>
+              </button>
+            </div>
+
             <!-- Donor Eligibility Capsule (Part 4 & 6) -->
             <div id="dlcCapsuleContainer" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hosp-border);">
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">

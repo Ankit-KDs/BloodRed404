@@ -223,6 +223,37 @@ public class HealthCheckDao {
     }
 
     /**
+     * Clear active hospital deferral for a donor by moving defer_until to the past.
+     * Part 6 Step 3: Staff can clear a deferral; the donor is notified.
+     */
+    public boolean clearDonorDeferral(String donorId) {
+        if (donorId == null || donorId.isBlank()) return false;
+        String trimmed = donorId.trim();
+        java.sql.Date yesterday = java.sql.Date.valueOf(LocalDate.now().minusDays(1));
+        java.sql.Date today = java.sql.Date.valueOf(LocalDate.now());
+
+        String sql = "UPDATE health_checks SET defer_until = ? " +
+                "WHERE (donor_id = ? OR donor_id IN (SELECT donor_id FROM donors WHERE donor_id = ? OR CAST(id AS CHAR) = ?) " +
+                "   OR donor_id IN (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? OR CAST(id AS CHAR) = ?)) " +
+                "AND LOWER(outcome) = 'deferred' AND (defer_until IS NULL OR defer_until >= ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, yesterday);
+            ps.setString(2, trimmed);
+            ps.setString(3, trimmed);
+            ps.setString(4, trimmed);
+            ps.setString(5, trimmed);
+            ps.setString(6, trimmed);
+            ps.setDate(7, today);
+            int rows = ps.executeUpdate();
+            return rows > 0;
+        } catch (Exception e) {
+            log.error("Error clearing donor deferral: {}", e.getMessage(), e);
+        }
+        return false;
+    }
+
+    /**
      * Retrieve health check history for a donor (last 5 records).
      */
     public List<Map<String, Object>> getHealthCheckHistory(String donorId, int limit) {

@@ -1049,10 +1049,11 @@
       const isDeferred = Boolean(donorData.isDeferred || elig.deferred);
       let textMsg = '';
       if (isDeferred) {
+        const checkDate = donorData.verifiedDate || (donorData.healthChecks && donorData.healthChecks[0] && donorData.healthChecks[0].date) || 'your visit';
         if (nextDateStr || donorData.deferUntil || donorData.deferredUntil) {
-          textMsg = `Deferred by hospital. Next eligible on ${formattedDate}${daysLeft > 0 ? ` (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})` : ''}`;
+          textMsg = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital. You can try again on ${formattedDate}.`;
         } else {
-          textMsg = 'Deferred by hospital. Please check with the facility';
+          textMsg = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital.`;
         }
       } else {
         textMsg = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
@@ -1090,6 +1091,8 @@
           isUnlocked = count >= 1 && donorData.donations.some(d => {
             const timeStr = d.createdAt || d.created_at || d.timestamp || d.time;
             if (!timeStr) return false;
+            const strVal = String(timeStr).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(strVal)) return false;
             try {
               const dt = new Date(timeStr);
               if (isNaN(dt.getTime())) return false;

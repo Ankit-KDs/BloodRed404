@@ -120,10 +120,11 @@
 
         badge.className = 'status-eligibility-btn recovering';
         if (isDeferred) {
+          const checkDate = user.verifiedDate || (user.healthChecks && user.healthChecks[0] && user.healthChecks[0].date) || 'your visit';
           if (nextDate) {
-            textEl.textContent = `Deferred by hospital. Next eligible on ${formattedDate}${daysLeft > 0 ? ` (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})` : ''}`;
+            textEl.textContent = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital. You can try again on ${formattedDate}.`;
           } else {
-            textEl.textContent = "Deferred by hospital. Please check with the facility";
+            textEl.textContent = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital.`;
           }
         } else {
           textEl.textContent = `Next eligible on ${formattedDate} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;

@@ -321,6 +321,7 @@ public class HospitalDao {
             if (dbStatus != null && !dbStatus.isBlank()) vStatus = dbStatus;
         } catch (Exception ignored) {}
         hospital.put("verificationStatus", vStatus);
+        hospital.put("verification_status", vStatus);
         java.sql.Timestamp ts = rs.getTimestamp("created_at");
         hospital.put("createdAt", ts != null ? ts.toString() : null);
         return hospital;

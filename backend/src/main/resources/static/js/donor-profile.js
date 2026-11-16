@@ -128,6 +128,11 @@
         });
       }
     });
+
+    window.addEventListener('red404_language_changed', () => {
+      evaluateHealthAndEligibility();
+      renderDigitalIdAndIntakePayload();
+    });
   });
 
   function cleanLiveVal(val, demoPatterns = []) {
@@ -660,10 +665,11 @@
       }
       const isDeferred = Boolean(currentDonor.isDeferred || elig.deferred);
       if (isDeferred) {
+        const checkDate = currentDonor.verifiedDate || (currentDonor.healthChecks && currentDonor.healthChecks[0] && currentDonor.healthChecks[0].date) || 'your visit';
         if (nextDateStr || currentDonor.deferUntil || currentDonor.deferredUntil) {
-          statusWording = `Deferred by hospital. Next eligible on ${formattedDate}${daysUntil > 0 ? ` (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'})` : ''}`;
+          statusWording = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital. You can try again on ${formattedDate}.`;
         } else {
-          statusWording = "Deferred by hospital. Please check with the facility";
+          statusWording = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital.`;
         }
       } else {
         statusWording = `Next eligible on ${formattedDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'})`;
@@ -673,10 +679,43 @@
       }
     }
 
-    // Dynamic tick label update based on gender gap
+    // Dynamic tick label update & binding active tick to progress (Part 6 Step 6)
+    const tick90 = document.querySelector('.telemetry-tick.tick-90');
+    const tick60 = document.querySelector('.telemetry-tick.tick-60');
+    const tick30 = document.querySelector('.telemetry-tick.tick-30');
+    const tick0 = document.querySelector('.telemetry-tick.tick-0');
     const tick90Label = document.querySelector('.telemetry-tick.tick-90 .tick-label');
     if (tick90Label) {
       tick90Label.textContent = `${cooldownDays}d`;
+    }
+
+    [tick90, tick60, tick30, tick0].forEach(t => {
+      if (t) {
+        const lbl = t.querySelector('.tick-label');
+        if (lbl) lbl.classList.remove('ready', 'active');
+      }
+    });
+
+    if (isEligible || progressPct >= 100) {
+      if (tick90) {
+        const lbl = tick90.querySelector('.tick-label');
+        if (lbl) lbl.classList.add('ready');
+      }
+    } else if (progressPct >= 66) {
+      if (tick60) {
+        const lbl = tick60.querySelector('.tick-label');
+        if (lbl) lbl.classList.add('active');
+      }
+    } else if (progressPct >= 33) {
+      if (tick30) {
+        const lbl = tick30.querySelector('.tick-label');
+        if (lbl) lbl.classList.add('active');
+      }
+    } else {
+      if (tick0) {
+        const lbl = tick0.querySelector('.tick-label');
+        if (lbl) lbl.classList.add('active');
+      }
     }
 
     if (metaTag) {
@@ -788,6 +827,9 @@
     const isNightOwl = hist.some(d => {
       const dt = d.createdAt || d.timestamp || d.donationDate || d.date;
       if (!dt) return false;
+      const strVal = String(dt).trim();
+      // Date-only string (e.g. 2026-11-15) represents standard daytime check-in operating hours, NOT Night Owl
+      if (/^\d{4}-\d{2}-\d{2}$/.test(strVal)) return false;
       try {
         const parsed = new Date(dt);
         if (isNaN(parsed.getTime())) return false;

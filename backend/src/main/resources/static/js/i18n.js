@@ -202,7 +202,29 @@
       'profile.prefLang': 'Preferred Language',
       'profile.notifPrefs': 'Notification Preferences',
       'profile.scannableQr': 'Scannable donor QR',
-      'profile.saveChanges': 'Save changes'
+      'profile.saveChanges': 'Save changes',
+      'profile.vitalsTitle': 'Donor Profile & Vital Health Stats',
+      'profile.historyTitle': 'Health Check History',
+      'profile.trackerTitle': 'Medical Eligibility Tracker',
+      'profile.milestonesTitle': 'Donor Impact Milestones',
+      'profile.age': 'Age:',
+      'profile.weight': 'Weight:',
+      'profile.pulse': 'Pulse:',
+      'profile.hemoglobin': 'Hemoglobin:',
+      'profile.bloodPressure': 'Blood Pressure:',
+      'profile.temperature': 'Body Temperature:',
+      'profile.waitingCheck': 'Waiting for hospital check',
+      'profile.withinRange': 'Within usual range',
+      'profile.outsideRange': 'Outside usual range. Please speak to the hospital doctor',
+      'profile.residentialAddress': 'Residential Address',
+      'profile.fatherName': "Father's Name",
+      'profile.verifiedFacility': 'Verified Facility',
+      'profile.lastDonationDate': 'Last Donation Date',
+      'profile.knownAllergies': 'Known Allergies',
+      'profile.existingConditions': 'Existing Medical Conditions',
+      'profile.currentMedications': 'Current Medications',
+      'profile.previousSurgeries': 'Previous Surgeries (< 12 mos)',
+      'profile.noneRecorded': 'None recorded'
     },
 
     hi: {
@@ -394,7 +416,29 @@
       'profile.prefLang': 'पसंदीदा भाषा',
       'profile.notifPrefs': 'सूचना प्राथमिकताएं',
       'profile.scannableQr': 'स्कैन करने योग्य रक्तदाता QR',
-      'profile.saveChanges': 'परिवर्तन सहेजें'
+      'profile.saveChanges': 'परिवर्तन सहेजें',
+      'profile.vitalsTitle': 'रक्तदाता प्रोफ़ाइल और स्वास्थ्य आंकड़े',
+      'profile.historyTitle': 'स्वास्थ्य जांच इतिहास',
+      'profile.trackerTitle': 'चिकित्सा पात्रता ट्रैकर',
+      'profile.milestonesTitle': 'रक्तदाता प्रभाव मील के पत्थर',
+      'profile.age': 'आयु:',
+      'profile.weight': 'वजन:',
+      'profile.pulse': 'नाड़ी:',
+      'profile.hemoglobin': 'हीमोग्लोबिन:',
+      'profile.bloodPressure': 'रक्तचाप:',
+      'profile.temperature': 'शरीर का तापमान:',
+      'profile.waitingCheck': 'अस्पताल जांच की प्रतीक्षा',
+      'profile.withinRange': 'सामान्य सीमा में',
+      'profile.outsideRange': 'सामान्य सीमा से बाहर। कृपया अस्पताल के डॉक्टर से परामर्श लें',
+      'profile.residentialAddress': 'आवासीय पता',
+      'profile.fatherName': 'पिता का नाम',
+      'profile.verifiedFacility': 'सत्यापित अस्पताल',
+      'profile.lastDonationDate': 'अंतिम रक्तदान तिथि',
+      'profile.knownAllergies': 'ज्ञात एलर्जी',
+      'profile.existingConditions': 'मौजूदा चिकित्सा स्थितियां',
+      'profile.currentMedications': 'वर्तमान दवाएं',
+      'profile.previousSurgeries': 'पिछली सर्जरी (< 12 महीने)',
+      'profile.noneRecorded': 'कोई दर्ज नहीं'
     }
   };
 
@@ -721,7 +765,78 @@
     'Search verified blood banks': 'सत्यापित रक्त बैंक खोजें',
     'Search by hospital name or city...': 'अस्पताल के नाम या शहर से खोजें...',
     'Full legal name': 'पूरा कानूनी नाम',
-    '10-digit mobile number': '10 अंकों का मोबाइल नंबर'
+    '10-digit mobile number': '10 अंकों का मोबाइल नंबर',
+
+    // Part 6 Clinical Health Checks & Profile Translations
+    'Donor Profile & Vital Health Stats': 'रक्तदाता प्रोफ़ाइल और स्वास्थ्य आंकड़े',
+    'Medical Eligibility Tracker': 'चिकित्सा पात्रता ट्रैकर',
+    'Donor Impact Milestones': 'रक्तदाता प्रभाव मील के पत्थर',
+    'Health Check History': 'स्वास्थ्य जांच इतिहास',
+    'Last 5 Records': 'अंतिम 5 रिकॉर्ड',
+    'Outcome': 'परिणाम',
+    'Vitals & Status': 'लक्षण और स्थिति',
+    'Passed clinical screening': 'नैदानिक जांच में उत्तीर्ण',
+    'Under medical review': 'चिकित्सा समीक्षाधीन',
+    'Approved': 'स्वीकृत',
+    'Deferred': 'स्थगित',
+    'Age:': 'आयु:',
+    'Weight:': 'वजन:',
+    'Weight': 'वजन',
+    'Pulse:': 'नाड़ी:',
+    'Pulse': 'नाड़ी',
+    'Pulse / Heart Rate': 'नाड़ी / हृदय गति',
+    'Hemoglobin:': 'हीमोग्लोबिन:',
+    'Hemoglobin': 'हीमोग्लोबिन',
+    'Blood Pressure:': 'रक्तचाप:',
+    'Blood Pressure': 'रक्तचाप',
+    'Body Temperature:': 'शरीर का तापमान:',
+    'Body Temperature': 'शरीर का तापमान',
+    'Within usual range': 'सामान्य सीमा में',
+    'Outside usual range. Please speak to the hospital doctor': 'सामान्य सीमा से बाहर। कृपया अस्पताल के डॉक्टर से परामर्श लें',
+    'Outside usual range — speak to the hospital doctor': 'सामान्य सीमा से बाहर — कृपया अस्पताल के डॉक्टर से परामर्श लें',
+    'Waiting for hospital check': 'अस्पताल जांच की प्रतीक्षा',
+    'None recorded': 'कोई दर्ज नहीं',
+    'Set exact location on map or via GPS': 'मानचित्र या GPS द्वारा सटीक स्थान निर्धारित करें',
+    'Verified Facility': 'सत्यापित अस्पताल',
+    'Last Donation Date': 'अंतिम रक्तदान तिथि',
+    'Residential Address': 'आवासीय पता',
+    'Residential street address': 'आवासीय सड़क का पता',
+    "Father's Name": 'पिता का नाम',
+    "Father's full name (optional)": 'पिता का पूरा नाम (वैकल्पिक)',
+    'Known Allergies': 'ज्ञात एलर्जी',
+    'Known drug allergies or leave blank': 'ज्ञात दवा एलर्जी या खाली छोड़ें',
+    'Existing Medical Conditions': 'मौजूदा चिकित्सा स्थितियां',
+    'Medical conditions or leave blank': 'चिकित्सा स्थितियां या खाली छोड़ें',
+    'Current Medications': 'वर्तमान दवाएं',
+    'Current medications or leave blank': 'वर्तमान दवाएं या खाली छोड़ें',
+    'Previous Surgeries': 'पिछली सर्जरी',
+    'Previous Surgeries (< 12 mos)': 'पिछली सर्जरी (< 12 महीने)',
+    'Previous surgeries or leave blank': 'पिछली सर्जरी या खाली छोड़ें',
+    'Notification Preferences': 'अधिसूचना प्राथमिकताएं',
+    'SMS Alerts': 'एसएमएस अलर्ट',
+    'Email Alerts': 'ईमेल अलर्ट',
+    'Push Notifications': 'पुश नोटिफिकेशन',
+    'Tap QR to zoom • Scan for details': 'ज़ूम करने के लिए QR दबाएं • विवरण के लिए स्कैन करें',
+    'Regenerate QR': 'QR पुनः बनाएं',
+    'Edit Donor Profile': 'रक्तदाता प्रोफ़ाइल संपादित करें',
+    'Identity & Demographics': 'पहचान और जनसांख्यिकी',
+    'Contact & Residence': 'संपर्क और निवास',
+    'Clinical Vitals & Health Screening': 'नैदानिक लक्षण और स्वास्थ्य जांच',
+    'Update your contact and demographic details below. Clinical vitals and donation recovery intervals are verified and set by hospital staff during check-in.': 'नीचे अपना संपर्क और जनसांख्यिकी विवरण अपडेट करें। नैदानिक लक्षण और रक्तदान रिकवरी अवधि चेक-इन के दौरान अस्पताल के कर्मचारियों द्वारा सत्यापित और निर्धारित की जाती है।',
+    'Digital Blood Donor QR': 'डिजिटल रक्तदाता QR',
+    'Scan with camera to view official verified intake details': 'आधिकारिक सत्यापित विवरण देखने के लिए कैमरे से स्कैन करें',
+    'Tap outside or press Esc to dismiss': 'खारिज करने के लिए बाहर टैप करें या Esc दबाएं',
+    'System: Online': 'सिस्टम: ऑनलाइन',
+    'HEALTH STATUS: FIT TO DONATE': 'स्वास्थ्य स्थिति: रक्तदान के लिए उपयुक्त',
+    'HEALTH STATUS: MEDICAL REVIEW REQUIRED': 'स्वास्थ्य स्थिति: चिकित्सा समीक्षा आवश्यक',
+    'HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION': 'स्वास्थ्य स्थिति: अस्पताल स्वास्थ्य सत्यापन की प्रतीक्षा है',
+    'Verified during hospital intake': 'अस्पताल चेक-इन के दौरान सत्यापित',
+    'Saving changes...': 'परिवर्तन सहेजे जा रहे हैं...',
+    'NEGATIVE': 'नेगेटिव',
+    'LOCKED': 'लॉक',
+    'UNLOCKED': 'अनलॉक',
+    'LOCKED • Req. 5 Donations': 'लॉक • 5 रक्तदान आवश्यक',
+    'LOCKED • Req. 10 Donations': 'लॉक • 10 रक्तदान आवश्यक'
   };
 
   let currentLang = 'en';
@@ -815,6 +930,65 @@
     } catch (_) {}
   }
 
+  function matchDynamicPhrase(text) {
+    if (!text || typeof text !== 'string') return null;
+    let m;
+    // 1. "The hospital could not accept your donation on <date>. Please speak to the hospital. You can try again on <date>."
+    if ((m = text.match(/^The hospital could not accept your donation on (.+?)\. Please speak to the hospital\.\s*You can try again on (.+?)\.?$/))) {
+      return `अस्पताल ${m[1]} को आपका रक्तदान स्वीकार नहीं कर सका। कृपया अस्पताल से संपर्क करें। आप ${m[2]} को पुनः प्रयास कर सकते हैं।`;
+    }
+    // 2. "The hospital could not accept your donation on <date>. Please speak to the hospital."
+    if ((m = text.match(/^The hospital could not accept your donation on (.+?)\. Please speak to the hospital\.?$/))) {
+      return `अस्पताल ${m[1]} को आपका रक्तदान स्वीकार नहीं कर सका। कृपया अस्पताल से संपर्क करें।`;
+    }
+    // 3. "Next eligible on <date> (<N> days)" or "(<N> day)"
+    if ((m = text.match(/^Next eligible on (.+?)\s*\((.+?)\)$/))) {
+      const daysPart = m[2].replace(/days?/i, 'दिन');
+      return `अगली पात्रता: ${m[1]} (${daysPart})`;
+    }
+    // 4. "Checked at <hosp> on <date>"
+    if ((m = text.match(/^Checked at (.+?)\s+on\s+(.+)$/))) {
+      return `${m[1]} में ${m[2]} को जांच की गई`;
+    }
+    // 5. "Checked on <date> at <hosp>"
+    if ((m = text.match(/^Checked on (.+?)\s+at\s+(.+)$/))) {
+      return `${m[2]} में ${m[1]} को जांच की गई`;
+    }
+    // 6. "Last checked at <hosp> on <date>"
+    if ((m = text.match(/^Last checked at (.+?)\s+on\s+(.+)$/))) {
+      return `अंतिम जांच: ${m[1]} में ${m[2]} को`;
+    }
+    // 7. "Medically verified at <hosp> on <date>"
+    if ((m = text.match(/^Medically verified at (.+?)\s+on\s+(.+)$/))) {
+      return `${m[1]} में ${m[2]} को चिकित्सकीय रूप से सत्यापित`;
+    }
+    // 8. "Earned Badges: <N> / <M>"
+    if ((m = text.match(/^Earned Badges:\s*(\d+)\s*\/\s*(\d+)$/))) {
+      return `अर्जित पदक: ${m[1]} / ${m[2]}`;
+    }
+    // 9. "<N> Record" or "<N> Records"
+    if ((m = text.match(/^(\d+)\s+Records?$/i))) {
+      return `${m[1]} रिकॉर्ड`;
+    }
+    // 10. "Next eligible: <date>"
+    if ((m = text.match(/^Next eligible:\s*(.+)$/i))) {
+      return `अगली पात्रता: ${m[1]}`;
+    }
+    // 11. "Signed in as <email>"
+    if ((m = text.match(/^Signed in as\s*(.+)$/))) {
+      return `लॉग इन किया गया: ${m[1]}`;
+    }
+    // 12. "Checked at <hosp>, <date>"
+    if ((m = text.match(/^Checked at (.+?),\s*(.+)$/))) {
+      return `${m[1]}, ${m[2]} में जांच की गई`;
+    }
+    // 13. "Coordinates: <lat>, <lng>"
+    if ((m = text.match(/^Coordinates:\s*(.+)$/i))) {
+      return `निर्देशांक: ${m[1]}`;
+    }
+    return null;
+  }
+
   function applyTranslations(lang) {
     if (isApplying) return;
     isApplying = true;
@@ -862,11 +1036,11 @@
               rawText = (node.textContent || '').trim();
             }
 
-            if (rawText && PHRASE_MAP[rawText]) {
+            const hiText = PHRASE_MAP[rawText] || matchDynamicPhrase(rawText);
+            if (rawText && hiText) {
               if (!node.getAttribute('data-orig-en')) {
                 node.setAttribute('data-orig-en', rawText);
               }
-              const hiText = PHRASE_MAP[rawText];
               if (icon) {
                 node.innerHTML = '';
                 node.appendChild(icon);
@@ -877,6 +1051,32 @@
             }
           }
         }
+
+        // 2b. Translate read-only / disabled inputs in Hindi mode
+        document.querySelectorAll('input[readonly], input[disabled]').forEach(el => {
+          const val = (el.value || '').trim();
+          if (!val) return;
+          const hiVal = PHRASE_MAP[val] || matchDynamicPhrase(val);
+          if (hiVal) {
+            if (!el.getAttribute('data-orig-value')) {
+              el.setAttribute('data-orig-value', el.value);
+            }
+            el.value = hiVal;
+          }
+        });
+
+        // 2c. Translate select options in Hindi mode
+        document.querySelectorAll('select option').forEach(opt => {
+          const text = (opt.textContent || '').trim();
+          if (!text) return;
+          const hiOpt = PHRASE_MAP[text] || matchDynamicPhrase(text);
+          if (hiOpt) {
+            if (!opt.getAttribute('data-orig-text')) {
+              opt.setAttribute('data-orig-text', text);
+            }
+            opt.textContent = hiOpt;
+          }
+        });
       } else {
         // Revert phrase mapped elements back to English
         document.querySelectorAll('[data-orig-en]').forEach(el => {
@@ -890,6 +1090,22 @@
             } else {
               el.textContent = orig;
             }
+          }
+        });
+
+        // Revert read-only inputs back to English
+        document.querySelectorAll('input[data-orig-value]').forEach(el => {
+          const orig = el.getAttribute('data-orig-value');
+          if (orig) {
+            el.value = orig;
+          }
+        });
+
+        // Revert select options back to English
+        document.querySelectorAll('select option[data-orig-text]').forEach(opt => {
+          const orig = opt.getAttribute('data-orig-text');
+          if (orig) {
+            opt.textContent = orig;
           }
         });
       }
