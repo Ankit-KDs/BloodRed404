@@ -127,29 +127,40 @@
       updateCommandNav(currentUser);
     }
 
-    // Auto-inject Language Toggle (EN | हिन्दी) into navbar (Part 8)
+    // Ensure exactly ONE Language Toggle (EN | हिन्दी) in navbar (Part 4)
     const navRight = document.querySelector('.command-nav-right');
-    if (navRight && !document.getElementById('donorNavLangToggle') && !navRight.querySelector('.lang-toggle-pill') && !navRight.querySelector('.nav-lang-toggle')) {
-      const langDiv = document.createElement('div');
-      langDiv.className = 'nav-lang-toggle lang-toggle-pill';
-      langDiv.id = 'donorNavLangToggle';
-      langDiv.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; margin-right: 8px;';
-      langDiv.innerHTML = `
-        <button type="button" class="lang-toggle-btn" data-lang="en" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px;">EN</button>
-        <span style="opacity: 0.4; color: #fff;">|</span>
-        <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px;">हिन्दी</button>
-      `;
-      navRight.insertBefore(langDiv, navRight.firstChild);
+    if (navRight) {
+      const existingToggles = navRight.querySelectorAll('.lang-toggle-pill, .nav-lang-toggle');
+      if (existingToggles.length > 1) {
+        for (let i = 1; i < existingToggles.length; i++) {
+          existingToggles[i].remove();
+        }
+      }
+      let langDiv = existingToggles.length > 0 ? existingToggles[0] : null;
+      if (!langDiv) {
+        langDiv = document.createElement('div');
+        langDiv.className = 'nav-lang-toggle lang-toggle-pill';
+        langDiv.id = 'donorNavLangToggle';
+        langDiv.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; margin-right: 8px;';
+        langDiv.innerHTML = `
+          <button type="button" class="lang-toggle-btn" data-lang="en" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px;">EN</button>
+          <span style="opacity: 0.4; color: #fff;">|</span>
+          <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px;">हिन्दी</button>
+        `;
+        navRight.insertBefore(langDiv, navRight.firstChild);
+      }
 
       langDiv.querySelectorAll('.lang-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        const clone = btn.cloneNode(true);
+        btn.parentNode.replaceChild(clone, btn);
+        clone.addEventListener('click', (e) => {
           e.preventDefault();
-          const l = btn.getAttribute('data-lang');
+          const l = clone.getAttribute('data-lang');
           if (window.RED404_I18N) window.RED404_I18N.setLanguage(l);
         });
       });
-      if (window.RED404_I18N) {
-        const cur = window.RED404_I18N.getLanguage();
+
+      function updateActiveToggleBtn(cur) {
         langDiv.querySelectorAll('.lang-toggle-btn').forEach(b => {
           if (b.getAttribute('data-lang') === cur) {
             b.classList.add('active');
@@ -162,6 +173,13 @@
           }
         });
       }
+
+      if (window.RED404_I18N) {
+        updateActiveToggleBtn(window.RED404_I18N.getLanguage());
+      }
+      window.addEventListener('red404_language_changed', (e) => {
+        if (e.detail && e.detail.lang) updateActiveToggleBtn(e.detail.lang);
+      });
     }
 
     // Purge and redirect helper if session revoked or account deleted
@@ -1087,20 +1105,27 @@
                   const state = addr.state || '';
                   const locStr = state ? `${district}, ${state}` : district;
                   const span = gpsPill.querySelector('span:not(.gps-dot-pulse)');
-                  if (span) span.textContent = `Live GPS: ${locStr}`;
+                  const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+                  if (span) span.textContent = isHi ? 'स्थान सक्रिय' : 'Location on';
                   if (typeof showToast === 'function') {
                     showToast(`GPS Synced: ${locStr} (${lat.toFixed(4)}°, ${lng.toFixed(4)}°)`, 'success');
                   }
                   return;
                 }
               } catch (_) { }
+              const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+              const span = gpsPill.querySelector('span:not(.gps-dot-pulse)');
+              if (span) span.textContent = isHi ? 'स्थान सक्रिय' : 'Location on';
               if (typeof showToast === 'function') {
                 showToast(`GPS Refreshed: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`, 'success');
               }
             },
             () => {
+              const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+              const span = gpsPill.querySelector('span:not(.gps-dot-pulse)');
+              if (span) span.textContent = isHi ? 'स्थान सक्रिय' : 'Location on';
               if (typeof showToast === 'function') {
-                showToast('Live GPS Signal Connected', 'info');
+                showToast(isHi ? 'स्थान सक्रिय' : 'Location on', 'info');
               }
             }
           );

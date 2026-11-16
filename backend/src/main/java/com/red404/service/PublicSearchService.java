@@ -363,7 +363,7 @@ public class PublicSearchService {
         int freshnessHours = getFreshnessHours();
         long freshnessCutoff = System.currentTimeMillis() - (freshnessHours * 3600_000L);
 
-        String donorSql = "SELECT * FROM donors WHERE (availability IS NULL OR (LOWER(availability) NOT IN ('unavailable', 'busy', 'paused') AND (paused_until IS NULL OR paused_until <= CURRENT_DATE))) AND (deleted_at IS NULL)";
+        String donorSql = "SELECT * FROM donors WHERE (availability IS NULL OR (LOWER(availability) NOT IN ('unavailable', 'busy', 'paused') AND (paused_until IS NULL OR paused_until <= CURRENT_DATE)))";
 
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();

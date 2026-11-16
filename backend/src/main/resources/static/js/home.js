@@ -562,20 +562,35 @@ function updateBloodStock(groupId, newUnitCount, statusInfo) {
     }
   }
 
+  const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+  let displayLabel = statusLabel;
+  if (isHi) {
+    if (statusState === 'critical') displayLabel = 'अति गंभीर';
+    else if (statusState === 'low') displayLabel = 'कम';
+    else displayLabel = 'उपलब्ध';
+  } else {
+    if (statusState === 'critical') displayLabel = 'Critical';
+    else if (statusState === 'low') displayLabel = 'Low';
+    else displayLabel = 'OK';
+  }
+
   if (statusEl) {
     statusEl.className = `stock-status-pill status-${statusState}`;
-    statusEl.textContent = statusLabel;
+    statusEl.textContent = displayLabel;
   }
 }
 
 // Expose updateBloodStock globally for backend WebSocket / SSE / push triggers
 window.updateBloodStock = updateBloodStock;
 
+let lastNationalStockData = null;
+
 /**
  * Updates all 8 blood groups at once from an aggregated payload
  */
 function updateAllBloodStock(stockData) {
   if (!stockData || typeof stockData !== 'object') return;
+  lastNationalStockData = stockData;
 
   const gatedMsg = document.getElementById('nationalStockGatedMsg');
   const stockGrid = document.querySelector('.national-stock-grid');
@@ -593,10 +608,24 @@ function updateAllBloodStock(stockData) {
   if (gatedMsg) gatedMsg.style.display = 'none';
   if (stockGrid) stockGrid.style.display = 'grid';
 
+  const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
   const updatedEl = document.getElementById('homeStockUpdatedAgo');
   if (updatedEl) {
-    const updatedTxt = stockData.updatedAgo || (stockData.updatedAt ? formatRelativeTime(stockData.updatedAt) : 'just now');
-    updatedEl.textContent = `Updated ${updatedTxt}`;
+    const rawAgo = stockData.updatedAgo || (stockData.updatedAt ? formatRelativeTime(stockData.updatedAt) : 'just now');
+    if (isHi) {
+      if (!rawAgo || rawAgo === 'just now') {
+        updatedEl.textContent = 'अभी-अभी अपडेट किया गया';
+      } else {
+        const hiAgo = String(rawAgo)
+          .replace(/seconds? ago/i, 'सेकंड पहले')
+          .replace(/minutes? ago/i, 'मिनट पहले')
+          .replace(/hours? ago/i, 'घंटे पहले')
+          .replace(/just now/i, 'अभी-अभी');
+        updatedEl.textContent = `${hiAgo} अपडेट किया गया`;
+      }
+    } else {
+      updatedEl.textContent = `Updated ${rawAgo || 'just now'}`;
+    }
   }
 
   const payload = stockData.data || stockData;
@@ -670,6 +699,13 @@ function initNationalBloodStockStream() {
   window.addEventListener('storage', (e) => {
     if (e.key === 'red404_inventory_updated' || e.key === 'red404_registered_hospitals') {
       fetchLiveNationalBloodStock();
+    }
+  });
+
+  // 5. Re-render stock on language toggle
+  window.addEventListener('red404_language_changed', () => {
+    if (lastNationalStockData) {
+      updateAllBloodStock(lastNationalStockData);
     }
   });
 }

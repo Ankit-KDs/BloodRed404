@@ -55,12 +55,13 @@
     }
 
     .search-hero-title {
-      font-size: clamp(2rem, 3.5vw, 2.75rem);
+      font-size: clamp(1.4rem, 4vw, 2.75rem);
       font-weight: 700;
       color: #f8fafc;
       letter-spacing: -0.02em;
       line-height: 1.25;
       margin-bottom: 0.75rem;
+      word-break: break-word;
     }
 
     .search-hero-subtitle {
@@ -589,6 +590,28 @@
     }
 
     @media (max-width: 600px) {
+      .container {
+        padding: 0 0.75rem !important;
+      }
+      .search-hero {
+        padding: 4.5rem 0.25rem 1rem !important;
+      }
+      .search-hero-title {
+        font-size: 1.05rem !important;
+        line-height: 1.35 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        word-break: normal !important;
+        overflow-wrap: break-word !important;
+      }
+      .search-hero-subtitle {
+        font-size: 0.85rem !important;
+        padding: 0 0.5rem !important;
+      }
+      .search-controls-card {
+        padding: 1.25rem 0.75rem !important;
+        margin: 1rem auto 1.5rem !important;
+      }
       .search-form-grid {
         grid-template-columns: 1fr;
       }
@@ -597,6 +620,14 @@
       }
       .btn-search-trigger {
         grid-column: span 1;
+        width: 100%;
+      }
+      .loc-input-wrapper {
+        flex-direction: column;
+      }
+      .btn-location-gps {
+        width: 100%;
+        justify-content: center;
       }
     }
   </style>
@@ -618,12 +649,12 @@
       </a>
 
       <ul class="nav-links" id="navLinks">
-        <li><a href="index.html#home" class="nav-link">Home</a></li>
-        <li><a href="about.html" class="nav-link">About Us</a></li>
-        <li><a href="blood-availability-search.html" class="nav-link active">Donor Search</a></li>
-        <li><a href="blood-availability.html?portal=public" class="nav-link">Blood Banks</a></li>
-        <li><a href="eligibility-checker.html" class="nav-link">Eligibility</a></li>
-        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+        <li><a href="index.html#home" class="nav-link" data-i18n="nav.home">Home</a></li>
+        <li><a href="about.html" class="nav-link" data-i18n="nav.about">About Us</a></li>
+        <li><a href="blood-availability-search.html" class="nav-link active" data-i18n="nav.donorSearch">Donor Search</a></li>
+        <li><a href="blood-availability.html?portal=public" class="nav-link" data-i18n="nav.bloodBanks">Blood Banks</a></li>
+        <li><a href="eligibility-checker.html" class="nav-link" data-i18n="nav.eligibility">Eligibility</a></li>
+        <li><a href="index.html#contact" class="nav-link" data-i18n="nav.contact">Contact</a></li>
       </ul>
 
       <div class="nav-actions">
@@ -648,12 +679,12 @@
     <div class="search-hero">
       <div class="search-hero-badge">
         <i class="fas fa-hospital"></i>
-        <span>Public Blood Availability Search</span>
+        <span data-i18n="search.heroBadge">Public Blood Availability Search</span>
       </div>
-      <h1 class="search-hero-title">
+      <h1 class="search-hero-title" data-i18n="search.heroTitle">
         Blood Availability in Your Area
       </h1>
-      <p class="search-hero-subtitle">
+      <p class="search-hero-subtitle" data-i18n="search.heroSubtitle">
         Check real-time blood stock across verified partner hospitals and aggregate counts of eligible voluntary donors within 5 km to 20 km.
       </p>
     </div>
@@ -663,9 +694,9 @@
       <form id="searchForm" class="search-form-grid" onsubmit="event.preventDefault(); executeAvailabilitySearch();">
         <!-- 1. Blood Group -->
         <div class="form-group-item">
-          <label for="selectBloodGroup"><i class="fas fa-droplet"></i> Blood Group</label>
+          <label for="selectBloodGroup"><i class="fas fa-droplet"></i> <span data-i18n="search.labelBloodGroup">Blood Group</span></label>
           <select id="selectBloodGroup" class="custom-select">
-            <option value="ALL">All Groups</option>
+            <option value="ALL" data-i18n="search.allGroups">All Groups</option>
             <option value="A+">A+</option>
             <option value="A-">A-</option>
             <option value="B+" selected>B+</option>
@@ -679,12 +710,12 @@
 
         <!-- 2. Location (Manual City/PIN or Live GPS) -->
         <div class="form-group-item loc-group">
-          <label for="inputLocation"><i class="fas fa-location-crosshairs"></i> Location</label>
-          <div style="display: flex; gap: 0.5rem; width: 100%;">
-            <input type="text" id="inputLocation" class="custom-input" placeholder="City or 6-digit PIN (e.g. Bhimtal, 263136)" />
+          <label for="inputLocation"><i class="fas fa-location-crosshairs"></i> <span data-i18n="search.labelLocation">Location</span></label>
+          <div class="loc-input-wrapper" style="display: flex; gap: 0.5rem; width: 100%;">
+            <input type="text" id="inputLocation" class="custom-input" placeholder="City or 6-digit PIN (e.g. Bhimtal, 263136)" data-i18n-placeholder="search.placeholderLocation" />
             <button type="button" class="btn-location-gps" id="btnGpsTrigger" title="Detect current GPS coordinates">
               <i class="fas fa-location-arrow" id="gpsIcon"></i>
-              <span id="gpsBtnLabel">Use GPS</span>
+              <span id="gpsBtnLabel" data-i18n="search.btnUseGps">Use GPS</span>
             </button>
           </div>
           <span id="locationFeedback" style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;"></span>
@@ -692,24 +723,24 @@
 
         <!-- 3. Radius -->
         <div class="form-group-item">
-          <label for="selectRadius"><i class="fas fa-circle-notch"></i> Radius</label>
+          <label for="selectRadius"><i class="fas fa-circle-notch"></i> <span data-i18n="search.labelRadius">Radius</span></label>
           <select id="selectRadius" class="custom-select">
-            <option value="5">Within 5 km</option>
-            <option value="10" selected>Within 10 km</option>
-            <option value="20">Within 20 km</option>
+            <option value="5" data-i18n="search.within5">Within 5 km</option>
+            <option value="10" selected data-i18n="search.within10">Within 10 km</option>
+            <option value="20" data-i18n="search.within20">Within 20 km</option>
           </select>
         </div>
 
         <!-- Submit Button -->
         <button type="submit" class="btn-search-trigger" id="btnSearch">
           <i class="fas fa-search-location"></i>
-          <span>Search</span>
+          <span data-i18n="search.btnSubmit">Search</span>
         </button>
       </form>
 
       <div class="privacy-notice-box">
         <i class="fas fa-shield-halved"></i>
-        <span><strong>Anonymity & Privacy:</strong> Exact donor identities, phone numbers, and coordinates are never returned or logged. Search queries are resolved to ~1 km grid cells.</span>
+        <span data-i18n="search.privacyNotice">We never show donor names, phone numbers or exact locations. Counts are approximate. Queries are resolved to ~1 km grid cells.</span>
       </div>
     </div>
 
@@ -721,7 +752,7 @@
       </div>
       <div class="results-badge-live">
         <span class="dot-live-pulse"></span>
-        <span>Aggregates verified</span>
+        <span data-i18n="search.aggregatesVerified">Aggregates verified</span>
       </div>
     </div>
 
@@ -733,7 +764,7 @@
     <!-- Hospital Dispatch Only Notice -->
     <div class="hospital-info-banner" style="margin-bottom: 3.5rem;">
       <i class="fas fa-circle-info"></i>
-      <span><strong>Medical Notice:</strong> Only hospitals can send requests to donors. If you are authorized hospital staff, please <a href="hospital-login.html">log in to the Hospital Portal</a> to dispatch emergency requests.</span>
+      <span data-i18n="search.medicalNotice">Only hospitals can send blood requests. For an urgent need, contact a hospital from the list below.</span>
     </div>
   </main>
 
@@ -879,19 +910,38 @@
       const metaBar = document.getElementById('resultsMetaBar');
       const countText = document.getElementById('resultsCountText');
       const btnSearch = document.getElementById('btnSearch');
+      const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+
+      function formatCountBadge(val) {
+        if (!val || val === 'None' || val === '0') return isHi ? 'कोई नहीं' : 'None';
+        if (val === 'Fewer than 3') return isHi ? '3 से कम' : 'Fewer than 3';
+        return val;
+      }
+
+      function formatUpdatedAgo(ago) {
+        if (!ago) return isHi ? 'हाल ही में' : 'recently';
+        if (isHi) {
+          return String(ago)
+            .replace(/seconds? ago/i, 'सेकंड पहले')
+            .replace(/minutes? ago/i, 'मिनट पहले')
+            .replace(/hours? ago/i, 'घंटे पहले')
+            .replace(/just now/i, 'अभी-अभी');
+        }
+        return ago;
+      }
 
       // 1. Loading State
       if (btnSearch) {
         btnSearch.disabled = true;
-        btnSearch.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Searching...</span>';
+        btnSearch.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>${isHi ? 'खोज रहे हैं...' : 'Searching...'}</span>`;
       }
       if (metaBar) metaBar.style.display = 'none';
 
       container.innerHTML = `
         <div class="state-box">
           <i class="fas fa-spinner fa-spin" style="color: #38bdf8;"></i>
-          <h4>Checking Verified Blood Availability</h4>
-          <p>Scanning partner hospital reserves and eligible voluntary donor aggregates within ${radius} km...</p>
+          <h4>${isHi ? 'सत्यापित रक्त उपलब्धता की जांच की जा रही है' : 'Checking Verified Blood Availability'}</h4>
+          <p>${isHi ? `${radius} किमी के दायरे में अस्पताल स्टॉक और स्वैच्छिक रक्तदाता आंकड़ों को स्कैन किया जा रहा है...` : `Scanning partner hospital reserves and eligible voluntary donor aggregates within ${radius} km...`}</p>
         </div>
       `;
 
@@ -915,13 +965,13 @@
             container.innerHTML = `
               <div class="state-box">
                 <i class="fas fa-location-crosshairs" style="color: #e63946;"></i>
-                <h4>Location Required</h4>
-                <p>Please enter your city, 6-digit PIN code, or click "Use GPS" to check availability within ${radius} km.</p>
+                <h4>${isHi ? 'स्थान आवश्यक है' : 'Location Required'}</h4>
+                <p>${isHi ? `कृपया अपना शहर, 6 अंकों का पिन कोड दर्ज करें या ${radius} किमी के दायरे में उपलब्धता जांचने के लिए "GPS उपयोग करें" पर क्लिक करें।` : `Please enter your city, 6-digit PIN code, or click "Use GPS" to check availability within ${radius} km.`}</p>
               </div>
             `;
             if (btnSearch) {
               btnSearch.disabled = false;
-              btnSearch.innerHTML = '<i class="fas fa-search-location"></i> <span>Search</span>';
+              btnSearch.innerHTML = `<i class="fas fa-search-location"></i> <span>${isHi ? 'खोजें' : 'Search'}</span>`;
             }
             document.getElementById('inputLocation')?.focus();
             return;
@@ -936,10 +986,10 @@
           container.innerHTML = `
             <div class="state-box">
               <i class="fas fa-clock-rotate-left" style="color: #f59e0b;"></i>
-              <h4>Rate Limit Active</h4>
-              <p>${json.message || 'Too many requests. Please wait before retrying.'}</p>
+              <h4>${isHi ? 'अनुरोध सीमा सक्रिय' : 'Rate Limit Active'}</h4>
+              <p>${json.message || (isHi ? 'बहुत अधिक अनुरोध। पुनः प्रयास करने से पहले प्रतीक्षा करें।' : 'Too many requests. Please wait before retrying.')}</p>
               <button type="button" class="btn-retry-action" onclick="executeAvailabilitySearch()">
-                <i class="fas fa-rotate-right"></i> <span>Retry in ${retrySec}s</span>
+                <i class="fas fa-rotate-right"></i> <span>${isHi ? `${retrySec} सेकंड में पुनः प्रयास करें` : `Retry in ${retrySec}s`}</span>
               </button>
             </div>
           `;
@@ -961,7 +1011,9 @@
 
         if (metaBar) metaBar.style.display = 'flex';
         if (countText) {
-          countText.textContent = `Availability within ${radius} km for ${bloodGroup === 'ALL' ? 'All Blood Groups' : bloodGroup}`;
+          countText.textContent = isHi
+            ? `${radius} किमी दायरे में ${bloodGroup === 'ALL' ? 'सभी रक्त समूहों' : bloodGroup} के लिए उपलब्धता`
+            : `Availability within ${radius} km for ${bloodGroup === 'ALL' ? 'All Blood Groups' : bloodGroup}`;
         }
 
         // Empty State: No hospitals and 0 donors found
@@ -969,10 +1021,10 @@
           container.innerHTML = `
             <div class="state-box">
               <i class="fas fa-circle-question" style="color: #94a3b8;"></i>
-              <h4>No Current Availability in this Radial Band</h4>
-              <p>No verified partner hospitals or active voluntary donors found within ${radius} km for ${bloodGroup}. Try selecting a wider radius (e.g. 20 km) or entering a neighboring city or PIN code.</p>
+              <h4>${isHi ? 'इस दायरे में वर्तमान में कोई उपलब्धता नहीं है' : 'No Current Availability in this Radial Band'}</h4>
+              <p>${isHi ? `${radius} किमी के दायरे में ${bloodGroup} के लिए कोई सत्यापित अस्पताल या सक्रिय रक्तदाता नहीं मिला। कृपया दायरा बढ़ाकर देखें या नजदीकी शहर/पिन कोड दर्ज करें।` : `No verified partner hospitals or active voluntary donors found within ${radius} km for ${bloodGroup}. Try selecting a wider radius (e.g. 20 km) or entering a neighboring city or PIN code.`}</p>
               <button type="button" class="btn-retry-action" onclick="document.getElementById('selectRadius').value = '20'; executeAvailabilitySearch();">
-                <i class="fas fa-expand"></i> <span>Expand to 20 km</span>
+                <i class="fas fa-expand"></i> <span>${isHi ? '20 किमी तक बढ़ाएं' : 'Expand to 20 km'}</span>
               </button>
             </div>
           `;
@@ -986,15 +1038,15 @@
         html += `
           <div>
             <div class="section-title-group">
-              <h3 class="section-heading"><i class="fas fa-hospital" style="color: #e63946;"></i> Verified Partner Hospitals (${totalHospitals})</h3>
-              <p class="section-subheading">Accredited institutions with confirmed blood bank stock within ${radius} km.</p>
+              <h3 class="section-heading"><i class="fas fa-hospital" style="color: #e63946;"></i> ${isHi ? 'सत्यापित साझेदार अस्पताल' : 'Verified Partner Hospitals'} (${totalHospitals})</h3>
+              <p class="section-subheading">${isHi ? `इस ${radius} किमी दायरे में उपलब्ध रक्त बैंक स्टॉक वाले मान्यता प्राप्त अस्पताल।` : `Accredited institutions with confirmed blood bank stock within ${radius} km.`}</p>
             </div>
         `;
 
         if (hospitals.length === 0) {
           html += `
             <div style="background: #17181b; border: 1px dashed #2a2c31; border-radius: 10px; padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">
-              No partner hospitals with confirmed stock in this immediate radius. Check neighboring regions below.
+              ${isHi ? 'इस तत्काल दायरे में पुष्ट स्टॉक वाला कोई साझेदार अस्पताल नहीं मिला।' : 'No partner hospitals with confirmed stock in this immediate radius.'}
             </div>
           `;
         } else {
@@ -1002,7 +1054,7 @@
           hospitals.forEach((h, idx) => {
             const compatEntries = Object.entries(h.compatibleStock || {});
             const hasCompat = compatEntries.length > 0;
-            const reqLabel = bloodGroup === 'ALL' ? 'total on-hand' : `${bloodGroup}`;
+            const reqLabel = bloodGroup === 'ALL' ? (isHi ? 'कुल उपलब्ध' : 'total on-hand') : `${bloodGroup}`;
 
             html += `
               <div class="hospital-card">
@@ -1011,19 +1063,19 @@
                     <h4 class="hosp-name">${escapeHtml(h.name)}</h4>
                     <span class="hosp-area"><i class="fas fa-map-pin"></i> ${escapeHtml(h.area)}</span>
                   </div>
-                  <span class="distance-pill"><i class="fas fa-route"></i> ${h.distanceKm} km away</span>
+                  <span class="distance-pill"><i class="fas fa-route"></i> ${h.distanceKm} ${isHi ? 'किमी दूर' : 'km away'}</span>
                 </div>
 
                 <div class="hosp-stock-box">
                   <div class="hosp-stock-primary">
                     <span class="hosp-stock-units">${h.requestedGroupUnits}</span>
-                    <span class="hosp-stock-label">units of ${reqLabel}</span>
+                    <span class="hosp-stock-label">${isHi ? `${reqLabel} की यूनिट` : `units of ${reqLabel}`}</span>
                   </div>
 
                   ${hasCompat ? `
                     <button type="button" class="btn-toggle-compat" onclick="toggleCompatDrawer('compat-${idx}', this)">
                       <i class="fas fa-layer-group"></i>
-                      <span>Compatible groups (${h.compatibleUnits} units)</span>
+                      <span>${isHi ? `संगत समूह (${h.compatibleUnits} यूनिट)` : `Compatible groups (${h.compatibleUnits} units)`}</span>
                       <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
                     </button>
                   ` : ''}
@@ -1036,18 +1088,18 @@
                         <span class="blood-drop-badge ${u > 0 ? 'ok' : 'low'}" style="width: 22px; height: 26px; font-size: 10px;">
                           <span class="drop-text">${bg}</span>
                         </span>
-                        <span>${bg}: <strong>${u} units</strong></span>
+                        <span>${bg}: <strong>${u} ${isHi ? 'यूनिट' : 'units'}</strong></span>
                       </span>
                     `).join('')}
                   </div>
                 ` : ''}
 
                 <div class="hosp-footer">
-                  <span class="hosp-updated">Stock updated ${escapeHtml(h.updatedAgo || 'recently')}</span>
+                  <span class="hosp-updated">${isHi ? 'स्टॉक अपडेट:' : 'Stock updated'} ${escapeHtml(formatUpdatedAgo(h.updatedAgo))}</span>
                   <div class="hosp-action-btns">
                     ${h.directionsUrl ? `
                       <a href="${h.directionsUrl}" target="_blank" rel="noopener noreferrer" class="btn-action-outline btn-directions">
-                        <i class="fas fa-diamond-turn-right"></i> <span>Directions</span>
+                        <i class="fas fa-diamond-turn-right"></i> <span>${isHi ? 'दिशा-निर्देश' : 'Directions'}</span>
                       </a>
                     ` : ''}
                     ${h.emergencyPhone ? `
@@ -1072,59 +1124,59 @@
         html += `
           <div class="donor-bands-section">
             <div class="section-title-group">
-              <h3 class="section-heading"><i class="fas fa-users" style="color: #38bdf8;"></i> Nearby Voluntary Donors (Aggregate Counts)</h3>
-              <p class="section-subheading">Active, eligible voluntary donors matching clinical criteria within radial bands.</p>
+              <h3 class="section-heading"><i class="fas fa-users" style="color: #38bdf8;"></i> ${isHi ? 'नजदीकी स्वैच्छिक रक्तदाता (कुल संख्या)' : 'Nearby Voluntary Donors (Aggregate Counts)'}</h3>
+              <p class="section-subheading">${isHi ? 'दायरे में मौजूद पात्र स्वैच्छिक रक्तदाता। यह उपलब्धता की गारंटी नहीं है।' : 'Active, eligible voluntary donors matching clinical criteria within radial bands.'}</p>
             </div>
 
             <div class="donor-bands-grid">
               <!-- Band 1: 0 - 5 km -->
               <div class="band-card">
-                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 0 – 5 km</h4>
+                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 0 – 5 ${isHi ? 'किमी' : 'km'}</h4>
                 <div class="band-row">
-                  <span>Exact Match (${bloodGroup}):</span>
-                  <span class="band-count-badge ${b0_5.exactDisplay !== 'None' ? 'active-count' : ''}">${b0_5.exactDisplay || 'None'}</span>
+                  <span>${isHi ? `सटीक मिलान (${bloodGroup}):` : `Exact Match (${bloodGroup}):`}</span>
+                  <span class="band-count-badge ${b0_5.exactDisplay !== 'None' ? 'active-count' : ''}">${formatCountBadge(b0_5.exactDisplay)}</span>
                 </div>
                 <div class="band-row">
-                  <span>Compatible Groups:</span>
-                  <span class="band-count-badge">${b0_5.compatibleDisplay || 'None'}</span>
+                  <span>${isHi ? 'अन्य संगत समूह:' : 'Compatible Groups:'}</span>
+                  <span class="band-count-badge">${formatCountBadge(b0_5.compatibleDisplay)}</span>
                 </div>
                 <div class="band-row" style="border-top: 1px solid #2a2c31; padding-top: 0.5rem; margin-top: 0.25rem;">
-                  <span>Total in Band:</span>
-                  <strong style="color: #f8fafc;">${b0_5.totalDisplay || 'None'}</strong>
+                  <span>${isHi ? 'दायरे में कुल:' : 'Total in Band:'}</span>
+                  <strong style="color: #f8fafc;">${formatCountBadge(b0_5.totalDisplay)}</strong>
                 </div>
               </div>
 
               <!-- Band 2: 5 - 10 km -->
               <div class="band-card">
-                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 5 – 10 km</h4>
+                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 5 – 10 ${isHi ? 'किमी' : 'km'}</h4>
                 <div class="band-row">
-                  <span>Exact Match (${bloodGroup}):</span>
-                  <span class="band-count-badge ${b5_10.exactDisplay !== 'None' ? 'active-count' : ''}">${b5_10.exactDisplay || 'None'}</span>
+                  <span>${isHi ? `सटीक मिलान (${bloodGroup}):` : `Exact Match (${bloodGroup}):`}</span>
+                  <span class="band-count-badge ${b5_10.exactDisplay !== 'None' ? 'active-count' : ''}">${formatCountBadge(b5_10.exactDisplay)}</span>
                 </div>
                 <div class="band-row">
-                  <span>Compatible Groups:</span>
-                  <span class="band-count-badge">${b5_10.compatibleDisplay || 'None'}</span>
+                  <span>${isHi ? 'अन्य संगत समूह:' : 'Compatible Groups:'}</span>
+                  <span class="band-count-badge">${formatCountBadge(b5_10.compatibleDisplay)}</span>
                 </div>
                 <div class="band-row" style="border-top: 1px solid #2a2c31; padding-top: 0.5rem; margin-top: 0.25rem;">
-                  <span>Total in Band:</span>
-                  <strong style="color: #f8fafc;">${b5_10.totalDisplay || 'None'}</strong>
+                  <span>${isHi ? 'दायरे में कुल:' : 'Total in Band:'}</span>
+                  <strong style="color: #f8fafc;">${formatCountBadge(b5_10.totalDisplay)}</strong>
                 </div>
               </div>
 
               <!-- Band 3: 10 - 20 km -->
               <div class="band-card">
-                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 10 – 20 km</h4>
+                <h4 class="band-range-title"><i class="fas fa-bullseye"></i> 10 – 20 ${isHi ? 'किमी' : 'km'}</h4>
                 <div class="band-row">
-                  <span>Exact Match (${bloodGroup}):</span>
-                  <span class="band-count-badge ${b10_20.exactDisplay !== 'None' ? 'active-count' : ''}">${b10_20.exactDisplay || 'None'}</span>
+                  <span>${isHi ? `सटीक मिलान (${bloodGroup}):` : `Exact Match (${bloodGroup}):`}</span>
+                  <span class="band-count-badge ${b10_20.exactDisplay !== 'None' ? 'active-count' : ''}">${formatCountBadge(b10_20.exactDisplay)}</span>
                 </div>
                 <div class="band-row">
-                  <span>Compatible Groups:</span>
-                  <span class="band-count-badge">${b10_20.compatibleDisplay || 'None'}</span>
+                  <span>${isHi ? 'अन्य संगत समूह:' : 'Compatible Groups:'}</span>
+                  <span class="band-count-badge">${formatCountBadge(b10_20.compatibleDisplay)}</span>
                 </div>
                 <div class="band-row" style="border-top: 1px solid #2a2c31; padding-top: 0.5rem; margin-top: 0.25rem;">
-                  <span>Total in Band:</span>
-                  <strong style="color: #f8fafc;">${b10_20.totalDisplay || 'None'}</strong>
+                  <span>${isHi ? 'दायरे में कुल:' : 'Total in Band:'}</span>
+                  <strong style="color: #f8fafc;">${formatCountBadge(b10_20.totalDisplay)}</strong>
                 </div>
               </div>
             </div>
@@ -1138,17 +1190,17 @@
         container.innerHTML = `
           <div class="state-box">
             <i class="fas fa-triangle-exclamation" style="color: #e63946;"></i>
-            <h4>Unable to Complete Availability Search</h4>
-            <p>${escapeHtml(err.message || 'Network error while querying blood stock. Please retry.')}</p>
+            <h4>${isHi ? 'उपलब्धता खोज पूर्ण करने में असमर्थ' : 'Unable to Complete Availability Search'}</h4>
+            <p>${escapeHtml(err.message || (isHi ? 'रक्त स्टॉक खोजते समय नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।' : 'Network error while querying blood stock. Please retry.'))}</p>
             <button type="button" class="btn-retry-action" onclick="executeAvailabilitySearch()">
-              <i class="fas fa-rotate-right"></i> <span>Retry Search</span>
+              <i class="fas fa-rotate-right"></i> <span>${isHi ? 'पुनः प्रयास करें' : 'Retry Search'}</span>
             </button>
           </div>
         `;
       } finally {
         if (btnSearch) {
           btnSearch.disabled = false;
-          btnSearch.innerHTML = '<i class="fas fa-search-location"></i> <span>Search</span>';
+          btnSearch.innerHTML = `<i class="fas fa-search-location"></i> <span>${isHi ? 'खोजें' : 'Search'}</span>`;
         }
       }
     }
@@ -1202,6 +1254,10 @@
           navLinks.classList.toggle('active');
         });
       }
+      // Re-run search and refresh translations when language toggles
+      window.addEventListener('red404_language_changed', () => {
+        executeAvailabilitySearch();
+      });
     });
   </script>
 </body>
