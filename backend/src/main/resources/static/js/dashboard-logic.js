@@ -320,7 +320,7 @@
           evaluateBadges();
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     fetch('/api/donor/blood-requests', { credentials: 'include' })
       .then(r => r.json())
@@ -333,7 +333,7 @@
           renderAlerts();
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 
   /**
@@ -564,7 +564,7 @@
           `);
         });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // 2. Real active emergency requests
     if (donorData.activeAlerts && donorData.activeAlerts.length > 0) {
@@ -1020,8 +1020,8 @@
     const daysLeft = typeof elig.days_until_eligible === 'number' ? elig.days_until_eligible : 0;
 
     const hasDonated = (donorData.donations && donorData.donations.length > 0) ||
-                       (donorData.totalDonations && donorData.totalDonations > 0) ||
-                       Boolean(donorData.lastDonationDate);
+      (donorData.totalDonations && donorData.totalDonations > 0) ||
+      Boolean(donorData.lastDonationDate);
 
     if (isEligible) {
       strip.className = 'mini-eligibility-strip eligible';

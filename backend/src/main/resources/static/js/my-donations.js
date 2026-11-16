@@ -116,7 +116,7 @@
           if (!isNaN(nextD.getTime())) {
             formattedDate = nextD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           }
-        } catch (_) {}
+        } catch (_) { }
 
         badge.className = 'status-eligibility-btn recovering';
         if (isDeferred) {
@@ -239,7 +239,7 @@
           if (v.temp || v.temperature) parts.push(`Temp ${v.temp || v.temperature}°F`);
           if (v.weight) parts.push(`Wt ${v.weight} kg`);
           if (parts.length > 0) vitalsSummary = parts.join(' · ');
-        } catch (_) {}
+        } catch (_) { }
       }
 
       return `
