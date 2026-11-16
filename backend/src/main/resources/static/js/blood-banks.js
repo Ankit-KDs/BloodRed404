@@ -12,6 +12,7 @@
   let userLocation = null; // { lat, lng } grid-rounded
   let selectedBloodGroup = 'ALL';
   let searchTerm = '';
+  let hasUserSearched = false;
 
   // Stock Thresholds matching StockService.java
   // O+/O-: crit 4 / low 8, A/B: crit 3 / low 5, AB: crit 2 / low 4
@@ -31,6 +32,23 @@
   document.addEventListener('DOMContentLoaded', () => {
     initAuthHeader();
     initSearchControls();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('search') || urlParams.has('q')) {
+      searchTerm = (urlParams.get('search') || urlParams.get('q') || '').trim().toLowerCase();
+      const input = document.getElementById('searchInput');
+      if (input) input.value = searchTerm;
+      hasUserSearched = true;
+    }
+    if (urlParams.has('bloodGroup')) {
+      selectedBloodGroup = urlParams.get('bloodGroup');
+      const bgChips = document.querySelectorAll('.bg-chip');
+      bgChips.forEach(c => {
+        c.classList.toggle('active', c.getAttribute('data-bg') === selectedBloodGroup);
+      });
+      hasUserSearched = true;
+    }
+
     loadHospitalsDirectory();
   });
 
@@ -130,7 +148,22 @@
       searchInput.addEventListener('input', () => {
         searchTerm = searchInput.value.trim().toLowerCase();
         if (clearBtn) clearBtn.style.display = searchTerm ? 'block' : 'none';
-        renderFilteredHospitals();
+        if (searchTerm) {
+          hasUserSearched = true;
+          renderFilteredHospitals();
+        } else if (!userLocation && selectedBloodGroup === 'ALL') {
+          hasUserSearched = false;
+          renderInitialPrompt();
+        } else {
+          renderFilteredHospitals();
+        }
+      });
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          hasUserSearched = true;
+          renderFilteredHospitals();
+        }
       });
     }
 
@@ -139,12 +172,18 @@
         if (searchInput) searchInput.value = '';
         searchTerm = '';
         clearBtn.style.display = 'none';
-        renderFilteredHospitals();
+        if (!userLocation && selectedBloodGroup === 'ALL') {
+          hasUserSearched = false;
+          renderInitialPrompt();
+        } else {
+          renderFilteredHospitals();
+        }
       });
     }
 
     if (nearMeBtn) {
       nearMeBtn.addEventListener('click', () => {
+        hasUserSearched = true;
         requestNearMeLocation();
       });
     }
@@ -155,7 +194,12 @@
         const chip = document.getElementById('locationStatusChip');
         if (chip) chip.style.display = 'none';
         if (nearMeBtn) nearMeBtn.classList.remove('active');
-        renderFilteredHospitals();
+        if (!searchTerm && selectedBloodGroup === 'ALL') {
+          hasUserSearched = false;
+          renderInitialPrompt();
+        } else {
+          renderFilteredHospitals();
+        }
       });
     }
 
@@ -164,6 +208,7 @@
         bgChips.forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         selectedBloodGroup = chip.getAttribute('data-bg') || 'ALL';
+        hasUserSearched = true;
         renderFilteredHospitals();
       });
     });
@@ -181,7 +226,8 @@
         bgChips.forEach(c => {
           c.classList.toggle('active', c.getAttribute('data-bg') === 'ALL');
         });
-        renderFilteredHospitals();
+        hasUserSearched = false;
+        renderInitialPrompt();
       });
     }
 
@@ -242,7 +288,7 @@
   }
 
   // ==================== 4. FETCH DIRECTORY DATA ====================
-  async function loadHospitalsDirectory() {
+  function renderInitialPrompt() {
     const grid = document.getElementById('hospitalsGrid');
     const emptyState = document.getElementById('emptyState');
     const errorState = document.getElementById('errorState');
@@ -250,7 +296,29 @@
 
     if (errorState) errorState.style.display = 'none';
     if (emptyState) emptyState.style.display = 'none';
-    if (countText) countText.textContent = 'Loading verified blood banks...';
+    if (countText) countText.textContent = '';
+    if (!grid) return;
+
+    const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+    grid.innerHTML = `
+      <div class="directory-prompt-card" id="initialDirectoryPromptState" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; text-align: center; background: #17181b; border: 1px solid #2a2c31; border-radius: 14px; margin: 12px 0;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(229, 56, 59, 0.12); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #e5383b; font-size: 20px;">
+          <i class="fas fa-hospital"></i>
+        </div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #ecebe8; margin: 0 0 8px 0;" data-i18n="bloodBanks.promptTitle">${isHi ? 'सत्यापित ब्लड बैंक निर्देशिका' : 'Verified Blood Bank Directory'}</h3>
+        <p style="font-size: 0.92rem; color: #9b9a96; max-width: 520px; margin: 0 auto; line-height: 1.5;" data-i18n="bloodBanks.promptDesc">${isHi ? 'अस्पताल का नाम, शहर या पिन कोड द्वारा खोजें, "मेरे पास" पर क्लिक करें, या सत्यापित ब्लड बैंक और रीयल-टाइम स्टॉक देखने के लिए रक्त समूह फ़िल्टर चुनें।' : 'Search by hospital name, city, or PIN code, click &quot;Near me&quot;, or select a blood group filter to view verified blood banks and real-time reserves.'}</p>
+      </div>
+    `;
+  }
+
+  async function loadHospitalsDirectory(forceRender = false) {
+    const grid = document.getElementById('hospitalsGrid');
+    const emptyState = document.getElementById('emptyState');
+    const errorState = document.getElementById('errorState');
+    const countText = document.getElementById('resultsCountText');
+
+    if (errorState) errorState.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'none';
 
     try {
       const res = await fetch('/api/hospitals/directory');
@@ -265,7 +333,12 @@
         });
 
         updateSummaryStats(allHospitals);
-        renderFilteredHospitals();
+
+        if (hasUserSearched || forceRender) {
+          renderFilteredHospitals();
+        } else {
+          renderInitialPrompt();
+        }
       } else {
         throw new Error(json.message || 'Failed to load hospitals');
       }
@@ -495,6 +568,14 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
+
+  window.addEventListener('red404_language_changed', () => {
+    if (hasUserSearched) {
+      renderFilteredHospitals();
+    } else {
+      renderInitialPrompt();
+    }
+  });
 
   // Expose component for donor portal integration
   window.Red404BloodBankDirectory = {

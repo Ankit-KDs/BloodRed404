@@ -74,10 +74,9 @@
         </div>
 
         <!-- Language Toggle -->
-        <div class="lang-toggle-pill" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; color: #fff; margin-right: 4px;">
-          <button type="button" class="lang-toggle-btn active" data-lang="en" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px; font-size:13px;">EN</button>
-          <span style="opacity: 0.4;">|</span>
-          <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px; font-size:13px;">हिन्दी</button>
+        <div class="lang-toggle-pill" role="group" aria-label="Language Selector">
+          <button type="button" class="lang-toggle-btn active" data-lang="en">EN</button>
+          <button type="button" class="lang-toggle-btn" data-lang="hi">HI</button>
         </div>
 
         <!-- Notification Bell -->
@@ -231,8 +230,8 @@
         </div>
       </div>
 
-      <!-- CARD 2: FIND NEARBY BLOOD BANKS (Part 3.3) -->
-      <a href="blood-banks.html" class="bento-card bento-action-card card-inventory" title="Open Real-time Hospital Blood Inventory Search">
+      <!-- CARD 2: FIND NEARBY BLOOD BANKS (Part 5) -->
+      <a href="donor-blood-banks.html" class="bento-card bento-action-card card-inventory" title="Open Real-time Hospital Blood Inventory Search">
         <div>
           <div class="action-header-row">
             <div class="action-icon-title">
@@ -241,7 +240,7 @@
               </div>
               <h2 class="action-title">Find Nearby Blood Banks</h2>
             </div>
-            <span class="action-badge" style="font-size: 13px; text-transform: none; letter-spacing: normal; color: #94a3b8; font-weight: 500;">Verified hospitals</span>
+            <span class="action-badge" style="font-size: 13px; text-transform: none; letter-spacing: normal; color: #94a3b8; font-weight: 500; white-space: nowrap; flex-shrink: 0;">Verified hospitals</span>
           </div>
 
           <p class="action-summary-text">

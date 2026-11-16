@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>RED404 • Verified Blood Bank Directory</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+
+  <!-- FontAwesome 6 Pro/Free CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Core & Command Nav Styles -->
+  <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
+  <link rel="stylesheet" href="css/command-nav.css?v=20261113_v40" />
+  <link rel="stylesheet" href="css/dashboard-bento.css?v=20261113_v40" />
+  <link rel="stylesheet" href="css/blood-banks.css?v=20261116_v1" />
+</head>
+<body class="bento-dashboard-body blood-banks-body">
+
+  <!-- ==================== FLOATING GLASS COMMAND PILL TOP NAVIGATION ==================== -->
+  <header class="command-nav-wrapper">
+    <div class="command-nav-pill">
+      
+      <!-- LEFT: LOGO -->
+      <div class="command-nav-left">
+        <a href="dashboard.html" class="command-brand" title="RED404 Blood Rescue Command Network">
+          <div class="brand-icon-drop">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+          <span class="brand-text">RED<span>404</span></span>
+        </a>
+      </div>
+
+      <!-- CENTER: HORIZONTAL COMMAND TABS -->
+      <nav class="command-nav-center">
+        <a href="dashboard.html" class="command-tab-link" title="Command Center Dashboard" data-i18n="nav.dashboard">
+          <i class="fa-solid fa-gauge-high"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="donor-alerts.html" class="command-tab-link alert-radar-tab" title="Active Emergencies & Emergency Dispatch Radar" data-i18n="nav.emergencies">
+          <i class="fa-solid fa-truck-medical"></i>
+          <span>Emergencies</span>
+          <span class="tab-radar-pulse"></span>
+        </a>
+        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs" data-i18n="nav.donations">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Donation History</span>
+        </a>
+      </nav>
+
+      <!-- RIGHT: WIDGETS (GPS, NOTIFICATIONS, AVATAR DROPDOWN) -->
+      <div class="command-nav-right">
+        
+        <!-- Live GPS Indicator -->
+        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location" style="white-space: nowrap;">
+          <span class="gps-dot-pulse"></span>
+          <span>Location on</span>
+        </div>
+
+        <!-- Language Toggle (Exact Split Pill) -->
+        <div class="lang-toggle-pill" role="group" aria-label="Language Selector">
+          <button type="button" class="lang-toggle-btn active" data-lang="en">EN</button>
+          <button type="button" class="lang-toggle-btn" data-lang="hi">HI</button>
+        </div>
+
+        <!-- Notification Bell -->
+        <button class="nav-icon-btn" id="navNotifBtn" title="Emergency Broadcasts & Feed" aria-label="Notifications">
+          <i class="fa-solid fa-bell"></i>
+          <span class="nav-badge-dot"></span>
+        </button>
+
+        <!-- User Profile Avatar with Online Dot -->
+        <div class="user-avatar-wrap" id="userProfileTrigger" title="Donor Profile Settings" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+          <span id="userAvatarInitials">CJ</span>
+          <span class="avatar-online-dot"></span>
+
+          <!-- SLEEK GLASSMORPHISM USER DROPDOWN COMPONENT -->
+          <div class="user-dropdown-menu" id="userProfileDropdown">
+            <div class="dropdown-user-header">
+              <div class="duh-name" id="dropdownUserName">Chinmay Joshi</div>
+              <div class="duh-email" id="dropdownUserEmail">Signed in as <span id="dropdown-user-email">chinmay.joshi@example.com</span></div>
+              <div class="duh-id" id="dropdownUserId" style="font-size: 0.72rem; color: #ff334b; font-family: 'Space Mono', monospace; margin-top: 4px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-id-card"></i> <span id="dropdownDonorIdText">DNR-1511-D232</span></div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="donor-profile.html" class="dropdown-item">
+              <i class="fa-solid fa-heart-pulse"></i>
+              <span>Health Profile</span>
+            </a>
+            <button type="button" class="dropdown-item" id="privacySettingsBtn">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Privacy & Security</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout-btn" id="dropdownLogoutBtn">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT: AUTHENTICATED BLOOD BANK DIRECTORY ==================== -->
+  <main class="directory-container" style="max-width: 1200px; margin: 0 auto; padding: 24px 24px 60px 24px; box-sizing: border-box; width: 100%;">
+    
+    <!-- Breadcrumb: Back to Dashboard -->
+    <div style="margin-bottom: 8px;">
+      <a href="dashboard.html" style="display: inline-flex; align-items: center; gap: 8px; color: #9b9a96; font-size: 13.5px; text-decoration: none; font-weight: 500; transition: color 0.15s ease;" onmouseover="this.style.color='#ecebe8'" onmouseout="this.style.color='#9b9a96'">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+
+    <!-- Header Section -->
+    <header class="directory-header">
+      <div class="header-content">
+        <h1 class="directory-title" data-i18n="bloodBanks.title">Verified Blood Bank Directory</h1>
+        <p class="directory-subtitle" data-i18n="bloodBanks.subtitle">
+          Real-time blood stock and reserves across verified partner hospitals near you.
+        </p>
+      </div>
+
+      <!-- Quick Summary Stats -->
+      <div class="header-stats-strip">
+        <div class="h-stat-item">
+          <span class="h-stat-num" id="statHospitalsCount">--</span>
+          <span class="h-stat-lbl" data-i18n="bloodBanks.statHospitals">Verified Hospitals</span>
+        </div>
+        <div class="h-stat-item">
+          <span class="h-stat-num" id="statUnitsCount">--</span>
+          <span class="h-stat-lbl" data-i18n="bloodBanks.statUnits">Available Units</span>
+        </div>
+        <div class="h-stat-item">
+          <span class="h-stat-num" id="statCitiesCount">--</span>
+          <span class="h-stat-lbl" data-i18n="bloodBanks.statCities">Cities Covered</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Controls Card (Search + Location + Filter) -->
+    <section class="directory-controls-card">
+      <div class="search-primary-row">
+        <!-- Text Search -->
+        <div class="search-input-wrap">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="searchInput" class="search-input"
+            placeholder="Search by hospital name, city, or pincode..." autocomplete="off" />
+          <button type="button" id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="Clear search">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Near Me Button -->
+        <button type="button" id="nearMeBtn" class="btn btn-near-me">
+          <i class="fas fa-location-crosshairs"></i>
+          <span data-i18n="bloodBanks.nearMe">Near me</span>
+        </button>
+      </div>
+
+      <!-- Location Status Chip (if Near Me active) -->
+      <div id="locationStatusChip" class="location-status-chip" style="display: none;">
+        <span class="loc-chip-dot"></span>
+        <span class="loc-chip-text" id="locationStatusText">Using your approximate location</span>
+        <button type="button" class="loc-chip-close" id="clearLocationBtn" title="Clear location">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Filter Row: Blood Group Selector -->
+      <div class="blood-group-filter-row">
+        <span class="filter-label" data-i18n="bloodBanks.filterLabel">Filter by Available Group:</span>
+        <div class="blood-group-chips" id="bloodGroupChips">
+          <button type="button" class="bg-chip active" data-bg="ALL" data-i18n="bloodBanks.allGroups">All Groups</button>
+          <button type="button" class="bg-chip" data-bg="A+">A+</button>
+          <button type="button" class="bg-chip" data-bg="A-">A-</button>
+          <button type="button" class="bg-chip" data-bg="B+">B+</button>
+          <button type="button" class="bg-chip" data-bg="B-">B-</button>
+          <button type="button" class="bg-chip" data-bg="AB+">AB+</button>
+          <button type="button" class="bg-chip" data-bg="AB-">AB-</button>
+          <button type="button" class="bg-chip" data-bg="O+">O+</button>
+          <button type="button" class="bg-chip" data-bg="O-">O-</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Status Line -->
+    <div class="results-meta-bar">
+      <span class="results-count-text" id="resultsCountText"></span>
+      <span class="results-note" id="resultsNoteText" data-i18n="bloodBanks.resultsNote">Stock updated directly by each partner hospital.</span>
+    </div>
+
+    <!-- Hospitals List / Grid (Search Gated by Part 4) -->
+    <div class="hospitals-grid" id="hospitalsGrid">
+      <!-- Dynamically populated hospital cards or initial prompt state -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state-card" id="emptyState" style="display: none;">
+      <div class="empty-icon"><i class="fas fa-hospital-alt"></i></div>
+      <h3 class="empty-title" data-i18n="bloodBanks.emptyTitle">No verified blood banks found</h3>
+      <p class="empty-desc" id="emptyDesc" data-i18n="bloodBanks.emptyDesc">No verified hospitals match your search criteria. Try a different city or blood group.</p>
+      <button type="button" class="btn btn-outline" id="resetFiltersBtn" data-i18n="bloodBanks.resetFilters">Reset Search Filters</button>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state-card" id="errorState" style="display: none;">
+      <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
+      <h3 class="error-title" data-i18n="bloodBanks.errorTitle">Failed to load directory</h3>
+      <p class="error-desc" data-i18n="bloodBanks.errorDesc">Unable to connect to hospital network. Please check your connection and try again.</p>
+      <button type="button" class="btn btn-primary" id="retryFetchBtn" data-i18n="bloodBanks.retry">Retry</button>
+    </div>
+
+  </main>
+
+  <!-- ==================== SLEEK MINIMALIST MINI-FOOTER ==================== -->
+  <footer class="app-mini-footer">
+    <div class="mini-footer-container">
+      <div class="mf-left">
+        <span class="mf-status-dot"></span>
+        <span class="mf-status-text">System: Online</span>
+        <span class="mf-divider">&bull;</span>
+        <span class="mf-copy">&copy; 2026 RED404</span>
+      </div>
+      <nav class="mf-center" aria-label="Quick Links">
+        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('help')">Help &amp; Support</a>
+        <span class="mf-link-sep">&bull;</span>
+        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('report')">Report Issue</a>
+        <span class="mf-link-sep">&bull;</span>
+        <a href="javascript:void(0)" class="mf-link" onclick="openMiniFooterModal('privacy')">Privacy &amp; Policy</a>
+      </nav>
+      <div class="mf-right">
+        <span class="mf-version">v2.5-donor</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/common.js?v=20261113_v40"></script>
+  <script src="js/i18n.js?v=20261115_v1"></script>
+  <script src="js/command-nav.js?v=20261113_v40"></script>
+  <script src="js/blood-banks.js?v=20261116_v2"></script>
+</body>
+</html>

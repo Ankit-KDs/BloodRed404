@@ -190,13 +190,19 @@
         <li><a href="blood-banks.html" class="nav-link" data-i18n="nav.bloodBanks">Blood Banks</a></li>
         <li><a href="eligibility-checker.html" class="nav-link" data-i18n="nav.eligibility">Eligibility</a></li>
         <li><a href="index.html#contact" class="nav-link" data-i18n="nav.contact">Contact</a></li>
+      
+        <li class="nav-mobile-action">
+          <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
+        </li>
+        <li class="nav-mobile-action">
+          <a href="hospital-login.html" class="btn btn-primary" data-i18n="nav.hospitalLogin">Hospital Login</a>
+        </li>
       </ul>
 
       <div class="nav-actions">
-        <div class="lang-toggle-pill" id="aboutLangToggle" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; color: #fff; margin-right: 8px;">
-          <button type="button" class="lang-toggle-btn active" data-lang="en" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px;">EN</button>
-          <span style="opacity: 0.4;">|</span>
-          <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px;">हिन्दी</button>
+        <div class="lang-toggle-pill" role="group" aria-label="Language Selector">
+          <button type="button" class="lang-toggle-btn active" data-lang="en">EN</button>
+          <button type="button" class="lang-toggle-btn" data-lang="hi">HI</button>
         </div>
         <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
         <a href="hospital-login.html" class="btn btn-primary" data-i18n="nav.hospitalLogin">Hospital Login</a>

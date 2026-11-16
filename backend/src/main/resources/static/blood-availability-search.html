@@ -50,10 +50,11 @@
     }
 
     .search-page-container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 5.5rem 1.5rem 3rem;
+      padding: 32px 24px 60px;
       width: 100%;
+      box-sizing: border-box;
       flex: 1;
     }
 
@@ -471,7 +472,7 @@
 <body class="public-search-body">
 
   <!-- ========== NAVBAR ========== -->
-  <nav class="navbar" id="mainNavbar">
+  <nav class="navbar" id="navbar">
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="logo-icon">
@@ -486,14 +487,21 @@
         <li><a href="blood-availability-search.html" class="nav-link active" data-i18n="nav.donorSearch">Donor Search</a></li>
         <li><a href="blood-banks.html" class="nav-link" data-i18n="nav.bloodBanks">Blood Banks</a></li>
         <li><a href="eligibility-checker.html" class="nav-link" data-i18n="nav.eligibility">Eligibility</a></li>
+        <li><a href="index.html#contact" class="nav-link" data-i18n="nav.contact">Contact</a></li>
+      
+        <li class="nav-mobile-action">
+          <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
+        </li>
+        <li class="nav-mobile-action">
+          <a href="hospital-login.html" class="btn btn-primary" data-i18n="nav.hospitalLogin">Hospital Login</a>
+        </li>
       </ul>
 
       <div class="nav-actions">
         <!-- Language Switcher -->
-        <div class="lang-toggle-pill" id="homeLangToggle">
+        <div class="lang-toggle-pill" role="group" aria-label="Language Selector">
           <button type="button" class="lang-toggle-btn active" data-lang="en">EN</button>
-          <span style="opacity: 0.4;">|</span>
-          <button type="button" class="lang-toggle-btn" data-lang="hi">हिन्दी</button>
+          <button type="button" class="lang-toggle-btn" data-lang="hi">HI</button>
         </div>
 
         <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
@@ -733,7 +741,27 @@
       });
     }
 
+    let hasPerformedSearch = false;
+
+    function renderInitialSearchPrompt() {
+      const container = document.getElementById('resultsContainer');
+      const metaBar = document.getElementById('resultsMetaBar');
+      if (metaBar) metaBar.style.display = 'none';
+      if (!container) return;
+      const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+      container.innerHTML = `
+        <div class="state-box" id="initialSearchPromptState" style="background: #17181b; border: 1px solid #2a2c31; border-radius: 14px; padding: 48px 24px; text-align: center; margin: 16px 0;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(229, 56, 59, 0.12); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #e5383b; font-size: 20px;">
+            <i class="fas fa-search"></i>
+          </div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; color: #ecebe8; margin: 0 0 8px 0;" data-i18n="search.promptTitle">${isHi ? 'स्वैच्छिक रक्तदाता खोजें' : 'Find Voluntary Donors'}</h4>
+          <p style="font-size: 0.92rem; color: #9b9a96; max-width: 480px; margin: 0 auto; line-height: 1.5;" data-i18n="search.promptDesc">${isHi ? 'रक्त समूह चुनें और अपना शहर या पिन कोड दर्ज करें, फिर अपने नजदीकी उपलब्ध स्वैच्छिक रक्तदाताओं को खोजने के लिए खोजें पर क्लिक करें।' : 'Select a blood group and enter your city or PIN code, then click Search to find available voluntary donors near you.'}</p>
+        </div>
+      `;
+    }
+
     async function executeAvailabilitySearch() {
+      hasPerformedSearch = true;
       const bloodGroup = document.getElementById('selectBloodGroup').value;
       const radius = parseFloat(document.getElementById('selectRadius').value) || 10;
       const manualLocation = (document.getElementById('inputLocation').value || '').trim();
@@ -916,10 +944,13 @@
       initGpsDetector();
 
       const urlParams = new URLSearchParams(window.location.search);
+      let shouldAutoSearch = false;
+
       if (urlParams.has('bloodGroup')) {
         const bg = urlParams.get('bloodGroup');
         const bgSelect = document.getElementById('selectBloodGroup');
         if (bgSelect) bgSelect.value = bg;
+        if (bg !== 'ALL') shouldAutoSearch = true;
       }
       if (urlParams.has('radius')) {
         const rad = urlParams.get('radius');
@@ -930,18 +961,16 @@
         const loc = urlParams.get('location');
         const locInput = document.getElementById('inputLocation');
         if (locInput) locInput.value = loc;
+        if (loc && loc.trim()) shouldAutoSearch = true;
+      }
+      if (urlParams.has('search')) {
+        shouldAutoSearch = true;
       }
 
-      const stored = getSessionOrStoredCoords();
-      if (stored && !urlParams.has('location')) {
-        activeGpsCoords = stored;
-        const feedback = document.getElementById('locationFeedback');
-        if (feedback) feedback.textContent = 'Your location is approximate.';
+      if (shouldAutoSearch) {
         executeAvailabilitySearch();
       } else {
-        const input = document.getElementById('inputLocation');
-        if (input && !input.value) input.value = 'Bhimtal';
-        executeAvailabilitySearch();
+        renderInitialSearchPrompt();
       }
 
       const hamburger = document.getElementById('hamburger');
@@ -953,7 +982,11 @@
       }
 
       window.addEventListener('red404_language_changed', () => {
-        executeAvailabilitySearch();
+        if (hasPerformedSearch) {
+          executeAvailabilitySearch();
+        } else {
+          renderInitialSearchPrompt();
+        }
       });
     });
   </script>

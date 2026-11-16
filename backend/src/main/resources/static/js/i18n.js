@@ -81,6 +81,10 @@
       // Public Availability Search
       'search.heroBadge': 'Public Blood Availability Search',
       'search.heroTitle': 'Find Voluntary Donors',
+      'search.promptTitle': 'Find Voluntary Donors',
+      'search.promptDesc': 'Select a blood group and enter your city or PIN code, then click Search to find available voluntary donors near you.',
+      'bloodBanks.promptTitle': 'Verified Blood Bank Directory',
+      'bloodBanks.promptDesc': 'Search by hospital name, city, or PIN code, click "Near me", or select a blood group filter to view verified blood banks and real-time reserves.',
       'search.heroSubtitle': 'Looking for hospital stock? See the blood bank directory.',
       'search.lookingForStock': 'Looking for hospital stock? See the',
       'search.bloodBankDir': 'blood bank directory',
@@ -333,6 +337,10 @@
       // Public Availability Search
       'search.heroBadge': 'सार्वजनिक रक्तदाता खोज',
       'search.heroTitle': 'स्वैच्छिक रक्तदाता खोजें',
+      'search.promptTitle': 'स्वैच्छिक रक्तदाता खोजें',
+      'search.promptDesc': 'रक्त समूह चुनें और अपना शहर या पिन कोड दर्ज करें, फिर अपने नजदीकी उपलब्ध स्वैच्छिक रक्तदाताओं को खोजने के लिए खोजें पर क्लिक करें।',
+      'bloodBanks.promptTitle': 'सत्यापित ब्लड बैंक निर्देशिका',
+      'bloodBanks.promptDesc': 'अस्पताल का नाम, शहर या पिन कोड द्वारा खोजें, "मेरे पास" पर क्लिक करें, या सत्यापित ब्लड बैंक और रीयल-टाइम स्टॉक देखने के लिए रक्त समूह फ़िल्टर चुनें।',
       'search.heroSubtitle': 'अस्पताल रक्त बैंक स्टॉक देखना चाहते हैं? रक्त बैंक निर्देशिका देखें।',
       'search.lookingForStock': 'अस्पताल रक्त बैंक स्टॉक देखना चाहते हैं? देखें',
       'search.bloodBankDir': 'रक्त बैंक निर्देशिका',
@@ -1260,12 +1268,14 @@
       const bLang = btn.getAttribute('data-lang');
       if (bLang === lang) {
         btn.classList.add('active');
-        btn.style.color = '#38bdf8';
-        btn.style.fontWeight = '700';
+        btn.style.setProperty('background', '#800000', 'important');
+        btn.style.setProperty('color', '#ffffff', 'important');
+        btn.style.setProperty('font-weight', '700', 'important');
       } else {
         btn.classList.remove('active');
-        btn.style.color = '#94a3b8';
-        btn.style.fontWeight = '500';
+        btn.style.setProperty('background', '#ffffff', 'important');
+        btn.style.setProperty('color', '#800000', 'important');
+        btn.style.setProperty('font-weight', '700', 'important');
       }
     });
   }

@@ -44,12 +44,16 @@
 
 /* ==================== HERO SECTION ==================== */
 .hero-section {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 3rem;
-  padding: 8rem 6rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  width: 100%;
+  box-sizing: border-box;
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -2451,9 +2455,9 @@
 /* Ultra-wide & 4K Big Screens */
 @media (min-width: 1440px) {
   .hero-section {
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 9rem 2rem 5rem;
+    padding: 48px 24px 64px;
   }
 
   .services-section,
@@ -2462,14 +2466,13 @@
   .stats-section,
   .zones-section,
   .cta-section {
-    max-width: 1400px;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
   }
 }
 
 @media (min-width: 1920px) {
-
   .hero-section,
   .services-section,
   .about-section,
@@ -2477,7 +2480,7 @@
   .stats-section,
   .zones-section,
   .cta-section {
-    max-width: 1600px;
+    max-width: 1200px;
   }
 }
 
