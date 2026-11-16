@@ -3470,3 +3470,61 @@ html, body {
 
 
 
+
+
+/* ==================== UNIVERSAL HINDI TYPOGRAPHY (ALL PAGES) ==================== */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
+html[lang="hi"],
+html[lang="hi"] body,
+[lang="hi"] {
+  font-family: 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+html[lang="hi"] h1,
+html[lang="hi"] h2,
+html[lang="hi"] h3,
+html[lang="hi"] h4,
+html[lang="hi"] h5,
+html[lang="hi"] h6,
+html[lang="hi"] .title,
+html[lang="hi"] .hero-title,
+html[lang="hi"] .card-title,
+html[lang="hi"] .section-title,
+html[lang="hi"] .title-line {
+  font-family: 'Noto Sans Devanagari', system-ui, sans-serif !important;
+  line-height: 1.55 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  overflow: visible !important;
+}
+
+html[lang="hi"] p,
+html[lang="hi"] span,
+html[lang="hi"] a,
+html[lang="hi"] button,
+html[lang="hi"] label,
+html[lang="hi"] input,
+html[lang="hi"] .btn,
+html[lang="hi"] .nav-link,
+html[lang="hi"] .dropdown-item {
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  overflow: visible !important;
+}
+
+/* Nav Buttons Height Auto with Padding, Never Clipped at 360px or 1440px */
+.nav-actions .btn,
+.navbar .btn {
+  height: auto !important;
+  min-height: 40px !important;
+  padding: 0.5rem 1.15rem !important;
+  line-height: 1.35 !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  text-align: center !important;
+}

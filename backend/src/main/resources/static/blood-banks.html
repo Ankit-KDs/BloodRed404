@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Verified Blood Bank Directory — RED404</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Core Styles -->
+  <link rel="stylesheet" href="css/common.css?v=20261116_v1" />
+  <link rel="stylesheet" href="css/home.css?v=20261116_v1" />
+  <link rel="stylesheet" href="css/blood-banks.css?v=20261116_v1" />
+</head>
+
+<body class="blood-banks-body">
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="mainNavbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <div class="logo-icon">
+          <i class="fas fa-tint"></i>
+        </div>
+        <span class="logo-text">RED<span class="logo-404">404</span></span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="nav-link" data-i18n="nav.home">Home</a></li>
+        <li><a href="about.html" class="nav-link" data-i18n="nav.about">About Us</a></li>
+        <li><a href="blood-availability-search.html" class="nav-link" data-i18n="nav.donorSearch">Donor Search</a></li>
+        <li><a href="blood-banks.html" class="nav-link active" data-i18n="nav.bloodBanks">Blood Banks</a></li>
+        <li><a href="eligibility-checker.html" class="nav-link" data-i18n="nav.eligibility">Eligibility</a></li>
+      </ul>
+
+      <div class="nav-actions" id="navActions">
+        <!-- Language Switcher -->
+        <div class="lang-toggle-pill" id="homeLangToggle">
+          <button type="button" class="lang-toggle-btn active" data-lang="en">EN</button>
+          <span style="opacity: 0.4;">|</span>
+          <button type="button" class="lang-toggle-btn" data-lang="hi">हिन्दी</button>
+        </div>
+
+        <!-- Default Public Actions -->
+        <div id="publicNavButtons" class="nav-btn-group">
+          <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
+          <a href="hospital-login.html" class="btn btn-primary" data-i18n="nav.hospitalLogin">Hospital Login</a>
+        </div>
+
+        <!-- Authenticated Donor Menu (Only visible if donor session is active) -->
+        <div id="donorNavMenu" class="donor-user-menu" style="display: none; position: relative;">
+          <button type="button" class="donor-avatar-btn" id="donorAvatarBtn" aria-expanded="false" aria-label="Donor menu">
+            <span class="avatar-initials" id="donorNavInitials">DJ</span>
+          </button>
+          <div class="donor-dropdown-panel" id="donorDropdownPanel" style="display: none;">
+            <div class="dropdown-header">
+              <span class="dropdown-name" id="donorNavName">Donor</span>
+              <span class="dropdown-sub" id="donorNavSub">Registered Donor</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="dashboard.html" class="dropdown-item"><i class="fas fa-columns"></i> Dashboard</a>
+            <a href="donor-profile.html" class="dropdown-item"><i class="fas fa-user-circle"></i> My Profile</a>
+            <a href="donation-history.html" class="dropdown-item"><i class="fas fa-history"></i> Donation History</a>
+            <div class="dropdown-divider"></div>
+            <button type="button" class="dropdown-item dropdown-logout-btn" id="donorNavLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="directory-container">
+    <!-- Header Section -->
+    <header class="directory-header">
+      <div class="header-content">
+        <h1 class="directory-title">Verified Blood Bank Directory</h1>
+        <p class="directory-subtitle">
+          Real-time blood stock and reserves across verified partner hospitals. Available to the public with no login required.
+        </p>
+      </div>
+
+      <!-- Quick Summary Stats -->
+      <div class="header-stats-strip">
+        <div class="h-stat-item">
+          <span class="h-stat-num" id="statHospitalsCount">--</span>
+          <span class="h-stat-lbl">Verified Hospitals</span>
+        </div>
+        <div class="h-stat-item">
+          <span class="h-stat-num" id="statUnitsCount">--</span>
+          <span class="h-stat-lbl">Available Units</span>
+        </div>
+        <div class="h-stat-item">
+          <span class="h-stat-num" id="statCitiesCount">--</span>
+          <span class="h-stat-lbl">Cities Covered</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Search & Filter Controls -->
+    <section class="directory-controls-card">
+      <div class="search-primary-row">
+        <!-- Text Search -->
+        <div class="search-input-wrap">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="searchInput" class="search-input"
+            placeholder="Search by hospital name, city, or pincode..." autocomplete="off" />
+          <button type="button" id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="Clear search">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Near Me Button -->
+        <button type="button" id="nearMeBtn" class="btn btn-near-me">
+          <i class="fas fa-location-crosshairs"></i>
+          <span>Near me</span>
+        </button>
+      </div>
+
+      <!-- Location Status Chip (if Near Me active) -->
+      <div id="locationStatusChip" class="location-status-chip" style="display: none;">
+        <span class="loc-chip-dot"></span>
+        <span class="loc-chip-text" id="locationStatusText">Using your approximate location</span>
+        <button type="button" class="loc-chip-close" id="clearLocationBtn" title="Clear location">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Filter Row: Blood Group Selector -->
+      <div class="blood-group-filter-row">
+        <span class="filter-label">Filter by Available Group:</span>
+        <div class="blood-group-chips" id="bloodGroupChips">
+          <button type="button" class="bg-chip active" data-bg="ALL">All Groups</button>
+          <button type="button" class="bg-chip" data-bg="A+">A+</button>
+          <button type="button" class="bg-chip" data-bg="A-">A-</button>
+          <button type="button" class="bg-chip" data-bg="B+">B+</button>
+          <button type="button" class="bg-chip" data-bg="B-">B-</button>
+          <button type="button" class="bg-chip" data-bg="AB+">AB+</button>
+          <button type="button" class="bg-chip" data-bg="AB-">AB-</button>
+          <button type="button" class="bg-chip" data-bg="O+">O+</button>
+          <button type="button" class="bg-chip" data-bg="O-">O-</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Status Line -->
+    <div class="results-meta-bar">
+      <span class="results-count-text" id="resultsCountText">Loading verified blood banks...</span>
+      <span class="results-note" id="resultsNoteText">Stock updated directly by each partner hospital.</span>
+    </div>
+
+    <!-- Hospitals List / Grid -->
+    <div class="hospitals-grid" id="hospitalsGrid">
+      <!-- Dynamically populated hospital cards -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state-card" id="emptyState" style="display: none;">
+      <div class="empty-icon"><i class="fas fa-hospital-alt"></i></div>
+      <h3 class="empty-title">No verified blood banks found</h3>
+      <p class="empty-desc" id="emptyDesc">No verified hospitals match your search criteria. Try a different city or blood group.</p>
+      <button type="button" class="btn btn-outline" id="resetFiltersBtn">Reset Search Filters</button>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state-card" id="errorState" style="display: none;">
+      <div class="error-icon"><i class="fas fa-triangle-exclamation"></i></div>
+      <h3 class="error-title">Unable to Load Blood Banks</h3>
+      <p class="error-desc">There was an issue communicating with the directory service. Please try again.</p>
+      <button type="button" class="btn btn-primary" id="retryFetchBtn">Retry</button>
+    </div>
+  </main>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="directory-footer">
+    <div class="footer-container">
+      <div class="footer-col">
+        <div class="footer-logo">
+          <i class="fas fa-tint"></i>
+          <span>RED<span style="color:#e63946">404</span></span>
+        </div>
+        <p class="footer-desc">Emergency blood network connecting voluntary donors with verified hospitals in real time.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Directory Services</h4>
+        <ul>
+          <li><a href="blood-banks.html">Verified Blood Banks</a></li>
+          <li><a href="blood-availability-search.html">Public Donor Search</a></li>
+          <li><a href="eligibility-checker.html">Check Eligibility</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Partner Hospitals</h4>
+        <ul>
+          <li><a href="hospital-login.html">Hospital Login</a></li>
+          <li><a href="hospital-register.html">Hospital Registration</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 RED404 Emergency Blood Rescue Network. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/common.js?v=20261116_v1"></script>
+  <script src="js/i18n.js?v=20261116_v1"></script>
+  <script src="js/blood-banks.js?v=20261116_v2"></script>
+</body>
+
+</html>

@@ -56,7 +56,7 @@ public class DonorController {
 
     // ======================== GET ========================
 
-    @GetMapping({"/profile", "/profile-data"})
+    @GetMapping({"/profile", "/profile-data", "/me"})
     public ResponseEntity<ApiResponse> getProfile(
             @RequestParam(required = false) String donorId,
             @RequestParam(required = false) String email,
@@ -121,8 +121,14 @@ public class DonorController {
                     }
                 }
                 donorProfile.put("healthChecks", checks);
+                Map<String, Object> latestCheck = new com.red404.dao.HealthCheckDao().getLatestHealthCheck(dCode);
+                if (latestCheck != null) {
+                    latestCheck.remove("deferReasonCategory");
+                    donorProfile.put("latestHealthCheck", latestCheck);
+                }
             } else {
                 donorProfile.remove("healthChecks");
+                donorProfile.remove("latestHealthCheck");
             }
             donorProfile.remove("deferReasonCategory");
 
@@ -834,6 +840,21 @@ public class DonorController {
         } catch (Exception e) {
             return serverError(e);
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            try {
+                Object user = session.getAttribute("user");
+                if (user instanceof Map<?, ?> donor && donor.get("id") != null) {
+                    sessionDao.killSession(((Number) donor.get("id")).intValue(), "DONOR", session.getId());
+                }
+            } catch (Exception ignored) {}
+            session.invalidate();
+        }
+        return ok("Logged out successfully", null);
     }
 
     @PostMapping("/change-password")

@@ -30,8 +30,10 @@
       const res = await fetch('/api/admin/check-auth');
       if (!res.ok) {
         // Not authorized, return to login
+        sessionStorage.removeItem('admin_session');
         sessionStorage.removeItem('red404_super_admin');
         sessionStorage.removeItem('red404_admin_token');
+        localStorage.removeItem('admin_session');
         window.location.replace('donor-login.html');
       }
     } catch (_) {
@@ -1282,10 +1284,12 @@
           if (window.Red404Security) {
             await window.Red404Security.logout('ADMIN');
           } else {
-            try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (_) {}
+            try { await fetch('/api/admin/logout', { method: 'POST', headers: { 'X-Red404-Role': 'ADMIN' } }); } catch (_) {}
             try {
-              localStorage.clear();
-              sessionStorage.clear();
+              sessionStorage.removeItem('admin_session');
+              sessionStorage.removeItem('red404_super_admin');
+              sessionStorage.removeItem('red404_admin_token');
+              localStorage.removeItem('admin_session');
             } catch (_) {}
             window.location.replace('donor-login.html');
           }

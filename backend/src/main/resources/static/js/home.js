@@ -350,25 +350,19 @@ async function loadDynamicPlatformStats() {
 
     // Update Hero elements data-target
     const heroD = document.getElementById('heroActiveDonors');
-    if (heroD) heroD.dataset.target = activeDonors;
+    if (heroD) heroD.dataset.target = regDonors;
     const heroH = document.getElementById('heroHospitals');
     if (heroH) heroH.dataset.target = partnerHospitals;
-    const heroL = document.getElementById('heroLivesSaved');
-    if (heroL) heroL.dataset.target = lives;
-    const heroZ = document.getElementById('heroZonesActive');
-    if (heroZ) heroZ.dataset.target = zones;
+    const heroDon = document.getElementById('heroDonations');
+    if (heroDon) heroDon.dataset.target = lives;
 
     // Update Stats Section elements data-target
     const sReg = document.getElementById('statRegDonors');
     if (sReg) sReg.dataset.target = regDonors;
     const sHosp = document.getElementById('statHospitals');
     if (sHosp) sHosp.dataset.target = partnerHospitals;
-    const sLives = document.getElementById('statLivesSaved');
-    if (sLives) sLives.dataset.target = lives;
-
-    // Label: "Lives saved" = computed from verified donations (labeled "Donations")
-    const statLivesLabel = document.querySelector('#statLivesSaved + .stat-text') || document.getElementById('labelLivesSaved');
-    if (statLivesLabel) statLivesLabel.textContent = 'Donations';
+    const sDon = document.getElementById('statDonations');
+    if (sDon) sDon.dataset.target = lives;
 
     const sResp = document.getElementById('statAvgResponse');
     const bResp = document.getElementById('barAvgResponse');

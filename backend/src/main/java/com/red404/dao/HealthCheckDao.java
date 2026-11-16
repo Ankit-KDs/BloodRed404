@@ -138,6 +138,9 @@ public class HealthCheckDao {
         String healthStatus = "Checked at " + facility + " on " + dateStr;
         java.sql.Date vDate = checkedAt != null ? new java.sql.Date(checkedAt.getTime()) : java.sql.Date.valueOf(LocalDate.now());
 
+        int numericId = 0;
+        try { numericId = Integer.parseInt(donorId.trim()); } catch (Exception ignored) {}
+
         String sql = "UPDATE donors SET " +
                 "weight = COALESCE(?, weight), " +
                 "pulse = COALESCE(?, pulse), " +
@@ -147,7 +150,7 @@ public class HealthCheckDao {
                 "verified_facility = ?, " +
                 "verified_date = ?, " +
                 "health_status = ? " +
-                "WHERE donor_id = ? OR CAST(id AS CHAR) = ?";
+                "WHERE id = ? OR donor_id = ? OR CAST(id AS CHAR) = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             if (weight != null && weight > 0) ps.setDouble(1, weight); else ps.setNull(1, Types.DOUBLE);
             if (pulse != null && pulse > 0) ps.setInt(2, pulse); else ps.setNull(2, Types.INTEGER);
@@ -157,8 +160,9 @@ public class HealthCheckDao {
             ps.setString(6, facility);
             ps.setDate(7, vDate);
             ps.setString(8, healthStatus);
-            ps.setString(9, donorId);
-            ps.setString(10, donorId);
+            ps.setInt(9, numericId);
+            ps.setString(10, donorId.trim());
+            ps.setString(11, donorId.trim());
             ps.executeUpdate();
         }
     }

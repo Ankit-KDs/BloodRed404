@@ -144,8 +144,7 @@ public class HospitalController {
                 }
             }
             if (hospitalId == null) {
-                List<Map<String, Object>> all = hospitalDao.listAll();
-                if (!all.isEmpty()) hospitalId = ((Number) all.get(0).get("id")).intValue();
+                return unauthorized();
             }
             if (hospitalId != null) {
                 Map<String, Object> profile = hospitalDao.findById(hospitalId);
@@ -1288,10 +1287,22 @@ public class HospitalController {
                 weight = JsonUtil.asDouble(vNode, "weight");
                 hb = JsonUtil.asDouble(vNode, "hemoglobin");
                 systolic = JsonUtil.asDouble(vNode, "systolic");
+                if (systolic == null) systolic = JsonUtil.asDouble(vNode, "bpSys");
                 diastolic = JsonUtil.asDouble(vNode, "diastolic");
+                if (diastolic == null) diastolic = JsonUtil.asDouble(vNode, "bpDia");
                 pulse = vNode.has("pulse") && !vNode.get("pulse").isNull() ? vNode.get("pulse").asInt() : null;
                 temp = JsonUtil.asDouble(vNode, "temperature");
+                if (temp == null) temp = JsonUtil.asDouble(vNode, "temp");
             }
+            if (weight == null) weight = JsonUtil.asDouble(body, "weight");
+            if (hb == null) hb = JsonUtil.asDouble(body, "hemoglobin");
+            if (systolic == null) systolic = JsonUtil.asDouble(body, "systolic");
+            if (systolic == null) systolic = JsonUtil.asDouble(body, "bpSys");
+            if (diastolic == null) diastolic = JsonUtil.asDouble(body, "diastolic");
+            if (diastolic == null) diastolic = JsonUtil.asDouble(body, "bpDia");
+            if (pulse == null && body.has("pulse") && !body.get("pulse").isNull()) pulse = body.get("pulse").asInt();
+            if (temp == null) temp = JsonUtil.asDouble(body, "temperature");
+            if (temp == null) temp = JsonUtil.asDouble(body, "temp");
 
             Map<String, Object> hosp = hospitalDao.findById(hospitalId);
             String hospName = (hosp != null && hosp.get("hospital_name") != null) ? (String) hosp.get("hospital_name") : "Verified Hospital";

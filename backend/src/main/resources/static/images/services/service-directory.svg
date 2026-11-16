@@ -63,20 +63,10 @@
   <line x1="45" y1="240" x2="355" y2="240" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
 
   <!-- Floating Telemetry Badges -->
-  <g transform="translate(45, 52)">
-    <rect width="110" height="24" rx="6" fill="#1b1b26" stroke="#10b981" stroke-width="1"/>
-    <circle cx="14" cy="12" r="4" fill="#10b981"/>
-    <text x="26" y="16" fill="#ffffff" font-family="'Inter', sans-serif" font-size="10" font-weight="700">Stock: Optimal</text>
-  </g>
+  
 
-  <g transform="translate(245, 52)">
-    <rect width="110" height="24" rx="6" fill="#1b1b26" stroke="#e63946" stroke-width="1"/>
-    <circle cx="14" cy="12" r="4" fill="#e63946"/>
-    <text x="26" y="16" fill="#ffffff" font-family="'Inter', sans-serif" font-size="10" font-weight="700">24/7 Depots Live</text>
-  </g>
+  
 
   <!-- Bottom Tag -->
-  <rect x="110" y="266" width="180" height="22" rx="11" fill="rgba(230,57,70,0.12)" stroke="rgba(230,57,70,0.3)"/>
-  <text x="200" y="281" fill="#ff6b6b" font-family="'Orbitron', monospace" font-size="9" font-weight="700" letter-spacing="1" text-anchor="middle">DISTRICT BLOOD DEPOTS</text>
-</svg>
+  </svg>
 

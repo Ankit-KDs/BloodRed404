@@ -3880,3 +3880,202 @@ body.donor-profile-body {
   flex-shrink: 0 !important;
 }
 
+
+
+/* ==================== NEW ELIGIBILITY TRACKER (PART 2) ==================== */
+.eligibility-tracker-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0;
+}
+
+.eligibility-ring-details-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eligibility-ring-wrapper {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.eligibility-progress-svg {
+  width: 160px;
+  height: 160px;
+  overflow: visible;
+}
+
+.elig-ring-track {
+  stroke: #2a2c31;
+}
+
+.elig-ring-progress {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+}
+
+.elig-ring-text-val {
+  font-family: var(--font-main, system-ui, sans-serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.elig-ring-text-sub {
+  font-family: var(--font-main, system-ui, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.eligibility-details-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.elig-meta-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 13.5px;
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+
+.elig-meta-label {
+  color: #9b9a96;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.elig-meta-val {
+  color: #ecebe8;
+  font-weight: 600;
+}
+
+.elig-meta-status-wrap {
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #2a2c31;
+}
+
+.eligibility-status-text {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #ecebe8;
+  margin: 0;
+}
+
+/* Horizontal Timeline Bar */
+.eligibility-timeline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  padding-top: 0.5rem;
+  border-top: 1px solid #2a2c31;
+}
+
+.eligibility-timeline-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: #2a2c31;
+  border-radius: 4px;
+  overflow: visible;
+}
+
+.timeline-fill-bar {
+  height: 100%;
+  background: #3ecf8e;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+
+.timeline-today-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 2;
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timeline-marker-pin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ecebe8;
+  border: 2.5px solid #17181b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.timeline-marker-label {
+  position: absolute;
+  top: 16px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #9b9a96;
+  white-space: nowrap;
+}
+
+.timeline-axis-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #9b9a96;
+  padding-top: 14px;
+}
+
+/* Prefers-reduced-motion support */
+@media (prefers-reduced-motion: reduce) {
+  .elig-ring-progress,
+  .timeline-fill-bar,
+  .timeline-today-marker {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Responsive at 360px */
+@media (max-width: 540px) {
+  .eligibility-ring-details-row {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+  }
+  .eligibility-details-col {
+    align-items: center;
+    text-align: center;
+    width: 100%;
+  }
+  .elig-meta-item {
+    justify-content: center;
+  }
+  .elig-meta-label {
+    min-width: auto;
+  }
+  .timeline-axis-labels {
+    font-size: 10.5px;
+  }
+}

@@ -41,6 +41,7 @@
     .qr-zoom-footer-hint {
       font-size: max(13px, 0.8125rem) !important;
     }
+
     /* ==================== CYBERNETIC DNA REGENERATION PILLAR ==================== */
     .dna-visual-col {
       display: flex !important;
@@ -371,7 +372,14 @@
       grid-template-columns: repeat(2, 1fr) !important;
       gap: 1.5rem !important;
       align-items: stretch !important;
-      /* Forces both cards to always match height */
+    }
+
+    #donorVitalsCard.profile-card {
+      grid-column: 1 / -1 !important;
+      width: 100% !important;
+      height: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
 
     @media (max-width: 1200px) {
@@ -379,20 +387,10 @@
         grid-template-columns: 1fr !important;
         align-items: stretch !important;
       }
-    }
 
-    .profile-card {
-      height: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-      box-sizing: border-box !important;
-      position: relative !important;
-    }
-
-    #donorVitalsCard.profile-card {
-      height: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
+      #donorVitalsCard.profile-card {
+        grid-column: 1 / -1 !important;
+      }
     }
 
     #donorVitalsCard .vitals-split-layout {
@@ -1302,7 +1300,8 @@
           <span>Emergencies</span>
           <span class="tab-radar-pulse"></span>
         </a>
-        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs" data-i18n="nav.donations">
+        <a href="my-donations.html" class="command-tab-link" title="Historical Clinical Donation Logs"
+          data-i18n="nav.donations">
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span>Donation History</span>
         </a>
@@ -1312,16 +1311,20 @@
       <div class="command-nav-right">
 
         <!-- Live GPS Indicator -->
-        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location" style="white-space: nowrap;">
+        <div class="nav-gps-pill" id="navGpsIndicator" title="Click to refresh browser GPS location"
+          style="white-space: nowrap;">
           <span class="gps-dot-pulse"></span>
           <span>Location on</span>
         </div>
 
         <!-- Language Toggle -->
-        <div class="lang-toggle-pill" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; color: #fff; margin-right: 4px;">
-          <button type="button" class="lang-toggle-btn active" data-lang="en" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px; font-size:13px;">EN</button>
+        <div class="lang-toggle-pill"
+          style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); font-size: 13px; font-weight: 600; color: #fff; margin-right: 4px;">
+          <button type="button" class="lang-toggle-btn active" data-lang="en"
+            style="background:none; border:none; color:#38bdf8; cursor:pointer; font-weight:700; padding:0 3px; font-size:13px;">EN</button>
           <span style="opacity: 0.4;">|</span>
-          <button type="button" class="lang-toggle-btn" data-lang="hi" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px; font-size:13px;">हिन्दी</button>
+          <button type="button" class="lang-toggle-btn" data-lang="hi"
+            style="background:none; border:none; color:#94a3b8; cursor:pointer; font-weight:600; padding:0 3px; font-size:13px;">हिन्दी</button>
         </div>
 
         <!-- Notification Bell -->
@@ -1372,85 +1375,42 @@
   <main class="profile-workspace-unified">
     <div class="profile-grid">
 
-      <!-- CARD 1: DONOR PROFILE & VITAL HEALTH STATS (Hospital-Fed + AI Check) -->
+      <!-- CARD 1: DONOR PROFILE & VITAL HEALTH STATS (Hospital-Fed) -->
       <section class="profile-card" id="donorVitalsCard">
         <div class="card-header-row">
           <h2 class="card-title">Donor Profile & Vital Health Stats</h2>
         </div>
 
         <div class="vitals-split-layout">
-          <!-- Left Crimson 3D Glossy Glass Blood Emblem -->
+          <!-- Left Flat Calm Blood Group Emblem (No red neon glow) -->
           <div class="blood-emblem-box">
             <div class="beb-type" id="vitalBloodType">A+</div>
             <div class="beb-label" id="vitalBloodLabel">POSITIVE</div>
             <div class="beb-icon">
-              <svg class="heart-drop-3d" viewBox="0 0 54 54" width="46" height="46" fill="none"
+              <!-- Flat calm heart drop icon without neon glow -->
+              <svg class="heart-drop-flat" viewBox="0 0 54 54" width="44" height="44" fill="none"
                 xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <!-- Glass reflection gradient for top of heart -->
-                  <linearGradient id="heartGlassGloss" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6" />
-                    <stop offset="45%" stop-color="#fca5a5" stop-opacity="0.25" />
-                    <stop offset="100%" stop-color="#ef4444" stop-opacity="0" />
-                  </linearGradient>
-
-                  <!-- Blood fill 3D gradient -->
-                  <linearGradient id="blood3DFill" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#ef4444" />
-                    <stop offset="60%" stop-color="#dc2626" />
-                    <stop offset="100%" stop-color="#7f1d1d" />
-                  </linearGradient>
-
-                  <!-- Droplet 3D gradient -->
-                  <radialGradient id="drop3DGrad" cx="35%" cy="35%" r="65%">
-                    <stop offset="0%" stop-color="#fca5a5" />
-                    <stop offset="40%" stop-color="#ef4444" />
-                    <stop offset="100%" stop-color="#7f1d1d" />
-                  </radialGradient>
-
-                  <!-- Filter for soft ambient glow -->
-                  <filter id="heartGlow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#ef4444" flood-opacity="0.35" />
-                  </filter>
-                </defs>
-
-                <!-- Heart Base Outline & Glass Body -->
                 <path
-                  d="M26 40C26 40 8 28 8 17C8 10.5 13 6 19 6C22.8 6 25 8.2 26 9.5C27 8.2 29.2 6 33 6C39 6 44 10.5 44 17C44 28 26 40 26 40Z"
-                  fill="rgba(153, 27, 27, 0.35)" stroke="rgba(248, 113, 113, 0.45)" stroke-width="1.8"
-                  stroke-linejoin="round" filter="url(#heartGlow)" />
-
-                <!-- Blood Liquid Fill (Lower half with wavy meniscus surface) -->
+                  d="M27 41C27 41 11 29 11 18C11 12 15.5 7.5 21 7.5C24.5 7.5 26.2 9.2 27 10.2C27.8 9.2 29.5 7.5 33 7.5C38.5 7.5 43 12 43 18C43 29 27 41 27 41Z"
+                  fill="#e5383b" stroke="#fca5a5" stroke-width="1.6" stroke-linejoin="round" />
                 <path
-                  d="M9.5 20C14 22 18 18 26 21C34 24 38 19 42.5 20C43.5 23 42 27 38 31.5C32.5 37 26 40 26 40C26 40 19.5 37 14 31.5C10 27 8.5 23 9.5 20Z"
-                  fill="url(#blood3DFill)" opacity="0.95" />
-
-                <!-- Top Specular Glass Sheen -->
-                <path d="M19 8C14.5 8 10.5 11.5 10.5 16.5C10.5 18 11.5 20 13 21C16 19 20 18 25 20C25.5 14 23 8 19 8Z"
-                  fill="url(#heartGlassGloss)" opacity="0.85" />
-                <path d="M33 8C37.5 8 41.5 11.5 41.5 16.5C41.5 18 40.5 20 39 21C36 19 32 18 27 20C26.5 14 29 8 33 8Z"
-                  fill="url(#heartGlassGloss)" opacity="0.75" />
-
-                <!-- 3D Dripping Blood Drop hanging at bottom right -->
-                <path
-                  d="M35 44C33 41 30.5 36.5 30.5 33.5C30.5 30.5 32.5 28.5 35 28.5C37.5 28.5 39.5 30.5 39.5 33.5C39.5 36.5 37 41 35 44Z"
-                  fill="url(#drop3DGrad)" stroke="rgba(254, 202, 202, 0.6)" stroke-width="0.8" />
-                <!-- Specular highlight dot on droplet -->
-                <circle cx="33.8" cy="32" r="1.2" fill="#ffffff" opacity="0.9" />
+                  d="M35 44C33.2 41.5 31.2 37.5 31.2 34.5C31.2 32 32.8 30.5 35 30.5C37.2 30.5 38.8 32 38.8 34.5C38.8 37.5 36.8 41.5 35 44Z"
+                  fill="#dc2626" stroke="#fca5a5" stroke-width="1" />
               </svg>
             </div>
           </div>
 
-          <!-- Right Verified Vitals Details (Empty by default, auto-filled by hospital dashboard) -->
+          <!-- Right Verified Vitals Details -->
           <div class="vitals-details-box">
-            <div class="vitals-top-meta" style="display:none;">
+            <div class="vitals-top-meta" id="vitalsTopMeta" style="display:none;">
               Age: <b id="vitalAge">--</b>
             </div>
             <div class="vitals-verified-sub" id="vitalsVerifiedSub" style="display:none;">
               Waiting for hospital check
             </div>
 
-            <div id="vitalsWaitingNotice" style="padding: 16px 0; font-size: 14px; color: #94a3b8; font-style: normal;">
+            <div id="vitalsWaitingNotice"
+              style="padding: 16px 0; font-size: 14px; color: #9b9a96; font-style: normal; display: none;">
               Waiting for hospital check
             </div>
 
@@ -1458,73 +1418,44 @@
               <span class="vr-label">Weight:</span>
               <b class="vr-val"><span id="vitalWeight">--</span> kg</b>
               <span class="vr-dot">•</span>
-              <span class="vital-pill pill-awaiting" id="weightPill" style="display:none;">PENDING</span>
+              <span class="vital-pill pill-normal" id="weightPill" style="display:none;">Within usual range</span>
             </div>
 
             <div class="vital-row vital-row-pulse" style="display:none;">
               <span class="vr-label">Pulse:</span>
               <b class="vr-val"><span id="vitalPulse">--</span> bpm</b>
               <span class="vr-dot">•</span>
-              <span class="vital-pill pill-awaiting" id="pulsePill" style="display:none;">PENDING</span>
+              <span class="vital-pill pill-normal" id="pulsePill" style="display:none;">Within usual range</span>
             </div>
 
             <div class="vital-row vital-row-hb" style="display:none;">
               <span class="vr-label">Hemoglobin:</span>
               <b class="vr-val"><span id="vitalHemoglobin">--</span> g/dL</b>
               <span class="vr-dot">•</span>
-              <span class="vital-pill pill-awaiting" id="hbPill" style="display:none;">PENDING</span>
+              <span class="vital-pill pill-normal" id="hbPill" style="display:none;">Within usual range</span>
             </div>
 
             <div class="vital-row vital-row-bp" style="display:none;">
               <span class="vr-label">Blood Pressure:</span>
               <b class="vr-val"><span id="vitalBP">--/--</span> mmHg</b>
               <span class="vr-dot">•</span>
-              <span class="vital-pill pill-awaiting" id="bpPill" style="display:none;">PENDING</span>
+              <span class="vital-pill pill-normal" id="bpPill" style="display:none;">Within usual range</span>
             </div>
 
             <div class="vital-row vital-row-temp" style="display:none;">
               <span class="vr-label">Body Temperature:</span>
-              <b class="vr-val"><span id="vitalTemp">--</span>° F</b>
+              <b class="vr-val"><span id="vitalTemp">--</span> °F</b>
               <span class="vr-dot">•</span>
-              <span class="vital-pill pill-awaiting" id="tempPill" style="display:none;">PENDING</span>
+              <span class="vital-pill pill-normal" id="tempPill" style="display:none;">Within usual range</span>
             </div>
 
-            <p id="vitalsHealthStatusLine" style="font-size: 12px; color: #9b9a96; margin: 8px 0 0 0; display: none;"></p>
-
-            <!-- Automated AI Health Evaluation Banner -->
-            <div class="health-eval-badge badge-awaiting" id="aiHealthEvalBadge" role="button"
-              title="Hospital Intake Health Status" style="display:none;">
-              <i class="fas fa-clock" style="margin-right:6px;"></i>
-              <span>HEALTH STATUS: AWAITING HOSPITAL HEALTH VERIFICATION</span>
-            </div>
+            <p id="vitalsHealthStatusLine" style="font-size: 12px; color: #9b9a96; margin: 8px 0 0 0; display: none;">
+            </p>
           </div>
         </div>
       </section>
 
-      <!-- CARD 1B: HEALTH CHECK HISTORY (Last 5 records) -->
-      <section class="profile-card" id="healthCheckHistoryCard" style="display:none;">
-        <div class="card-header-row">
-          <h2 class="card-title">Health Check History</h2>
-          <span class="card-meta-tag scanner-meta-tag" id="healthCheckHistoryCount">
-            Last 5 Records
-          </span>
-        </div>
-        <div style="margin-top: 14px; overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="border-bottom: 1px solid #2a2c31;">
-                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Date</th>
-                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Hospital</th>
-                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Outcome</th>
-                <th style="padding: 8px 10px; font-size: 11px; color: #9b9a96; text-align: left; font-weight: 500;">Vitals & Status</th>
-              </tr>
-            </thead>
-            <tbody id="healthCheckHistoryTableBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- CARD 2: REAL-TIME 90-DAY MEDICAL ELIGIBILITY TRACKER (Recovery Period) -->
+      <!-- CARD 2: MEDICAL ELIGIBILITY TRACKER (Progress Ring & Timeline) -->
       <section class="profile-card" id="eligibilityTrackerCard">
         <div class="card-header-row">
           <h2 class="card-title">Medical Eligibility Tracker</h2>
@@ -1533,391 +1464,63 @@
           </span>
         </div>
 
-        <div class="dna-tracker-layout">
-          <!-- Left: Vertical Cybernetic DNA Regeneration Pillar (140px x 300px) -->
-          <div class="dna-visual-col">
-            <div class="dna-pillar-wrapper" id="dnaPillarWrapper">
+        <div class="eligibility-tracker-layout" id="eligibilityTrackerBody" role="region"
+          aria-label="Medical eligibility tracker: You can donate.">
+          <!-- Top Row: Progress Ring & Beside Details -->
+          <div class="eligibility-ring-details-row">
+            <!-- Progress ring (SVG, ~160 px, 10 px stroke, track #2a2c31) -->
+            <div class="eligibility-ring-wrapper">
+              <svg class="eligibility-progress-svg" width="160" height="160" viewBox="0 0 160 160" role="img"
+                aria-label="Eligibility progress circle">
+                <!-- Background track -->
+                <circle cx="80" cy="80" r="70" class="elig-ring-track" fill="none" stroke="#2a2c31" stroke-width="10" />
+                <!-- Active progress stroke -->
+                <circle id="eligibilityRingCircle" cx="80" cy="80" r="70" class="elig-ring-progress" fill="none"
+                  stroke="#3ecf8e" stroke-width="10" stroke-linecap="round" stroke-dasharray="439.82"
+                  stroke-dashoffset="0" transform="rotate(-90 80 80)" />
+                <!-- Center text -->
+                <text id="eligibilityRingValue" x="80" y="76" text-anchor="middle" dominant-baseline="central"
+                  class="elig-ring-text-val" fill="#3ecf8e">Ready</text>
+                <text id="eligibilityRingSubtitle" x="80" y="102" text-anchor="middle" class="elig-ring-text-sub"
+                  fill="#9b9a96" style="display:none;">days left</text>
+              </svg>
+            </div>
 
-              <!-- Telemetry Ticks along left side of pillar -->
-              <div class="dna-telemetry-ruler">
-                <div class="telemetry-tick tick-90" style="bottom: 88%;">
-                  <span class="tick-label ready">90d</span>
-                  <span class="tick-dash"></span>
-                </div>
-                <div class="telemetry-tick tick-sub" style="bottom: 78%;"><span class="tick-dash sub"></span></div>
-                <div class="telemetry-tick tick-sub" style="bottom: 69%;"><span class="tick-dash sub"></span></div>
-                <div class="telemetry-tick tick-60" style="bottom: 60%;">
-                  <span class="tick-label">60d</span>
-                  <span class="tick-dash"></span>
-                </div>
-                <div class="telemetry-tick tick-sub" style="bottom: 50%;"><span class="tick-dash sub"></span></div>
-                <div class="telemetry-tick tick-sub" style="bottom: 41%;"><span class="tick-dash sub"></span></div>
-                <div class="telemetry-tick tick-30" style="bottom: 32%;">
-                  <span class="tick-label">30d</span>
-                  <span class="tick-dash"></span>
-                </div>
-                <div class="telemetry-tick tick-sub" style="bottom: 23%;"><span class="tick-dash sub"></span></div>
-                <div class="telemetry-tick tick-sub" style="bottom: 14%;"><span class="tick-dash sub"></span></div>
-                <div class="telemetry-tick tick-0" style="bottom: 6%;">
-                  <span class="tick-label">0d</span>
-                  <span class="tick-dash"></span>
-                </div>
+            <!-- Beside it: Last donation (date, hospital), Next eligible date, Gap length -->
+            <div class="eligibility-details-col">
+              <div class="elig-meta-item">
+                <span class="elig-meta-label">Last donation:</span>
+                <span class="elig-meta-val" id="eligLastDonation">None recorded</span>
               </div>
-
-              <!-- Vertical Glass Cylinder Pillar (140px x 300px) -->
-              <div class="dna-pillar-cylinder" id="dnaPillarCylinder">
-                <!-- Top Machined Titanium Collar -->
-                <div class="pillar-cap-top">
-                  <div class="cap-step-lip"></div>
-                  <div class="cap-specular-rim"></div>
-                </div>
-
-                <!-- Central Quartz Glass Body -->
-                <div class="pillar-glass-body">
-                  <!-- Glass Surface Optics & 3D Glare Reflections -->
-                  <div class="glass-specular-edge-left"></div>
-                  <div class="glass-specular-edge-right"></div>
-                  <div class="glass-specular-streak"></div>
-
-                  <!-- Layer A: Base Inactive DNA Strand (Full Height, faint muted wireframe) -->
-                  <div class="dna-strand-layer strand-inactive">
-                    <svg class="dna-svg dna-svg-inactive" viewBox="0 0 120 244" preserveAspectRatio="none">
-                      <!-- Backbone Strands -->
-                      <path
-                        d="M 60.00,8.00 L 65.61,10.28 L 71.04,12.56 L 76.13,14.84 L 80.73,17.12 L 84.68,19.40 L 87.87,21.68 L 90.19,23.96 L 91.58,26.24 L 92.00,28.52 L 91.42,30.80 L 89.87,33.08 L 87.40,35.36 L 84.08,37.64 L 80.01,39.92 L 75.33,42.20 L 70.17,44.48 L 64.69,46.76 L 59.07,49.04 L 53.48,51.32 L 48.09,53.60 L 43.07,55.88 L 38.58,58.16 L 34.74,60.44 L 31.69,62.72 L 29.51,65.00 L 28.28,67.28 L 28.03,69.56 L 28.77,71.84 L 30.47,74.12 L 33.09,76.40 L 36.54,78.68 L 40.72,80.96 L 45.49,83.24 L 50.72,85.52 L 56.23,87.80 L 61.85,90.08 L 67.42,92.36 L 72.76,94.64 L 77.71,96.92 L 82.10,99.20 L 85.82,101.48 L 88.73,103.76 L 90.76,106.04 L 91.83,108.32 L 91.92,110.60 L 91.02,112.88 L 89.16,115.16 L 86.40,117.44 L 82.82,119.72 L 78.53,122.00 L 73.67,124.28 L 68.39,126.56 L 62.85,128.84 L 57.22,131.12 L 51.68,133.40 L 46.39,135.68 L 41.53,137.96 L 37.24,140.24 L 33.65,142.52 L 30.87,144.80 L 29.00,147.08 L 28.09,149.36 L 28.16,151.64 L 29.22,153.92 L 31.24,156.20 L 34.14,158.48 L 37.84,160.76 L 42.23,163.04 L 47.17,165.32 L 52.51,167.60 L 58.07,169.88 L 63.70,172.16 L 69.21,174.44 L 74.44,176.72 L 79.22,179.00 L 83.41,181.28 L 86.87,183.56 L 89.50,185.84 L 91.22,188.12 L 91.97,190.40 L 91.73,192.68 L 90.51,194.96 L 88.34,197.24 L 85.30,199.52 L 81.48,201.80 L 76.99,204.08 L 71.98,206.36 L 66.59,208.64 L 61.00,210.92 L 55.38,213.20 L 49.90,215.48 L 44.74,217.76 L 40.05,220.04 L 35.97,222.32 L 32.64,224.60 L 30.15,226.88 L 28.59,229.16 L 28.00,231.44 L 28.41,233.72 L 29.78,236.00"
-                        class="dna-backbone backbone-a" fill="none" stroke-width="2.6" stroke-linecap="round" />
-                      <path
-                        d="M 60.00,8.00 L 54.39,10.28 L 48.96,12.56 L 43.87,14.84 L 39.27,17.12 L 35.32,19.40 L 32.13,21.68 L 29.81,23.96 L 28.42,26.24 L 28.00,28.52 L 28.58,30.80 L 30.13,33.08 L 32.60,35.36 L 35.92,37.64 L 39.99,39.92 L 44.67,42.20 L 49.83,44.48 L 55.31,46.76 L 60.93,49.04 L 66.52,51.32 L 71.91,53.60 L 76.93,55.88 L 81.42,58.16 L 85.26,60.44 L 88.31,62.72 L 90.49,65.00 L 91.72,67.28 L 91.97,69.56 L 91.23,71.84 L 89.53,74.12 L 86.91,76.40 L 83.46,78.68 L 79.28,80.96 L 74.51,83.24 L 69.28,85.52 L 63.77,87.80 L 58.15,90.08 L 52.58,92.36 L 47.24,94.64 L 42.29,96.92 L 37.90,99.20 L 34.18,101.48 L 31.27,103.76 L 29.24,106.04 L 28.17,108.32 L 28.08,110.60 L 28.98,112.88 L 30.84,115.16 L 33.60,117.44 L 37.18,119.72 L 41.47,122.00 L 46.33,124.28 L 51.61,126.56 L 57.15,128.84 L 62.78,131.12 L 68.32,133.40 L 73.61,135.68 L 78.47,137.96 L 82.76,140.24 L 86.35,142.52 L 89.13,144.80 L 91.00,147.08 L 91.91,149.36 L 91.84,151.64 L 90.78,153.92 L 88.76,156.20 L 85.86,158.48 L 82.16,160.76 L 77.77,163.04 L 72.83,165.32 L 67.49,167.60 L 61.93,169.88 L 56.30,172.16 L 50.79,174.44 L 45.56,176.72 L 40.78,179.00 L 36.59,181.28 L 33.13,183.56 L 30.50,185.84 L 28.78,188.12 L 28.03,190.40 L 28.27,192.68 L 29.49,194.96 L 31.66,197.24 L 34.70,199.52 L 38.52,201.80 L 43.01,204.08 L 48.02,206.36 L 53.41,208.64 L 59.00,210.92 L 64.62,213.20 L 70.10,215.48 L 75.26,217.76 L 79.95,220.04 L 84.03,222.32 L 87.36,224.60 L 89.85,226.88 L 91.41,229.16 L 92.00,231.44 L 91.59,233.72 L 90.22,236.00"
-                        class="dna-backbone backbone-b" fill="none" stroke-width="2.6" stroke-linecap="round" />
-                      <!-- Base Pair Rungs -->
-                      <g class="dna-rungs">
-
-                        <line x1="60.00" y1="8.00" x2="60.00" y2="8.00" stroke-width="1.8" stroke-opacity="1.00" />
-                        <circle cx="60" cy="8.00" r="1.5" opacity="1.00" />
-
-                        <line x1="81.43" y1="17.50" x2="38.57" y2="17.50" stroke-width="1.8" stroke-opacity="0.87" />
-                        <circle cx="60" cy="17.50" r="1.5" opacity="0.87" />
-
-                        <line x1="91.83" y1="27.00" x2="28.17" y2="27.00" stroke-width="1.8" stroke-opacity="0.55" />
-                        <circle cx="60" cy="27.00" r="1.5" opacity="0.55" />
-
-                        <line x1="85.84" y1="36.50" x2="34.16" y2="36.50" stroke-width="1.2" stroke-opacity="0.79" />
-                        <circle cx="60" cy="36.50" r="1.5" opacity="0.79" />
-
-                        <line x1="66.54" y1="46.00" x2="53.46" y2="46.00" stroke-width="1.2" stroke-opacity="0.99" />
-                        <circle cx="60" cy="46.00" r="1.5" opacity="0.99" />
-
-                        <line x1="43.88" y1="55.50" x2="76.12" y2="55.50" stroke-width="1.2" stroke-opacity="0.93" />
-                        <circle cx="60" cy="55.50" r="1.5" opacity="0.93" />
-
-                        <line x1="29.51" y1="65.00" x2="90.49" y2="65.00" stroke-width="1.2" stroke-opacity="0.65" />
-                        <circle cx="60" cy="65.00" r="1.5" opacity="0.65" />
-
-                        <line x1="30.85" y1="74.50" x2="89.15" y2="74.50" stroke-width="1.8" stroke-opacity="0.71" />
-                        <circle cx="60" cy="74.50" r="1.5" opacity="0.71" />
-
-                        <line x1="47.19" y1="84.00" x2="72.81" y2="84.00" stroke-width="1.8" stroke-opacity="0.96" />
-                        <circle cx="60" cy="84.00" r="1.5" opacity="0.96" />
-
-                        <line x1="70.13" y1="93.50" x2="49.87" y2="93.50" stroke-width="1.8" stroke-opacity="0.97" />
-                        <circle cx="60" cy="93.50" r="1.5" opacity="0.97" />
-
-                        <line x1="87.85" y1="103.00" x2="32.15" y2="103.00" stroke-width="1.8" stroke-opacity="0.75" />
-                        <circle cx="60" cy="103.00" r="1.5" opacity="0.75" />
-
-                        <line x1="91.23" y1="112.50" x2="28.77" y2="112.50" stroke-width="1.2" stroke-opacity="0.61" />
-                        <circle cx="60" cy="112.50" r="1.5" opacity="0.61" />
-
-                        <line x1="78.53" y1="122.00" x2="41.47" y2="122.00" stroke-width="1.2" stroke-opacity="0.91" />
-                        <circle cx="60" cy="122.00" r="1.5" opacity="0.91" />
-
-                        <line x1="56.29" y1="131.50" x2="63.71" y2="131.50" stroke-width="1.2" stroke-opacity="1.00" />
-                        <circle cx="60" cy="131.50" r="1.5" opacity="1.00" />
-
-                        <line x1="35.95" y1="141.00" x2="84.05" y2="141.00" stroke-width="1.2" stroke-opacity="0.83" />
-                        <circle cx="60" cy="141.00" r="1.5" opacity="0.83" />
-
-                        <line x1="28.00" y1="150.50" x2="92.00" y2="150.50" stroke-width="1.8" stroke-opacity="0.51" />
-                        <circle cx="60" cy="150.50" r="1.5" opacity="0.51" />
-
-                        <line x1="36.53" y1="160.00" x2="83.47" y2="160.00" stroke-width="1.8" stroke-opacity="0.84" />
-                        <circle cx="60" cy="160.00" r="1.5" opacity="0.84" />
-
-                        <line x1="57.14" y1="169.50" x2="62.86" y2="169.50" stroke-width="1.8" stroke-opacity="1.00" />
-                        <circle cx="60" cy="169.50" r="1.5" opacity="1.00" />
-
-                        <line x1="79.22" y1="179.00" x2="40.78" y2="179.00" stroke-width="1.8" stroke-opacity="0.90" />
-                        <circle cx="60" cy="179.00" r="1.5" opacity="0.90" />
-
-                        <line x1="91.41" y1="188.50" x2="28.59" y2="188.50" stroke-width="1.8" stroke-opacity="0.60" />
-                        <circle cx="60" cy="188.50" r="1.5" opacity="0.60" />
-
-                        <line x1="87.42" y1="198.00" x2="32.58" y2="198.00" stroke-width="1.2" stroke-opacity="0.76" />
-                        <circle cx="60" cy="198.00" r="1.5" opacity="0.76" />
-
-                        <line x1="69.32" y1="207.50" x2="50.68" y2="207.50" stroke-width="1.2" stroke-opacity="0.98" />
-                        <circle cx="60" cy="207.50" r="1.5" opacity="0.98" />
-
-                        <line x1="46.42" y1="217.00" x2="73.58" y2="217.00" stroke-width="1.2" stroke-opacity="0.95" />
-                        <circle cx="60" cy="217.00" r="1.5" opacity="0.95" />
-
-                        <line x1="30.51" y1="226.50" x2="89.49" y2="226.50" stroke-width="1.2" stroke-opacity="0.69" />
-                        <circle cx="60" cy="226.50" r="1.5" opacity="0.69" />
-
-                        <line x1="29.78" y1="236.00" x2="90.22" y2="236.00" stroke-width="1.8" stroke-opacity="0.66" />
-                        <circle cx="60" cy="236.00" r="1.5" opacity="0.66" />
-
-                      </g>
-                      <!-- Technical Nodes & Rings -->
-                      <g class="dna-tech-nodes">
-
-                        <circle cx="92.00" cy="28.33" r="3" class="dna-node-dot" />
-                        <circle cx="92.00" cy="28.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                          class="dna-orbit-ring" fill="none" />
-
-                        <circle cx="28.00" cy="69.00" r="3" class="dna-node-dot" />
-                        <circle cx="28.00" cy="69.00" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                          class="dna-orbit-ring" fill="none" />
-
-                        <circle cx="92.00" cy="109.66" r="3" class="dna-node-dot" />
-                        <circle cx="92.00" cy="109.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                          class="dna-orbit-ring" fill="none" />
-
-                        <circle cx="28.00" cy="150.33" r="3" class="dna-node-dot" />
-                        <circle cx="28.00" cy="150.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                          class="dna-orbit-ring" fill="none" />
-
-                        <circle cx="92.00" cy="190.99" r="3" class="dna-node-dot" />
-                        <circle cx="92.00" cy="190.99" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                          class="dna-orbit-ring" fill="none" />
-
-                        <circle cx="28.00" cy="231.66" r="3" class="dna-node-dot" />
-                        <circle cx="28.00" cy="231.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                          class="dna-orbit-ring" fill="none" />
-
-                        <circle cx="60" cy="48.66" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                          class="dna-central-orbit" fill="none" opacity="0.6" />
-                        <circle cx="44.00" cy="48.66" r="1.8" class="dna-node-dot" />
-                        <circle cx="76.00" cy="48.66" r="1.8" class="dna-node-dot" />
-
-                        <circle cx="60" cy="89.33" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                          class="dna-central-orbit" fill="none" opacity="0.6" />
-                        <circle cx="44.00" cy="89.33" r="1.8" class="dna-node-dot" />
-                        <circle cx="76.00" cy="89.33" r="1.8" class="dna-node-dot" />
-
-                        <circle cx="60" cy="130.00" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                          class="dna-central-orbit" fill="none" opacity="0.6" />
-                        <circle cx="44.00" cy="130.00" r="1.8" class="dna-node-dot" />
-                        <circle cx="76.00" cy="130.00" r="1.8" class="dna-node-dot" />
-
-                        <circle cx="60" cy="170.66" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                          class="dna-central-orbit" fill="none" opacity="0.6" />
-                        <circle cx="44.00" cy="170.66" r="1.8" class="dna-node-dot" />
-                        <circle cx="76.00" cy="170.66" r="1.8" class="dna-node-dot" />
-
-                        <circle cx="60" cy="211.32" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                          class="dna-central-orbit" fill="none" opacity="0.6" />
-                        <circle cx="44.00" cy="211.32" r="1.8" class="dna-node-dot" />
-                        <circle cx="76.00" cy="211.32" r="1.8" class="dna-node-dot" />
-
-                      </g>
-                    </svg>
-                  </div>
-
-                  <!-- Layer B: Dynamic Liquid Blood Column (Anchored to bottom, height: ${percentage}%) -->
-                  <div class="dna-fluid-container" id="dnaFluidContainer" style="height: 0%;">
-                    <!-- Flowing Wave Meniscus at Fluid Surface -->
-                    <div class="dna-wave-meniscus">
-                      <div class="dna-wave-track">
-                        <svg class="dna-wave-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
-                          <path d="M 0,10 Q 50,2 100,10 T 200,10 T 300,10 T 400,10" fill="none" stroke="#fca5a5"
-                            stroke-width="4.5" opacity="0.4" style="filter:blur(2px);" />
-                          <path d="M 0,10 Q 50,2 100,10 T 200,10 T 300,10 T 400,10" fill="none" stroke="#fca5a5"
-                            stroke-width="2.6" class="dna-wave-crest" />
-                        </svg>
-                      </div>
-                    </div>
-
-                    <!-- Deep Ruby Arterial Blood Column -->
-                    <div class="dna-blood-column"></div>
-
-                    <!-- Layer C: Active Glowing Cyan/Mint DNA Strand (Submerged portion, reveals as fluid rises) -->
-                    <div class="dna-strand-layer strand-active">
-                      <svg class="dna-svg dna-svg-active" viewBox="0 0 120 244" preserveAspectRatio="none">
-                        <!-- Backbone Strands -->
-                        <path
-                          d="M 60.00,8.00 L 65.61,10.28 L 71.04,12.56 L 76.13,14.84 L 80.73,17.12 L 84.68,19.40 L 87.87,21.68 L 90.19,23.96 L 91.58,26.24 L 92.00,28.52 L 91.42,30.80 L 89.87,33.08 L 87.40,35.36 L 84.08,37.64 L 80.01,39.92 L 75.33,42.20 L 70.17,44.48 L 64.69,46.76 L 59.07,49.04 L 53.48,51.32 L 48.09,53.60 L 43.07,55.88 L 38.58,58.16 L 34.74,60.44 L 31.69,62.72 L 29.51,65.00 L 28.28,67.28 L 28.03,69.56 L 28.77,71.84 L 30.47,74.12 L 33.09,76.40 L 36.54,78.68 L 40.72,80.96 L 45.49,83.24 L 50.72,85.52 L 56.23,87.80 L 61.85,90.08 L 67.42,92.36 L 72.76,94.64 L 77.71,96.92 L 82.10,99.20 L 85.82,101.48 L 88.73,103.76 L 90.76,106.04 L 91.83,108.32 L 91.92,110.60 L 91.02,112.88 L 89.16,115.16 L 86.40,117.44 L 82.82,119.72 L 78.53,122.00 L 73.67,124.28 L 68.39,126.56 L 62.85,128.84 L 57.22,131.12 L 51.68,133.40 L 46.39,135.68 L 41.53,137.96 L 37.24,140.24 L 33.65,142.52 L 30.87,144.80 L 29.00,147.08 L 28.09,149.36 L 28.16,151.64 L 29.22,153.92 L 31.24,156.20 L 34.14,158.48 L 37.84,160.76 L 42.23,163.04 L 47.17,165.32 L 52.51,167.60 L 58.07,169.88 L 63.70,172.16 L 69.21,174.44 L 74.44,176.72 L 79.22,179.00 L 83.41,181.28 L 86.87,183.56 L 89.50,185.84 L 91.22,188.12 L 91.97,190.40 L 91.73,192.68 L 90.51,194.96 L 88.34,197.24 L 85.30,199.52 L 81.48,201.80 L 76.99,204.08 L 71.98,206.36 L 66.59,208.64 L 61.00,210.92 L 55.38,213.20 L 49.90,215.48 L 44.74,217.76 L 40.05,220.04 L 35.97,222.32 L 32.64,224.60 L 30.15,226.88 L 28.59,229.16 L 28.00,231.44 L 28.41,233.72 L 29.78,236.00"
-                          class="dna-backbone backbone-a" fill="none" stroke-width="2.6" stroke-linecap="round" />
-                        <path
-                          d="M 60.00,8.00 L 54.39,10.28 L 48.96,12.56 L 43.87,14.84 L 39.27,17.12 L 35.32,19.40 L 32.13,21.68 L 29.81,23.96 L 28.42,26.24 L 28.00,28.52 L 28.58,30.80 L 30.13,33.08 L 32.60,35.36 L 35.92,37.64 L 39.99,39.92 L 44.67,42.20 L 49.83,44.48 L 55.31,46.76 L 60.93,49.04 L 66.52,51.32 L 71.91,53.60 L 76.93,55.88 L 81.42,58.16 L 85.26,60.44 L 88.31,62.72 L 90.49,65.00 L 91.72,67.28 L 91.97,69.56 L 91.23,71.84 L 89.53,74.12 L 86.91,76.40 L 83.46,78.68 L 79.28,80.96 L 74.51,83.24 L 69.28,85.52 L 63.77,87.80 L 58.15,90.08 L 52.58,92.36 L 47.24,94.64 L 42.29,96.92 L 37.90,99.20 L 34.18,101.48 L 31.27,103.76 L 29.24,106.04 L 28.17,108.32 L 28.08,110.60 L 28.98,112.88 L 30.84,115.16 L 33.60,117.44 L 37.18,119.72 L 41.47,122.00 L 46.33,124.28 L 51.61,126.56 L 57.15,128.84 L 62.78,131.12 L 68.32,133.40 L 73.61,135.68 L 78.47,137.96 L 82.76,140.24 L 86.35,142.52 L 89.13,144.80 L 91.00,147.08 L 91.91,149.36 L 91.84,151.64 L 90.78,153.92 L 88.76,156.20 L 85.86,158.48 L 82.16,160.76 L 77.77,163.04 L 72.83,165.32 L 67.49,167.60 L 61.93,169.88 L 56.30,172.16 L 50.79,174.44 L 45.56,176.72 L 40.78,179.00 L 36.59,181.28 L 33.13,183.56 L 30.50,185.84 L 28.78,188.12 L 28.03,190.40 L 28.27,192.68 L 29.49,194.96 L 31.66,197.24 L 34.70,199.52 L 38.52,201.80 L 43.01,204.08 L 48.02,206.36 L 53.41,208.64 L 59.00,210.92 L 64.62,213.20 L 70.10,215.48 L 75.26,217.76 L 79.95,220.04 L 84.03,222.32 L 87.36,224.60 L 89.85,226.88 L 91.41,229.16 L 92.00,231.44 L 91.59,233.72 L 90.22,236.00"
-                          class="dna-backbone backbone-b" fill="none" stroke-width="2.6" stroke-linecap="round" />
-                        <!-- Base Pair Rungs -->
-                        <g class="dna-rungs">
-
-                          <line x1="60.00" y1="8.00" x2="60.00" y2="8.00" stroke-width="1.8" stroke-opacity="1.00" />
-                          <circle cx="60" cy="8.00" r="1.5" opacity="1.00" />
-
-                          <line x1="81.43" y1="17.50" x2="38.57" y2="17.50" stroke-width="1.8" stroke-opacity="0.87" />
-                          <circle cx="60" cy="17.50" r="1.5" opacity="0.87" />
-
-                          <line x1="91.83" y1="27.00" x2="28.17" y2="27.00" stroke-width="1.8" stroke-opacity="0.55" />
-                          <circle cx="60" cy="27.00" r="1.5" opacity="0.55" />
-
-                          <line x1="85.84" y1="36.50" x2="34.16" y2="36.50" stroke-width="1.2" stroke-opacity="0.79" />
-                          <circle cx="60" cy="36.50" r="1.5" opacity="0.79" />
-
-                          <line x1="66.54" y1="46.00" x2="53.46" y2="46.00" stroke-width="1.2" stroke-opacity="0.99" />
-                          <circle cx="60" cy="46.00" r="1.5" opacity="0.99" />
-
-                          <line x1="43.88" y1="55.50" x2="76.12" y2="55.50" stroke-width="1.2" stroke-opacity="0.93" />
-                          <circle cx="60" cy="55.50" r="1.5" opacity="0.93" />
-
-                          <line x1="29.51" y1="65.00" x2="90.49" y2="65.00" stroke-width="1.2" stroke-opacity="0.65" />
-                          <circle cx="60" cy="65.00" r="1.5" opacity="0.65" />
-
-                          <line x1="30.85" y1="74.50" x2="89.15" y2="74.50" stroke-width="1.8" stroke-opacity="0.71" />
-                          <circle cx="60" cy="74.50" r="1.5" opacity="0.71" />
-
-                          <line x1="47.19" y1="84.00" x2="72.81" y2="84.00" stroke-width="1.8" stroke-opacity="0.96" />
-                          <circle cx="60" cy="84.00" r="1.5" opacity="0.96" />
-
-                          <line x1="70.13" y1="93.50" x2="49.87" y2="93.50" stroke-width="1.8" stroke-opacity="0.97" />
-                          <circle cx="60" cy="93.50" r="1.5" opacity="0.97" />
-
-                          <line x1="87.85" y1="103.00" x2="32.15" y2="103.00" stroke-width="1.8"
-                            stroke-opacity="0.75" />
-                          <circle cx="60" cy="103.00" r="1.5" opacity="0.75" />
-
-                          <line x1="91.23" y1="112.50" x2="28.77" y2="112.50" stroke-width="1.2"
-                            stroke-opacity="0.61" />
-                          <circle cx="60" cy="112.50" r="1.5" opacity="0.61" />
-
-                          <line x1="78.53" y1="122.00" x2="41.47" y2="122.00" stroke-width="1.2"
-                            stroke-opacity="0.91" />
-                          <circle cx="60" cy="122.00" r="1.5" opacity="0.91" />
-
-                          <line x1="56.29" y1="131.50" x2="63.71" y2="131.50" stroke-width="1.2"
-                            stroke-opacity="1.00" />
-                          <circle cx="60" cy="131.50" r="1.5" opacity="1.00" />
-
-                          <line x1="35.95" y1="141.00" x2="84.05" y2="141.00" stroke-width="1.2"
-                            stroke-opacity="0.83" />
-                          <circle cx="60" cy="141.00" r="1.5" opacity="0.83" />
-
-                          <line x1="28.00" y1="150.50" x2="92.00" y2="150.50" stroke-width="1.8"
-                            stroke-opacity="0.51" />
-                          <circle cx="60" cy="150.50" r="1.5" opacity="0.51" />
-
-                          <line x1="36.53" y1="160.00" x2="83.47" y2="160.00" stroke-width="1.8"
-                            stroke-opacity="0.84" />
-                          <circle cx="60" cy="160.00" r="1.5" opacity="0.84" />
-
-                          <line x1="57.14" y1="169.50" x2="62.86" y2="169.50" stroke-width="1.8"
-                            stroke-opacity="1.00" />
-                          <circle cx="60" cy="169.50" r="1.5" opacity="1.00" />
-
-                          <line x1="79.22" y1="179.00" x2="40.78" y2="179.00" stroke-width="1.8"
-                            stroke-opacity="0.90" />
-                          <circle cx="60" cy="179.00" r="1.5" opacity="0.90" />
-
-                          <line x1="91.41" y1="188.50" x2="28.59" y2="188.50" stroke-width="1.8"
-                            stroke-opacity="0.60" />
-                          <circle cx="60" cy="188.50" r="1.5" opacity="0.60" />
-
-                          <line x1="87.42" y1="198.00" x2="32.58" y2="198.00" stroke-width="1.2"
-                            stroke-opacity="0.76" />
-                          <circle cx="60" cy="198.00" r="1.5" opacity="0.76" />
-
-                          <line x1="69.32" y1="207.50" x2="50.68" y2="207.50" stroke-width="1.2"
-                            stroke-opacity="0.98" />
-                          <circle cx="60" cy="207.50" r="1.5" opacity="0.98" />
-
-                          <line x1="46.42" y1="217.00" x2="73.58" y2="217.00" stroke-width="1.2"
-                            stroke-opacity="0.95" />
-                          <circle cx="60" cy="217.00" r="1.5" opacity="0.95" />
-
-                          <line x1="30.51" y1="226.50" x2="89.49" y2="226.50" stroke-width="1.2"
-                            stroke-opacity="0.69" />
-                          <circle cx="60" cy="226.50" r="1.5" opacity="0.69" />
-
-                          <line x1="29.78" y1="236.00" x2="90.22" y2="236.00" stroke-width="1.8"
-                            stroke-opacity="0.66" />
-                          <circle cx="60" cy="236.00" r="1.5" opacity="0.66" />
-
-                        </g>
-                        <!-- Technical Nodes & Rings -->
-                        <g class="dna-tech-nodes">
-
-                          <circle cx="92.00" cy="28.33" r="3" class="dna-node-dot" />
-                          <circle cx="92.00" cy="28.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                            class="dna-orbit-ring" fill="none" />
-
-                          <circle cx="28.00" cy="69.00" r="3" class="dna-node-dot" />
-                          <circle cx="28.00" cy="69.00" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                            class="dna-orbit-ring" fill="none" />
-
-                          <circle cx="92.00" cy="109.66" r="3" class="dna-node-dot" />
-                          <circle cx="92.00" cy="109.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                            class="dna-orbit-ring" fill="none" />
-
-                          <circle cx="28.00" cy="150.33" r="3" class="dna-node-dot" />
-                          <circle cx="28.00" cy="150.33" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                            class="dna-orbit-ring" fill="none" />
-
-                          <circle cx="92.00" cy="190.99" r="3" class="dna-node-dot" />
-                          <circle cx="92.00" cy="190.99" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                            class="dna-orbit-ring" fill="none" />
-
-                          <circle cx="28.00" cy="231.66" r="3" class="dna-node-dot" />
-                          <circle cx="28.00" cy="231.66" r="6.5" stroke-width="0.8" stroke-dasharray="2,2"
-                            class="dna-orbit-ring" fill="none" />
-
-                          <circle cx="60" cy="48.66" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                            class="dna-central-orbit" fill="none" opacity="0.6" />
-                          <circle cx="44.00" cy="48.66" r="1.8" class="dna-node-dot" />
-                          <circle cx="76.00" cy="48.66" r="1.8" class="dna-node-dot" />
-
-                          <circle cx="60" cy="89.33" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                            class="dna-central-orbit" fill="none" opacity="0.6" />
-                          <circle cx="44.00" cy="89.33" r="1.8" class="dna-node-dot" />
-                          <circle cx="76.00" cy="89.33" r="1.8" class="dna-node-dot" />
-
-                          <circle cx="60" cy="130.00" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                            class="dna-central-orbit" fill="none" opacity="0.6" />
-                          <circle cx="44.00" cy="130.00" r="1.8" class="dna-node-dot" />
-                          <circle cx="76.00" cy="130.00" r="1.8" class="dna-node-dot" />
-
-                          <circle cx="60" cy="170.66" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                            class="dna-central-orbit" fill="none" opacity="0.6" />
-                          <circle cx="44.00" cy="170.66" r="1.8" class="dna-node-dot" />
-                          <circle cx="76.00" cy="170.66" r="1.8" class="dna-node-dot" />
-
-                          <circle cx="60" cy="211.32" r="16" stroke-width="0.75" stroke-dasharray="3,3"
-                            class="dna-central-orbit" fill="none" opacity="0.6" />
-                          <circle cx="44.00" cy="211.32" r="1.8" class="dna-node-dot" />
-                          <circle cx="76.00" cy="211.32" r="1.8" class="dna-node-dot" />
-
-                        </g>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Bottom Machined Titanium Base Dock -->
-                <div class="pillar-cap-bottom">
-                  <div class="cap-specular-rim"></div>
-                  <div class="cap-step-lip"></div>
-                </div>
+              <div class="elig-meta-item">
+                <span class="elig-meta-label">Next eligible date:</span>
+                <span class="elig-meta-val" id="eligNextDate">Ready to donate</span>
               </div>
-
+              <div class="elig-meta-item">
+                <span class="elig-meta-label">Gap length:</span>
+                <span class="elig-meta-val" id="eligGapLength">90 days</span>
+              </div>
+              <div class="elig-meta-status-wrap">
+                <p id="eligibilityStatusMsg" class="eligibility-status-text">
+                  No donation yet. You're ready.
+                </p>
+              </div>
             </div>
           </div>
 
-          <!-- Right: Dynamic Plain-Text Readout (Group D) -->
-          <div class="capsule-telemetry-panel" style="display: flex; flex-direction: column; justify-content: center; padding: 24px 8px;">
-            <p id="eligibilityStatusMsg" style="font-size: 16px; font-weight: 500; line-height: 1.6; color: #f8fafc; margin: 0;">
-              No donation yet. You're ready.
-            </p>
+          <!-- Under it: Thin horizontal timeline bar from last donation date to next eligible date with marker for today -->
+          <div class="eligibility-timeline-wrap">
+            <div class="eligibility-timeline-bar" id="eligibilityTimelineBar">
+              <div class="timeline-fill-bar" id="timelineFillBar" style="width: 100%;"></div>
+              <div class="timeline-today-marker" id="timelineTodayMarker" style="left: 100%;" title="Today">
+                <span class="timeline-marker-pin"></span>
+                <span class="timeline-marker-label">Today</span>
+              </div>
+            </div>
+            <div class="timeline-axis-labels">
+              <span id="timelineStartLabel">Last donation</span>
+              <span id="timelineEndLabel">Next eligible</span>
+            </div>
           </div>
         </div>
       </section>
@@ -2329,7 +1932,8 @@
       </section>
 
       <!-- CARD 4: DIGITAL BLOOD DONOR IDENTITY CARD -->
-      <section class="profile-card digital-id-intake-card" id="digitalIdIntakeCard" style="background: transparent; border: none; padding: 0; box-shadow: none;">
+      <section class="profile-card digital-id-intake-card" id="digitalIdIntakeCard"
+        style="background: transparent; border: none; padding: 0; box-shadow: none;">
         <!-- Centered Compact Digital Blood Donor Identity Card -->
         <div class="compact-card-outer-center">
           <div class="compact-donor-card" id="printableDonorCard">
@@ -2358,7 +1962,8 @@
                 <span>Tap QR to zoom &bull; Scan for details</span>
               </p>
               <div style="margin-top: 8px; text-align: center;">
-                <button type="button" id="btnRegenerateQr" class="btn-secondary" style="padding: 6px 14px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); color: #e2e8f0;">
+                <button type="button" id="btnRegenerateQr" class="btn-secondary"
+                  style="padding: 6px 14px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); color: #e2e8f0;">
                   <i class="fa-solid fa-arrows-rotate"></i>
                   <span>Regenerate QR</span>
                 </button>
@@ -2412,7 +2017,8 @@
         autocapitalize="off" spellcheck="false" novalidate>
         <div class="modal-telemetry-body">
           <p class="edit-modal-intro">
-            Update your contact and demographic details below. Clinical vitals and donation recovery intervals are verified and set by hospital staff during check-in.
+            Update your contact and demographic details below. Clinical vitals and donation recovery intervals are
+            verified and set by hospital staff during check-in.
           </p>
 
           <!-- Section 1: Core Identity -->
@@ -2458,7 +2064,9 @@
               <input type="date" id="editDonorDob" name="dob" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorWeight">Weight (kg) <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <label for="editDonorWeight">Weight (kg) <span class="badge-set-by-hospital"
+                  style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set
+                  by hospital</span></label>
               <input type="text" id="editDonorWeight" name="weight" readonly disabled
                 style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
@@ -2512,7 +2120,8 @@
               style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
               <div>
                 <span style="font-size: 13px; font-weight: 600; color: #fff;">Saved Location &amp; Coordinates</span>
-                <div style="font-size: 13px; color: #94a3b8;" id="editLocationCoordsNotice">Set exact location on map or via GPS</div>
+                <div style="font-size: 13px; color: #94a3b8;" id="editLocationCoordsNotice">Set exact location on map or
+                  via GPS</div>
               </div>
               <button type="button" id="btnSyncGpsInEditForm"
                 style="padding: 7px 14px; font-size: 13px; border-radius: 6px; background: #0284c7; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px;">
@@ -2544,33 +2153,45 @@
           </div>
           <div class="form-grid-2col">
             <div class="form-field-group">
-              <label for="editDonorPulse">Pulse / Heart Rate <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <label for="editDonorPulse">Pulse / Heart Rate <span class="badge-set-by-hospital"
+                  style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set
+                  by hospital</span></label>
               <input type="text" id="editDonorPulse" name="pulse" readonly disabled
                 style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorHb">Hemoglobin <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <label for="editDonorHb">Hemoglobin <span class="badge-set-by-hospital"
+                  style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set
+                  by hospital</span></label>
               <input type="text" id="editDonorHb" name="hemoglobin" readonly disabled
                 style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorBp">Blood Pressure <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <label for="editDonorBp">Blood Pressure <span class="badge-set-by-hospital"
+                  style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set
+                  by hospital</span></label>
               <input type="text" id="editDonorBp" name="bloodPressure" readonly disabled
                 style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorTemp">Body Temperature <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <label for="editDonorTemp">Body Temperature <span class="badge-set-by-hospital"
+                  style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set
+                  by hospital</span></label>
               <input type="text" id="editDonorTemp" name="bodyTemp" readonly disabled
                 style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
-              <label for="editDonorLastDonation">Last Donation Date <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <label for="editDonorLastDonation">Last Donation Date <span class="badge-set-by-hospital"
+                  style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set
+                  by hospital</span></label>
               <input type="text" id="editDonorLastDonation" name="lastDonationDate" readonly disabled
                 style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);"
                 title="Last donation date is set by verified hospital check-in only." />
             </div>
             <div class="form-field-group">
-              <label for="editDonorFacility">Verified Facility <span class="badge-set-by-hospital" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set by hospital</span></label>
+              <label for="editDonorFacility">Verified Facility <span class="badge-set-by-hospital"
+                  style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 500;">Set
+                  by hospital</span></label>
               <input type="text" id="editDonorFacility" name="verifiedFacility" readonly disabled
                 style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
@@ -2599,7 +2220,8 @@
 
         <div class="modal-telemetry-footer">
           <button type="button" class="btn-cancel" id="btnCancelEditModal">Cancel</button>
-          <button type="submit" class="btn-save-telemetry" id="btnSaveDonorProfile" style="display: inline-flex; align-items: center; gap: 8px;">
+          <button type="submit" class="btn-save-telemetry" id="btnSaveDonorProfile"
+            style="display: inline-flex; align-items: center; gap: 8px;">
             <i class="fa-solid fa-check"></i>
             <span>Save changes</span>
           </button>

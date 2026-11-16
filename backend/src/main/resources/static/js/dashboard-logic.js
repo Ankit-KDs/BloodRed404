@@ -219,14 +219,13 @@
         .then(r => {
           if (r.status === 401 || r.status === 404) {
             try {
-              localStorage.removeItem('red404_donor_session');
-              localStorage.removeItem('red404_auth_session');
-              localStorage.removeItem('red404_session');
-              localStorage.removeItem('donorUser');
-              localStorage.removeItem('red404_user');
-              localStorage.removeItem('red404_token');
-              localStorage.removeItem('red404_donorToken');
-              sessionStorage.clear();
+              if (window.Red404Security) window.Red404Security.clearRoleStorage('DONOR');
+              else {
+                localStorage.removeItem('donor_session');
+                localStorage.removeItem('red404_donor_session');
+                localStorage.removeItem('red404_auth_session');
+                localStorage.removeItem('donorUser');
+              }
             } catch (_) { }
             window.location.replace('donor-login.html');
             return null;
@@ -275,12 +274,18 @@
               window.updateCommandNav(d);
             }
             try {
+              localStorage.setItem('donor_session', JSON.stringify({ user: d, role: 'DONOR', userId: d.id || d.donorId }));
               localStorage.setItem('red404_donor_session', JSON.stringify({ user: d }));
             } catch (_) { }
           } else if (json && json.success === false) {
             try {
-              localStorage.clear();
-              sessionStorage.clear();
+              if (window.Red404Security) window.Red404Security.clearRoleStorage('DONOR');
+              else {
+                localStorage.removeItem('donor_session');
+                localStorage.removeItem('red404_donor_session');
+                localStorage.removeItem('red404_auth_session');
+                localStorage.removeItem('donorUser');
+              }
             } catch (_) { }
             window.location.replace('donor-login.html');
           }

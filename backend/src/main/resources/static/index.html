@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 
 <body>
@@ -39,7 +39,7 @@
         <li><a href="index.html#home" class="nav-link active" data-i18n="nav.home">Home</a></li>
         <li><a href="about.html" class="nav-link" data-i18n="nav.about">About Us</a></li>
         <li><a href="blood-availability-search.html" class="nav-link" data-i18n="nav.donorSearch">Donor Search</a></li>
-        <li><a href="blood-availability.html?portal=public" class="nav-link" data-i18n="nav.bloodBanks">Blood Banks</a></li>
+        <li><a href="blood-banks.html" class="nav-link" data-i18n="nav.bloodBanks">Blood Banks</a></li>
         <li><a href="eligibility-checker.html" class="nav-link" data-i18n="nav.eligibility">Eligibility</a></li>
         <li><a href="index.html#contact" class="nav-link" data-i18n="nav.contact">Contact</a></li>
       </ul>
@@ -63,27 +63,20 @@
   <!-- ========== HERO SECTION ========== -->
   <section class="hero-section" id="home">
     <div class="hero-content">
-      <div class="hero-badge">
-        <span class="badge-dot"></span>
-        <span>Live Blood Network Active</span>
-      </div>
-
       <h1 class="hero-title">
-        <span class="title-line">Every Drop</span>
-        <span class="title-line highlight">Saves A Life</span>
+        <span class="title-line" data-i18n="hero.titleLine1">Every Drop</span>
+        <span class="title-line highlight" data-i18n="hero.titleLine2">Saves A Life</span>
       </h1>
 
-      <p class="hero-subtitle">
-        RED404 connects voluntary blood donors with nearby hospitals in real time.
-        When emergencies strike and every second counts, we bring life-saving help fast.
+      <p class="hero-subtitle" data-i18n="hero.subtitle">
+        RED404 connects voluntary blood donors with nearby hospitals in real time. Fast, verified, and completely secure.
       </p>
 
-      <div class="hero-cta-wrapper" style="margin-bottom: 2.5rem;">
+      <div class="hero-cta-wrapper" style="margin-bottom: 2rem;">
         <div class="hero-cta-buttons" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
           <a href="donor-register.html" class="btn btn-hero-primary" data-i18n="hero.btnBecomeDonor">
             <i class="fas fa-heart"></i>
             <span>Become a Donor</span>
-            <span class="btn-glow"></span>
           </a>
           <a href="hospital-register.html" class="btn btn-hero-secondary" data-i18n="hero.btnRegisterHospital">
             <i class="fas fa-hospital"></i>
@@ -92,95 +85,69 @@
         </div>
         <div class="hospital-verify-note" style="margin-top: 0.65rem; display: flex; align-items: center; gap: 0.35rem; font-size: 0.8125rem; color: #94a3b8;" data-i18n="hero.verificationNotice">
           <i class="fas fa-shield-alt" style="color: #22c55e;"></i>
-          <span>Hospitals are verified by our team before they can send requests.</span>
+          <span>Partner hospital verification required</span>
         </div>
       </div>
 
       <div class="hero-stats-bar">
         <div class="stat-item">
           <span class="stat-num" id="heroActiveDonors" data-target="0">0</span>
-          <span class="stat-label">Active Donors</span>
+          <span class="stat-label" data-i18n="hero.statsRegisteredDonors">Registered Donors</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-num" id="heroHospitals" data-target="0">0</span>
-          <span class="stat-label">Hospitals</span>
+          <span class="stat-label" data-i18n="hero.statsVerifiedHospitals">Verified Hospitals</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-num" id="heroLivesSaved" data-target="0">0</span>
-          <span class="stat-label">Lives Saved</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-num" id="heroZonesActive" data-target="0">0</span>
-          <span class="stat-label">Zones Active</span>
+          <span class="stat-num" id="heroDonations" data-target="0">0</span>
+          <span class="stat-label" data-i18n="hero.statsDonationsRecorded">Donations Recorded</span>
         </div>
       </div>
     </div>
 
     <div class="hero-visual">
-      <div class="city-map-container">
-        <div class="map-pulse-center">
-          <div class="center-dot"></div>
-          <div class="pulse-wave w1"></div>
-          <div class="pulse-wave w2"></div>
-          <div class="pulse-wave w3"></div>
-        </div>
-        <!-- Zone rings -->
-        <div class="zone-ring z5km">
-          <span class="zone-label">Zone 1 · 5km</span>
-        </div>
-        <div class="zone-ring z10km">
-          <span class="zone-label">Zone 2 · 10km</span>
-        </div>
-        <div class="zone-ring z20km">
-          <span class="zone-label">Zone 3 · 20km</span>
-        </div>
+      <div class="hero-diagram-wrapper">
+        <svg class="hero-flat-radar-svg" viewBox="0 0 360 360" width="360" height="360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Network diagram: 3 distance zones with hospital in the center and nearby voluntary donors">
+          <!-- Zone rings (5 km, 10 km, 20 km) -->
+          <circle cx="180" cy="180" r="55" fill="none" stroke="#2a2c31" stroke-width="1.5" stroke-dasharray="4,4" />
+          <circle cx="180" cy="180" r="100" fill="none" stroke="#2a2c31" stroke-width="1.5" stroke-dasharray="4,4" />
+          <circle cx="180" cy="180" r="145" fill="none" stroke="#2a2c31" stroke-width="1.5" stroke-dasharray="4,4" />
 
-        <!-- Donor nodes -->
-        <div class="donor-node dn1" style="top:20%;left:55%">
-          <i class="fas fa-user"></i>
-          <div class="node-ping"></div>
-        </div>
-        <div class="donor-node dn2" style="top:35%;left:70%">
-          <i class="fas fa-user"></i>
-          <div class="node-ping"></div>
-        </div>
-        <div class="donor-node dn3" style="top:60%;left:65%">
-          <i class="fas fa-user"></i>
-          <div class="node-ping"></div>
-        </div>
-        <div class="donor-node dn4" style="top:70%;left:40%">
-          <i class="fas fa-user"></i>
-          <div class="node-ping"></div>
-        </div>
-        <div class="donor-node dn5" style="top:25%;left:35%">
-          <i class="fas fa-user"></i>
-          <div class="node-ping"></div>
-        </div>
+          <!-- Connection lines to 5 donors -->
+          <line x1="180" y1="180" x2="239" y2="99" stroke="rgba(229, 56, 59, 0.35)" stroke-width="1.2" />
+          <line x1="180" y1="180" x2="318" y2="225" stroke="rgba(229, 56, 59, 0.35)" stroke-width="1.2" />
+          <line x1="180" y1="180" x2="180" y2="280" stroke="rgba(229, 56, 59, 0.35)" stroke-width="1.2" />
+          <line x1="180" y1="180" x2="42" y2="225" stroke="rgba(229, 56, 59, 0.35)" stroke-width="1.2" />
+          <line x1="180" y1="180" x2="148" y2="135" stroke="rgba(229, 56, 59, 0.35)" stroke-width="1.2" />
 
-        <!-- Hospital icon center -->
-        <div class="hospital-node">
-          <i class="fas fa-hospital-alt"></i>
-          <span>Hospital</span>
-        </div>
+          <!-- 5 evenly spaced donor dots -->
+          <circle cx="239" cy="99" r="6" fill="#e5383b" stroke="#ecebe8" stroke-width="1.5" />
+          <circle cx="318" cy="225" r="6" fill="#e5383b" stroke="#ecebe8" stroke-width="1.5" />
+          <circle cx="180" cy="280" r="6" fill="#e5383b" stroke="#ecebe8" stroke-width="1.5" />
+          <circle cx="42" cy="225" r="6" fill="#e5383b" stroke="#ecebe8" stroke-width="1.5" />
+          <circle cx="148" cy="135" r="6" fill="#e5383b" stroke="#ecebe8" stroke-width="1.5" />
 
-        <!-- SVG connection lines -->
-        <svg class="connection-lines" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-          <line class="conn-line" x1="200" y1="200" x2="270" y2="88" />
-          <line class="conn-line" x1="200" y1="200" x2="332" y2="148" />
-          <line class="conn-line" x1="200" y1="200" x2="312" y2="252" />
-          <line class="conn-line" x1="200" y1="200" x2="192" y2="296" />
-          <line class="conn-line" x1="200" y1="200" x2="148" y2="112" />
+          <!-- Horizontal zone labels (never rotating) -->
+          <!-- 5 km label -->
+          <rect x="162" y="117" width="36" height="16" rx="4" fill="#17181b" stroke="#2a2c31" stroke-width="1" />
+          <text x="180" y="129" fill="#9b9a96" font-size="10.5" font-weight="600" text-anchor="middle" font-family="'Instrument Sans', sans-serif">5 km</text>
+
+          <!-- 10 km label -->
+          <rect x="159" y="72" width="42" height="16" rx="4" fill="#17181b" stroke="#2a2c31" stroke-width="1" />
+          <text x="180" y="84" fill="#9b9a96" font-size="10.5" font-weight="600" text-anchor="middle" font-family="'Instrument Sans', sans-serif">10 km</text>
+
+          <!-- 20 km label -->
+          <rect x="159" y="27" width="42" height="16" rx="4" fill="#17181b" stroke="#2a2c31" stroke-width="1" />
+          <text x="180" y="39" fill="#9b9a96" font-size="10.5" font-weight="600" text-anchor="middle" font-family="'Instrument Sans', sans-serif">20 km</text>
+
+          <!-- Hospital in the centre -->
+          <circle cx="180" cy="180" r="18" fill="#17181b" stroke="#3ecf8e" stroke-width="2" />
+          <rect x="177" y="171" width="6" height="18" rx="1.5" fill="#3ecf8e" />
+          <rect x="171" y="177" width="18" height="6" rx="1.5" fill="#3ecf8e" />
+          <text x="180" y="210" fill="#ecebe8" font-size="11" font-weight="600" text-anchor="middle" font-family="'Instrument Sans', sans-serif">Hospital</text>
         </svg>
-      </div>
-    </div>
-
-    <div class="hero-scroll-hint">
-      <span>Scroll to explore</span>
-      <div class="scroll-arrow">
-        <i class="fas fa-chevron-down"></i>
       </div>
     </div>
   </section>
@@ -201,7 +168,6 @@
           aria-controls="tab-search">
           <div class="stc-icon"><i class="fas fa-satellite-dish"></i></div>
           <div class="stc-content">
-            <span class="stc-step">Blood search</span>
             <span class="stc-title">Blood Availability Search</span>
           </div>
         </button>
@@ -210,7 +176,6 @@
           aria-controls="tab-directory">
           <div class="stc-icon"><i class="fas fa-hospital-user"></i></div>
           <div class="stc-content">
-            <span class="stc-step">Blood bank directory</span>
             <span class="stc-title">Blood Bank Directory</span>
           </div>
         </button>
@@ -219,7 +184,6 @@
           aria-controls="tab-screening">
           <div class="stc-icon"><i class="fas fa-heart-pulse"></i></div>
           <div class="stc-content">
-            <span class="stc-step">Health screening</span>
             <span class="stc-title">Health Screening</span>
           </div>
         </button>
@@ -228,7 +192,6 @@
           aria-controls="tab-portals">
           <div class="stc-icon"><i class="fas fa-shield-halved"></i></div>
           <div class="stc-content">
-            <span class="stc-step">Portal access</span>
             <span class="stc-title">Portal Access</span>
           </div>
         </button>
@@ -237,7 +200,6 @@
           aria-controls="tab-campaigns">
           <div class="stc-icon"><i class="fas fa-calendar-check"></i></div>
           <div class="stc-content">
-            <span class="stc-step">Donation drives</span>
             <span class="stc-title">Donation Drives</span>
           </div>
         </button>
@@ -285,12 +247,12 @@
                 Find verified hospital blood banks and blood storage centres. Look up contact numbers and available blood units.
               </p>
               <div class="pane-features">
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Verified government and partner hospitals</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Verified partner hospitals</div>
                 <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Direct phone and contact details</div>
-                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Whole blood bags tracked by blood group</div>
+                <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Blood units by group, updated by each hospital</div>
               </div>
               <div class="pane-actions">
-                <a href="blood-availability.html" class="btn btn-service-primary">
+                <a href="blood-banks.html" class="btn btn-service-primary">
                   <span>View Directory</span>
                   <i class="fas fa-hospital"></i>
                 </a>
@@ -377,7 +339,7 @@
               <span class="pane-badge"><i class="fas fa-users"></i> Community Outreach</span>
               <h3 class="pane-heading">Donation Drives</h3>
               <p class="pane-text">
-                Find upcoming blood donation drives and camps organized by hospitals and community groups.
+                Verified partner hospitals organize blood donation drives. Registered voluntary donors receive invitations and can RSVP directly.
               </p>
               <div class="pane-features">
                 <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Verified blood donation camps</div>
@@ -385,8 +347,8 @@
                 <div class="pane-feat-item"><i class="fas fa-check-circle"></i> Easy RSVP and directions</div>
               </div>
               <div class="pane-actions">
-                <a href="#" class="btn btn-service-primary btn-explore-campaigns-action">
-                  <span>Explore Drives</span>
+                <a href="donor-register.html" class="btn btn-service-primary">
+                  <span>Register to Participate</span>
                   <i class="fas fa-calendar-plus"></i>
                 </a>
               </div>
@@ -452,13 +414,13 @@
                 <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Verified government & partner hospitals</div>
                 <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Direct phone and contact details
                 </div>
-                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Whole blood bags tracked by blood group</div>
+                <div class="acc-feat-item"><i class="fas fa-check-circle"></i> Blood units by group, updated by each hospital</div>
               </div>
               <div class="acc-img-wrap">
                 <img src="images/services/service-directory.svg" alt="Blood Bank Directory" class="acc-static-img" />
               </div>
               <div class="acc-actions">
-                <a href="blood-availability.html" class="btn btn-service-primary">
+                <a href="blood-banks.html" class="btn btn-service-primary">
                   <span>View Directory</span>
                   <i class="fas fa-hospital"></i>
                 </a>
@@ -552,7 +514,7 @@
                 <img src="images/services/service-campaigns.svg" alt="Campaigns" class="acc-static-img" />
               </div>
               <div class="acc-actions">
-                <a href="#" class="btn btn-service-primary btn-explore-campaigns-action">
+                <a href="donor-register.html" class="btn btn-service-primary">
                   <span>Explore Campaigns</span>
                   <i class="fas fa-calendar-plus"></i>
                 </a>
@@ -564,128 +526,83 @@
     </div>
   </section>
 
-  <!-- ========== BLOOD TYPES TICKER ========== -->
-  <div class="blood-ticker">
+  <!-- ========== BLOOD TYPES (STATIC ROW) ========== -->
+  <div class="blood-ticker blood-ticker-static">
     <div class="ticker-label">
-      <i class="fas fa-tint"></i> Blood Types We Cover:
+      <i class="fas fa-tint"></i> <span data-i18n="bloodTypes.label">Blood Types We Cover:</span>
     </div>
-    <div class="ticker-track">
-      <div class="ticker-content">
-        <span class="blood-tag a-pos">A+</span>
-        <span class="blood-tag a-neg">A-</span>
-        <span class="blood-tag b-pos">B+</span>
-        <span class="blood-tag b-neg">B-</span>
-        <span class="blood-tag ab-pos">AB+</span>
-        <span class="blood-tag ab-neg">AB-</span>
-        <span class="blood-tag o-pos">O+</span>
-        <span class="blood-tag o-neg">O-</span>
-        <span class="blood-tag a-pos">A+</span>
-        <span class="blood-tag a-neg">A-</span>
-        <span class="blood-tag b-pos">B+</span>
-        <span class="blood-tag b-neg">B-</span>
-        <span class="blood-tag ab-pos">AB+</span>
-        <span class="blood-tag ab-neg">AB-</span>
-        <span class="blood-tag o-pos">O+</span>
-        <span class="blood-tag o-neg">O-</span>
-      </div>
+    <div class="blood-types-static-row">
+      <span class="blood-tag a-pos">A+</span>
+      <span class="blood-tag a-neg">A-</span>
+      <span class="blood-tag b-pos">B+</span>
+      <span class="blood-tag b-neg">B-</span>
+      <span class="blood-tag ab-pos">AB+</span>
+      <span class="blood-tag ab-neg">AB-</span>
+      <span class="blood-tag o-pos">O+</span>
+      <span class="blood-tag o-neg">O-</span>
     </div>
   </div>
 
-  <!-- ========== PROCESS FLOW (HOW RED404 WORKS) ========== -->
+  <!-- ========== HOW RED404 WORKS (VERTICAL NUMBERED LIST) ========== -->
   <section class="how-section" id="process-flow">
     <div class="section-container">
-      <div class="section-header" style="text-align: center; margin-bottom: 3.5rem;">
+      <div class="section-header" style="text-align: center; margin-bottom: 2.5rem;">
         <h2 class="section-title">How <span style="color: #e63946">RED404</span> Works</h2>
       </div>
 
-      <div class="stepper-linear-container">
-        <!-- Step 01 -->
-        <div class="stepper-step-card">
-          <div class="ssc-top">
-            <span class="ssc-num">01</span>
-            <span class="ssc-icon"><i class="fas fa-user-plus"></i></span>
-          </div>
-          <h3 class="ssc-title">Register</h3>
-          <p class="ssc-desc">Donors sign up with their blood group and location.</p>
-        </div>
-
-        <div class="stepper-arrow-divider">
-          <span class="stepper-dashed-line"></span>
-          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
-        </div>
-
-        <!-- Step 02 -->
-        <div class="stepper-step-card">
-          <div class="ssc-top">
-            <span class="ssc-num">02</span>
-            <span class="ssc-icon"><i class="fas fa-hospital"></i></span>
-          </div>
-          <h3 class="ssc-title">Hospital SOS</h3>
-          <p class="ssc-desc">Verified hospitals raise an urgent request.</p>
-        </div>
-
-        <div class="stepper-arrow-divider">
-          <span class="stepper-dashed-line"></span>
-          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
-        </div>
-
-        <!-- Step 03 -->
-        <div class="stepper-step-card">
-          <div class="ssc-top">
-            <span class="ssc-num">03</span>
-            <span class="ssc-icon"><i class="fas fa-satellite-dish"></i></span>
-          </div>
-          <h3 class="ssc-title">Nearby Matching</h3>
-          <p class="ssc-desc">The system identifies eligible voluntary donors in nearby radial sectors.</p>
-          <div class="zone-coverage-badge">
-            <span class="zone-tag-label">ZONE:</span>
-            <span class="zone-tag-steps">5km <span class="zone-tag-arr">&rarr;</span> 10km <span class="zone-tag-arr">&rarr;</span> 20km</span>
+      <div class="how-works-vertical-list">
+        <!-- 1 -->
+        <div class="how-works-step">
+          <div class="hws-num">1</div>
+          <div class="hws-content">
+            <h3 class="hws-title">Register</h3>
+            <p class="hws-desc">Donors sign up with their blood group and location.</p>
           </div>
         </div>
 
-        <div class="stepper-arrow-divider">
-          <span class="stepper-dashed-line"></span>
-          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
-        </div>
-
-        <!-- Step 04 -->
-        <div class="stepper-step-card">
-          <div class="ssc-top">
-            <span class="ssc-num">04</span>
-            <span class="ssc-icon"><i class="fas fa-bell"></i></span>
+        <!-- 2 -->
+        <div class="how-works-step">
+          <div class="hws-num">2</div>
+          <div class="hws-content">
+            <h3 class="hws-title">Hospital searches</h3>
+            <p class="hws-desc">A verified hospital looks for eligible donors nearby by blood group and distance.</p>
           </div>
-          <h3 class="ssc-title">Instant Alert</h3>
-          <p class="ssc-desc">Eligible donors nearby receive a real-time ping.</p>
         </div>
 
-        <div class="stepper-arrow-divider">
-          <span class="stepper-dashed-line"></span>
-          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
-        </div>
-
-        <!-- Step 05 -->
-        <div class="stepper-step-card">
-          <div class="ssc-top">
-            <span class="ssc-num">05</span>
-            <span class="ssc-icon"><i class="fas fa-route"></i></span>
+        <!-- 3 -->
+        <div class="how-works-step">
+          <div class="hws-num">3</div>
+          <div class="hws-content">
+            <h3 class="hws-title">Donor gets a request</h3>
+            <p class="hws-desc">Only eligible donors with location on are notified.</p>
           </div>
-          <h3 class="ssc-title">Fast Routing</h3>
-          <p class="ssc-desc">Donors get the quickest map route to the hospital.</p>
         </div>
 
-        <div class="stepper-arrow-divider">
-          <span class="stepper-dashed-line"></span>
-          <i class="fas fa-chevron-right stepper-arrow-icon"></i>
-        </div>
-
-        <!-- Step 06 -->
-        <div class="stepper-step-card">
-          <div class="ssc-top">
-            <span class="ssc-num">06</span>
-            <span class="ssc-icon"><i class="fas fa-heart-pulse"></i></span>
+        <!-- 4 -->
+        <div class="how-works-step">
+          <div class="hws-num">4</div>
+          <div class="hws-content">
+            <h3 class="hws-title">Accept and navigate</h3>
+            <p class="hws-desc">The donor accepts and gets directions. The hospital sees the phone number only after acceptance.</p>
           </div>
-          <h3 class="ssc-title">Life Saved</h3>
-          <p class="ssc-desc">Blood is donated, and the donor's digital badge is upgraded.</p>
+        </div>
+
+        <!-- 5 -->
+        <div class="how-works-step">
+          <div class="hws-num">5</div>
+          <div class="hws-content">
+            <h3 class="hws-title">Check-in</h3>
+            <p class="hws-desc">The hospital checks vitals and records the donation.</p>
+          </div>
+        </div>
+
+        <!-- 6 -->
+        <div class="how-works-step">
+          <div class="hws-num">6</div>
+          <div class="hws-content">
+            <h3 class="hws-title">Record</h3>
+            <p class="hws-desc">The donor sees the donation, certificate and next eligible date.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -701,45 +618,35 @@
         </p>
       </div>
 
-      <div class="eligibility-grid">
-        <div class="eligibility-card">
-          <div class="eligibility-icon-wrap">
-            <i class="fas fa-user-clock"></i>
-          </div>
-          <div class="eligibility-metric">18 – 65 Years</div>
-          <div class="eligibility-title">Age Range</div>
-          <p class="eligibility-desc">You must be at least 18 years old and below 65 years of age in good general health.</p>
+      <div class="wcd-aligned-table">
+        <div class="wcd-row wcd-row-header">
+          <div class="wcd-cell wcd-val-cell">Criteria</div>
+          <div class="wcd-cell wcd-label-cell">Category</div>
+          <div class="wcd-cell wcd-desc-cell">Standard</div>
         </div>
-
-        <div class="eligibility-card">
-          <div class="eligibility-icon-wrap">
-            <i class="fas fa-weight-scale"></i>
-          </div>
-          <div class="eligibility-metric">≥ 45 kg</div>
-          <div class="eligibility-title">Body Weight</div>
-          <p class="eligibility-desc">Minimum body weight of 45 kg is required for standard 350ml whole-blood donation.</p>
+        <div class="wcd-row">
+          <div class="wcd-cell wcd-val-cell">18 – 65 Years</div>
+          <div class="wcd-cell wcd-label-cell">Age Range</div>
+          <div class="wcd-cell wcd-desc-cell">Must be at least 18 years old and below 65 years of age in good general health.</div>
         </div>
-
-        <div class="eligibility-card" id="donationGapCard">
-          <div class="eligibility-icon-wrap">
-            <i class="fas fa-calendar-days"></i>
-          </div>
-          <div class="eligibility-metric" id="donationGapMetric">90 / 120 Days</div>
-          <div class="eligibility-title" id="donationGapTitle">Donation Interval</div>
-          <p class="eligibility-desc" id="donationGapDesc">90 days for men, 120 days for women</p>
+        <div class="wcd-row">
+          <div class="wcd-cell wcd-val-cell">≥ 45 kg</div>
+          <div class="wcd-cell wcd-label-cell">Body Weight</div>
+          <div class="wcd-cell wcd-desc-cell">Minimum body weight of 45 kg is required for whole-blood donation.</div>
         </div>
-
-        <div class="eligibility-card">
-          <div class="eligibility-icon-wrap">
-            <i class="fas fa-droplet"></i>
-          </div>
-          <div class="eligibility-metric">≥ 12.5 g/dL</div>
-          <div class="eligibility-title">Hemoglobin Level</div>
-          <p class="eligibility-desc">A minimum hemoglobin level of 12.5 g/dL is verified prior to donation at the hospital.</p>
+        <div class="wcd-row">
+          <div class="wcd-cell wcd-val-cell">90 / 120 Days</div>
+          <div class="wcd-cell wcd-label-cell">Donation Gap</div>
+          <div class="wcd-cell wcd-desc-cell">90 days for men, 120 days for women between whole-blood donations.</div>
+        </div>
+        <div class="wcd-row">
+          <div class="wcd-cell wcd-val-cell">≥ 12.5 g/dL</div>
+          <div class="wcd-cell wcd-label-cell">Hemoglobin Level</div>
+          <div class="wcd-cell wcd-desc-cell">Minimum hemoglobin level of 12.5 g/dL verified at intake before donation.</div>
         </div>
       </div>
 
-      <div class="eligibility-cta-wrap">
+      <div class="eligibility-cta-wrap" style="text-align: center; margin-top: 1.5rem;">
         <a href="eligibility-checker.html" class="btn btn-service-primary">
           <i class="fas fa-stethoscope"></i>
           <span>Check Full Eligibility</span>
@@ -754,54 +661,21 @@
       <div class="ecg-line"></div>
     </div>
     <div class="section-container">
-      <div class="stats-grid">
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); max-width: 900px; margin: 0 auto 3rem;">
         <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-tint"></i></div>
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
           <div class="stat-count" id="statRegDonors" data-target="0">0</div>
-          <div class="stat-text">Registered Donors</div>
-          <div class="stat-bar">
-            <div class="bar-fill" id="barRegDonors" style="width:0%"></div>
-          </div>
+          <div class="stat-text" data-i18n="stats.registeredDonors">Registered Donors</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-hospital-alt"></i></div>
           <div class="stat-count" id="statHospitals" data-target="0">0</div>
-          <div class="stat-text">Partner Hospitals</div>
-          <div class="stat-bar">
-            <div class="bar-fill" id="barHospitals" style="width:0%"></div>
-          </div>
+          <div class="stat-text" data-i18n="stats.verifiedHospitals">Verified Hospitals</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-heart"></i></div>
-          <div class="stat-count" id="statLivesSaved" data-target="0">0</div>
-          <div class="stat-text">Lives Saved</div>
-          <div class="stat-bar">
-            <div class="bar-fill" id="barLivesSaved" style="width:0%"></div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-clock"></i></div>
-          <div class="stat-count" id="statAvgResponse" data-target="none" style="font-size: 18px;">No data yet</div>
-          <div class="stat-text">Avg. Response (min)</div>
-          <div class="stat-bar">
-            <div class="bar-fill" id="barAvgResponse" style="width:0%"></div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-map"></i></div>
-          <div class="stat-count" id="statActiveZones" data-target="0">0</div>
-          <div class="stat-text">Active Zones</div>
-          <div class="stat-bar">
-            <div class="bar-fill" id="barActiveZones" style="width:0%"></div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-          <div class="stat-count" id="statSuccessRate" data-target="none" style="font-size: 18px;">No data yet</div>
-          <div class="stat-text">% Success Rate</div>
-          <div class="stat-bar">
-            <div class="bar-fill" id="barSuccessRate" style="width:0%"></div>
-          </div>
+          <div class="stat-count" id="statDonations" data-target="0">0</div>
+          <div class="stat-text" data-i18n="stats.donationsRecorded">Donations Recorded</div>
         </div>
       </div>
 
@@ -1042,7 +916,7 @@
           <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
           <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
           <li><a href="blood-availability-search.html"><i class="fas fa-chevron-right"></i> Donor Search</a></li>
-          <li><a href="blood-availability.html?portal=public"><i class="fas fa-chevron-right"></i> Blood Banks</a></li>
+          <li><a href="blood-banks.html"><i class="fas fa-chevron-right"></i> Blood Banks</a></li>
           <li><a href="eligibility-checker.html"><i class="fas fa-chevron-right"></i> Eligibility</a></li>
         </ul>
       </div>

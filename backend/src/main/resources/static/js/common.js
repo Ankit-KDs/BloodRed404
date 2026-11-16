@@ -42,15 +42,24 @@ window.BloodCompatibility = {
 /* ==================== RED404 SESSION & BACK-BUTTON SECURITY ==================== */
 window.Red404Security = {
   broadcastChannel: (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('red404_auth_channel') : null,
+  currentRole: null,
+  currentUserId: null,
 
-  init(role) {
+  init(role, userId) {
     const self = this;
-    const loginUrl = self.getLoginUrl(role);
+    self.currentRole = (role || 'DONOR').toUpperCase();
+    if (userId) {
+      self.currentUserId = String(userId);
+    } else {
+      self.currentUserId = self.resolveUserIdFromStorage(self.currentRole);
+    }
+
+    const loginUrl = self.getLoginUrl(self.currentRole);
 
     // 1. bfcache (back-forward cache) protection
     window.addEventListener('pageshow', function (event) {
       if (event.persisted) {
-        self.verifySession(role).then(valid => {
+        self.verifySession(self.currentRole).then(valid => {
           if (!valid) {
             window.location.replace(loginUrl);
           }
@@ -59,30 +68,80 @@ window.Red404Security = {
     });
 
     // 2. Cross-tab logout listener via BroadcastChannel
+    // Part 1 Requirement 3: message includes {role, userId}. A tab reacts ONLY when role AND userId match its own.
     if (self.broadcastChannel) {
       self.broadcastChannel.onmessage = function (event) {
-        if (event.data && event.data.type === 'LOGOUT') {
-          self.clearAllStorage();
-          window.location.replace(loginUrl);
+        if (!event.data || event.data.type !== 'LOGOUT') return;
+        const targetRole = String(event.data.role || '').toUpperCase();
+        const targetUserId = event.data.userId != null ? String(event.data.userId) : null;
+        const myRole = String(self.currentRole || '').toUpperCase();
+        const myUserId = self.currentUserId != null ? String(self.currentUserId) : null;
+
+        if (targetRole && myRole && targetRole === myRole) {
+          if (!targetUserId || !myUserId || targetUserId === myUserId) {
+            self.clearRoleStorage(myRole);
+            window.location.replace(loginUrl);
+          }
         }
       };
     }
 
     // 3. Storage event fallback for cross-tab sync
     window.addEventListener('storage', function (event) {
-      if (event.key === 'red404_session_kill' || event.key === 'red404_logout_event') {
-        self.clearAllStorage();
-        window.location.replace(loginUrl);
+      if (event.key === 'red404_logout_event' && event.newValue) {
+        try {
+          const payload = JSON.parse(event.newValue);
+          if (payload && payload.type === 'LOGOUT') {
+            const targetRole = String(payload.role || '').toUpperCase();
+            const targetUserId = payload.userId != null ? String(payload.userId) : null;
+            const myRole = String(self.currentRole || '').toUpperCase();
+            const myUserId = self.currentUserId != null ? String(self.currentUserId) : null;
+
+            if (targetRole && myRole && targetRole === myRole) {
+              if (!targetUserId || !myUserId || targetUserId === myUserId) {
+                self.clearRoleStorage(myRole);
+                window.location.replace(loginUrl);
+              }
+            }
+          }
+        } catch (_) {}
       }
     });
   },
 
+  resolveUserIdFromStorage(role) {
+    try {
+      const r = (role || '').toUpperCase();
+      if (r === 'DONOR') {
+        const raw = localStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const u = parsed.user || parsed;
+          return u.id != null ? String(u.id) : (u.donorId ? String(u.donorId) : null);
+        }
+      } else if (r === 'HOSPITAL') {
+        const raw = localStorage.getItem('hospital_session') || localStorage.getItem('red404_hospital_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const h = parsed.hospital || parsed;
+          return h.id != null ? String(h.id) : null;
+        }
+      } else if (r === 'ADMIN') {
+        return 'SUPER_ADMIN';
+      }
+    } catch (_) {}
+    return null;
+  },
+
   async verifySession(role) {
     try {
-      let endpoint = '/api/auth/session';
-      if (role === 'HOSPITAL') endpoint = '/api/hospital/profile';
-      else if (role === 'ADMIN') endpoint = '/api/admin/profile';
-      const res = await fetch(endpoint, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+      const r = (role || this.currentRole || 'DONOR').toUpperCase();
+      let endpoint = '/api/donor/profile';
+      let headers = { 'Accept': 'application/json', 'X-Red404-Role': r };
+      if (r === 'HOSPITAL') endpoint = '/api/hospital/profile';
+      else if (r === 'ADMIN') endpoint = '/api/admin/check-auth';
+
+      const res = await fetch(endpoint, { credentials: 'include', headers });
       return res.ok;
     } catch (_) {
       return false;
@@ -90,44 +149,72 @@ window.Red404Security = {
   },
 
   getLoginUrl(role) {
-    if (role === 'HOSPITAL') return 'hospital-login.html';
-    if (role === 'ADMIN') return 'donor-login.html';
+    const r = (role || this.currentRole || 'DONOR').toUpperCase();
+    if (r === 'HOSPITAL') return 'hospital-login.html';
+    if (r === 'ADMIN') return 'donor-login.html';
     return 'donor-login.html';
   },
 
-  clearAllStorage() {
+  clearRoleStorage(role) {
+    const r = (role || this.currentRole || 'DONOR').toUpperCase();
     try {
-      localStorage.clear();
-      sessionStorage.clear();
+      if (r === 'DONOR') {
+        localStorage.removeItem('donor_session');
+        localStorage.removeItem('red404_donor_session');
+        localStorage.removeItem('red404_auth_session');
+        localStorage.removeItem('donorUser');
+        localStorage.removeItem('red404_session');
+        localStorage.removeItem('red404_token');
+        localStorage.removeItem('red404_donorToken');
+        sessionStorage.removeItem('donor_session');
+        sessionStorage.removeItem('red404_donor_session');
+      } else if (r === 'HOSPITAL') {
+        localStorage.removeItem('hospital_session');
+        localStorage.removeItem('red404_hospital_session');
+        localStorage.removeItem('red404_hospitalToken');
+        localStorage.removeItem('hospitalToken');
+        sessionStorage.removeItem('hospital_session');
+        sessionStorage.removeItem('red404_hospital_session');
+      } else if (r === 'ADMIN') {
+        sessionStorage.removeItem('admin_session');
+        sessionStorage.removeItem('red404_super_admin');
+        sessionStorage.removeItem('red404_admin_token');
+        localStorage.removeItem('admin_session');
+      }
     } catch (_) {}
   },
 
-  async logout(role) {
+  async logout(role, userId) {
     const self = this;
-    const loginUrl = self.getLoginUrl(role);
+    const r = (role || self.currentRole || 'DONOR').toUpperCase();
+    const uId = userId || self.currentUserId || self.resolveUserIdFromStorage(r);
+    const loginUrl = self.getLoginUrl(r);
 
-    // 1. Invalidate server session
+    // 1. Invalidate server session for ONLY this role
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      if (r === 'HOSPITAL') {
+        await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'HOSPITAL' } });
+      } else if (r === 'ADMIN') {
+        await fetch('/api/admin/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'ADMIN' } });
+      } else {
+        await fetch('/api/donors/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'DONOR' } })
+          .catch(() => fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'DONOR' } }));
+      }
     } catch (_) {}
-    if (role === 'HOSPITAL') {
-      try { await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
-    } else if (role === 'ADMIN') {
-      try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
-    }
 
-    // 2. Notify other open tabs
+    // 2. Notify other open tabs with {role, userId}
+    const msg = { type: 'LOGOUT', role: r, userId: uId, time: Date.now() };
     if (self.broadcastChannel) {
-      try { self.broadcastChannel.postMessage({ type: 'LOGOUT', role: role, time: Date.now() }); } catch (_) {}
+      try { self.broadcastChannel.postMessage(msg); } catch (_) {}
     }
     try {
-      localStorage.setItem('red404_logout_event', String(Date.now()));
+      localStorage.setItem('red404_logout_event', JSON.stringify(msg));
     } catch (_) {}
 
-    // 3. Clear all client storage
-    self.clearAllStorage();
+    // 3. Clear storage for ONLY this role
+    self.clearRoleStorage(r);
 
-    // 4. Replace current page in history so back button cannot re-enter
+    // 4. Redirect
     window.location.replace(loginUrl);
   }
 };
@@ -302,15 +389,24 @@ window.BloodCompatibility = {
 /* ==================== RED404 SESSION & BACK-BUTTON SECURITY ==================== */
 window.Red404Security = {
   broadcastChannel: (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('red404_auth_channel') : null,
+  currentRole: null,
+  currentUserId: null,
 
-  init(role) {
+  init(role, userId) {
     const self = this;
-    const loginUrl = self.getLoginUrl(role);
+    self.currentRole = (role || 'DONOR').toUpperCase();
+    if (userId) {
+      self.currentUserId = String(userId);
+    } else {
+      self.currentUserId = self.resolveUserIdFromStorage(self.currentRole);
+    }
+
+    const loginUrl = self.getLoginUrl(self.currentRole);
 
     // 1. bfcache (back-forward cache) protection
     window.addEventListener('pageshow', function (event) {
       if (event.persisted) {
-        self.verifySession(role).then(valid => {
+        self.verifySession(self.currentRole).then(valid => {
           if (!valid) {
             window.location.replace(loginUrl);
           }
@@ -319,30 +415,80 @@ window.Red404Security = {
     });
 
     // 2. Cross-tab logout listener via BroadcastChannel
+    // Part 1 Requirement 3: message includes {role, userId}. A tab reacts ONLY when role AND userId match its own.
     if (self.broadcastChannel) {
       self.broadcastChannel.onmessage = function (event) {
-        if (event.data && event.data.type === 'LOGOUT') {
-          self.clearAllStorage();
-          window.location.replace(loginUrl);
+        if (!event.data || event.data.type !== 'LOGOUT') return;
+        const targetRole = String(event.data.role || '').toUpperCase();
+        const targetUserId = event.data.userId != null ? String(event.data.userId) : null;
+        const myRole = String(self.currentRole || '').toUpperCase();
+        const myUserId = self.currentUserId != null ? String(self.currentUserId) : null;
+
+        if (targetRole && myRole && targetRole === myRole) {
+          if (!targetUserId || !myUserId || targetUserId === myUserId) {
+            self.clearRoleStorage(myRole);
+            window.location.replace(loginUrl);
+          }
         }
       };
     }
 
     // 3. Storage event fallback for cross-tab sync
     window.addEventListener('storage', function (event) {
-      if (event.key === 'red404_session_kill' || event.key === 'red404_logout_event') {
-        self.clearAllStorage();
-        window.location.replace(loginUrl);
+      if (event.key === 'red404_logout_event' && event.newValue) {
+        try {
+          const payload = JSON.parse(event.newValue);
+          if (payload && payload.type === 'LOGOUT') {
+            const targetRole = String(payload.role || '').toUpperCase();
+            const targetUserId = payload.userId != null ? String(payload.userId) : null;
+            const myRole = String(self.currentRole || '').toUpperCase();
+            const myUserId = self.currentUserId != null ? String(self.currentUserId) : null;
+
+            if (targetRole && myRole && targetRole === myRole) {
+              if (!targetUserId || !myUserId || targetUserId === myUserId) {
+                self.clearRoleStorage(myRole);
+                window.location.replace(loginUrl);
+              }
+            }
+          }
+        } catch (_) {}
       }
     });
   },
 
+  resolveUserIdFromStorage(role) {
+    try {
+      const r = (role || '').toUpperCase();
+      if (r === 'DONOR') {
+        const raw = localStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const u = parsed.user || parsed;
+          return u.id != null ? String(u.id) : (u.donorId ? String(u.donorId) : null);
+        }
+      } else if (r === 'HOSPITAL') {
+        const raw = localStorage.getItem('hospital_session') || localStorage.getItem('red404_hospital_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const h = parsed.hospital || parsed;
+          return h.id != null ? String(h.id) : null;
+        }
+      } else if (r === 'ADMIN') {
+        return 'SUPER_ADMIN';
+      }
+    } catch (_) {}
+    return null;
+  },
+
   async verifySession(role) {
     try {
-      let endpoint = '/api/auth/session';
-      if (role === 'HOSPITAL') endpoint = '/api/hospital/profile';
-      else if (role === 'ADMIN') endpoint = '/api/admin/profile';
-      const res = await fetch(endpoint, { credentials: 'include', headers: { 'Accept': 'application/json' } });
+      const r = (role || this.currentRole || 'DONOR').toUpperCase();
+      let endpoint = '/api/donor/profile';
+      let headers = { 'Accept': 'application/json', 'X-Red404-Role': r };
+      if (r === 'HOSPITAL') endpoint = '/api/hospital/profile';
+      else if (r === 'ADMIN') endpoint = '/api/admin/check-auth';
+
+      const res = await fetch(endpoint, { credentials: 'include', headers });
       return res.ok;
     } catch (_) {
       return false;
@@ -350,44 +496,72 @@ window.Red404Security = {
   },
 
   getLoginUrl(role) {
-    if (role === 'HOSPITAL') return 'hospital-login.html';
-    if (role === 'ADMIN') return 'donor-login.html';
+    const r = (role || this.currentRole || 'DONOR').toUpperCase();
+    if (r === 'HOSPITAL') return 'hospital-login.html';
+    if (r === 'ADMIN') return 'donor-login.html';
     return 'donor-login.html';
   },
 
-  clearAllStorage() {
+  clearRoleStorage(role) {
+    const r = (role || this.currentRole || 'DONOR').toUpperCase();
     try {
-      localStorage.clear();
-      sessionStorage.clear();
+      if (r === 'DONOR') {
+        localStorage.removeItem('donor_session');
+        localStorage.removeItem('red404_donor_session');
+        localStorage.removeItem('red404_auth_session');
+        localStorage.removeItem('donorUser');
+        localStorage.removeItem('red404_session');
+        localStorage.removeItem('red404_token');
+        localStorage.removeItem('red404_donorToken');
+        sessionStorage.removeItem('donor_session');
+        sessionStorage.removeItem('red404_donor_session');
+      } else if (r === 'HOSPITAL') {
+        localStorage.removeItem('hospital_session');
+        localStorage.removeItem('red404_hospital_session');
+        localStorage.removeItem('red404_hospitalToken');
+        localStorage.removeItem('hospitalToken');
+        sessionStorage.removeItem('hospital_session');
+        sessionStorage.removeItem('red404_hospital_session');
+      } else if (r === 'ADMIN') {
+        sessionStorage.removeItem('admin_session');
+        sessionStorage.removeItem('red404_super_admin');
+        sessionStorage.removeItem('red404_admin_token');
+        localStorage.removeItem('admin_session');
+      }
     } catch (_) {}
   },
 
-  async logout(role) {
+  async logout(role, userId) {
     const self = this;
-    const loginUrl = self.getLoginUrl(role);
+    const r = (role || self.currentRole || 'DONOR').toUpperCase();
+    const uId = userId || self.currentUserId || self.resolveUserIdFromStorage(r);
+    const loginUrl = self.getLoginUrl(r);
 
-    // 1. Invalidate server session
+    // 1. Invalidate server session for ONLY this role
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      if (r === 'HOSPITAL') {
+        await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'HOSPITAL' } });
+      } else if (r === 'ADMIN') {
+        await fetch('/api/admin/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'ADMIN' } });
+      } else {
+        await fetch('/api/donors/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'DONOR' } })
+          .catch(() => fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'DONOR' } }));
+      }
     } catch (_) {}
-    if (role === 'HOSPITAL') {
-      try { await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
-    } else if (role === 'ADMIN') {
-      try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
-    }
 
-    // 2. Notify other open tabs
+    // 2. Notify other open tabs with {role, userId}
+    const msg = { type: 'LOGOUT', role: r, userId: uId, time: Date.now() };
     if (self.broadcastChannel) {
-      try { self.broadcastChannel.postMessage({ type: 'LOGOUT', role: role, time: Date.now() }); } catch (_) {}
+      try { self.broadcastChannel.postMessage(msg); } catch (_) {}
     }
     try {
-      localStorage.setItem('red404_logout_event', String(Date.now()));
+      localStorage.setItem('red404_logout_event', JSON.stringify(msg));
     } catch (_) {}
 
-    // 3. Clear all client storage
-    self.clearAllStorage();
+    // 3. Clear storage for ONLY this role
+    self.clearRoleStorage(r);
 
-    // 4. Replace current page in history so back button cannot re-enter
+    // 4. Redirect
     window.location.replace(loginUrl);
   }
 };

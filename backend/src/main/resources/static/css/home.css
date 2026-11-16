@@ -3426,3 +3426,286 @@
     align-items: flex-start;
   }
 }
+
+
+/* ==================== PART 3: HOME PAGE FIXES & HINDI RENDERING ==================== */
+
+/* 1. Universal Hindi Typography */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
+html[lang="hi"],
+html[lang="hi"] body,
+[lang="hi"] {
+  font-family: 'Noto Sans Devanagari', var(--font-body, system-ui, sans-serif) !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+html[lang="hi"] h1,
+html[lang="hi"] h2,
+html[lang="hi"] h3,
+html[lang="hi"] h4,
+html[lang="hi"] h5,
+html[lang="hi"] h6,
+html[lang="hi"] .hero-title,
+html[lang="hi"] .section-title,
+html[lang="hi"] .card-title,
+html[lang="hi"] .title-line {
+  font-family: 'Noto Sans Devanagari', var(--font-heading, system-ui, sans-serif) !important;
+  line-height: 1.55 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  overflow: visible !important;
+}
+
+html[lang="hi"] p,
+html[lang="hi"] span,
+html[lang="hi"] a,
+html[lang="hi"] button,
+html[lang="hi"] .hero-subtitle,
+html[lang="hi"] .nav-link,
+html[lang="hi"] .btn {
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  overflow: visible !important;
+}
+
+/* Nav Buttons Height Auto with Padding, Never Clipped */
+.navbar .nav-actions .btn {
+  height: auto !important;
+  min-height: 40px !important;
+  padding: 0.5rem 1.15rem !important;
+  line-height: 1.35 !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+/* 2. Flat Hero Diagram (Static, Centered, No Glow, No Rotation) */
+.hero-diagram-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.hero-flat-radar-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  filter: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+@media (max-width: 480px) {
+  .hero-visual {
+    display: none !important;
+  }
+}
+
+/* 3. Static Blood Types Row (No Marquee) */
+.blood-ticker-static {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: #121316;
+  border-top: 1px solid #2a2c31;
+  border-bottom: 1px solid #2a2c31;
+  flex-wrap: wrap;
+}
+
+.blood-types-static-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.blood-types-static-row .blood-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 38px;
+  border-radius: 8px;
+  background: #17181b;
+  border: 1px solid #2a2c31;
+  color: #ecebe8;
+  font-weight: 700;
+  font-size: 14px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.blood-types-static-row .blood-tag:hover {
+  border-color: #3ecf8e;
+  transform: translateY(-2px);
+}
+
+/* 4. "How RED404 Works" - Numbered Vertical List */
+.how-works-vertical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.how-works-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: #17181b;
+  border: 1px solid #2a2c31;
+  border-radius: 12px;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease;
+}
+
+.how-works-step:hover {
+  border-color: #3ecf8e;
+}
+
+.hws-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2a2c31;
+  color: #ecebe8;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.hws-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.hws-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ecebe8;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.35;
+}
+
+.hws-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #9b9a96;
+  margin: 0;
+}
+
+/* 5. "Who Can Donate" - Aligned Table with Fixed Columns */
+.wcd-aligned-table {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  border: 1px solid #2a2c31;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #17181b;
+}
+
+.wcd-row {
+  display: grid;
+  grid-template-columns: 160px 180px 1fr;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #2a2c31;
+  gap: 1rem;
+}
+
+.wcd-row:last-child {
+  border-bottom: none;
+}
+
+.wcd-row-header {
+  background: #202227;
+  font-weight: 700;
+  color: #ecebe8;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wcd-val-cell {
+  font-weight: 700;
+  color: #3ecf8e;
+  font-size: 15px;
+}
+
+.wcd-label-cell {
+  font-weight: 600;
+  color: #ecebe8;
+  font-size: 14px;
+}
+
+.wcd-desc-cell {
+  color: #9b9a96;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .wcd-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    padding: 0.85rem 1rem;
+  }
+  .wcd-row-header {
+    display: none;
+  }
+}
+
+/* 6. Remove Glows and Enforce Minimum Font-Size >= 13px */
+.btn-glow,
+.pulse-wave,
+.center-dot,
+.hero-badge,
+.hero-scroll-hint {
+  display: none !important;
+}
+
+.card,
+.stat-card,
+.service-tab-card,
+.service-pane,
+.btn,
+.btn-primary,
+.btn-hero-primary {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* All Home Sections Text >= 13px */
+.hero-section,
+.services-section,
+.how-section,
+.who-can-donate-section,
+.stats-section,
+.faq-section,
+.cta-section {
+  font-size: 14px;
+}
+
+.stat-label,
+.pane-text,
+.pane-feat-item,
+.service-acc-body,
+.nav-link {
+  font-size: 13.5px !important;
+}

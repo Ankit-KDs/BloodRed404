@@ -46,7 +46,7 @@
 
   <!-- Approved Stamp / Badge -->
   <rect x="145" y="206" width="110" height="22" rx="4" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1.2"/>
-  <text x="200" y="221" fill="#10b981" font-family="'Orbitron', monospace" font-size="9" font-weight="800" text-anchor="middle">STATUS: ELIGIBLE</text>
+  
 
   <!-- Stethoscope / Medical Icon floating left -->
   <g transform="translate(42, 105)">
@@ -63,7 +63,5 @@
   </g>
 
   <!-- Bottom Tag -->
-  <rect x="110" y="266" width="180" height="22" rx="11" fill="rgba(230,57,70,0.12)" stroke="rgba(230,57,70,0.3)"/>
-  <text x="200" y="281" fill="#ff6b6b" font-family="'Orbitron', monospace" font-size="9" font-weight="700" letter-spacing="1" text-anchor="middle">WHO CLINICAL CRITERIA</text>
-</svg>
+  </svg>
 

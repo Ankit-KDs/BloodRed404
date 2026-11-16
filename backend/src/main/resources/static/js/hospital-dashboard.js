@@ -533,12 +533,14 @@ function initHospitalLogout() {
       await window.Red404Security.logout('HOSPITAL');
     } else {
       try {
-        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-        await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include' });
+        await fetch('/api/hospital/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'HOSPITAL' } });
       } catch (_) {}
       try {
-        localStorage.clear();
-        sessionStorage.clear();
+        localStorage.removeItem('hospital_session');
+        localStorage.removeItem('red404_hospital_session');
+        localStorage.removeItem('red404_hospitalToken');
+        sessionStorage.removeItem('hospital_session');
+        sessionStorage.removeItem('red404_hospital_session');
       } catch (_) {}
       window.location.replace('hospital-login.html');
     }

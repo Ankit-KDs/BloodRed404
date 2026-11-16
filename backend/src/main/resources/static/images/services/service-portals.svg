@@ -30,12 +30,12 @@
     <path d="M53 52 C53 45 61 45 67 45 C73 45 81 45 81 52 Z" fill="#ff6b6b"/>
 
     <!-- Labels -->
-    <text x="67" y="80" fill="#ffffff" font-family="'Orbitron', monospace" font-size="11" font-weight="700" text-anchor="middle">DONOR PORTAL</text>
-    <text x="67" y="96" fill="#9898b8" font-family="'Inter', sans-serif" font-size="9" text-anchor="middle">Voluntary Citizen Node</text>
+    
+    
 
     <!-- Badge -->
     <rect x="22" y="112" width="90" height="20" rx="4" fill="rgba(230,57,70,0.2)" stroke="#e63946" stroke-width="1"/>
-    <text x="67" y="126" fill="#ff6b6b" font-family="'Inter', sans-serif" font-size="9" font-weight="700" text-anchor="middle">Personal ID Card</text>
+    
   </g>
 
   <!-- Center Lock & Bridge -->
@@ -59,16 +59,14 @@
     <rect x="59" y="37" width="16" height="6" fill="#0f172a"/>
 
     <!-- Labels -->
-    <text x="67" y="80" fill="#ffffff" font-family="'Orbitron', monospace" font-size="11" font-weight="700" text-anchor="middle">HOSPITAL NODE</text>
-    <text x="67" y="96" fill="#9898b8" font-family="'Inter', sans-serif" font-size="9" text-anchor="middle">Trauma Triage Dispatch</text>
+    
+    
 
     <!-- Badge -->
     <rect x="22" y="112" width="90" height="20" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-    <text x="67" y="126" fill="#cbd5e1" font-family="'Inter', sans-serif" font-size="9" font-weight="700" text-anchor="middle">Emergency SOS Gate</text>
+    
   </g>
 
   <!-- Bottom Tag -->
-  <rect x="110" y="266" width="180" height="22" rx="11" fill="rgba(230,57,70,0.12)" stroke="rgba(230,57,70,0.3)"/>
-  <text x="200" y="281" fill="#ff6b6b" font-family="'Orbitron', monospace" font-size="9" font-weight="700" letter-spacing="1" text-anchor="middle">256-BIT ENCRYPTED NODES</text>
-</svg>
+  </svg>
 

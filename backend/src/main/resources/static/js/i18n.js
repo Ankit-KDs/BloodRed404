@@ -51,6 +51,13 @@
       'services.tab5': 'Donation drives',
 
       // Home Stats
+      'hero.statsRegisteredDonors': 'Registered Donors',
+      'hero.statsVerifiedHospitals': 'Verified Hospitals',
+      'hero.statsDonationsRecorded': 'Donations Recorded',
+      'stats.registeredDonors': 'Registered Donors',
+      'stats.verifiedHospitals': 'Verified Hospitals',
+      'stats.donationsRecorded': 'Donations Recorded',
+      'bloodTypes.label': 'Blood Types We Cover:',
       'stats.donors': 'Registered Donors',
       'stats.hospitals': 'Partner Hospitals',
       'stats.donations': 'Verified Donations',
@@ -265,6 +272,13 @@
       'services.tab5': 'रक्तदान शिविर',
 
       // Home Stats
+      'hero.statsRegisteredDonors': 'पंजीकृत रक्तदाता',
+      'hero.statsVerifiedHospitals': 'सत्यापित अस्पताल',
+      'hero.statsDonationsRecorded': 'दर्ज रक्तदान',
+      'stats.registeredDonors': 'पंजीकृत रक्तदाता',
+      'stats.verifiedHospitals': 'सत्यापित अस्पताल',
+      'stats.donationsRecorded': 'दर्ज रक्तदान',
+      'bloodTypes.label': 'रक्त समूह जिन्हें हम कवर करते हैं:',
       'stats.donors': 'पंजीकृत रक्तदाता',
       'stats.hospitals': 'साझेदार अस्पताल',
       'stats.donations': 'सत्यापित रक्तदान',

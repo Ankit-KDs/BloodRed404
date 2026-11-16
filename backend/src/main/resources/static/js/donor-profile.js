@@ -153,7 +153,7 @@
       let userData = session ? (session.user || session) : null;
       if (!userData) {
         try {
-          const s = localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session');
+          const s = localStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session');
           if (s) {
             const parsed = JSON.parse(s);
             userData = parsed.user || parsed;
@@ -273,13 +273,13 @@
       }
       if (res.status === 401 || res.status === 404) {
         try {
-          localStorage.removeItem('red404_donor_session');
-          localStorage.removeItem('red404_auth_session');
-          localStorage.removeItem('red404_session');
-          localStorage.removeItem('donorUser');
-          localStorage.removeItem('red404_user');
-          localStorage.removeItem('red404_token');
-          sessionStorage.clear();
+          if (window.Red404Security) window.Red404Security.clearRoleStorage('DONOR');
+          else {
+            localStorage.removeItem('donor_session');
+            localStorage.removeItem('red404_donor_session');
+            localStorage.removeItem('red404_auth_session');
+            localStorage.removeItem('donorUser');
+          }
         } catch (_) { }
         window.location.replace('donor-login.html');
         return;
@@ -342,6 +342,13 @@
           if (d.eligibility) {
             currentDonor.eligibility = d.eligibility;
           }
+          if (d.nextEligibleDate || d.next_eligible_date) currentDonor.nextEligibleDate = d.nextEligibleDate || d.next_eligible_date;
+          if (d.daysToNextEligible !== undefined || d.days_until_eligible !== undefined || d.daysRemaining !== undefined) {
+            currentDonor.daysToNextEligible = d.daysToNextEligible !== undefined ? d.daysToNextEligible : (d.days_until_eligible !== undefined ? d.days_until_eligible : d.daysRemaining);
+          }
+          if (d.cooldown_days !== undefined || d.donationGapDays !== undefined) currentDonor.donationGapDays = d.cooldown_days || d.donationGapDays;
+          if (d.totalDonations !== undefined) currentDonor.totalDonations = d.totalDonations;
+          if (d.isEligible !== undefined || d.eligible !== undefined) currentDonor.isEligible = d.isEligible !== undefined ? d.isEligible : d.eligible;
           if (d.latitude && d.longitude) {
             currentDonor.latitude = parseFloat(d.latitude);
             currentDonor.longitude = parseFloat(d.longitude);
@@ -357,6 +364,14 @@
           if (d.pushNotif !== undefined) currentDonor.pushNotif = d.pushNotif;
           // Step 2: healthChecks history (only returned when authenticated as self)
           if (Array.isArray(d.healthChecks)) currentDonor.healthChecks = d.healthChecks;
+          if (d.latestHealthCheck) {
+            currentDonor.latestHealthCheck = d.latestHealthCheck;
+            if (currentDonor.pulse == null && d.latestHealthCheck.pulse != null) currentDonor.pulse = d.latestHealthCheck.pulse;
+            if (currentDonor.hemoglobin == null && d.latestHealthCheck.hemoglobin != null) currentDonor.hemoglobin = d.latestHealthCheck.hemoglobin;
+            if (!currentDonor.bloodPressure && d.latestHealthCheck.bloodPressure) currentDonor.bloodPressure = d.latestHealthCheck.bloodPressure;
+            if (currentDonor.bodyTemp == null && d.latestHealthCheck.temperature != null) currentDonor.bodyTemp = d.latestHealthCheck.temperature;
+            if (currentDonor.weight == null && d.latestHealthCheck.weight != null) currentDonor.weight = d.latestHealthCheck.weight;
+          }
           if (d.healthStatus) currentDonor.healthStatus = d.healthStatus;
         }
       }
@@ -415,7 +430,6 @@
   // ======================== 3. AI HEALTH EVALUATION & VITALS ========================
   function evaluateHealthAndEligibility() {
     renderVitalsCard();
-    renderAIHealthSuggestion();
     renderMedicalEligibilityTracker();
     evaluateAndRenderMilestones();
     renderHealthCheckHistory();
@@ -440,28 +454,40 @@
       beLabel.textContent = bloodGroup.includes('-') ? 'NEGATIVE' : 'POSITIVE';
     }
 
-    const hasRealVitals = (currentDonor.hemoglobin !== null && currentDonor.hemoglobin !== undefined && currentDonor.hemoglobin > 0) ||
-                          (Boolean(currentDonor.bloodPressure) && currentDonor.bloodPressure !== '--/--') ||
-                          (currentDonor.weight !== null && currentDonor.weight !== undefined && currentDonor.weight > 0) ||
-                          Boolean(currentDonor.verifiedDate);
+    // Latest health check or profile vitals
+    const latestCheck = currentDonor.latestHealthCheck ||
+      ((Array.isArray(currentDonor.healthChecks) && currentDonor.healthChecks.length > 0) ? currentDonor.healthChecks[0] : null);
+
+    const weightVal = latestCheck && latestCheck.weight != null ? latestCheck.weight : currentDonor.weight;
+    const pulseVal = latestCheck && latestCheck.pulse != null ? latestCheck.pulse : currentDonor.pulse;
+    const hbVal = latestCheck && latestCheck.hemoglobin != null ? latestCheck.hemoglobin : currentDonor.hemoglobin;
+    const bpVal = latestCheck && latestCheck.bloodPressure ? latestCheck.bloodPressure : currentDonor.bloodPressure;
+    const tempVal = latestCheck && latestCheck.temperature != null ? latestCheck.temperature : (currentDonor.bodyTemp != null ? currentDonor.bodyTemp : currentDonor.temperature);
+    const checkDate = (latestCheck && (latestCheck.date || latestCheck.checkedAt)) ? (latestCheck.date || latestCheck.checkedAt.substring(0, 10)) : currentDonor.verifiedDate;
+    const hospName = (latestCheck && latestCheck.hospitalName) ? latestCheck.hospitalName : currentDonor.verifiedFacility;
+
+    const hasRealVitals = (weightVal != null && weightVal > 0) ||
+                          (pulseVal != null && pulseVal > 0) ||
+                          (hbVal != null && hbVal > 0) ||
+                          (bpVal && bpVal !== '--/--') ||
+                          (tempVal != null && tempVal > 0) ||
+                          Boolean(checkDate);
 
     const vitalsDetailsBox = document.querySelector('.vitals-details-box');
-    const topMeta = document.querySelector('.vitals-top-meta');
+    const topMeta = document.getElementById('vitalsTopMeta') || document.querySelector('.vitals-top-meta');
     const verifiedSub = document.getElementById('vitalsVerifiedSub');
     const vitalRows = document.querySelectorAll('.vitals-details-box .vital-row');
-    const evalBadge = document.getElementById('aiHealthEvalBadge');
     const statusLineEl = document.getElementById('vitalsHealthStatusLine');
 
     let waitingEl = document.getElementById('vitalsWaitingNotice');
     if (!waitingEl && vitalsDetailsBox) {
       waitingEl = document.createElement('div');
       waitingEl.id = 'vitalsWaitingNotice';
-      waitingEl.style.cssText = 'padding: 16px 0; font-size: 14px; color: #94a3b8; font-style: normal;';
+      waitingEl.style.cssText = 'padding: 16px 0; font-size: 14px; color: #9b9a96; font-style: normal;';
       vitalsDetailsBox.appendChild(waitingEl);
     }
 
     if (!hasRealVitals) {
-      // Group D.4: Replace repeated "PENDING" chips with one line "Waiting for hospital check"
       if (waitingEl) {
         waitingEl.textContent = 'Waiting for hospital check';
         waitingEl.style.display = 'block';
@@ -469,53 +495,50 @@
       if (topMeta) topMeta.style.display = 'none';
       if (verifiedSub) verifiedSub.style.display = 'none';
       vitalRows.forEach(r => r.style.display = 'none');
-      if (evalBadge) evalBadge.style.display = 'none';
       if (statusLineEl) statusLineEl.style.display = 'none';
     } else {
-      // Real values exist: show real values with check date and hospital name
       if (waitingEl) waitingEl.style.display = 'none';
-      if (topMeta) topMeta.style.display = (currentDonor.age !== null && currentDonor.age !== undefined) ? 'block' : 'none';
+      if (topMeta) {
+        topMeta.style.display = (currentDonor.age !== null && currentDonor.age !== undefined) ? 'block' : 'none';
+        const ageEl = document.getElementById('vitalAge');
+        if (ageEl) ageEl.textContent = (currentDonor.age !== null && currentDonor.age !== undefined) ? currentDonor.age : '--';
+      }
       if (verifiedSub) {
-        verifiedSub.style.display = 'block';
-        if (currentDonor.verifiedDate) {
-          const hospName = currentDonor.verifiedFacility ? ` at ${currentDonor.verifiedFacility}` : '';
-          verifiedSub.textContent = `Checked on ${formatDate(currentDonor.verifiedDate)}${hospName}`;
+        if (checkDate) {
+          const atHosp = hospName ? ` at ${hospName}` : '';
+          verifiedSub.textContent = `Checked on ${formatDate(checkDate)}${atHosp}`;
+          verifiedSub.style.display = 'block';
         } else {
-          verifiedSub.textContent = 'Verified during hospital intake';
+          verifiedSub.style.display = 'none';
         }
       }
       vitalRows.forEach(r => r.style.display = 'flex');
-      if (evalBadge) evalBadge.style.display = 'flex';
 
-      const ageEl = document.getElementById('vitalAge');
-      if (ageEl) ageEl.textContent = (currentDonor.age !== null && currentDonor.age !== undefined) ? currentDonor.age : '--';
-
-      // Latest health check evaluations (SAME ranges config as Check-in)
-      const latestCheck = (Array.isArray(currentDonor.healthChecks) && currentDonor.healthChecks.length > 0)
-        ? currentDonor.healthChecks[0]
-        : null;
+      // Evaluations using SAME clinical ranges config as Check-in (HealthCheckDao)
       const evals = latestCheck ? (latestCheck.evaluations || {}) : {};
 
-      const evalWeight = evals.weight || (currentDonor.weight != null
-        ? (currentDonor.weight >= 45.0 && currentDonor.weight <= 200.0 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+      const evalWeight = evals.weight || (weightVal != null
+        ? (weightVal >= 45.0 && weightVal <= 200.0 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
         : null);
-      const evalPulse = evals.pulse || (currentDonor.pulse != null
-        ? (currentDonor.pulse >= 50 && currentDonor.pulse <= 100 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+      const evalPulse = evals.pulse || (pulseVal != null
+        ? (pulseVal >= 50 && pulseVal <= 100 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
         : null);
-      const evalHb = evals.hemoglobin || (currentDonor.hemoglobin != null
-        ? (currentDonor.hemoglobin >= 12.5 && currentDonor.hemoglobin <= 20.0 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+      const evalHb = evals.hemoglobin || (hbVal != null
+        ? (hbVal >= 12.5 && hbVal <= 20.0 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
         : null);
       let evalBp = evals.bloodPressure;
-      if (!evalBp && currentDonor.bloodPressure) {
-        const parts = currentDonor.bloodPressure.split('/');
+      if (!evalBp && bpVal) {
+        const parts = bpVal.split('/');
         if (parts.length === 2) {
           const sys = parseInt(parts[0].trim(), 10);
           const dia = parseInt(parts[1].trim(), 10);
-          evalBp = (sys >= 100 && sys <= 180 && dia >= 50 && dia <= 100) ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor';
+          evalBp = (sys >= 100 && sys <= 180 && dia >= 50 && dia <= 100)
+            ? 'Within usual range'
+            : 'Outside usual range. Please speak to the hospital doctor';
         }
       }
-      const evalTemp = evals.temperature || (currentDonor.bodyTemp != null
-        ? (currentDonor.bodyTemp >= 95.0 && currentDonor.bodyTemp <= 99.5 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
+      const evalTemp = evals.temperature || (tempVal != null
+        ? (tempVal >= 95.0 && tempVal <= 99.5 ? 'Within usual range' : 'Outside usual range. Please speak to the hospital doctor')
         : null);
 
       function setVitalPill(pillId, text) {
@@ -533,92 +556,44 @@
 
       // 1. Weight
       const weightEl = document.getElementById('vitalWeight');
-      if (weightEl) weightEl.textContent = (currentDonor.weight != null) ? currentDonor.weight : '--';
+      if (weightEl) weightEl.textContent = (weightVal != null) ? weightVal : '--';
       setVitalPill('weightPill', evalWeight);
 
       // 2. Pulse
       const pulseEl = document.getElementById('vitalPulse');
-      if (pulseEl) pulseEl.textContent = (currentDonor.pulse != null) ? currentDonor.pulse : '--';
+      if (pulseEl) pulseEl.textContent = (pulseVal != null) ? pulseVal : '--';
       setVitalPill('pulsePill', evalPulse);
 
       // 3. Hemoglobin
-      const hbVal = document.getElementById('vitalHemoglobin');
-      if (hbVal) hbVal.textContent = (currentDonor.hemoglobin != null) ? currentDonor.hemoglobin : '--';
+      const hbEl = document.getElementById('vitalHemoglobin');
+      if (hbEl) hbEl.textContent = (hbVal != null) ? hbVal : '--';
       setVitalPill('hbPill', evalHb);
 
       // 4. Blood Pressure
-      const bpVal = document.getElementById('vitalBP');
-      if (bpVal) bpVal.textContent = currentDonor.bloodPressure || '--/--';
+      const bpEl = document.getElementById('vitalBP');
+      if (bpEl) bpEl.textContent = bpVal || '--/--';
       setVitalPill('bpPill', evalBp);
 
       // 5. Body Temperature
-      const tempVal = document.getElementById('vitalTemp');
-      if (tempVal) tempVal.textContent = (currentDonor.bodyTemp != null) ? currentDonor.bodyTemp : '--';
+      const tempEl = document.getElementById('vitalTemp');
+      if (tempEl) tempEl.textContent = (tempVal != null) ? tempVal : '--';
       setVitalPill('tempPill', evalTemp);
 
       // Health status line
       if (statusLineEl) {
         statusLineEl.textContent = currentDonor.healthStatus ||
-          (currentDonor.verifiedFacility && currentDonor.verifiedDate ? `Checked at ${currentDonor.verifiedFacility} on ${formatDate(currentDonor.verifiedDate)}` : '');
+          (hospName && checkDate ? `Checked at ${hospName} on ${formatDate(checkDate)}` : '');
         statusLineEl.style.display = statusLineEl.textContent ? 'block' : 'none';
       }
     }
   }
 
-  // ======================== AI HEALTH EVALUATION ========================
-  // Automatically runs AI safety audit once hospital fills vitals
-  function renderAIHealthSuggestion() {
-    const evalBadge = document.getElementById('aiHealthEvalBadge');
-
-    const hb = currentDonor.hemoglobin;
-    const bp = currentDonor.bloodPressure;
-    const weight = currentDonor.weight;
-    const pulse = currentDonor.pulse;
-    const temp = currentDonor.bodyTemp;
-
-    const hasData = (hb !== null && hb !== undefined) &&
-      Boolean(bp) &&
-      (weight !== null && weight !== undefined);
-
-    // If details are empty: hide eval badge so it does not duplicate waiting notice
-    if (!hasData) {
-      if (evalBadge) {
-        evalBadge.style.display = 'none';
-      }
-      return;
-    }
-
-    // Standard clinical thresholds for whole blood donation (WHO & NBTC guidelines)
-    const isHbOk = hb >= 12.5;
-    const isBpOk = isBpNormal(bp);
-    const isWeightOk = weight >= 50;
-    const isPulseOk = (pulse !== null && pulse !== undefined) ? (pulse >= 60 && pulse <= 100) : true;
-    const isTempOk = (temp !== null && temp !== undefined) ? (temp <= 99.0) : true;
-
-    const isFit = isHbOk && isBpOk && isWeightOk && isPulseOk && isTempOk;
-
-    // Update main status banner to prominent GREEN if fit
-    if (evalBadge) {
-      if (isFit) {
-        evalBadge.className = 'health-eval-badge badge-fit';
-        evalBadge.innerHTML = `<span>HEALTH STATUS: FIT TO DONATE</span>`;
-      } else {
-        evalBadge.className = 'health-eval-badge badge-unfit';
-        evalBadge.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><span>HEALTH STATUS: MEDICAL REVIEW REQUIRED</span>`;
-      }
-    }
-  }
-
-  // ======================== 4. 3D BIOMETRIC CRYO-POD TRACKER ========================
-  // Real-time animated flowing blood chamber with anatomical human silhouette
-  // ======================== 4. PRECISE TELEMETRY DATA LOGIC (Group D) ========================
+  // ======================== NEW ELIGIBILITY TRACKER (PART 2) ========================
   function renderTelemetryData() {
     const metaTag = document.getElementById('eligibilityMetaTag');
-    const fluidContainer = document.getElementById('dnaFluidContainer') || document.getElementById('bloodFluid');
+    const genderGap = (currentDonor.gender && currentDonor.gender.toLowerCase() === 'female') ? 120 : 90;
 
-    const genderGap = (currentDonor.gender && currentDonor.gender.toLowerCase() === 'male') ? 90 : 120;
-
-    // Authoritative Single Source of Truth from Server computeEligibility
+    // Single source of truth from Server computeEligibility
     const elig = currentDonor.eligibility || {
       eligible: currentDonor.isEligible !== false,
       days_until_eligible: currentDonor.daysToNextEligible || currentDonor.daysUntilEligible || 0,
@@ -632,13 +607,43 @@
     const isEligible = Boolean(elig.eligible);
     const daysUntil = typeof elig.days_until_eligible === 'number' ? elig.days_until_eligible : 0;
     const cooldownDays = elig.cooldown_days || genderGap;
-    const progressPct = typeof elig.progress_pct === 'number' ? elig.progress_pct : (isEligible ? 100 : 0);
-    const nextDateStr = elig.next_eligible_date;
+    const progressPct = typeof elig.progress_pct === 'number' ? Math.max(0, Math.min(100, elig.progress_pct)) : (isEligible ? 100 : 0);
+    const lastDateStr = elig.last_donation_date || currentDonor.lastDonationDate || currentDonor.lastDonation || null;
+    const nextDateStr = elig.next_eligible_date || currentDonor.nextEligibleDate || null;
+    const hospName = currentDonor.verifiedFacility || 'Verified Hospital';
 
-    const hasDonated = (currentDonor.totalDonations !== null && currentDonor.totalDonations !== undefined && currentDonor.totalDonations > 0) ||
-                       (currentDonor.donations && currentDonor.donations.length > 0) ||
-                       (currentDonor.lastDonationDate !== null && currentDonor.lastDonationDate !== undefined && currentDonor.lastDonationDate !== '');
+    const hasDonated = (currentDonor.totalDonations != null && currentDonor.totalDonations > 0) ||
+                       (Array.isArray(currentDonor.donations) && currentDonor.donations.length > 0) ||
+                       Boolean(lastDateStr);
 
+    let formattedNextDate = 'soon';
+    if (nextDateStr) {
+      try {
+        const nextD = new Date(nextDateStr);
+        formattedNextDate = !isNaN(nextD.getTime())
+          ? nextD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          : nextDateStr;
+      } catch (_) {
+        formattedNextDate = nextDateStr;
+      }
+    }
+
+    let formattedLastDate = 'No donation yet';
+    if (lastDateStr) {
+      try {
+        const lastD = new Date(lastDateStr);
+        formattedLastDate = !isNaN(lastD.getTime())
+          ? lastD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          : lastDateStr;
+      } catch (_) {
+        formattedLastDate = lastDateStr;
+      }
+    }
+
+    // Part 2 Item 3 texts:
+    // - never donated: "No donation yet. You're ready."
+    // - ready: "You can donate. The hospital does a final check before donating."
+    // - filling: "Next donation possible on <date> (N days left)"
     let statusWording = '';
     if (isEligible) {
       if (!hasDonated) {
@@ -646,97 +651,91 @@
       } else {
         statusWording = "You can donate. The hospital does a final check before donating.";
       }
-      if (fluidContainer) {
-        fluidContainer.style.height = '100%';
-      }
     } else {
-      let formattedDate = 'soon';
-      if (nextDateStr) {
-        try {
-          const nextD = new Date(nextDateStr);
-          if (!isNaN(nextD.getTime())) {
-            formattedDate = nextD.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-          } else {
-            formattedDate = nextDateStr;
-          }
-        } catch (_) {
-          formattedDate = nextDateStr;
-        }
-      }
-      const isDeferred = Boolean(currentDonor.isDeferred || elig.deferred);
-      if (isDeferred) {
-        const checkDate = currentDonor.verifiedDate || (currentDonor.healthChecks && currentDonor.healthChecks[0] && currentDonor.healthChecks[0].date) || 'your visit';
-        if (nextDateStr || currentDonor.deferUntil || currentDonor.deferredUntil) {
-          statusWording = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital. You can try again on ${formattedDate}.`;
-        } else {
-          statusWording = `The hospital could not accept your donation on ${checkDate}. Please speak to the hospital.`;
-        }
+      statusWording = `Next donation possible on ${formattedNextDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'} left)`;
+    }
+
+    // 1. SVG Progress Ring (~160 px, 10 px stroke, track #2a2c31)
+    const ringCircle = document.getElementById('eligibilityRingCircle');
+    const ringVal = document.getElementById('eligibilityRingValue');
+    const ringSub = document.getElementById('eligibilityRingSubtitle');
+
+    const radius = 70;
+    const circumference = 2 * Math.PI * radius; // ~439.82
+
+    if (ringCircle) {
+      ringCircle.style.strokeDasharray = `${circumference}`;
+      const offset = isEligible ? 0 : circumference * (1 - (progressPct / 100));
+      ringCircle.style.strokeDashoffset = `${offset}`;
+      ringCircle.style.stroke = isEligible ? '#3ecf8e' : '#ecebe8';
+    }
+
+    if (ringVal) {
+      if (isEligible) {
+        ringVal.textContent = 'Ready';
+        ringVal.setAttribute('fill', '#3ecf8e');
+        ringVal.style.fontSize = '28px';
+        ringVal.setAttribute('y', '80');
+        if (ringSub) ringSub.style.display = 'none';
       } else {
-        statusWording = `Next eligible on ${formattedDate} (${daysUntil} ${daysUntil === 1 ? 'day' : 'days'})`;
-      }
-      if (fluidContainer) {
-        fluidContainer.style.height = `${progressPct}%`;
-      }
-    }
-
-    // Dynamic tick label update & binding active tick to progress (Part 6 Step 6)
-    const tick90 = document.querySelector('.telemetry-tick.tick-90');
-    const tick60 = document.querySelector('.telemetry-tick.tick-60');
-    const tick30 = document.querySelector('.telemetry-tick.tick-30');
-    const tick0 = document.querySelector('.telemetry-tick.tick-0');
-    const tick90Label = document.querySelector('.telemetry-tick.tick-90 .tick-label');
-    if (tick90Label) {
-      tick90Label.textContent = `${cooldownDays}d`;
-    }
-
-    [tick90, tick60, tick30, tick0].forEach(t => {
-      if (t) {
-        const lbl = t.querySelector('.tick-label');
-        if (lbl) lbl.classList.remove('ready', 'active');
-      }
-    });
-
-    if (isEligible || progressPct >= 100) {
-      if (tick90) {
-        const lbl = tick90.querySelector('.tick-label');
-        if (lbl) lbl.classList.add('ready');
-      }
-    } else if (progressPct >= 66) {
-      if (tick60) {
-        const lbl = tick60.querySelector('.tick-label');
-        if (lbl) lbl.classList.add('active');
-      }
-    } else if (progressPct >= 33) {
-      if (tick30) {
-        const lbl = tick30.querySelector('.tick-label');
-        if (lbl) lbl.classList.add('active');
-      }
-    } else {
-      if (tick0) {
-        const lbl = tick0.querySelector('.tick-label');
-        if (lbl) lbl.classList.add('active');
+        ringVal.textContent = String(daysUntil);
+        ringVal.setAttribute('fill', '#ecebe8');
+        ringVal.style.fontSize = '34px';
+        ringVal.setAttribute('y', '74');
+        if (ringSub) {
+          ringSub.style.display = 'block';
+          ringSub.textContent = 'days left';
+        }
       }
     }
 
-    if (metaTag) {
-      metaTag.textContent = 'Eligibility';
+    // 2. Beside it details
+    const eligLastEl = document.getElementById('eligLastDonation');
+    if (eligLastEl) {
+      eligLastEl.textContent = hasDonated ? `${formattedLastDate}${hospName ? ' (' + hospName + ')' : ''}` : 'No donation yet';
     }
 
-    // Render plain text into the telemetry panel (Group D: plain text only, keep capsule graphic)
+    const eligNextEl = document.getElementById('eligNextDate');
+    if (eligNextEl) {
+      eligNextEl.textContent = isEligible ? 'Ready to donate' : formattedNextDate;
+    }
+
+    const eligGapEl = document.getElementById('eligGapLength');
+    if (eligGapEl) {
+      eligGapEl.textContent = `${cooldownDays} days`;
+    }
+
+    // 3. Status wording
     const statusMsgEl = document.getElementById('eligibilityStatusMsg');
     if (statusMsgEl) {
       statusMsgEl.textContent = statusWording;
-    } else {
-      const panel = document.querySelector('.capsule-telemetry-panel');
-      if (panel) {
-        panel.innerHTML = `
-          <div style="padding: 24px 8px; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
-            <p id="eligibilityStatusMsg" style="font-size: 16px; font-weight: 500; line-height: 1.6; color: #f8fafc; margin: 0;">
-              ${escapeHtml(statusWording)}
-            </p>
-          </div>
-        `;
-      }
+    }
+
+    // 4. Accessible region
+    const trackerRegion = document.getElementById('eligibilityTrackerBody');
+    if (trackerRegion) {
+      trackerRegion.setAttribute('aria-label', `Medical eligibility tracker: ${statusWording}`);
+    }
+
+    // 5. Horizontal timeline bar under it with marker for today
+    const fillBar = document.getElementById('timelineFillBar');
+    const todayMarker = document.getElementById('timelineTodayMarker');
+    const startLabel = document.getElementById('timelineStartLabel');
+    const endLabel = document.getElementById('timelineEndLabel');
+
+    const pct = isEligible ? 100 : progressPct;
+    if (fillBar) {
+      fillBar.style.width = `${pct}%`;
+      fillBar.style.backgroundColor = isEligible ? '#3ecf8e' : '#ecebe8';
+    }
+    if (todayMarker) {
+      todayMarker.style.left = `${pct}%`;
+    }
+    if (startLabel) {
+      startLabel.textContent = hasDonated ? formattedLastDate : 'Start';
+    }
+    if (endLabel) {
+      endLabel.textContent = isEligible ? 'Ready' : formattedNextDate;
     }
   }
 
@@ -744,56 +743,8 @@
     renderTelemetryData();
   }
 
-  // ======================== HEALTH CHECK HISTORY ========================
   function renderHealthCheckHistory() {
-    const checks = currentDonor.healthChecks;
-    const card = document.getElementById('healthCheckHistoryCard');
-    const tbody = document.getElementById('healthCheckHistoryTableBody');
-    const countTag = document.getElementById('healthCheckHistoryCount');
-
-    if (!card || !tbody) return;
-
-    if (!Array.isArray(checks) || checks.length === 0) {
-      card.style.display = 'none';
-      tbody.innerHTML = '';
-      return;
-    }
-
-    card.style.display = 'block';
-    if (countTag) {
-      countTag.textContent = `${Math.min(checks.length, 5)} Record${Math.min(checks.length, 5) > 1 ? 's' : ''}`;
-    }
-
-    const rows = checks.slice(0, 5).map(c => {
-      const isDeferred = c.outcome === 'Deferred';
-      const hasWarning = c.evaluations && Object.values(c.evaluations).some(v => v && v.includes('Outside'));
-      const outcomeColor = isDeferred ? '#f5a524' : '#3ecf8e';
-      const vitalsStr = [
-        c.hemoglobin != null ? `Hb ${c.hemoglobin} g/dL` : null,
-        c.bloodPressure ? `BP ${c.bloodPressure}` : null,
-        c.pulse != null ? `Pulse ${c.pulse} bpm` : null,
-        c.temperature != null ? `Temp ${c.temperature}°F` : null,
-        c.weight != null ? `Wt ${c.weight} kg` : null
-      ].filter(Boolean).join(' · ');
-      const deferNote = isDeferred && c.deferUntil
-        ? `<div style="font-size:11px;color:#9b9a96;margin-top:2px;">Next eligible: ${escapeHtml(c.deferUntil)}</div>` : '';
-      const warnBadge = hasWarning
-        ? `<div style="font-size:11px;color:#f5a524;margin-top:2px;">⚠ Outside usual range — speak to the hospital doctor</div>` : '';
-      return `<tr>
-        <td style="padding:10px;font-size:13px;color:#ecebe8;border-bottom:1px solid #2a2c31;">${escapeHtml(c.date || c.checkedAt || '')}</td>
-        <td style="padding:10px;font-size:13px;color:#ecebe8;border-bottom:1px solid #2a2c31;">${escapeHtml(c.hospitalName || '')}</td>
-        <td style="padding:10px;font-size:13px;font-weight:600;color:${outcomeColor};border-bottom:1px solid #2a2c31;">
-          ${escapeHtml(c.outcome || '')}
-          ${deferNote}
-        </td>
-        <td style="padding:10px;font-size:12px;color:#9b9a96;border-bottom:1px solid #2a2c31;">
-          ${escapeHtml(vitalsStr)}
-          ${warnBadge}
-        </td>
-      </tr>`;
-    }).join('');
-
-    tbody.innerHTML = rows;
+    // Health Check History card removed from donor profile in Part 2
   }
 
   // ======================== 4. DYNAMIC DONOR BADGES EVALUATION ========================

@@ -61,9 +61,12 @@ async function verifySession() {
     Store.rm('donorToken');
     Store.rm('donorSession');
   }
+  localStorage.removeItem('donor_session');
+  localStorage.removeItem('red404_donor_session');
   localStorage.removeItem('red404_token');
   localStorage.removeItem('red404_user');
-  sessionStorage.clear();
+  sessionStorage.removeItem('donor_session');
+  sessionStorage.removeItem('red404_donor_session');
   window.location.replace('donor-login.html');
   return null;
 }
@@ -724,9 +727,12 @@ async function donorLogout() {
     Store.rm('donorToken');
     Store.rm('donorSession');
   }
+  localStorage.removeItem('donor_session');
+  localStorage.removeItem('red404_donor_session');
   localStorage.removeItem('red404_token');
   localStorage.removeItem('red404_user');
-  sessionStorage.clear();
+  sessionStorage.removeItem('donor_session');
+  sessionStorage.removeItem('red404_donor_session');
   window.location.replace('donor-login.html');
 }
 

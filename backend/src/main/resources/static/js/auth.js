@@ -10,8 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const params = new URLSearchParams(window.location.search);
     if (params.get('deleted') === '1') {
-      localStorage.clear();
-      sessionStorage.clear();
+      localStorage.removeItem('donor_session');
+      localStorage.removeItem('red404_donor_session');
+      localStorage.removeItem('red404_auth_session');
+      localStorage.removeItem('donorUser');
       if (typeof showToast === 'function') {
         showToast('Account permanently deleted. All associated data erased.', 'info', 4000);
       }
@@ -385,6 +387,7 @@ function initDonorRegisterForm() {
         Auth.saveSession(donorData);
         Store.set('donorToken', 'SESSION-DONOR-1');
       }
+      localStorage.setItem('donor_session', JSON.stringify({ user: donorData, role: 'DONOR', userId: donorData.id || donorData.donorId }));
       localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
       localStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
       localStorage.setItem('donorUser', JSON.stringify(donorData));
@@ -567,6 +570,7 @@ function initDonorLoginForm() {
 
       Auth.saveSession(donorData);
       Store.set('donorToken', result.data.token || ('SESSION-DONOR-' + (currentSmartId || '1')));
+      localStorage.setItem('donor_session', JSON.stringify({ user: donorData, role: 'DONOR', userId: donorData.id || donorData.donorId }));
       localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
       localStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
       localStorage.setItem('donorUser', JSON.stringify(donorData));
@@ -615,11 +619,13 @@ function initHospitalRegisterForm() {
 
     if (result.success) {
       if (result.data && result.data.hospital) {
-        Auth.saveSession(result.data.hospital);
+        const hosp = result.data.hospital;
+        Auth.saveSession(hosp);
         Store.set('hospitalToken', result.data.token);
+        localStorage.setItem('hospital_session', JSON.stringify({ hospital: hosp, role: 'HOSPITAL', userId: hosp.id }));
+        localStorage.setItem('red404_hospital_session', JSON.stringify(hosp));
         try {
           const list = JSON.parse(localStorage.getItem('red404_registered_hospitals') || '[]');
-          const hosp = result.data.hospital;
           if (!list.some(h => (h.id && h.id === hosp.id) || (h.email && h.email === hosp.email))) {
             list.push(hosp);
             localStorage.setItem('red404_registered_hospitals', JSON.stringify(list));
@@ -707,8 +713,11 @@ function initHospitalLoginForm() {
     setButtonLoading(submitBtn, false);
 
     if (result.success) {
-      Auth.saveSession(result.data.hospital);
+      const hosp = result.data.hospital;
+      Auth.saveSession(hosp);
       Store.set('hospitalToken', result.data.token);
+      localStorage.setItem('hospital_session', JSON.stringify({ hospital: hosp, role: 'HOSPITAL', userId: hosp.id }));
+      localStorage.setItem('red404_hospital_session', JSON.stringify(hosp));
       showToast('Login successful! Redirecting...', 'success', 1500);
       setTimeout(() => { window.location.href = 'hospital-dashboard.html'; }, 1500);
     } else {

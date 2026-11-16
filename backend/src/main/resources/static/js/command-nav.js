@@ -108,7 +108,7 @@
     // 1. Load active user session if available
     let session = null;
     try {
-      const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session') || localStorage.getItem('donorUser');
+      const raw = localStorage.getItem('donor_session') || sessionStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session') || localStorage.getItem('donorUser');
       if (raw) session = JSON.parse(raw);
       if (!session && typeof Auth !== 'undefined' && Auth.getSession) {
         const u = Auth.getSession();
@@ -187,20 +187,26 @@
       if (window._isPurgingSession) return;
       window._isPurgingSession = true;
       try {
-        localStorage.removeItem('red404_donor_session');
-        localStorage.removeItem('red404_auth_session');
-        localStorage.removeItem('red404_session');
-        localStorage.removeItem('donorUser');
-        localStorage.removeItem('red404_user');
-        localStorage.removeItem('red404_token');
-        localStorage.removeItem('red404_donorToken');
-        sessionStorage.clear();
+        if (window.Red404Security) {
+          window.Red404Security.clearRoleStorage('DONOR');
+        } else {
+          localStorage.removeItem('donor_session');
+          localStorage.removeItem('red404_donor_session');
+          localStorage.removeItem('red404_auth_session');
+          localStorage.removeItem('red404_session');
+          localStorage.removeItem('donorUser');
+          localStorage.removeItem('red404_user');
+          localStorage.removeItem('red404_token');
+          localStorage.removeItem('red404_donorToken');
+          sessionStorage.removeItem('donor_session');
+          sessionStorage.removeItem('red404_donor_session');
+        }
         if (typeof Auth !== 'undefined' && Auth.clearSession) {
           Auth.clearSession();
         }
       } catch (_) { }
       const path = (window.location.pathname || '').toLowerCase();
-      const isPublic = path.endsWith('index.html') || path.endsWith('about.html') || path.endsWith('donor-login.html') || path.endsWith('hospital-login.html') || path.endsWith('donor-register.html') || path.endsWith('hospital-register.html') || path === '/' || path === '';
+      const isPublic = path.endsWith('index.html') || path.endsWith('about.html') || path.endsWith('donor-login.html') || path.endsWith('hospital-login.html') || path.endsWith('donor-register.html') || path.endsWith('hospital-register.html') || path.endsWith('blood-banks.html') || path.endsWith('blood-availability.html') || path.endsWith('blood-availability-search.html') || path === '/' || path === '';
       if (!isPublic) {
         window.location.replace('donor-login.html');
       }
@@ -209,16 +215,22 @@
 
     // Real-time Auth & Session Heartbeat Guard: detects account deletion & remote kill within ~2s
     function startRealtimeSessionGuard() {
+      const path = (window.location.pathname || '').toLowerCase();
+      const isProtected = path.endsWith('dashboard.html') || path.endsWith('donor-profile.html') || path.endsWith('donor-alerts.html') || path.endsWith('my-donations.html');
+      if (!isProtected) return; // Only guard protected donor pages
+
       if (window._realtimeSessionGuardStarted) return;
       window._realtimeSessionGuardStarted = true;
 
       async function checkAuthHeartbeat() {
         try {
+          const headers = getSettingsHeaders();
+          headers['X-Red404-Role'] = 'DONOR';
           const res = await fetch('/api/auth/check-session', {
             method: 'GET',
             cache: 'no-store',
             credentials: 'include',
-            headers: getSettingsHeaders()
+            headers: headers
           });
           if (res.status === 401 || res.status === 403 || res.status === 404) {
             purgeAllSessionAndRedirect('Session terminated or account deleted.');
@@ -372,9 +384,12 @@
             await window.Red404Security.logout('DONOR');
           } else {
             try {
-              localStorage.clear();
-              sessionStorage.clear();
-              await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              localStorage.removeItem('donor_session');
+              localStorage.removeItem('red404_donor_session');
+              localStorage.removeItem('red404_auth_session');
+              localStorage.removeItem('donorUser');
+              await fetch('/api/donors/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'DONOR' } })
+                .catch(() => fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'X-Red404-Role': 'DONOR' } }));
             } catch (_) {}
             window.location.replace('donor-login.html');
           }
@@ -840,8 +855,13 @@
             const json = await res.json();
             if (json && json.success) {
               try {
-                localStorage.clear();
-                sessionStorage.clear();
+                if (window.Red404Security) window.Red404Security.clearRoleStorage('DONOR');
+                else {
+                  localStorage.removeItem('donor_session');
+                  localStorage.removeItem('red404_donor_session');
+                  localStorage.removeItem('red404_auth_session');
+                  localStorage.removeItem('donorUser');
+                }
               } catch (_) { }
               alert('Your RED404 account and all associated records have been permanently deleted.');
               window.location.href = 'index.html';
