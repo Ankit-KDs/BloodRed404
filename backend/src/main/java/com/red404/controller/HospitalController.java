@@ -1708,6 +1708,19 @@ public class HospitalController {
             // Part 6 Step 4: Check-in lookup card shows donor's last check (date, hospital, hemoglobin, weight)
             Map<String, Object> lastCheck = healthCheckDao.getLatestHealthCheck(matchedDonorId);
             details.put("lastHealthCheck", lastCheck);
+
+            // Part 9 Item 12: Decrypt health questionnaire responses strictly for hospital staff during clinical check-in
+            String encHealth = (String) donor.get("health_answers_json");
+            if (encHealth == null) encHealth = (String) donor.get("healthAnswersJson");
+            if (encHealth != null) {
+                String decHealth = com.red404.util.AesGcmEncryptionUtil.decrypt(encHealth);
+                details.put("healthAnswersJson", decHealth);
+                details.put("health_answers_json", decHealth);
+            }
+            boolean revNeeded = Boolean.TRUE.equals(donor.get("hospital_review_needed")) || Boolean.TRUE.equals(donor.get("hospitalReviewNeeded"));
+            details.put("hospitalReviewNeeded", revNeeded);
+            details.put("hospital_review_needed", revNeeded);
+
             AdminController.addLog("DONOR_LOOKUP", "Verified hospital " + hospName + " (ID: " + hospitalId + ") looked up donor " + matchedDonorId);
 
             return ok("Donor details retrieved", details);

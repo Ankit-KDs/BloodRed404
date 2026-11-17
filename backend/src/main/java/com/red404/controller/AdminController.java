@@ -7,6 +7,7 @@ import com.red404.service.StockService;
 import com.red404.util.DBConnection;
 import com.red404.util.GeoLocationUtil;
 import com.red404.util.JsonUtil;
+import com.red404.util.LogSanitizer;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -144,12 +145,13 @@ public class AdminController {
     // ==========================================
     // 1. STEALTH AUTHENTICATION ENDPOINT
     // ==========================================
-    @PostMapping("/stealth-auth")
+    @PostMapping({"/stealth-auth", "/login"})
     public ResponseEntity<ApiResponse> stealthAuth(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             String email = JsonUtil.textOrNull(body, "email");
             String authCode = JsonUtil.textOrNull(body, "authCode");
             if (authCode == null) authCode = JsonUtil.textOrNull(body, "code");
+            if (authCode == null) authCode = JsonUtil.textOrNull(body, "secretKey");
 
             if (email == null || authCode == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -181,6 +183,10 @@ public class AdminController {
                     }
                 }
 
+                HttpSession oldSession = request.getSession(false);
+                if (oldSession != null) {
+                    try { oldSession.invalidate(); } catch (Exception ignored) {}
+                }
                 HttpSession session = request.getSession(true);
                 session.setAttribute("adminRole", "SUPER_ADMIN");
                 session.setAttribute("adminEmail", email);
@@ -253,7 +259,8 @@ public class AdminController {
                 "FROM donors d ORDER BY d.id DESC LIMIT ? OFFSET ?";
 
         try (Connection conn = DBConnection.getConnection()) {
-            try (Statement st = conn.createStatement(); ResultSet crs = st.executeQuery(countSql)) {
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM donors");
+                 ResultSet crs = cps.executeQuery()) {
                 if (crs.next()) totalDonors = crs.getInt(1);
             } catch (Exception ignored) {}
 
@@ -638,8 +645,8 @@ public class AdminController {
 
         try (Connection conn = DBConnection.getConnection()) {
             // 1. Tally counts across statuses
-            try (Statement st = conn.createStatement();
-                 ResultSet crs = st.executeQuery("SELECT COALESCE(verification_status, 'pending_review') as vstat, COUNT(*) FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' GROUP BY verification_status")) {
+            try (PreparedStatement cst = conn.prepareStatement("SELECT COALESCE(verification_status, 'pending_review') as vstat, COUNT(*) FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' GROUP BY verification_status");
+                 ResultSet crs = cst.executeQuery()) {
                 int totalAll = 0;
                 while (crs.next()) {
                     String raw = crs.getString(1);
@@ -1359,7 +1366,7 @@ public class AdminController {
     // SECURITY HELPERS
     // ==========================================
     private boolean isAdmin(HttpServletRequest request) {
-        if (request == null) return true;
+        if (request == null) return false;
         HttpSession session = request.getSession(false);
         if (session != null && "SUPER_ADMIN".equals(session.getAttribute("adminRole"))) {
             Long lastAccess = (Long) session.getAttribute("adminLastAccess");
@@ -1372,8 +1379,7 @@ public class AdminController {
             session.setAttribute("adminLastAccess", now);
             return true;
         }
-        String headerToken = request.getHeader("X-Admin-Clearance");
-        return headerToken != null && headerToken.startsWith("LEVEL0-");
+        return false;
     }
 
     private ResponseEntity<ApiResponse> unauthorized() {

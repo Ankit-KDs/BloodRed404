@@ -271,6 +271,11 @@ public class HospitalVerificationService {
             log.warn("Suspension session cleanup notice: {}", e.getMessage());
         }
 
+        // Invalidate in-memory role sessions immediately
+        try {
+            com.red404.config.RoleSessionManager.invalidateHospitalSessions(hospitalId);
+        } catch (Exception ignored) {}
+
         // 2. Cancel open / pending blood requests
         try (PreparedStatement ps = conn.prepareStatement(
                 "UPDATE blood_requests SET status = 'CANCELLED', rejection_reason = 'Hospital account suspended' " +

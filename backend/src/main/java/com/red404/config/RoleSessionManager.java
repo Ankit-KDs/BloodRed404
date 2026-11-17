@@ -44,6 +44,14 @@ public class RoleSessionManager {
 
     private static final Map<String, RoleHttpSession> SESSIONS = new ConcurrentHashMap<>();
     private static final int DEFAULT_MAX_INACTIVE_INTERVAL = 30 * 60; // 30 minutes
+    private static final long ABSOLUTE_TIMEOUT_MS = 12 * 60 * 60 * 1000L; // 12 hours absolute timeout
+    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+
+    public static String generate256BitSessionId() {
+        byte[] bytes = new byte[32]; // 256 bits of high-entropy cryptographic randomness
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
 
     public static Role resolveRoleForRequest(HttpServletRequest request) {
         String uri = request.getRequestURI();
@@ -123,10 +131,58 @@ public class RoleSessionManager {
     }
 
     public static RoleHttpSession createSession(Role role, ServletContext servletContext) {
-        String id = UUID.randomUUID().toString();
+        String id = generate256BitSessionId();
         RoleHttpSession session = new RoleHttpSession(id, role, servletContext);
         SESSIONS.put(id, session);
         return session;
+    }
+
+    public static RoleHttpSession rotateSession(String oldSessionId, Role role, ServletContext servletContext) {
+        RoleHttpSession oldSession = oldSessionId != null ? SESSIONS.remove(oldSessionId.trim()) : null;
+        String newId = generate256BitSessionId();
+        RoleHttpSession newSession = new RoleHttpSession(newId, role, servletContext);
+        if (oldSession != null) {
+            Enumeration<String> names = oldSession.getAttributeNames();
+            while (names.hasMoreElements()) {
+                String name = names.nextElement();
+                newSession.setAttribute(name, oldSession.getAttribute(name));
+            }
+            try {
+                oldSession.invalidate();
+            } catch (Exception ignored) {}
+        }
+        SESSIONS.put(newId, newSession);
+        return newSession;
+    }
+
+    public static void invalidateHospitalSessions(int hospitalId) {
+        for (Map.Entry<String, RoleHttpSession> entry : SESSIONS.entrySet()) {
+            RoleHttpSession sess = entry.getValue();
+            if (sess != null && sess.getRole() == Role.HOSPITAL) {
+                Object hid = sess.getAttribute("hospital_id");
+                if (hid == null) hid = sess.getAttribute("hospitalId");
+                if (hid instanceof Number n && n.intValue() == hospitalId) {
+                    try { sess.invalidate(); } catch (Exception ignored) {}
+                } else if (hid != null && String.valueOf(hid).equals(String.valueOf(hospitalId))) {
+                    try { sess.invalidate(); } catch (Exception ignored) {}
+                }
+            }
+        }
+    }
+
+    public static void invalidateDonorSessions(int donorId) {
+        for (Map.Entry<String, RoleHttpSession> entry : SESSIONS.entrySet()) {
+            RoleHttpSession sess = entry.getValue();
+            if (sess != null && sess.getRole() == Role.DONOR) {
+                Object did = sess.getAttribute("donor_id");
+                if (did == null) did = sess.getAttribute("donorId");
+                if (did instanceof Number n && n.intValue() == donorId) {
+                    try { sess.invalidate(); } catch (Exception ignored) {}
+                } else if (did != null && String.valueOf(did).equals(String.valueOf(donorId))) {
+                    try { sess.invalidate(); } catch (Exception ignored) {}
+                }
+            }
+        }
     }
 
     public static void removeSession(String sessionId) {
@@ -193,8 +249,10 @@ public class RoleSessionManager {
 
         public boolean isExpired() {
             if (!isValid) return true;
+            long now = System.currentTimeMillis();
+            if ((now - creationTime) > ABSOLUTE_TIMEOUT_MS) return true;
             if (maxInactiveInterval <= 0) return false;
-            return (System.currentTimeMillis() - lastAccessedTime) > (maxInactiveInterval * 1000L);
+            return (now - lastAccessedTime) > (maxInactiveInterval * 1000L);
         }
 
         @Override

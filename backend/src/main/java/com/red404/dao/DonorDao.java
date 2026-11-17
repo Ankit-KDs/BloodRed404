@@ -991,9 +991,9 @@ public class DonorDao {
                     ps.executeUpdate();
                 } catch (Exception ignored) {}
 
-                // 4. Delete donation records
+                // 4. Anonymize donation records for hospital records with donor identity scrubbed (Part 9 Item 15)
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "DELETE FROM donations WHERE (donor_id = ? OR donor_id = CAST(? AS CHAR))")) {
+                        "UPDATE donations SET donor_id = 'ANONYMOUS' WHERE (donor_id = ? OR donor_id = CAST(? AS CHAR))")) {
                     ps.setString(1, donorIdToBurn != null ? donorIdToBurn : rawId);
                     ps.setInt(2, numId);
                     ps.executeUpdate();

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy | RED404</title>
+  <link rel="stylesheet" href="css/hospital-tokens.css" />
+  <link rel="stylesheet" href="css/registration-modern.css" />
+  <style>
+    body {
+      background: #0f172a;
+      color: #cbd5e1;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+    .privacy-header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .privacy-brand {
+      color: #f8fafc;
+      font-size: 20px;
+      font-weight: 800;
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .privacy-content {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .privacy-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    h1 { color: #f8fafc; font-size: 28px; margin-top: 0; margin-bottom: 8px; }
+    h2 { color: #f8fafc; font-size: 20px; margin-top: 24px; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+    p, li { font-size: 15px; color: #94a3b8; }
+    ul { padding-left: 20px; }
+    .back-btn {
+      color: #38bdf8;
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+    .back-btn:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="privacy-header">
+    <a href="index.html" class="privacy-brand">RED404</a>
+    <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 14px;">Return to Home</a>
+  </header>
+
+  <main class="privacy-content">
+    <a href="javascript:history.back()" class="back-btn">&larr; Back</a>
+    <div class="privacy-card">
+      <h1>Privacy Policy</h1>
+      <p style="font-size: 13px; color: #64748b;">Last Updated: November 2026</p>
+
+      <h2>1. Overview &amp; Data Minimisation</h2>
+      <p>
+        RED404 is an emergency blood rescue network designed to connect volunteer blood donors with verified hospital facilities.
+        We adhere strictly to data minimisation principles, collecting only information required to facilitate life-saving donations.
+      </p>
+
+      <h2>2. What Information We Collect</h2>
+      <ul>
+        <li><strong>Volunteer Donors:</strong> Name, mobile number (+91 format checked, not verified), verified email address, date of birth, gender, self-declared blood type, self-declared health questionnaire answers, and approximate locality (city, state, PIN code). Exact street addresses are never collected.</li>
+        <li><strong>Hospitals &amp; Blood Centres:</strong> Facility name, official registration and blood bank licence details, authorised coordinator contact information, facility coordinates, operating hours, and compliance verification documents.</li>
+      </ul>
+
+      <h2>3. Who Can See What</h2>
+      <ul>
+        <li><strong>Donors:</strong> You can only view and manage your own profile, eligibility tracker, and donation history.</li>
+        <li><strong>Hospitals:</strong> Verified hospitals see donor names, blood groups, and approximate distance when searching for emergency donors. Phone numbers are revealed to hospital staff only after a donor accepts an emergency request. Detailed health questionnaire responses are viewable exclusively by hospital clinical staff during in-person check-in.</li>
+        <li><strong>Admins:</strong> Network administrators review hospital verification documents and maintain directory records. Admins never view donor health questionnaires or account passwords.</li>
+        <li><strong>Public:</strong> Public directories display only registered facility listings and donors who have explicitly opted into public search (displaying first name, blood group, and approximate distance only).</li>
+      </ul>
+
+      <h2>4. Application-Level Data Encryption</h2>
+      <p>
+        Donor health questionnaire answers are encrypted at rest at the application level using <strong>AES-256-GCM</strong>.
+        Hospital verification documents are stored in isolated private storage and accessible to authorized reviewers only via short-lived, time-limited cryptographic tokens.
+      </p>
+
+      <h2>5. Your Rights as a Donor</h2>
+      <ul>
+        <li><strong>Download My Data:</strong> You have the right to export a complete copy of your profile, consent logs, health questionnaire answers, and donation history in JSON format at any time from your settings.</li>
+        <li><strong>Delete My Account:</strong> You can request immediate account deletion from your profile. Upon deletion, your personal identifying data (name, email, phone, location, health questionnaire) is permanently scrubbed and anonymised. Clinical donation records are preserved in anonymised format without linkage to your identity to maintain hospital regulatory records.</li>
+      </ul>
+
+      <h2>6. Hospital Account Lifecycle</h2>
+      <p>
+        Hospital registrations undergo human review before activation. Once verified, account deletion or status changes (such as suspension) are managed by network administrators via soft-deletion to ensure traceability and audit compliance.
+      </p>
+
+      <h2>7. Contact Us</h2>
+      <p>
+        For privacy inquiries or data requests, please contact our privacy desk at <code>privacy@red404.org</code>.
+      </p>
+    </div>
+  </main>
+</body>
+</html>

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.sql.DataSource;
 import java.lang.management.ManagementFactory;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.LinkedHashMap;
@@ -45,8 +46,8 @@ public class HealthController {
         Map<String, Object> dbHealth = new LinkedHashMap<>();
         boolean dbOk = false;
         try (Connection conn = DBConnection.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT 1")) {
+             PreparedStatement st = conn.prepareStatement("SELECT 1");
+             ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
                 dbOk = true;
                 dbHealth.put("connected", true);

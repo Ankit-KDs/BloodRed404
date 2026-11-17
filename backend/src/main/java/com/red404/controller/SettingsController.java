@@ -1,6 +1,7 @@
 package com.red404.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.red404.config.RoleSessionManager;
 import com.red404.dao.DonorDao;
 import com.red404.dao.SessionDao;
 import com.red404.model.ApiResponse;
@@ -12,10 +13,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,9 +53,13 @@ public class SettingsController {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Current password is required."));
             }
-            if (newPassword.length() < 6) {
+            if (newPassword.length() < 8) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "New password must be at least 6 characters."));
+                        .body(new ApiResponse(false, "New password must be at least 8 characters."));
+            }
+            if (com.red404.util.PasswordUtil.isCommonPassword(newPassword) || com.red404.util.SecurityValidationUtil.isCommonPassword(newPassword)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "The password you entered is too common. Please choose a more secure password."));
             }
             if (!confirmPassword.isEmpty() && !newPassword.equals(confirmPassword)) {
                 return ResponseEntity.badRequest()
@@ -61,6 +68,7 @@ public class SettingsController {
 
             boolean updated = donorDao.updatePassword(donorId, currentPassword, newPassword);
             if (updated) {
+                RoleSessionManager.invalidateDonorSessions(donorId);
                 return ResponseEntity.ok(new ApiResponse(true,
                         "Password updated successfully with BCrypt encryption. Old credentials invalidated.", null));
             } else {
@@ -197,41 +205,106 @@ public class SettingsController {
     // SECTION 3: DANGER ZONE (HARD DELETE ACCOUNT)
     // ============================================================
 
+    @GetMapping("/download-data")
+    public ResponseEntity<?> downloadData(HttpServletRequest request) {
+        try {
+            Map<String, Object> donor = getAuthenticatedDonor(request);
+            if (donor == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse(false, "Authentication required to download data."));
+            }
+            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+            Map<String, Object> fresh = donorDao.findByIdOrDonorId(donorIdStr);
+            if (fresh == null) fresh = donor;
+
+            Map<String, Object> export = new LinkedHashMap<>();
+            export.put("exportTimestamp", java.time.Instant.now().toString());
+            export.put("donorId", donorIdStr);
+            export.put("name", fresh.get("name"));
+            export.put("email", fresh.get("email"));
+            export.put("phone", fresh.get("phone"));
+            export.put("bloodType", fresh.get("bloodType") != null ? fresh.get("bloodType") : fresh.get("blood_type"));
+            export.put("bloodGroupStatus", fresh.get("bloodGroupStatus") != null ? fresh.get("bloodGroupStatus") : fresh.get("blood_group_status"));
+            export.put("gender", fresh.get("gender"));
+            export.put("dob", fresh.get("dob"));
+            export.put("weightKg", fresh.get("weight"));
+            export.put("availability", fresh.get("availability"));
+            export.put("city", fresh.get("city"));
+            export.put("state", fresh.get("state"));
+            export.put("pincode", fresh.get("pincode"));
+
+            // Decrypt health questionnaire responses
+            String encHealth = (String) fresh.get("health_answers_json");
+            if (encHealth == null) encHealth = (String) fresh.get("healthAnswersJson");
+            if (encHealth != null) {
+                export.put("healthAnswers", com.red404.util.AesGcmEncryptionUtil.decrypt(encHealth));
+            }
+
+            // Consents
+            try {
+                com.red404.dao.ConsentDao consentDao = new com.red404.dao.ConsentDao();
+                export.put("consents", consentDao.getConsents("DONOR", donorIdStr));
+            } catch (Exception ignored) {}
+
+            // Donation history
+            try {
+                export.put("donations", donorDao.donationHistory(donorIdStr));
+            } catch (Exception ignored) {}
+
+            byte[] jsonBytes = com.red404.util.JsonUtil.mapper().writerWithDefaultPrettyPrinter().writeValueAsBytes(export);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setContentLength(jsonBytes.length);
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"red404_donor_export_" + donorIdStr + ".json\"");
+            return new ResponseEntity<>(jsonBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to export donor data: " + e.getMessage()));
+        }
+    }
+
     @RequestMapping(value = "/delete-account", method = {RequestMethod.POST, RequestMethod.DELETE})
     public ResponseEntity<ApiResponse> deleteAccount(
             @RequestBody(required = false) JsonNode body,
             HttpServletRequest request,
             HttpServletResponse response) {
         try {
-            Map<String, Object> donor = getAuthenticatedDonor(request, body);
-            String donorIdStr = null;
-            if (donor != null) {
-                donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
-            }
-            String donorEmail = donor != null && donor.get("email") != null ? donor.get("email").toString() : null;
-            String donorPhone = donor != null && donor.get("phone") != null ? donor.get("phone").toString() : null;
-
-            if ((donorIdStr == null || donorIdStr.isBlank()) && body != null) {
-                donorIdStr = JsonUtil.text(body, "donorId");
-                if (donorIdStr.isBlank()) donorIdStr = JsonUtil.text(body, "id");
-            }
-            if ((donorEmail == null || donorEmail.isBlank()) && body != null) {
-                donorEmail = JsonUtil.text(body, "email");
-            }
-            if ((donorPhone == null || donorPhone.isBlank()) && body != null) {
-                donorPhone = JsonUtil.text(body, "phone");
-            }
-
-            if ((donorIdStr == null || donorIdStr.isBlank()) && (donorEmail == null || donorEmail.isBlank())) {
+            Map<String, Object> donor = getAuthenticatedDonor(request);
+            if (donor == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Authentication required to delete account."));
             }
+            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+            String donorEmail = donor.get("email") != null ? donor.get("email").toString() : null;
+            String donorPhone = donor.get("phone") != null ? donor.get("phone").toString() : null;
+
+            // IDOR Protection: If body provides donorId or email, verify it matches
+            if (body != null) {
+                String bDonorId = JsonUtil.text(body, "donorId");
+                if (bDonorId.isBlank()) bDonorId = JsonUtil.text(body, "id");
+                if (!bDonorId.isBlank() && !bDonorId.equalsIgnoreCase(donorIdStr) && !bDonorId.equals(String.valueOf(donor.get("id")))) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponse(false, "Forbidden: Cannot delete another user's account."));
+                }
+                String bEmail = JsonUtil.text(body, "email");
+                if (!bEmail.isBlank() && donorEmail != null && !bEmail.equalsIgnoreCase(donorEmail)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponse(false, "Forbidden: Cannot delete another user's account."));
+                }
+            }
 
             boolean deleted = donorDao.hardDeleteDonor(donorIdStr, donorEmail, donorPhone);
+
+            // Invalidate session and cookie
             HttpSession session = request.getSession(false);
             if (session != null) {
                 session.invalidate();
             }
+            if (donor.get("id") instanceof Number n) {
+                com.red404.config.RoleSessionManager.invalidateDonorSessions(n.intValue());
+            }
+
+            com.red404.config.RoleSessionManager.clearRoleCookie(response, com.red404.config.RoleSessionManager.Role.DONOR.cookieName, RoleSessionManager.isConnectionSecure(request));
 
             ResponseCookie clearCookie1 = ResponseCookie.from("RED404_SESSION", "")
                     .path("/")
@@ -246,7 +319,7 @@ public class SettingsController {
             response.addHeader(HttpHeaders.SET_COOKIE, clearCookie1.toString());
             response.addHeader(HttpHeaders.SET_COOKIE, clearCookie2.toString());
 
-            return ResponseEntity.ok(new ApiResponse(true, "Account and all associated records permanently deleted.", null));
+            return ResponseEntity.ok(new ApiResponse(true, "Account and personal identifying records permanently anonymized and deleted.", null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Account deletion failed: " + e.getMessage()));
@@ -254,7 +327,8 @@ public class SettingsController {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getAuthenticatedDonor(HttpServletRequest request, JsonNode body) {
+    private Map<String, Object> getAuthenticatedDonor(HttpServletRequest request) {
+        if (request == null) return null;
         // 1. Check existing HTTP session
         HttpSession session = request.getSession(false);
         if (session != null) {
@@ -264,63 +338,28 @@ public class SettingsController {
             }
         }
 
-        // 2. Check headers
-        String donorIdHeader = request.getHeader("X-Donor-Id");
-        String donorEmailHeader = request.getHeader("X-Donor-Email");
+        // 2. Check Authorization header or X-Red404-Token
         String authHeader = request.getHeader("Authorization");
-
-        // 3. Check JSON body
-        if ((donorIdHeader == null || donorIdHeader.isBlank()) && body != null) {
-            String bDonorId = JsonUtil.text(body, "donorId");
-            if (bDonorId.isBlank()) bDonorId = JsonUtil.text(body, "id");
-            if (!bDonorId.isBlank()) donorIdHeader = bDonorId;
+        String token = request.getHeader("X-Red404-Token");
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
         }
-        if ((donorEmailHeader == null || donorEmailHeader.isBlank()) && body != null) {
-            String bEmail = JsonUtil.text(body, "email");
-            if (!bEmail.isBlank()) donorEmailHeader = bEmail;
-        }
-
-        // 4. Check query params
-        if (donorIdHeader == null || donorIdHeader.isBlank()) {
-            donorIdHeader = request.getParameter("donorId");
-        }
-        if (donorEmailHeader == null || donorEmailHeader.isBlank()) {
-            donorEmailHeader = request.getParameter("email");
-        }
-
-        Map<String, Object> donor = null;
-
-        // Resolve by Email first if provided (prevents stale ID collision)
-        if (donorEmailHeader != null && !donorEmailHeader.isBlank()) {
-            try {
-                donor = donorDao.findByEmail(donorEmailHeader.trim().toLowerCase());
-            } catch (Exception ignored) {}
-        }
-
-        // Resolve by Smart Donor ID or Integer ID
-        if (donor == null && donorIdHeader != null && !donorIdHeader.isBlank()) {
-            try {
-                donor = donorDao.findByIdOrDonorId(donorIdHeader.trim());
-            } catch (Exception ignored) {}
-        }
-
-        // Resolve by Token (Bearer <token>)
-        if (donor == null && authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7).trim();
-            if (!token.isBlank()) {
+        if (token != null && !token.isBlank()) {
+            if (token.startsWith("SESSION-DONOR-")) {
+                String dStr = token.substring("SESSION-DONOR-".length()).trim();
                 try {
-                    donor = donorDao.findByToken(token);
+                    return donorDao.findByIdOrDonorId(dStr);
                 } catch (Exception ignored) {}
             }
+            try {
+                return donorDao.findByToken(token);
+            } catch (Exception ignored) {}
         }
 
-        // If found, re-bind to HTTP session
-        if (donor != null) {
-            HttpSession newSession = request.getSession(true);
-            newSession.setAttribute("user", donor);
-            newSession.setAttribute("role", "DONOR");
-        }
+        return null;
+    }
 
-        return donor;
+    private Map<String, Object> getAuthenticatedDonor(HttpServletRequest request, JsonNode body) {
+        return getAuthenticatedDonor(request);
     }
 }

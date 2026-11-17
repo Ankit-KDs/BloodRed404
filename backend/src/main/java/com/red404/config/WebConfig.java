@@ -31,28 +31,5 @@ public class WebConfig implements WebMvcConfigurer {
         // Default welcome page
         registry.addViewController("/").setViewName("forward:/index.html");
     }
-
-    @Bean
-    public FilterRegistrationBean<Filter> noCacheSecurityFilter() {
-        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new Filter() {
-            @Override
-            public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-                    throws IOException, ServletException {
-                if (req instanceof HttpServletRequest httpReq && res instanceof HttpServletResponse httpRes) {
-                    String uri = httpReq.getRequestURI();
-                    if (uri.startsWith("/api/") || uri.endsWith(".html") || uri.endsWith("/")) {
-                        httpRes.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
-                        httpRes.setHeader("Pragma", "no-cache");
-                        httpRes.setDateHeader("Expires", 0);
-                    }
-                }
-                chain.doFilter(req, res);
-            }
-        });
-        registration.addUrlPatterns("/*");
-        registration.setOrder(1);
-        return registration;
-    }
 }
 

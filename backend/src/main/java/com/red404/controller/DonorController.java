@@ -74,34 +74,50 @@ public class DonorController {
             @RequestParam(required = false) String email,
             HttpServletRequest request) {
         try {
-            Map<String, Object> donorProfile = null;
+            Map<String, Object> loggedDonor = requireDonor(request);
+            if (loggedDonor == null) {
+                return unauthorized();
+            }
+
+            // Strict IDOR Protection: a donor can only access their own profile
             if (email != null && !email.isBlank()) {
-                donorProfile = donorDao.findByEmail(email.trim().toLowerCase());
-            }
-            if (donorProfile == null && donorId != null && !donorId.isBlank()) {
-                donorProfile = donorDao.findByIdOrDonorId(donorId);
-            }
-            if (donorProfile == null) {
-                Map<String, Object> donor = requireDonor(request);
-                if (donor != null) {
-                    String dId = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
-                    donorProfile = donorDao.findByIdOrDonorId(dId);
+                String sessEmail = (String) loggedDonor.get("email");
+                if (sessEmail == null || !sessEmail.equalsIgnoreCase(email.trim())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponse(false, "Forbidden: Access to another donor profile is denied."));
                 }
             }
-            if (donorProfile == null) {
-                HttpSession s = request.getSession(false);
-                if (s != null && s.getAttribute("user") != null) {
-                    try { s.invalidate(); } catch (Exception ignored) {}
+            if (donorId != null && !donorId.isBlank()) {
+                String sessId = loggedDonor.get("id") != null ? loggedDonor.get("id").toString() : "";
+                String sessCode = loggedDonor.get("donorId") != null ? loggedDonor.get("donorId").toString() : "";
+                if (!donorId.trim().equalsIgnoreCase(sessId) && !donorId.trim().equalsIgnoreCase(sessCode)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponse(false, "Forbidden: Access to another donor profile is denied."));
                 }
+            }
+
+            String dId = loggedDonor.get("donorId") != null ? loggedDonor.get("donorId").toString() : loggedDonor.get("id").toString();
+            Map<String, Object> donorProfile = donorDao.findByIdOrDonorId(dId);
+            if (donorProfile == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse(false, "Donor profile not found or account deleted."));
             }
+
+            // Decrypt application-level encrypted health questionnaire answers for the donor
+            String encHealth = (String) donorProfile.get("health_answers_json");
+            if (encHealth == null) encHealth = (String) donorProfile.get("healthAnswersJson");
+            if (encHealth != null) {
+                String dec = com.red404.util.AesGcmEncryptionUtil.decrypt(encHealth);
+                donorProfile.put("health_answers_json", dec);
+                donorProfile.put("healthAnswersJson", dec);
+            }
+
             if (donorProfile.get("id") instanceof Number num) {
-                int dId = num.intValue();
+                int dNumId = num.intValue();
                 String qt = (String) donorProfile.get("qrToken");
                 if (qt == null || qt.isBlank()) {
                     try {
-                        String newQt = donorDao.generateOrGetQrToken(dId);
+                        String newQt = donorDao.generateOrGetQrToken(dNumId);
                         donorProfile.put("qrToken", newQt);
                         donorProfile.put("qr_token", newQt);
                     } catch (Exception ignored) {}
@@ -111,36 +127,18 @@ public class DonorController {
 
             // Step 2 Requirement 3: Add "Health check history" (last 5).
             // The API returns this only to the donor himself, never to other donors, public pages, or the admin directory.
-            Map<String, Object> loggedDonor = requireDonor(request);
-            boolean isSelf = false;
-            if (loggedDonor != null && donorProfile != null) {
-                Object pId = donorProfile.get("id");
-                Object lId = loggedDonor.get("id");
-                Object pCode = donorProfile.get("donorId");
-                Object lCode = loggedDonor.get("donorId");
-                if (pId != null && pId.toString().equals(String.valueOf(lId))) isSelf = true;
-                else if (pCode != null && pCode.toString().equalsIgnoreCase(String.valueOf(lCode))) isSelf = true;
-            }
-            if ((donorId == null || donorId.isBlank()) && (email == null || email.isBlank()) && loggedDonor != null) {
-                isSelf = true;
-            }
-            if (isSelf) {
-                String dCode = donorProfile.get("donorId") != null ? donorProfile.get("donorId").toString() : donorProfile.get("id").toString();
-                List<Map<String, Object>> checks = new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5);
-                if (checks != null) {
-                    for (Map<String, Object> c : checks) {
-                        c.remove("deferReasonCategory");
-                    }
+            String dCode = donorProfile.get("donorId") != null ? donorProfile.get("donorId").toString() : donorProfile.get("id").toString();
+            List<Map<String, Object>> checks = new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5);
+            if (checks != null) {
+                for (Map<String, Object> c : checks) {
+                    c.remove("deferReasonCategory");
                 }
-                donorProfile.put("healthChecks", checks);
-                Map<String, Object> latestCheck = new com.red404.dao.HealthCheckDao().getLatestHealthCheck(dCode);
-                if (latestCheck != null) {
-                    latestCheck.remove("deferReasonCategory");
-                    donorProfile.put("latestHealthCheck", latestCheck);
-                }
-            } else {
-                donorProfile.remove("healthChecks");
-                donorProfile.remove("latestHealthCheck");
+            }
+            donorProfile.put("healthChecks", checks);
+            Map<String, Object> latestCheck = new com.red404.dao.HealthCheckDao().getLatestHealthCheck(dCode);
+            if (latestCheck != null) {
+                latestCheck.remove("deferReasonCategory");
+                donorProfile.put("latestHealthCheck", latestCheck);
             }
             donorProfile.remove("deferReasonCategory");
 
@@ -358,19 +356,20 @@ public class DonorController {
             @RequestParam(required = false) String donorId,
             HttpServletRequest request) {
         try {
-            String targetDonorId = null;
+            Map<String, Object> donor = requireDonor(request);
+            if (donor == null) {
+                return unauthorized();
+            }
+            String sessionDonorId = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
             if (donorId != null && !donorId.isBlank()) {
-                targetDonorId = donorId.trim();
-            } else {
-                Map<String, Object> donor = requireDonor(request);
-                if (donor != null) {
-                    targetDonorId = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+                String paramId = donorId.trim();
+                String numId = donor.get("id") != null ? donor.get("id").toString() : "";
+                if (!paramId.equalsIgnoreCase(sessionDonorId) && !paramId.equalsIgnoreCase(numId)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponse(false, "Forbidden: Access to another donor's donation records is denied."));
                 }
             }
-            if (targetDonorId == null || targetDonorId.isBlank()) {
-                targetDonorId = "DNR-0811-A404";
-            }
-            return ok("History loaded", donorDao.donationHistory(targetDonorId));
+            return ok("History loaded", donorDao.donationHistory(sessionDonorId));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -813,7 +812,7 @@ public class DonorController {
             donor.put("pushNotif", JsonUtil.asBoolean(body, "pushNotif", true));
             donor.put("emailNotif", JsonUtil.asBoolean(body, "emailNotif", true));
             donor.put("hospitalReviewNeeded", hospitalReviewNeeded);
-            donor.put("healthAnswersJson", healthAnswersJson);
+            donor.put("healthAnswersJson", com.red404.util.AesGcmEncryptionUtil.encrypt(healthAnswersJson));
             donor.put("emailVerified", true);
             donor.put("publicSearchOptIn", publicSearchOptIn);
             donor.put("publicDisplayName", firstName);
@@ -1268,9 +1267,12 @@ public class DonorController {
             HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            String donorName = donor != null && donor.get("name") != null ? (String) donor.get("name") : "Clinical Blood Donor";
-            String donorId = donor != null && donor.get("donorId") != null ? (String) donor.get("donorId") : "DNR-0811";
-            String blood = bloodType != null && !bloodType.isBlank() ? bloodType : (donor != null && donor.get("bloodType") != null ? (String) donor.get("bloodType") : "O+");
+            if (donor == null) {
+                return unauthorized();
+            }
+            String donorName = donor.get("name") != null ? (String) donor.get("name") : "Clinical Blood Donor";
+            String donorId = donor.get("donorId") != null ? (String) donor.get("donorId") : ("DNR-" + donor.get("id"));
+            String blood = bloodType != null && !bloodType.isBlank() ? bloodType : (donor.get("bloodType") != null ? (String) donor.get("bloodType") : "O+");
             String hosp = hospital != null && !hospital.isBlank() ? hospital : "Verified Regional Trauma Center";
             String dDate = date != null && !date.isBlank() ? date : java.time.LocalDate.now().toString();
             String code = refCode != null && !refCode.isBlank() ? refCode : (certId != null && !certId.isBlank() ? certId : "RED-" + (System.currentTimeMillis() % 100000));
@@ -1282,10 +1284,17 @@ public class DonorController {
                 }
                 if (dNum > 0) {
                     try (Connection c = DBConnection.getConnection();
-                         PreparedStatement cps = c.prepareStatement("SELECT volume_ml FROM donations WHERE id = ?")) {
+                         PreparedStatement cps = c.prepareStatement("SELECT donor_id, volume_ml FROM donations WHERE id = ?")) {
                         cps.setInt(1, dNum);
                         try (ResultSet crs = cps.executeQuery()) {
                             if (crs.next()) {
+                                String recordDonorId = crs.getString("donor_id");
+                                String myNumId = donor.get("id") != null ? donor.get("id").toString() : "";
+                                String myCode = donor.get("donorId") != null ? donor.get("donorId").toString() : "";
+                                if (recordDonorId != null && !recordDonorId.equalsIgnoreCase(myNumId) && !recordDonorId.equalsIgnoreCase(myCode)) {
+                                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                            .body(new ApiResponse(false, "Forbidden: Certificate ownership verification failed."));
+                                }
                                 int dbVol = crs.getInt("volume_ml");
                                 if (dbVol > 0) vol = dbVol + " mL (1 Unit)";
                             }

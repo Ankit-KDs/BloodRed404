@@ -43,4 +43,27 @@ public class ConsentDao {
             return false;
         }
     }
+
+    public java.util.List<java.util.Map<String, Object>> getConsents(String userType, String userId) {
+        String sql = "SELECT * FROM consent_records WHERE user_type = ? AND user_id = ? ORDER BY id DESC";
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, userType != null ? userType.toUpperCase() : "DONOR");
+            ps.setString(2, userId != null ? userId : "UNKNOWN");
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+                    row.put("termsVersion", rs.getString("terms_version"));
+                    row.put("privacyVersion", rs.getString("privacy_version"));
+                    row.put("locationConsent", rs.getBoolean("location_consent"));
+                    row.put("publicListingConsent", rs.getBoolean("public_listing_consent"));
+                    row.put("ageConfirmed", rs.getBoolean("age_confirmed"));
+                    row.put("recordedAt", rs.getString("recorded_at"));
+                    list.add(row);
+                }
+            }
+        } catch (Exception ignored) {}
+        return list;
+    }
 }
