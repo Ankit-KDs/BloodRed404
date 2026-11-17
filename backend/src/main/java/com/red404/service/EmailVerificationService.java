@@ -29,14 +29,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * EmailVerificationService
  *
- * Part 1, 2 & 6: Email verification codes for Donors & Hospitals.
+ * Part 1, 2, 4 & 6: Email verification codes & system lifecycle emails.
  * - 6-digit code from SecureRandom (CSPRNG)
  * - Stored hashed (SHA-256)
  * - Single-use, constant-time compare
  * - 10-minute expiry
- * - Max 5 attempts
- * - 30s resend cooldown
- * - Brevo REST API adapter with safe dev fallback
+ * - Max 5 attempts per code
+ * - 60s resend cooldown, max 5 per hour
+ * - Priority Queue & 250/day DB-tracked budget
+ * - 10-minute idempotency suppression for status emails
+ * - Brevo REST API adapter with safe dev log fallback
  */
 @Service
 public class EmailVerificationService {
@@ -135,7 +137,7 @@ public class EmailVerificationService {
 
         resp.put("success", true);
         resp.put("message", "A 6-digit verification code has been sent to " + LogSanitizer.maskEmail(cleanEmail));
-        resp.put("cooldownSeconds", 30);
+        resp.put("cooldownSeconds", 60);
         resp.put("expiresInMinutes", 10);
         return resp;
     }
@@ -535,7 +537,7 @@ public class EmailVerificationService {
         }
 
         // Urgent: sent immediately, timeout 5s, 1 retry after 3s
-        boolean sent = sendViaBrevo(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
+        boolean sent = sendViaBrevoStatic(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
         if (!sent) {
             log.info("First attempt to dispatch verification code to {} failed. Retrying in 3 seconds...", LogSanitizer.maskEmail(toEmail));
             try {
@@ -543,7 +545,7 @@ public class EmailVerificationService {
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
-            sent = sendViaBrevo(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
+            sent = sendViaBrevoStatic(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
         }
         return sent;
     }

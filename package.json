@@ -4,6 +4,6 @@
   "description": "RED404 - Emergency Blood Rescue Network",
   "scripts": {
     "email:preview": "mvn -pl backend exec:java \"-Dexec.mainClass=com.red404.service.EmailPreviewGenerator\" \"-Dexec.classpathScope=test\"",
-    "email:test": "node scripts/email-test.js"
+    "email:test": "mvn -pl backend exec:java \"-Dexec.mainClass=com.red404.service.EmailTestSender\" \"-Dexec.classpathScope=test\""
   }
 }
