@@ -63,8 +63,10 @@ public class DonorDao {
                 "donor_id, name, father_name, email, phone, dob, gender, password, blood_type, weight, " +
                 "last_donation, availability, address, city, state, pincode, latitude, longitude, zone, " +
                 "allergies, conditions, medications, surgeries, donor_type, pulse, hemoglobin, blood_pressure, body_temp, " +
-                "verified_facility, verified_date, qr_token, sms_notif, push_notif, email_notif" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "verified_facility, verified_date, qr_token, sms_notif, push_notif, email_notif, " +
+                "hospital_review_needed, health_answers_json, availability_pref, last_donation_self_reported, email_verified, email_verified_at, " +
+                "blood_group_status, public_search_opt_in, public_display_name, public_consent_at" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             String name = str(donor.get("name")).trim();
@@ -92,6 +94,16 @@ public class DonorDao {
             String rawPassword = str(donor.get("password")).trim();
             String password = PasswordUtil.isBCrypt(rawPassword) ? rawPassword : PasswordUtil.hashPassword(rawPassword);
 
+            String bType = str(donor.get("bloodType") != null ? donor.get("bloodType") : donor.get("blood_type")).trim();
+            String bgStatus = "self_declared";
+            if (bType.equalsIgnoreCase("Not sure") || bType.equalsIgnoreCase("UNKNOWN") || bType.isBlank()) {
+                bType = "Not sure";
+                bgStatus = "unconfirmed";
+            }
+            if (donor.containsKey("blood_group_status") && donor.get("blood_group_status") != null) {
+                bgStatus = str(donor.get("blood_group_status"));
+            }
+
             int idx = 1;
             ps.setString(idx++, smartId);
             ps.setString(idx++, name);
@@ -101,7 +113,7 @@ public class DonorDao {
             setDate(ps, idx++, dob);
             ps.setString(idx++, emptyToNull(str(donor.get("gender"))));
             ps.setString(idx++, password);
-            ps.setString(idx++, str(donor.get("bloodType") != null ? donor.get("bloodType") : donor.get("blood_type")));
+            ps.setString(idx++, bType);
             setDouble(ps, idx++, donor.get("weight"));
             setDate(ps, idx++, donor.get("lastDonation"));
             ps.setString(idx++, str(donor.getOrDefault("availability", "Available")));
@@ -124,9 +136,20 @@ public class DonorDao {
             ps.setString(idx++, emptyToNull(str(donor.get("verified_facility") != null ? donor.get("verified_facility") : donor.get("verifiedFacility"))));
             setDate(ps, idx++, donor.get("verified_date") != null ? donor.get("verified_date") : donor.get("verifiedDate"));
             ps.setString(idx++, emptyToNull(str(donor.get("qr_token") != null ? donor.get("qr_token") : donor.get("qrToken"))));
-            ps.setBoolean(idx++, bool(donor.get("smsNotif"), true));
+            ps.setBoolean(idx++, false); // SMS disabled by policy
             ps.setBoolean(idx++, bool(donor.get("pushNotif"), true));
-            ps.setBoolean(idx++, bool(donor.get("emailNotif"), false));
+            ps.setBoolean(idx++, bool(donor.get("emailNotif"), true));
+            ps.setBoolean(idx++, bool(donor.get("hospitalReviewNeeded"), bool(donor.get("hospital_review_needed"), false)));
+            ps.setString(idx++, emptyToNull(str(donor.get("healthAnswersJson") != null ? donor.get("healthAnswersJson") : donor.get("health_answers_json"))));
+            ps.setString(idx++, str(donor.getOrDefault("availabilityPref", donor.getOrDefault("availability_pref", "Any time"))));
+            setDate(ps, idx++, donor.get("lastDonationSelfReported") != null ? donor.get("lastDonationSelfReported") : donor.get("last_donation_self_reported"));
+            ps.setBoolean(idx++, bool(donor.get("emailVerified"), bool(donor.get("email_verified"), true)));
+            ps.setTimestamp(idx++, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setString(idx++, bgStatus);
+            boolean optIn = bool(donor.get("publicSearchOptIn"), bool(donor.get("public_search_opt_in"), false));
+            ps.setBoolean(idx++, optIn);
+            ps.setString(idx++, emptyToNull(str(donor.get("publicDisplayName") != null ? donor.get("publicDisplayName") : donor.get("public_display_name"))));
+            ps.setTimestamp(idx++, optIn ? new java.sql.Timestamp(System.currentTimeMillis()) : null);
             return ps.executeUpdate() > 0;
         }
     }
@@ -687,6 +710,12 @@ public class DonorDao {
             ensureCol(conn, "public_search_opt_in", "BOOLEAN DEFAULT FALSE");
             ensureCol(conn, "public_display_name", "VARCHAR(100) NULL DEFAULT NULL");
             ensureCol(conn, "public_consent_at", "TIMESTAMP NULL DEFAULT NULL");
+            ensureCol(conn, "hospital_review_needed", "BOOLEAN DEFAULT FALSE");
+            ensureCol(conn, "health_answers_json", "TEXT NULL");
+            ensureCol(conn, "availability_pref", "VARCHAR(50) DEFAULT 'Any time'");
+            ensureCol(conn, "last_donation_self_reported", "DATE NULL DEFAULT NULL");
+            ensureCol(conn, "email_verified", "BOOLEAN DEFAULT FALSE");
+            ensureCol(conn, "email_verified_at", "TIMESTAMP NULL DEFAULT NULL");
 
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate("UPDATE donors SET father_name = NULL WHERE father_name LIKE '%Rajesh%'");
@@ -1905,15 +1934,35 @@ public class DonorDao {
         try {
             donor.put("preferredLanguage", rs.getString("preferred_language"));
             donor.put("preferred_language", rs.getString("preferred_language"));
-            donor.put("smsNotif", rs.getObject("sms_notif") != null ? rs.getBoolean("sms_notif") : true);
+            donor.put("smsNotif", false);
             donor.put("emailNotif", rs.getObject("email_notif") != null ? rs.getBoolean("email_notif") : true);
             donor.put("pushNotif", rs.getObject("push_notif") != null ? rs.getBoolean("push_notif") : true);
+            donor.put("hospitalReviewNeeded", rs.getObject("hospital_review_needed") != null ? rs.getBoolean("hospital_review_needed") : false);
+            donor.put("hospital_review_needed", donor.get("hospitalReviewNeeded"));
+            donor.put("healthAnswersJson", rs.getString("health_answers_json"));
+            donor.put("health_answers_json", rs.getString("health_answers_json"));
+            donor.put("availabilityPref", rs.getString("availability_pref"));
+            donor.put("availability_pref", rs.getString("availability_pref"));
+            donor.put("lastDonationSelfReported", rs.getDate("last_donation_self_reported"));
+            donor.put("last_donation_self_reported", rs.getDate("last_donation_self_reported"));
+            donor.put("emailVerified", rs.getObject("email_verified") != null ? rs.getBoolean("email_verified") : false);
+            donor.put("email_verified", donor.get("emailVerified"));
+            donor.put("emailVerifiedAt", rs.getTimestamp("email_verified_at"));
+            donor.put("publicSearchOptIn", rs.getObject("public_search_opt_in") != null ? rs.getBoolean("public_search_opt_in") : false);
+            donor.put("public_search_opt_in", donor.get("publicSearchOptIn"));
+            donor.put("publicDisplayName", rs.getString("public_display_name"));
         } catch (SQLException ignored) {
             donor.put("preferredLanguage", "en");
             donor.put("preferred_language", "en");
-            donor.put("smsNotif", true);
+            donor.put("smsNotif", false);
             donor.put("emailNotif", true);
             donor.put("pushNotif", true);
+            donor.put("hospitalReviewNeeded", false);
+            donor.put("hospital_review_needed", false);
+            donor.put("emailVerified", false);
+            donor.put("email_verified", false);
+            donor.put("publicSearchOptIn", false);
+            donor.put("public_search_opt_in", false);
         }
         return donor;
     }

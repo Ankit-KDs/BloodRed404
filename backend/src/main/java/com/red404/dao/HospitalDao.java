@@ -31,8 +31,9 @@ public class HospitalDao {
         String sql = "INSERT INTO hospitals (hospital_name, registration_no, hospital_type, beds, blood_bank_license, " +
                 "hospital_email, hospital_phone, website, services, admin_name, admin_designation, admin_phone, " +
                 "admin_email, password, emergency_contact, address, landmark, city, state, pincode, " +
-                "latitude, longitude, zone, operating_hours, zone_radius, sms_notif, push_notif, email_notif) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "latitude, longitude, zone, operating_hours, zone_radius, sms_notif, push_notif, email_notif, " +
+                "verification_status, application_ref, eraktkosh_id, emergency_public, documents_json) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, str(hospital.get("hospitalName")));
@@ -62,9 +63,14 @@ public class HospitalDao {
             ps.setString(23, (String) hospital.get("zone"));
             ps.setString(24, str(hospital.getOrDefault("operatingHours", "24x7")));
             ps.setInt(25, num(hospital.get("zoneRadius"), 10));
-            ps.setBoolean(26, bool(hospital.get("smsNotif"), true));
+            ps.setBoolean(26, bool(hospital.get("smsNotif"), false));
             ps.setBoolean(27, bool(hospital.get("pushNotif"), true));
-            ps.setBoolean(28, bool(hospital.get("emailNotif"), false));
+            ps.setBoolean(28, bool(hospital.get("emailNotif"), true));
+            ps.setString(29, str(hospital.getOrDefault("verificationStatus", "pending_review")));
+            ps.setString(30, (String) hospital.get("applicationRef"));
+            ps.setString(31, (String) hospital.get("eraktkoshId"));
+            ps.setBoolean(32, bool(hospital.get("emergencyPublic"), true));
+            ps.setString(33, (String) hospital.get("documentsJson"));
             return ps.executeUpdate() > 0;
         }
     }

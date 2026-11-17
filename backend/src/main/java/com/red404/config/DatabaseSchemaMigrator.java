@@ -46,6 +46,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateHealthChecksTable(conn);
             ensureBhimtalHospital(conn);
             new com.red404.dao.HealthCheckDao().ensureChinmayJoshiHealthRecord(conn);
+            ensureDatabaseIndexes(conn);
             log.info("RED404 database schema initialization & migration completed successfully.");
         } catch (Exception e) {
             log.warn("Database schema migration notice: {}", e.getMessage());
@@ -261,6 +262,32 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             "    defer_reason_category VARCHAR(100) NULL," +
             "    defer_until DATE NULL," +
             "    linked_donation_id INT NULL" +
+            ")",
+
+            "CREATE TABLE IF NOT EXISTS email_verification_codes (" +
+            "    id INT AUTO_INCREMENT PRIMARY KEY," +
+            "    email VARCHAR(150) NOT NULL," +
+            "    code_hash VARCHAR(255) NOT NULL," +
+            "    purpose VARCHAR(50) NOT NULL," +
+            "    attempts INT DEFAULT 0," +
+            "    verified_token VARCHAR(100) NULL," +
+            "    expires_at TIMESTAMP NOT NULL," +
+            "    verified_at TIMESTAMP NULL," +
+            "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")",
+
+            "CREATE TABLE IF NOT EXISTS consent_records (" +
+            "    id INT AUTO_INCREMENT PRIMARY KEY," +
+            "    user_type VARCHAR(20) NOT NULL," +
+            "    user_id VARCHAR(50) NOT NULL," +
+            "    terms_version VARCHAR(20) NOT NULL," +
+            "    privacy_version VARCHAR(20) NOT NULL," +
+            "    location_consent BOOLEAN DEFAULT TRUE," +
+            "    public_listing_consent BOOLEAN DEFAULT FALSE," +
+            "    age_confirmed BOOLEAN DEFAULT TRUE," +
+            "    ip_address VARCHAR(50) NULL," +
+            "    user_agent VARCHAR(255) NULL," +
+            "    consented_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ")"
         };
 
@@ -349,8 +376,24 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("email_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("push_notif", "BOOLEAN DEFAULT TRUE");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        requiredColumns.put("hospital_review_needed", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("health_answers_json", "TEXT NULL");
+        requiredColumns.put("availability_pref", "VARCHAR(50) DEFAULT 'Any time'");
+        requiredColumns.put("last_donation_self_reported", "DATE NULL DEFAULT NULL");
+        requiredColumns.put("email_verified", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("email_verified_at", "TIMESTAMP NULL DEFAULT NULL");
 
         ensureColumns(conn, "donors", requiredColumns);
+
+        // Ensure blood_type column can hold "Not sure" / "UNKNOWN"
+        try (Statement st = conn.createStatement()) {
+            boolean isMySQL = conn.getMetaData().getDatabaseProductName().toLowerCase().contains("mysql");
+            if (isMySQL) {
+                st.executeUpdate("ALTER TABLE donors MODIFY COLUMN blood_type VARCHAR(20) NOT NULL");
+            } else {
+                st.executeUpdate("ALTER TABLE donors ALTER COLUMN blood_type VARCHAR(20)");
+            }
+        } catch (Exception ignored) {}
 
         // Explicitly ensure every nullable column has DEFAULT NULL so MySQL strict mode never fails
         String[] colsToSetNullDefault = {
@@ -497,9 +540,19 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("body_temp", "DOUBLE NULL DEFAULT 98.6");
         requiredColumns.put("verified_facility", "VARCHAR(180) NULL DEFAULT 'City General Hospital'");
         requiredColumns.put("verified_date", "DATE NULL");
-        requiredColumns.put("verification_status", "VARCHAR(30) DEFAULT 'Verified'");
+        requiredColumns.put("verification_status", "VARCHAR(30) DEFAULT 'pending_review'");
+        requiredColumns.put("application_ref", "VARCHAR(50) NULL");
+        requiredColumns.put("eraktkosh_id", "VARCHAR(50) NULL");
+        requiredColumns.put("emergency_public", "BOOLEAN DEFAULT TRUE");
+        requiredColumns.put("documents_json", "TEXT NULL");
         requiredColumns.put("updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        requiredColumns.put("hospital_review_needed", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("health_answers_json", "TEXT NULL");
+        requiredColumns.put("availability_pref", "VARCHAR(50) DEFAULT 'Any time'");
+        requiredColumns.put("last_donation_self_reported", "DATE NULL DEFAULT NULL");
+        requiredColumns.put("email_verified", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("email_verified_at", "TIMESTAMP NULL DEFAULT NULL");
         requiredColumns.put("deleted_at", "TIMESTAMP NULL DEFAULT NULL");
 
         ensureColumns(conn, "hospitals", requiredColumns);
@@ -524,6 +577,12 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("staff_user", "VARCHAR(150) NULL DEFAULT 'Hospital Staff'");
         requiredColumns.put("first_response_time", "VARCHAR(50) NULL");
         requiredColumns.put("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        requiredColumns.put("hospital_review_needed", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("health_answers_json", "TEXT NULL");
+        requiredColumns.put("availability_pref", "VARCHAR(50) DEFAULT 'Any time'");
+        requiredColumns.put("last_donation_self_reported", "DATE NULL DEFAULT NULL");
+        requiredColumns.put("email_verified", "BOOLEAN DEFAULT FALSE");
+        requiredColumns.put("email_verified_at", "TIMESTAMP NULL DEFAULT NULL");
 
         ensureColumns(conn, "blood_requests", requiredColumns);
 
@@ -721,10 +780,11 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                 st.executeUpdate("UPDATE donors SET city = NULL, state = NULL, pincode = NULL WHERE city = 'Meerut' AND pincode = '250002'");
             } catch (Exception ignored) {}
 
+            String hashedPass = com.red404.util.PasswordUtil.hashPassword("12345678");
             try (ResultSet rs = st.executeQuery("SELECT id, donor_id, dob, name FROM donors WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' LIMIT 1")) {
                 if (!rs.next()) {
                     String insertSql = "INSERT INTO donors (donor_id, name, email, password, blood_type, availability, created_at) " +
-                            "VALUES ('DNR-0811-A404', 'Ankit Kumar', 'ak30kr02@gmail.com', '12345678', 'A+', 'Available', '2026-11-08 14:00:00')";
+                            "VALUES ('DNR-0811-A404', 'Ankit Kumar', 'ak30kr02@gmail.com', '" + hashedPass + "', 'A+', 'Available', '2026-11-08 14:00:00')";
                     st.executeUpdate(insertSql);
                     log.info("Primary donor 'ak30kr02@gmail.com' verified in database with Smart Donor ID DNR-0811-A404 (zero dummy data).");
                 } else {
@@ -732,7 +792,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                     String currId = rs.getString("donor_id");
                     Date dob = rs.getDate("dob");
                     String name = rs.getString("name");
-                    st.executeUpdate("UPDATE donors SET password = '12345678' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' AND (password IS NULL OR password = '')");
+                    st.executeUpdate("UPDATE donors SET password = '" + hashedPass + "' WHERE LOWER(TRIM(email)) = 'ak30kr02@gmail.com' AND (password IS NULL OR password = '')");
                     if (currId == null || currId.isBlank()) {
                         String assignedId = com.red404.util.DonorIdGenerator.generateUniqueDonorId(conn, name != null ? name : "Ankit Kumar", dob);
                         try (PreparedStatement upPs = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
@@ -830,6 +890,82 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         } catch (Exception e) {
             log.warn("Notice ensuring Bhimtal Hospital in database: {}", e.getMessage());
         }
+    }
+
+    private void ensureDatabaseIndexes(Connection conn) {
+        log.info("Ensuring high-performance production database indexes (Part 8 Scale & Readiness)...");
+        // 1. Donors: location search, blood type, zone, city, created_at
+        ensureIndex(conn, "donors", "idx_donors_lat_lng", "latitude, longitude");
+        ensureIndex(conn, "donors", "idx_donors_blood_type", "blood_type");
+        ensureIndex(conn, "donors", "idx_donors_zone", "zone");
+        ensureIndex(conn, "donors", "idx_donors_city", "city");
+        ensureIndex(conn, "donors", "idx_donors_created", "created_at");
+
+        // 2. Blood Requests: hospital_id, status, created_at, blood_group
+        ensureIndex(conn, "blood_requests", "idx_requests_hosp_status", "hospital_id, status");
+        ensureIndex(conn, "blood_requests", "idx_requests_status_created", "status, created_at");
+        ensureIndex(conn, "blood_requests", "idx_requests_blood_group", "blood_group");
+
+        // 3. Notifications: donor_id, status, request_id
+        ensureIndex(conn, "blood_request_notifications", "idx_brn_donor_status", "donor_id, status");
+        ensureIndex(conn, "blood_request_notifications", "idx_brn_request_id", "request_id");
+        ensureIndex(conn, "donor_notifications", "idx_dn_donor_created", "donor_id, created_at");
+
+        // 4. Hospitals: verification_status, location, city
+        ensureIndex(conn, "hospitals", "idx_hosp_status", "verification_status");
+        ensureIndex(conn, "hospitals", "idx_hosp_lat_lng", "latitude, longitude");
+        ensureIndex(conn, "hospitals", "idx_hosp_city", "city");
+
+        // 5. Hospital Audit Logs table and index
+        try (Statement st = conn.createStatement()) {
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS hospital_audit_logs (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "hospital_id INT NOT NULL, " +
+                    "admin_user VARCHAR(150) NULL, " +
+                    "from_status VARCHAR(50) NULL, " +
+                    "to_status VARCHAR(50) NOT NULL, " +
+                    "reason TEXT NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")");
+        } catch (Exception ignored) {}
+        ensureIndex(conn, "hospital_audit_logs", "idx_hosp_audit_hosp_created", "hospital_id, created_at");
+    }
+
+    private void ensureIndex(Connection conn, String tableName, String indexName, String columns) {
+        try {
+            boolean exists = false;
+            DatabaseMetaData meta = conn.getMetaData();
+            try (ResultSet rs = meta.getIndexInfo(conn.getCatalog(), null, tableName.toLowerCase(), false, false)) {
+                while (rs.next()) {
+                    String idx = rs.getString("INDEX_NAME");
+                    if (indexName.equalsIgnoreCase(idx)) {
+                        exists = true;
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            if (!exists) {
+                try (ResultSet rs = meta.getIndexInfo(conn.getCatalog(), null, tableName.toUpperCase(), false, false)) {
+                    while (rs.next()) {
+                        String idx = rs.getString("INDEX_NAME");
+                        if (indexName.equalsIgnoreCase(idx)) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            if (!exists) {
+                try (Statement st = conn.createStatement()) {
+                    st.executeUpdate("CREATE INDEX " + indexName + " ON " + tableName + " (" + columns + ")");
+                    log.info("Created production database index {} on {} ({})", indexName, tableName, columns);
+                } catch (Exception ex) {
+                    // Ignored if already exists under different dialect or casing
+                }
+            }
+        } catch (Exception ignored) {}
     }
 }
 

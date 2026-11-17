@@ -7,516 +7,1139 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>RED404 - Donor Registration</title>
-  <link rel="stylesheet" href="css/common.css?v=20261113_v40"/>
-  <link rel="stylesheet" href="css/auth.css?v=20261113_v40"/>
+  <link rel="stylesheet" href="css/common.css?v=20261117_v1"/>
+  <link rel="stylesheet" href="css/hospital-tokens.css?v=20261117_v1"/>
+  <link rel="stylesheet" href="css/registration-modern.css?v=20261117_v1"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
 </head>
-<body class="auth-body">
+<body class="reg-body">
+
   <!-- Fixed Top-Right Language Toggle -->
   <div style="position: fixed; top: 18px; right: 24px; z-index: 9999;">
     <div class="lang-toggle-pill" role="group" aria-label="Language Selector">
-          <button type="button" class="lang-toggle-btn active" data-lang="en">EN</button>
-          <button type="button" class="lang-toggle-btn" data-lang="hi">HI</button>
-        </div>
+      <button type="button" class="lang-toggle-btn active" data-lang="en">EN</button>
+      <button type="button" class="lang-toggle-btn" data-lang="hi">HI</button>
+    </div>
   </div>
 
-  <!-- Blood Drop Floating & Particle Elements (Theme Matching Home Page) -->
-  <div class="particles-container" id="particles"></div>
-  <div class="floating-drops" id="floatingDrops"></div>
+  <div class="reg-page-container">
 
-
-  <div class="auth-particles" id="authParticles"></div>
-
-  <div class="auth-page-container">
-
-    <!-- Left Panel -->
-    <div class="auth-left-panel">
-      <a href="index.html" class="auth-logo">
+    <!-- Left Panel: True Benefits & Identity -->
+    <div class="reg-left-panel">
+      <a href="index.html" class="reg-logo">
         <i class="fas fa-tint"></i>
-        RED<span>404</span>
+        <span>RED404</span>
       </a>
-      <div class="auth-left-content">
-        <div class="blood-drop-anim">
-          <div class="big-drop">
-            <i class="fas fa-tint"></i>
-            <div class="drop-ripple r1"></div>
-            <div class="drop-ripple r2"></div>
-            <div class="drop-ripple r3"></div>
+
+      <h2 class="reg-left-title" data-i18n="donor_reg_hero_title">Emergency Blood Rescue Network</h2>
+      <p class="reg-left-desc" data-i18n="donor_reg_hero_desc">
+        Join verified voluntary blood donors across India. When a critical emergency arises within your area, RED404 routes targeted alerts directly to you.
+      </p>
+
+      <div class="reg-benefits-list">
+        <div class="reg-benefit-item">
+          <div class="reg-benefit-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="reg-benefit-text">
+            <strong>Real-Time Emergency Alerts:</strong> Receive instant SOS notifications when nearby hospitals request your specific blood group.
           </div>
         </div>
-        <h2>Join the Network</h2>
-        <p>Register as a blood donor and become part of a life-saving community. Your single donation can save up to 3 lives.</p>
-        <div class="auth-features">
-          <div class="af-item">
-            <i class="fas fa-bell"></i>
-            <span>Real-time alerts when blood needed nearby</span>
+        <div class="reg-benefit-item">
+          <div class="reg-benefit-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="reg-benefit-text">
+            <strong>Turn-by-Turn Hospital Routing:</strong> One-tap navigation directly to the hospital blood bank with real-time ETA tracking.
           </div>
-          <div class="af-item">
-            <i class="fas fa-route"></i>
-            <span>Navigation to hospital provided automatically</span>
+        </div>
+        <div class="reg-benefit-item">
+          <div class="reg-benefit-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="reg-benefit-text">
+            <strong>Strict Privacy Protection:</strong> Requesting hospitals never see your exact coordinates or home address. Contact details are shared only when you accept.
           </div>
-          <div class="af-item">
-            <i class="fas fa-shield-alt"></i>
-            <span>Your data is safe and private</span>
-          </div>
-          <div class="af-item">
-            <i class="fas fa-medal"></i>
-            <span>Earn badges for each donation</span>
+        </div>
+        <div class="reg-benefit-item">
+          <div class="reg-benefit-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="reg-benefit-text">
+            <strong>Verified Health Records:</strong> Track donation intervals, eligibility gap cooldowns, and hospital on-site screening history.
           </div>
         </div>
       </div>
+
+      <div class="reg-left-footer">
+        Already registered? <a href="donor-login.html">Log in to Donor Portal</a>
+      </div>
     </div>
 
-    <!-- Right Panel - Form -->
-    <div class="auth-right-panel">
-      <div class="auth-form-container">
-        <div class="form-header">
-          <h2>Donor Registration</h2>
-          <p>Fill in your details to join RED404</p>
-          <div class="form-progress-bar">
-            <div class="fpb-step active" data-step="1">Personal</div>
-            <div class="fpb-line"></div>
-            <div class="fpb-step" data-step="2">Medical</div>
-            <div class="fpb-line"></div>
-            <div class="fpb-step" data-step="3">Location</div>
+    <!-- Right Panel: Stepper & Form -->
+    <div class="reg-right-panel">
+
+      <!-- Stepper Navigation -->
+      <div class="reg-stepper" id="donorStepper" role="navigation" aria-label="Registration Progress">
+        <button type="button" class="reg-step-node active" id="stepNode1" onclick="navigateToStep(1)">
+          <span class="reg-step-badge" id="stepBadge1">1</span>
+          <span class="reg-step-name">Account</span>
+        </button>
+        <div class="reg-step-divider" id="stepDiv1"></div>
+
+        <button type="button" class="reg-step-node" id="stepNode2" onclick="navigateToStep(2)">
+          <span class="reg-step-badge" id="stepBadge2">2</span>
+          <span class="reg-step-name">Health</span>
+        </button>
+        <div class="reg-step-divider" id="stepDiv2"></div>
+
+        <button type="button" class="reg-step-node" id="stepNode3" onclick="navigateToStep(3)">
+          <span class="reg-step-badge" id="stepBadge3">3</span>
+          <span class="reg-step-name">Location</span>
+        </button>
+        <div class="reg-step-divider" id="stepDiv3"></div>
+
+        <button type="button" class="reg-step-node" id="stepNode4" onclick="navigateToStep(4)">
+          <span class="reg-step-badge" id="stepBadge4">4</span>
+          <span class="reg-step-name">Verify</span>
+        </button>
+      </div>
+
+      <!-- Registration Form -->
+      <form id="donorRegisterForm" novalidate onsubmit="return false;">
+
+        <!-- ==================== STEP 1: ACCOUNT ==================== -->
+        <div class="reg-step-content" id="stepContent1">
+          <h2 class="reg-step-heading">Personal &amp; Account Details</h2>
+          <p class="reg-step-subtext">Enter your legal name and contact details to initiate your donor profile.</p>
+
+          <div class="reg-grid-2">
+            <div class="reg-form-group">
+              <label class="reg-label" for="firstName">First Name <span class="reg-req">*</span></label>
+              <input type="text" id="firstName" name="firstName" class="reg-input" placeholder="e.g. Aarav" required />
+              <div class="reg-error-msg" id="firstNameErr"></div>
+            </div>
+
+            <div class="reg-form-group">
+              <label class="reg-label" for="lastName">Last Name <span class="reg-req">*</span></label>
+              <input type="text" id="lastName" name="lastName" class="reg-input" placeholder="e.g. Sharma" required />
+              <div class="reg-error-msg" id="lastNameErr"></div>
+            </div>
           </div>
-        </div>
 
-        <form id="donorRegisterForm" novalidate>
-
-          <!-- Step 1: Personal Info -->
-          <div class="form-step active" id="step1">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="firstName">First Name <span class="req">*</span></label>
-                <div class="input-wrap">
-                  <i class="fas fa-user input-icon"></i>
-                  <input type="text" id="firstName" name="firstName" placeholder="John" required/>
-                  <span class="input-focus-line"></span>
-                </div>
-                <span class="field-error" id="firstNameErr"></span>
+          <div class="reg-grid-2">
+            <div class="reg-form-group">
+              <label class="reg-label" for="phone">Mobile Number <span class="reg-req">*</span></label>
+              <div class="reg-input-prefix-wrap">
+                <span class="reg-prefix">+91</span>
+                <input type="tel" id="phone" name="phone" class="reg-input reg-input-prefixed" placeholder="10-digit mobile number" maxlength="10" required />
               </div>
-              <div class="form-group">
-                <label for="lastName">Last Name <span class="req">*</span></label>
-                <div class="input-wrap">
-                  <i class="fas fa-user input-icon"></i>
-                  <input type="text" id="lastName" name="lastName" placeholder="Doe" required/>
-                  <span class="input-focus-line"></span>
-                </div>
-                <span class="field-error" id="lastNameErr"></span>
-              </div>
+              <div class="reg-helper">Used strictly for emergency dispatch coordination; not verified by SMS OTP.</div>
+              <div class="reg-error-msg" id="phoneErr"></div>
             </div>
 
-            <div class="form-group">
-              <label for="email">Email Address <span class="req">*</span></label>
-              <div class="input-wrap">
-                <i class="fas fa-envelope input-icon"></i>
-                <input type="email" id="email" name="email" placeholder="john@example.com" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
-                <span class="input-focus-line"></span>
-              </div>
-              <span class="field-error" id="emailErr"></span>
+            <div class="reg-form-group">
+              <label class="reg-label" for="email">Email Address <span class="reg-req">*</span></label>
+              <input type="email" id="email" name="email" class="reg-input" placeholder="e.g. aarav.sharma@example.com" required />
+              <div class="reg-helper">A 6-digit verification code will be sent to this email in Step 4.</div>
+              <div class="reg-error-msg" id="emailErr"></div>
+            </div>
+          </div>
+
+          <div class="reg-grid-2">
+            <div class="reg-form-group">
+              <label class="reg-label" for="dob">Date of Birth <span class="reg-req">*</span></label>
+              <input type="date" id="dob" name="dob" class="reg-input" required />
+              <div class="reg-helper" id="dobCalcHelper">Donors must be between 18 and 65 years old.</div>
+              <div class="reg-error-msg" id="dobErr"></div>
             </div>
 
-            <div class="form-group">
-              <label for="phone">Phone Number <span class="req">*</span></label>
-              <div class="input-wrap">
-                <i class="fas fa-phone input-icon"></i>
-                <span class="phone-prefix">+91</span>
-                <input type="tel" id="phone" name="phone" placeholder="10-digit mobile number" autocapitalize="none" autocorrect="off" spellcheck="false" required class="with-prefix"/>
-                <span class="input-focus-line"></span>
+            <div class="reg-form-group">
+              <label class="reg-label">Gender <span class="reg-req">*</span></label>
+              <div class="reg-radio-group" id="genderGroup">
+                <label class="reg-radio-label">
+                  <input type="radio" name="gender" value="Male" />
+                  <span>Male</span>
+                </label>
+                <label class="reg-radio-label">
+                  <input type="radio" name="gender" value="Female" />
+                  <span>Female</span>
+                </label>
+                <label class="reg-radio-label">
+                  <input type="radio" name="gender" value="Other" />
+                  <span>Other</span>
+                </label>
               </div>
-              <span class="field-error" id="phoneErr"></span>
+              <div class="reg-helper">Used only to work out your donation gap (90 days for males, 120 days for females).</div>
+              <div class="reg-error-msg" id="genderErr"></div>
             </div>
+          </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="dob">Date of Birth <span class="req">*</span></label>
-                <div class="input-wrap">
-                  <i class="fas fa-calendar input-icon"></i>
-                  <input type="date" id="dob" name="dob" required/>
-                  <span class="input-focus-line"></span>
-                </div>
-                <span class="field-error" id="dobErr"></span>
-              </div>
-              <div class="form-group">
-                <label>Gender <span class="req">*</span></label>
-                <div class="gender-options">
-                  <label class="gender-opt">
-                    <input type="radio" name="gender" value="male"/>
-                    <span class="gender-btn"><i class="fas fa-mars"></i> Male</span>
-                  </label>
-                  <label class="gender-opt">
-                    <input type="radio" name="gender" value="female"/>
-                    <span class="gender-btn"><i class="fas fa-venus"></i> Female</span>
-                  </label>
-                  <label class="gender-opt">
-                    <input type="radio" name="gender" value="other"/>
-                    <span class="gender-btn"><i class="fas fa-genderless"></i> Other</span>
-                  </label>
-                </div>
-                <span class="field-error" id="genderErr"></span>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="password">Password <span class="req">*</span></label>
-              <div class="input-wrap">
-                <i class="fas fa-lock input-icon"></i>
-                <input type="password" id="password" name="password" placeholder="Create strong password" autocapitalize="none" autocorrect="off" spellcheck="false" required/>
-                <button type="button" class="toggle-pass" onclick="togglePassword('password','eyeIcon1')">
-                  <i class="fas fa-eye" id="eyeIcon1"></i>
+          <div class="reg-grid-2">
+            <div class="reg-form-group">
+              <label class="reg-label" for="password">Set Password <span class="reg-req">*</span></label>
+              <div class="reg-pass-wrap">
+                <input type="password" id="password" name="password" class="reg-input" placeholder="Min. 8 characters" required />
+                <button type="button" class="reg-pass-toggle" onclick="togglePassVisibility('password', 'passEyeIcon1')">
+                  <i class="fas fa-eye" id="passEyeIcon1"></i>
                 </button>
-                <span class="input-focus-line"></span>
               </div>
-              <div class="password-strength" id="passStrength">
-                <div class="strength-bar">
-                  <div class="strength-fill" id="strengthFill"></div>
-                </div>
-                <span class="strength-text" id="strengthText">Enter password</span>
+              <div class="reg-pass-meter">
+                <div class="reg-meter-bar"><div class="reg-meter-fill" id="passStrengthBar"></div></div>
+                <div class="reg-meter-label" id="passStrengthLabel">Enter password</div>
               </div>
-              <span class="field-error" id="passwordErr"></span>
+              <div class="reg-error-msg" id="passwordErr"></div>
             </div>
 
-            <div class="form-group">
-              <label for="confirmPass">Confirm Password <span class="req">*</span></label>
-              <div class="input-wrap">
-                <i class="fas fa-lock input-icon"></i>
-                <input type="password" id="confirmPass" name="confirmPass" placeholder="Repeat password" required/>
-                <button type="button" class="toggle-pass" onclick="togglePassword('confirmPass','eyeIcon2')">
-                  <i class="fas fa-eye" id="eyeIcon2"></i>
+            <div class="reg-form-group">
+              <label class="reg-label" for="confirmPass">Confirm Password <span class="reg-req">*</span></label>
+              <div class="reg-pass-wrap">
+                <input type="password" id="confirmPass" name="confirmPass" class="reg-input" placeholder="Re-enter password" required />
+                <button type="button" class="reg-pass-toggle" onclick="togglePassVisibility('confirmPass', 'passEyeIcon2')">
+                  <i class="fas fa-eye" id="passEyeIcon2"></i>
                 </button>
-                <span class="input-focus-line"></span>
               </div>
-              <span class="field-error" id="confirmPassErr"></span>
+              <div class="reg-error-msg" id="confirmPassErr"></div>
             </div>
+          </div>
 
-            <button type="button" class="btn-next" onclick="nextStep(1)">
-              Continue <i class="fas fa-arrow-right"></i>
+          <div class="reg-actions">
+            <div></div>
+            <button type="button" class="reg-btn reg-btn-primary" onclick="proceedToStep(2)">
+              Continue to Health Info <i class="fas fa-arrow-right"></i>
             </button>
           </div>
+        </div>
 
-          <!-- Step 2: Medical Info -->
-          <div class="form-step" id="step2">
-            <div class="form-group">
-              <label>Blood Type <span class="req">*</span></label>
-              <div class="blood-type-grid">
-                <label class="bt-option"><input type="radio" name="bloodType" value="A+"/><span>A+</span></label>
-                <label class="bt-option"><input type="radio" name="bloodType" value="A-"/><span>A-</span></label>
-                <label class="bt-option"><input type="radio" name="bloodType" value="B+"/><span>B+</span></label>
-                <label class="bt-option"><input type="radio" name="bloodType" value="B-"/><span>B-</span></label>
-                <label class="bt-option"><input type="radio" name="bloodType" value="AB+"/><span>AB+</span></label>
-                <label class="bt-option"><input type="radio" name="bloodType" value="AB-"/><span>AB-</span></label>
-                <label class="bt-option"><input type="radio" name="bloodType" value="O+"/><span>O+</span></label>
-                <label class="bt-option"><input type="radio" name="bloodType" value="O-"/><span>O-</span></label>
-              </div>
-              <span class="field-error" id="bloodTypeErr"></span>
-            </div>
+        <!-- ==================== STEP 2: HEALTH ==================== -->
+        <div class="reg-step-content" id="stepContent2" style="display:none;">
+          <h2 class="reg-step-heading">Self-Declared Health &amp; Eligibility</h2>
+          <p class="reg-step-subtext">Please share your preliminary health background to assist medical staff during on-site screening.</p>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="weight">Weight (kg) <span class="req">*</span></label>
-                <div class="input-wrap">
-                  <i class="fas fa-weight input-icon"></i>
-                  <input type="number" id="weight" name="weight" placeholder="60" min="45" max="200" required/>
-                  <span class="input-focus-line"></span>
-                </div>
-                <span class="field-error" id="weightErr"></span>
-              </div>
-              <div class="form-group">
-                <label for="lastDonation">Last Donation Date <small style="color: #94a3b8; font-weight: normal; font-size: 0.74rem;">(Leave blank if never donated)</small></label>
-                <div class="input-wrap">
-                  <i class="fas fa-calendar-check input-icon"></i>
-                  <input type="date" id="lastDonation" name="lastDonation"/>
-                  <span class="input-focus-line"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Medical Conditions</label>
-              <div class="checkbox-group">
-                <label class="check-opt">
-                  <input type="checkbox" name="conditions" value="none" id="condNone"/>
-                  <span class="checkmark"></span> No known conditions
-                </label>
-                <label class="check-opt">
-                  <input type="checkbox" name="conditions" value="diabetes"/>
-                  <span class="checkmark"></span> Diabetes
-                </label>
-                <label class="check-opt">
-                  <input type="checkbox" name="conditions" value="hypertension"/>
-                  <span class="checkmark"></span> Hypertension
-                </label>
-                <label class="check-opt">
-                  <input type="checkbox" name="conditions" value="heart"/>
-                  <span class="checkmark"></span> Heart condition
-                </label>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="availability">Donation Availability <span class="req">*</span></label>
-              <div class="input-wrap">
-                <i class="fas fa-clock input-icon"></i>
-                <select id="availability" name="availability" required>
-                  <option value="">Select availability</option>
-                  <option value="always">Always Available (Emergency)</option>
-                  <option value="weekdays">Weekdays Only</option>
-                  <option value="weekends">Weekends Only</option>
-                  <option value="scheduled">By Appointment Only</option>
-                </select>
-                <span class="input-focus-line"></span>
-              </div>
-              <span class="field-error" id="availabilityErr"></span>
-            </div>
-
-            <div class="form-group">
-              <label>Notification Preference</label>
-              <div class="toggle-group">
-                <label class="toggle-switch">
-                  <input type="checkbox" id="smsNotif" checked/>
-                  <span class="toggle-slider"></span>
-                  SMS Notifications
-                </label>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="pushNotif" checked/>
-                  <span class="toggle-slider"></span>
-                  Push Notifications
-                </label>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="emailNotif"/>
-                  <span class="toggle-slider"></span>
-                  Email Notifications
-                </label>
-              </div>
-            </div>
-
-            <div class="form-nav-btns">
-              <button type="button" class="btn-back" onclick="prevStep(2)">
-                <i class="fas fa-arrow-left"></i> Back
-              </button>
-              <button type="button" class="btn-next" onclick="nextStep(2)">
-                Continue <i class="fas fa-arrow-right"></i>
-              </button>
+          <div class="reg-notice">
+            <i class="fas fa-info-circle"></i>
+            <div class="reg-notice-text">
+              <strong>Notice:</strong> All self-reported health declarations are preliminary. The partner hospital makes the final decision on donation eligibility during on-site vitals screening at check-in.
             </div>
           </div>
 
-          <!-- Step 3: Location -->
-          <div class="form-step" id="step3">
-            <div class="form-group">
-              <label for="address">Street Address <span class="req">*</span></label>
-              <div class="input-wrap">
-                <i class="fas fa-map-marker-alt input-icon"></i>
-                <input type="text" id="address" name="address" placeholder="123 Main Street" required/>
-                <span class="input-focus-line"></span>
+          <!-- Blood Group -->
+          <div class="reg-form-group">
+            <label class="reg-label">Blood Group <span class="reg-req">*</span></label>
+            <div class="reg-bg-grid" id="bloodGroupGrid">
+              <button type="button" class="reg-bg-btn" data-val="A+">A+</button>
+              <button type="button" class="reg-bg-btn" data-val="A-">A-</button>
+              <button type="button" class="reg-bg-btn" data-val="B+">B+</button>
+              <button type="button" class="reg-bg-btn" data-val="B-">B-</button>
+              <button type="button" class="reg-bg-btn" data-val="AB+">AB+</button>
+              <button type="button" class="reg-bg-btn" data-val="AB-">AB-</button>
+              <button type="button" class="reg-bg-btn" data-val="O+">O+</button>
+              <button type="button" class="reg-bg-btn" data-val="O-">O-</button>
+              <button type="button" class="reg-bg-btn not-sure-btn" data-val="Not sure">Not sure / Don't know</button>
+            </div>
+            <input type="hidden" id="bloodType" name="bloodType" />
+            <div class="reg-helper" id="notSureHelper" style="display:none; color: var(--reg-blue);">
+              The hospital will confirm your blood group at your first donation. Donors with unconfirmed blood groups are not matched for emergency requests until verified.
+            </div>
+            <div class="reg-error-msg" id="bloodTypeErr"></div>
+          </div>
+
+          <div class="reg-grid-2">
+            <!-- Weight -->
+            <div class="reg-form-group">
+              <label class="reg-label" for="weight">Weight (kg) <span class="reg-req">*</span></label>
+              <input type="number" id="weight" name="weight" class="reg-input" placeholder="e.g. 62" min="30" max="200" step="0.5" required />
+              <div class="reg-warning-box" id="weightWarning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Donors weighing under 45 kg are usually deferred during on-site screening, but you can still register.</span>
               </div>
-              <span class="field-error" id="addressErr"></span>
+              <div class="reg-error-msg" id="weightErr"></div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="city">City <span class="req">*</span></label>
-                <div class="input-wrap">
-                  <i class="fas fa-city input-icon"></i>
-                  <input type="text" id="city" name="city" placeholder="Mumbai" required/>
-                  <span class="input-focus-line"></span>
-                </div>
-                <span class="field-error" id="cityErr"></span>
-              </div>
-              <div class="form-group">
-                <label for="state">State <span class="req">*</span></label>
-                <div class="input-wrap">
-                  <i class="fas fa-map input-icon"></i>
-                  <select id="state" name="state" required>
-                    <option value="">Select State</option>
-                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                    <option value="Assam">Assam</option>
-                    <option value="Bihar">Bihar</option>
-                    <option value="Chhattisgarh">Chhattisgarh</option>
-                    <option value="Goa">Goa</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Haryana">Haryana</option>
-                    <option value="Himachal Pradesh">Himachal Pradesh</option>
-                    <option value="Jharkhand">Jharkhand</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Kerala">Kerala</option>
-                    <option value="Madhya Pradesh">Madhya Pradesh</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Manipur">Manipur</option>
-                    <option value="Meghalaya">Meghalaya</option>
-                    <option value="Mizoram">Mizoram</option>
-                    <option value="Nagaland">Nagaland</option>
-                    <option value="Odisha">Odisha</option>
-                    <option value="Punjab">Punjab</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="Sikkim">Sikkim</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Telangana">Telangana</option>
-                    <option value="Tripura">Tripura</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                    <option value="Uttarakhand">Uttarakhand</option>
-                    <option value="West Bengal">West Bengal</option>
-                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                    <option value="Chandigarh">Chandigarh</option>
-                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                    <option value="Delhi">Delhi</option>
-                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                    <option value="Ladakh">Ladakh</option>
-                    <option value="Lakshadweep">Lakshadweep</option>
-                    <option value="Puducherry">Puducherry</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <span class="input-focus-line"></span>
-                </div>
-                <span class="field-error" id="stateErr"></span>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="pincode">PIN Code <span class="req">*</span></label>
-                <div class="input-wrap">
-                  <i class="fas fa-mail-bulk input-icon"></i>
-                  <input type="text" id="pincode" name="pincode" placeholder="400001" maxlength="6" required/>
-                  <span class="input-focus-line"></span>
-                </div>
-                <span class="field-error" id="pincodeErr"></span>
-              </div>
-              <div class="form-group">
-                <label for="zone">Zone</label>
-                <div class="input-wrap">
-                  <i class="fas fa-layer-group input-icon"></i>
-                  <input type="text" id="zone" name="zone" placeholder="Auto-detected" readonly/>
-                  <span class="input-focus-line"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="location-detect-btn" id="locationDetect">
-              <button type="button" onclick="detectLocation()">
-                <i class="fas fa-crosshairs"></i>
-                Auto-Detect My Location
-              </button>
-              <span class="location-status" id="locationStatus"></span>
-            </div>
-
-            <div class="location-coords" id="coordsDisplay" style="display:none;">
-              <div class="coord-item">
-                <i class="fas fa-compass"></i>
-                <span>Lat: <strong id="latDisplay">--</strong></span>
-              </div>
-              <div class="coord-item">
-                <i class="fas fa-compass"></i>
-                <span>Lng: <strong id="lngDisplay">--</strong></span>
-              </div>
-            </div>
-
-            <div class="form-group terms-group">
-              <label class="check-opt">
-                <input type="checkbox" id="terms" name="terms" required/>
-                <span class="checkmark"></span>
-                I agree to the <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" class="text-red">Terms of Service</a> and <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" class="text-red">Privacy Policy</a>
-              </label>
-              <span class="field-error" id="termsErr"></span>
-            </div>
-
-            <div class="form-nav-btns">
-              <button type="button" class="btn-back" onclick="prevStep(3)">
-                <i class="fas fa-arrow-left"></i> Back
-              </button>
-              <button type="submit" class="btn-submit" id="submitBtn">
-                <span class="btn-text">
-                  <i class="fas fa-heart"></i> Register as Donor
-                </span>
-                <span class="btn-loader" style="display:none;">
-                  <i class="fas fa-spinner fa-spin"></i> Registering...
-                </span>
-              </button>
+            <!-- Last Donation -->
+            <div class="reg-form-group">
+              <label class="reg-label" for="lastDonation">Last Blood Donation Date</label>
+              <input type="date" id="lastDonation" name="lastDonation" class="reg-input" />
+              <div class="reg-helper">Self-reported (Leave blank if you have never donated before). Used only to delay eligibility, never to shorten it, until verified.</div>
+              <div class="reg-error-msg" id="lastDonationErr"></div>
             </div>
           </div>
 
-        </form>
+          <!-- 8 Yes/No Health Questions -->
+          <div class="reg-form-group">
+            <label class="reg-label">Preliminary Health Screening Questions</label>
+            <div class="reg-helper" style="margin-bottom: 0.85rem;">
+              Answering "Yes" does not block your registration. It adds "Hospital review needed" to your profile, visible only to hospital doctors at check-in.
+            </div>
 
-        <div class="auth-switch">
-          Already a donor? <a href="donor-login.html">Login here</a>
+            <div class="reg-health-table">
+              <div class="reg-health-row">
+                <div class="reg-health-q">1. Do you currently have a fever, cough, flu, or active infection?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_feverNow_no"><input type="radio" name="feverNow" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_feverNow_yes"><input type="radio" name="feverNow" value="yes" /> Yes</label>
+                </div>
+              </div>
+
+              <div class="reg-health-row">
+                <div class="reg-health-q">2. Are you taking antibiotics or prescription medication?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_antibioticsNow_no"><input type="radio" name="antibioticsNow" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_antibioticsNow_yes"><input type="radio" name="antibioticsNow" value="yes" /> Yes</label>
+                </div>
+              </div>
+
+              <div class="reg-health-row">
+                <div class="reg-health-q">3. Have you had major surgery in the last 6 months?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_surgery6m_no"><input type="radio" name="surgery6m" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_surgery6m_yes"><input type="radio" name="surgery6m" value="yes" /> Yes</label>
+                </div>
+              </div>
+
+              <div class="reg-health-row">
+                <div class="reg-health-q">4. Have you gotten a tattoo or body piercing in the last 6 months?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_tattoo6m_no"><input type="radio" name="tattoo6m" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_tattoo6m_yes"><input type="radio" name="tattoo6m" value="yes" /> Yes</label>
+                </div>
+              </div>
+
+              <div class="reg-health-row">
+                <div class="reg-health-q">5. Have you received any vaccine in the past 4 weeks?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_vaccine4w_no"><input type="radio" name="vaccine4w" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_vaccine4w_yes"><input type="radio" name="vaccine4w" value="yes" /> Yes</label>
+                </div>
+              </div>
+
+              <div class="reg-health-row">
+                <div class="reg-health-q">6. Have you traveled outside India in the last 6 months?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_travelOutside_no"><input type="radio" name="travelOutside" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_travelOutside_yes"><input type="radio" name="travelOutside" value="yes" /> Yes</label>
+                </div>
+              </div>
+
+              <div class="reg-health-row" id="pregnantNursingRow">
+                <div class="reg-health-q">7. Are you currently pregnant or breastfeeding?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_pregnantNursing_no"><input type="radio" name="pregnantNursing" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_pregnantNursing_yes"><input type="radio" name="pregnantNursing" value="yes" /> Yes</label>
+                </div>
+              </div>
+
+              <div class="reg-health-row">
+                <div class="reg-health-q">8. Do you have any chronic conditions (diabetes, high BP, heart condition)?</div>
+                <div class="reg-health-options">
+                  <label class="reg-yn-opt active-no" id="lbl_chronicConditions_no"><input type="radio" name="chronicConditions" value="no" checked /> No</label>
+                  <label class="reg-yn-opt" id="lbl_chronicConditions_yes"><input type="radio" name="chronicConditions" value="yes" /> Yes</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reg-grid-2">
+            <!-- Availability Preference -->
+            <div class="reg-form-group">
+              <label class="reg-label" for="availabilityPref">Availability Preference (Optional)</label>
+              <select id="availabilityPref" name="availabilityPref" class="reg-select">
+                <option value="Any time">Any time (Recommended)</option>
+                <option value="Daytime">Daytime (8 AM - 6 PM)</option>
+                <option value="Evening">Evening (6 PM - 10 PM)</option>
+                <option value="Emergencies only">Critical Emergencies Only</option>
+              </select>
+            </div>
+
+            <!-- Notification Channels -->
+            <div class="reg-form-group">
+              <label class="reg-label">Notification Channels</label>
+              <div class="reg-checkbox-group">
+                <label class="reg-check-label checked">
+                  <input type="checkbox" id="pushNotif" name="pushNotif" checked />
+                  <span>Browser Push Notifications</span>
+                </label>
+                <label class="reg-check-label checked">
+                  <input type="checkbox" id="emailNotif" name="emailNotif" checked />
+                  <span>Email Alerts</span>
+                </label>
+              </div>
+              <div class="reg-helper">SMS notifications are disabled by system policy to eliminate external aggregator costs.</div>
+            </div>
+          </div>
+
+          <div class="reg-actions">
+            <button type="button" class="reg-btn reg-btn-secondary" onclick="proceedToStep(1)">
+              <i class="fas fa-arrow-left"></i> Back to Account
+            </button>
+            <button type="button" class="reg-btn reg-btn-primary" onclick="proceedToStep(3)">
+              Continue to Location <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==================== STEP 3: LOCATION ==================== -->
+        <div class="reg-step-content" id="stepContent3" style="display:none;">
+          <h2 class="reg-step-heading">Location &amp; Match Radius</h2>
+          <p class="reg-step-subtext">Set your general city and PIN code. Exact street address is never requested or stored.</p>
+
+          <div class="reg-notice">
+            <i class="fas fa-shield-alt"></i>
+            <div class="reg-notice-text">
+              <strong>Location Privacy:</strong> We use your coordinates solely to find nearby hospital requests within a 5–25 km radius. Hospitals never see your exact coordinates or building address.
+            </div>
+          </div>
+
+          <div class="reg-grid-3">
+            <div class="reg-form-group">
+              <label class="reg-label" for="city">City <span class="reg-req">*</span></label>
+              <input type="text" id="city" name="city" class="reg-input" placeholder="e.g. Meerut" required />
+              <div class="reg-error-msg" id="cityErr"></div>
+            </div>
+
+            <div class="reg-form-group">
+              <label class="reg-label" for="state">State <span class="reg-req">*</span></label>
+              <select id="state" name="state" class="reg-select" required>
+                <option value="">Select State</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                <option value="Assam">Assam</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Chhattisgarh">Chhattisgarh</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Goa">Goa</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana">Haryana</option>
+                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Manipur">Manipur</option>
+                <option value="Meghalaya">Meghalaya</option>
+                <option value="Mizoram">Mizoram</option>
+                <option value="Nagaland">Nagaland</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Sikkim">Sikkim</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Tripura">Tripura</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Uttarakhand">Uttarakhand</option>
+                <option value="West Bengal">West Bengal</option>
+              </select>
+              <div class="reg-error-msg" id="stateErr"></div>
+            </div>
+
+            <div class="reg-form-group">
+              <label class="reg-label" for="pincode">PIN Code <span class="reg-req">*</span></label>
+              <input type="text" id="pincode" name="pincode" class="reg-input" placeholder="e.g. 250001" maxlength="6" required />
+              <div class="reg-error-msg" id="pincodeErr"></div>
+            </div>
+          </div>
+
+          <div class="reg-form-group">
+            <label class="reg-label" for="locality">Area / Locality (Optional)</label>
+            <input type="text" id="locality" name="locality" class="reg-input" placeholder="e.g. Shastri Nagar / Civil Lines" />
+            <div class="reg-helper">Helpful for grouping nearby emergency requests without disclosing your street address.</div>
+          </div>
+
+          <!-- GPS Detection -->
+          <div class="reg-form-group" style="margin-top: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <button type="button" class="reg-btn reg-btn-secondary" id="btnDetectGps" onclick="detectDonorGps()">
+                <i class="fas fa-crosshairs"></i> Use My Current Location
+              </button>
+              <div id="locationSavedBadge" class="reg-loc-status pending" style="display:none;">
+                <i class="fas fa-circle"></i> <span>Location coordinates pending</span>
+              </div>
+            </div>
+            <div id="resolvedAreaName" style="font-size: 13px; color: var(--reg-text-muted); margin-top: 0.5rem; display:none;"></div>
+            <input type="hidden" id="lat" name="lat" />
+            <input type="hidden" id="lng" name="lng" />
+          </div>
+
+          <!-- Public Donor Search Opt-In Toggle -->
+          <div class="reg-form-group" style="margin-top: 1.5rem; padding: 1.25rem; background-color: var(--reg-surface); border: 1px solid var(--reg-border); border-radius: 8px;">
+            <label class="reg-check-label" style="padding: 0; background: none; border: none;">
+              <input type="checkbox" id="publicSearchOptIn" name="publicSearchOptIn" />
+              <span><strong>Show me in public donor directory (Optional)</strong></span>
+            </label>
+            <div class="reg-helper" style="margin-left: 28px; margin-top: 4px;">
+              Default is OFF. When enabled, only your blood group, first name, and approximate locality are visible to patients searching for donors. Your direct contact info and exact coordinates are never shown.
+            </div>
+          </div>
+
+          <div class="reg-actions">
+            <button type="button" class="reg-btn reg-btn-secondary" onclick="proceedToStep(2)">
+              <i class="fas fa-arrow-left"></i> Back to Health
+            </button>
+            <button type="button" class="reg-btn reg-btn-primary" onclick="proceedToStep(4)">
+              Continue to Verify <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==================== STEP 4: VERIFY AND FINISH ==================== -->
+        <div class="reg-step-content" id="stepContent4" style="display:none;">
+          <h2 class="reg-step-heading">Verify Email &amp; Complete Registration</h2>
+          <p class="reg-step-subtext">Enter the 6-digit confirmation code emailed to your address to activate your account.</p>
+
+          <div class="reg-notice">
+            <i class="fas fa-envelope-open-text"></i>
+            <div class="reg-notice-text">
+              A 6-digit verification code has been dispatched to <strong id="verifyEmailTarget">your email</strong>. Please check your inbox and spam folder.
+            </div>
+          </div>
+
+          <div class="reg-form-group" style="max-width: 320px;">
+            <label class="reg-label" for="verifyCode">Enter 6-Digit Code <span class="reg-req">*</span></label>
+            <input type="text" id="verifyCode" name="verifyCode" class="reg-input" placeholder="e.g. 583921" maxlength="6" style="font-family: monospace; font-size: 1.4rem; letter-spacing: 4px; text-align: center;" required />
+            <div class="reg-error-msg" id="verifyCodeErr"></div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <button type="button" class="reg-btn reg-btn-secondary" id="btnResendCode" onclick="triggerSendVerificationCode()" disabled>
+              <i class="fas fa-redo"></i> Resend Code (<span id="resendTimerSpan">30</span>s)
+            </button>
+            <span id="resendStatusText" style="font-size: 13px; color: var(--reg-text-muted);"></span>
+          </div>
+
+          <!-- Mandatory Consents -->
+          <div class="reg-form-group" style="border-top: 1px solid var(--reg-border); padding-top: 1.25rem;">
+            <label class="reg-check-label" style="padding: 0; background: none; border: none; margin-bottom: 0.75rem;">
+              <input type="checkbox" id="termsConsent" name="termsConsent" required />
+              <span>I agree to the <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-blue);">Terms of Service</a> and <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-blue);">Privacy Policy</a>. <span class="reg-req">*</span></span>
+            </label>
+            <div class="reg-error-msg" id="termsConsentErr"></div>
+
+            <label class="reg-check-label" style="padding: 0; background: none; border: none;">
+              <input type="checkbox" id="ageConsent" name="ageConsent" required />
+              <span>I confirm that I am 18 years of age or older, and my self-reported details are accurate. <span class="reg-req">*</span></span>
+            </label>
+            <div class="reg-error-msg" id="ageConsentErr"></div>
+          </div>
+
+          <div class="reg-actions">
+            <button type="button" class="reg-btn reg-btn-secondary" onclick="proceedToStep(3)">
+              <i class="fas fa-arrow-left"></i> Back to Location
+            </button>
+            <button type="button" class="reg-btn reg-btn-danger" id="btnCompleteRegister" onclick="completeDonorRegistration()">
+              <span id="btnRegText"><i class="fas fa-heart"></i> Verify &amp; Finish Registration</span>
+              <span id="btnRegSpinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Registering...</span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- ==================== REGISTRATION SUCCESS CARD ==================== -->
+      <div id="donorSuccessView" style="display:none;">
+        <div class="reg-success-card">
+          <div class="reg-success-badge"><i class="fas fa-check"></i></div>
+          <h2 style="margin: 0 0 0.5rem 0; font-size: 1.6rem; color: var(--reg-text);">Welcome to RED404!</h2>
+          <p style="color: var(--reg-text-muted); font-size: 14px; margin: 0 0 1rem 0;">Your donor account is active and verified.</p>
+
+          <div>
+            <div style="font-size: 13px; color: var(--reg-text-muted); text-transform: uppercase; letter-spacing: 1px;">Your Smart Donor ID</div>
+            <div class="reg-smart-id-box" id="successSmartId">UP-2004-M-9021</div>
+          </div>
+
+          <div style="margin: 1.25rem 0; display: flex; flex-direction: column; align-items: center;">
+            <div id="successQrContainer" style="background: #ffffff; padding: 12px; border-radius: 8px; display: inline-block;"></div>
+            <div style="font-size: 12px; color: var(--reg-text-dim); margin-top: 6px;">Present this QR code for rapid hospital check-in</div>
+          </div>
+
+          <div class="reg-next-steps">
+            <h4><i class="fas fa-clipboard-list" style="color: var(--reg-blue);"></i> Next Steps to Complete Verification:</h4>
+            <ol>
+              <li><strong>Visit a Partner Hospital:</strong> Present your Smart Donor ID or QR code at check-in to confirm your blood group and record your baseline vitals.</li>
+              <li><strong>Stay Alert for SOS:</strong> You will receive notifications when patients urgently require your blood group nearby.</li>
+              <li><strong>Track on Dashboard:</strong> Access your donor dashboard to view donation gap countdowns and life-saving impact.</li>
+            </ol>
+          </div>
+
+          <a href="dashboard.html" class="reg-btn reg-btn-primary" style="min-width: 220px;">
+            <i class="fas fa-columns"></i> Go to Donor Dashboard
+          </a>
         </div>
       </div>
-    </div>
 
+    </div>
   </div>
 
-  <!-- ========== SHARED FOOTER ========== -->
-  <footer class="footer" id="contact">
-    <div class="footer-container">
-      <div class="footer-brand">
-        <div class="footer-logo">
-          <i class="fas fa-tint"></i>
-          RED<span>404</span>
-        </div>
-        <p>Real-Time Blood Donation System. Connecting donors and hospitals intelligently.</p>
+  <!-- Shared Minimal Footer -->
+  <footer class="footer" id="contact" style="background-color: var(--reg-surface); border-top: 1px solid var(--reg-border); margin-top: auto; padding: 2rem 1.5rem;">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; font-size: 14px; color: var(--reg-text-muted);">
+      <div>© 2026 RED404 · Emergency Blood Rescue Network</div>
+      <div style="display: flex; gap: 1.5rem;">
+        <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-text-muted); text-decoration: none;">Privacy Policy</a>
+        <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-text-muted); text-decoration: none;">Terms of Service</a>
+        <a href="donor-login.html" style="color: var(--reg-blue); text-decoration: none;">Donor Login</a>
       </div>
-
-      <div class="footer-links">
-        <h4>Quick Links</h4>
-        <ul>
-          <li><a href="donor-register.html"><i class="fas fa-chevron-right"></i> Donor Register</a></li>
-          <li><a href="donor-login.html"><i class="fas fa-chevron-right"></i> Donor Login</a></li>
-          <li><a href="hospital-register.html"><i class="fas fa-chevron-right"></i> Hospital Register</a></li>
-          <li><a href="hospital-login.html"><i class="fas fa-chevron-right"></i> Hospital Login</a></li>
-          <li><a href="blood-availability-search.html"><i class="fas fa-chevron-right"></i> Donor Search</a></li>
-          <li><a href="blood-banks.html"><i class="fas fa-chevron-right"></i> Blood Banks</a></li>
-          <li><a href="eligibility-checker.html"><i class="fas fa-chevron-right"></i> Eligibility</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-links">
-        <h4>Explore &amp; Legal</h4>
-        <ul>
-          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
-          <li><a href="index.html#process-flow"><i class="fas fa-chevron-right"></i> Process Flow</a></li>
-          <li><a href="index.html#stats"><i class="fas fa-chevron-right"></i> Live Impact</a></li>
-          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('help')"><i class="fas fa-chevron-right"></i> Help &amp; Support</a></li>
-          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('report')"><i class="fas fa-chevron-right"></i> Report Issue</a></li>
-          <li><a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')"><i class="fas fa-chevron-right"></i> Privacy &amp; Policy</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-contact">
-        <h4>Contact</h4>
-        <p id="footerSupportEmailWrap"><i class="fas fa-envelope"></i> <span id="footerSupportEmail">support@red404.org</span></p>
-        <p id="footerTollFreeWrap" style="display: none;"><i class="fas fa-headset"></i> <span id="footerTollFree"></span></p>
-        <p><i class="fas fa-map-marker-alt"></i> India</p>
-        <div class="emergency-tag" id="footerEmergencyTag" style="display: none;">
-          <i class="fas fa-exclamation-circle"></i>
-          <span>Toll-Free Helpline: <span id="footerHelplineNum"></span></span>
-        </div>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© <span class="footer-current-year" id="footerCurrentYear">2026</span> RED404 · Real-Time Blood Donation System · Built with <i class="fas fa-heart text-red"></i> to Save Lives</p>
     </div>
   </footer>
 
-  <!-- Success Modal -->
-  <div class="modal-overlay" id="successModal" style="display:none;">
-    <div class="modal-box success-modal">
-      <div class="success-anim">
-        <div class="success-circle">
-          <i class="fas fa-check"></i>
-        </div>
-        <div class="success-rings r1"></div>
-        <div class="success-rings r2"></div>
-      </div>
-      <h3>Registration Successful!</h3>
-      <p>Welcome to RED404! You are now part of our life-saving network. You'll receive notifications when nearby hospitals need your blood type.</p>
-      <a href="dashboard.html" class="btn btn-primary">Go to Dashboard</a>
-    </div>
-  </div>
+  <!-- Scripts -->
+  <script src="js/common.js?v=20261117_v1"></script>
+  <script src="js/i18n.js?v=20261117_v1"></script>
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/auth.js?v=20261117_v1"></script>
 
-  <script src="js/common.js?v=20261113_v40"></script>
-  <script src="js/i18n.js?v=20261115_v1"></script>
-  <script src="js/auth.js?v=20261113_v40"></script>
+  <script>
+    /* Inline step logic and draft handling for Donor Registration */
+    let currentStep = 1;
+    let completedSteps = new Set();
+    let emailVerificationToken = null;
+    let resendCountdown = 30;
+    let resendTimerInterval = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initDraftRestoration();
+      initHealthOptions();
+      initBloodGroupButtons();
+      initPasswordMeter();
+      initInputClearing();
+      initWeightWarning();
+    });
+
+    function initDraftRestoration() {
+      try {
+        const raw = sessionStorage.getItem('red404_donor_reg_draft');
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        if (draft.firstName) document.getElementById('firstName').value = draft.firstName;
+        if (draft.lastName) document.getElementById('lastName').value = draft.lastName;
+        if (draft.phone) document.getElementById('phone').value = draft.phone;
+        if (draft.email) document.getElementById('email').value = draft.email;
+        if (draft.dob) document.getElementById('dob').value = draft.dob;
+        if (draft.gender) {
+          const r = document.querySelector(`input[name="gender"][value="${draft.gender}"]`);
+          if (r) r.checked = true;
+        }
+        if (draft.city) document.getElementById('city').value = draft.city;
+        if (draft.state) document.getElementById('state').value = draft.state;
+        if (draft.pincode) document.getElementById('pincode').value = draft.pincode;
+        if (draft.locality) document.getElementById('locality').value = draft.locality;
+        if (draft.bloodType) selectBloodType(draft.bloodType);
+        if (draft.weight) document.getElementById('weight').value = draft.weight;
+      } catch (_) {}
+    }
+
+    function saveDraft() {
+      try {
+        const draft = {
+          firstName: document.getElementById('firstName')?.value.trim(),
+          lastName: document.getElementById('lastName')?.value.trim(),
+          phone: document.getElementById('phone')?.value.trim(),
+          email: document.getElementById('email')?.value.trim().toLowerCase(),
+          dob: document.getElementById('dob')?.value,
+          gender: document.querySelector('input[name="gender"]:checked')?.value,
+          city: document.getElementById('city')?.value.trim(),
+          state: document.getElementById('state')?.value,
+          pincode: document.getElementById('pincode')?.value.trim(),
+          locality: document.getElementById('locality')?.value.trim(),
+          bloodType: document.getElementById('bloodType')?.value,
+          weight: document.getElementById('weight')?.value
+        };
+        sessionStorage.setItem('red404_donor_reg_draft', JSON.stringify(draft));
+      } catch (_) {}
+    }
+
+    function initInputClearing() {
+      const inputs = document.querySelectorAll('.reg-input, .reg-select');
+      inputs.forEach(inp => {
+        inp.addEventListener('input', () => {
+          const errEl = document.getElementById(inp.id + 'Err');
+          if (errEl) errEl.textContent = '';
+          saveDraft();
+        });
+      });
+      document.querySelectorAll('input[name="gender"]').forEach(r => {
+        r.addEventListener('change', () => {
+          document.getElementById('genderErr').textContent = '';
+          const femaleRow = document.getElementById('pregnantNursingRow');
+          if (femaleRow) {
+            femaleRow.style.display = (r.value === 'Female') ? 'flex' : 'none';
+          }
+          saveDraft();
+        });
+      });
+    }
+
+    function initWeightWarning() {
+      const wtInput = document.getElementById('weight');
+      const warnBox = document.getElementById('weightWarning');
+      if (!wtInput || !warnBox) return;
+      wtInput.addEventListener('input', () => {
+        const val = parseFloat(wtInput.value);
+        if (!isNaN(val) && val > 0 && val < 45) {
+          warnBox.classList.add('visible');
+        } else {
+          warnBox.classList.remove('visible');
+        }
+      });
+    }
+
+    function initBloodGroupButtons() {
+      document.querySelectorAll('.reg-bg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectBloodType(btn.getAttribute('data-val'));
+        });
+      });
+    }
+
+    function selectBloodType(val) {
+      document.querySelectorAll('.reg-bg-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.querySelector(`.reg-bg-btn[data-val="${val}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+      document.getElementById('bloodType').value = val;
+      document.getElementById('bloodTypeErr').textContent = '';
+
+      const helper = document.getElementById('notSureHelper');
+      if (helper) {
+        helper.style.display = (val === 'Not sure') ? 'block' : 'none';
+      }
+      saveDraft();
+    }
+
+    function initHealthOptions() {
+      const questions = ['feverNow', 'antibioticsNow', 'surgery6m', 'tattoo6m', 'vaccine4w', 'travelOutside', 'pregnantNursing', 'chronicConditions'];
+      questions.forEach(q => {
+        const noRad = document.querySelector(`input[name="${q}"][value="no"]`);
+        const yesRad = document.querySelector(`input[name="${q}"][value="yes"]`);
+        const lblNo = document.getElementById(`lbl_${q}_no`);
+        const lblYes = document.getElementById(`lbl_${q}_yes`);
+
+        if (noRad && yesRad) {
+          noRad.addEventListener('change', () => {
+            if (lblNo) lblNo.className = 'reg-yn-opt active-no';
+            if (lblYes) lblYes.className = 'reg-yn-opt';
+          });
+          yesRad.addEventListener('change', () => {
+            if (lblNo) lblNo.className = 'reg-yn-opt';
+            if (lblYes) lblYes.className = 'reg-yn-opt active-yes';
+          });
+        }
+      });
+    }
+
+    function initPasswordMeter() {
+      const passInp = document.getElementById('password');
+      const bar = document.getElementById('passStrengthBar');
+      const lbl = document.getElementById('passStrengthLabel');
+      if (!passInp || !bar || !lbl) return;
+
+      passInp.addEventListener('input', () => {
+        const val = passInp.value;
+        if (!val) {
+          bar.style.width = '0%';
+          lbl.textContent = 'Enter password';
+          return;
+        }
+        let score = 0;
+        if (val.length >= 8) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+
+        const levels = [
+          { label: 'Weak (min. 8 characters)', color: '#ff4d4f', width: '25%' },
+          { label: 'Fair (add numbers & symbols)', color: '#faad14', width: '50%' },
+          { label: 'Good password', color: '#1890ff', width: '75%' },
+          { label: 'Strong secure password', color: '#52c41a', width: '100%' }
+        ];
+        const lvl = levels[Math.min(score, levels.length - 1)];
+        bar.style.width = lvl.width;
+        bar.style.backgroundColor = lvl.color;
+        lbl.textContent = lvl.label;
+        lbl.style.color = lvl.color;
+      });
+    }
+
+    function togglePassVisibility(inputId, iconId) {
+      const inp = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!inp || !icon) return;
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        inp.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    }
+
+    /* Step Navigation */
+    function navigateToStep(targetStep) {
+      if (targetStep === currentStep) return;
+      if (targetStep < currentStep || completedSteps.has(targetStep)) {
+        showStep(targetStep);
+      } else if (targetStep === currentStep + 1) {
+        proceedToStep(targetStep);
+      }
+    }
+
+    function proceedToStep(targetStep) {
+      if (targetStep > currentStep) {
+        if (!validateStep(currentStep)) return;
+        completedSteps.add(currentStep);
+        saveDraft();
+      }
+      if (targetStep === 4) {
+        // Prepare Step 4 verification code
+        const email = document.getElementById('email').value.trim();
+        document.getElementById('verifyEmailTarget').textContent = email;
+        triggerSendVerificationCode();
+      }
+      showStep(targetStep);
+    }
+
+    function showStep(step) {
+      document.querySelectorAll('.reg-step-content').forEach(el => el.style.display = 'none');
+      const targetEl = document.getElementById(`stepContent${step}`);
+      if (targetEl) targetEl.style.display = 'block';
+
+      currentStep = step;
+      updateStepperUI();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateStepperUI() {
+      for (let s = 1; s <= 4; s++) {
+        const node = document.getElementById(`stepNode${s}`);
+        const badge = document.getElementById(`stepBadge${s}`);
+        const div = document.getElementById(`stepDiv${s}`);
+
+        if (!node) continue;
+        node.classList.remove('active', 'completed', 'clickable');
+
+        if (s === currentStep) {
+          node.classList.add('active');
+          badge.textContent = s;
+        } else if (completedSteps.has(s)) {
+          node.classList.add('completed', 'clickable');
+          badge.innerHTML = '<i class="fas fa-check"></i>';
+        } else {
+          badge.textContent = s;
+        }
+
+        if (div) {
+          div.classList.toggle('filled', completedSteps.has(s));
+        }
+      }
+    }
+
+    function validateStep(step) {
+      let valid = true;
+      const setErr = (id, msg) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = msg;
+        valid = false;
+      };
+
+      if (step === 1) {
+        const fn = document.getElementById('firstName').value.trim();
+        const ln = document.getElementById('lastName').value.trim();
+        const ph = document.getElementById('phone').value.trim().replace(/\s+/g, '');
+        const em = document.getElementById('email').value.trim().toLowerCase();
+        const dob = document.getElementById('dob').value;
+        const gen = document.querySelector('input[name="gender"]:checked');
+        const pw = document.getElementById('password').value;
+        const cpw = document.getElementById('confirmPass').value;
+
+        if (!fn) setErr('firstNameErr', 'First name is required.');
+        if (!ln) setErr('lastNameErr', 'Last name is required.');
+        if (!ph || !/^\d{10}$/.test(ph)) setErr('phoneErr', 'Please enter a valid 10-digit mobile number.');
+        if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) setErr('emailErr', 'Please enter a valid email address.');
+        if (!dob) {
+          setErr('dobErr', 'Date of birth is required.');
+        } else {
+          const birth = new Date(dob);
+          const ageDif = new Date(Date.now() - birth.getTime());
+          const age = Math.abs(ageDif.getUTCFullYear() - 1970);
+          if (age < 18) setErr('dobErr', 'You must be at least 18 years old to register as a donor.');
+          else if (age > 65) setErr('dobErr', 'Maximum donor registration age is 65 years.');
+        }
+        if (!gen) setErr('genderErr', 'Please select your gender.');
+        if (!pw || pw.length < 8) setErr('passwordErr', 'Password must be at least 8 characters.');
+        if (pw && isCommonPassword(pw)) setErr('passwordErr', 'Password is too common. Please choose a more secure password.');
+        if (pw !== cpw) setErr('confirmPassErr', 'Passwords do not match.');
+      }
+
+      if (step === 2) {
+        const bt = document.getElementById('bloodType').value;
+        const wt = parseFloat(document.getElementById('weight').value);
+        if (!bt) setErr('bloodTypeErr', 'Please select your blood group or select "Not sure".');
+        if (isNaN(wt) || wt <= 0) setErr('weightErr', 'Please enter your weight in kg.');
+      }
+
+      if (step === 3) {
+        const city = document.getElementById('city').value.trim();
+        const state = document.getElementById('state').value;
+        const pin = document.getElementById('pincode').value.trim();
+
+        if (!city) setErr('cityErr', 'City is required.');
+        if (!state) setErr('stateErr', 'State is required.');
+        if (!pin || !/^\d{6}$/.test(pin)) setErr('pincodeErr', 'Enter a valid 6-digit PIN code.');
+      }
+
+      return valid;
+    }
+
+    function isCommonPassword(pw) {
+      const common = ['12345678', 'password', 'password123', 'admin123', 'qwerty123', '123456789', 'welcome123'];
+      return common.includes(pw.toLowerCase());
+    }
+
+    /* GPS Detection */
+    function detectDonorGps() {
+      const btn = document.getElementById('btnDetectGps');
+      const badge = document.getElementById('locationSavedBadge');
+      const resName = document.getElementById('resolvedAreaName');
+
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          document.getElementById('lat').value = lat;
+          document.getElementById('lng').value = lng;
+
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check"></i> Location Captured';
+
+          badge.style.display = 'inline-flex';
+          badge.className = 'reg-loc-status saved';
+          badge.innerHTML = '<i class="fas fa-check-circle"></i> <span>Location saved</span>';
+
+          // Reverse geocode to find area name (no raw coordinates shown)
+          try {
+            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            if (resp.ok) {
+              const data = await resp.json();
+              const addr = data.address || {};
+              const area = addr.suburb || addr.neighbourhood || addr.city_district || addr.locality || '';
+              const city = addr.city || addr.town || addr.village || '';
+              const state = addr.state || '';
+              const post = addr.postcode || '';
+
+              if (city && !document.getElementById('city').value) document.getElementById('city').value = city;
+              if (post && !document.getElementById('pincode').value) document.getElementById('pincode').value = post.replace(/\D/g, '').substring(0, 6);
+              if (state && !document.getElementById('state').value) {
+                const opt = Array.from(document.getElementById('state').options).find(o => o.value.toLowerCase() === state.toLowerCase());
+                if (opt) opt.selected = true;
+              }
+              if (area && !document.getElementById('locality').value) document.getElementById('locality').value = area;
+
+              resName.style.display = 'block';
+              resName.textContent = `📍 Captured: ${[area, city, state].filter(Boolean).join(', ')}`;
+            }
+          } catch (_) {
+            resName.style.display = 'block';
+            resName.textContent = '📍 GPS coordinates captured securely.';
+          }
+          saveDraft();
+        },
+        err => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Current Location';
+          alert('Unable to capture location: ' + err.message + '. Please ensure your City and PIN code are entered.');
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    }
+
+    /* Verification Code Dispatch */
+    async function triggerSendVerificationCode() {
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      if (!email) return;
+
+      const resendBtn = document.getElementById('btnResendCode');
+      const statusText = document.getElementById('resendStatusText');
+      resendBtn.disabled = true;
+      statusText.textContent = 'Sending code...';
+
+      try {
+        const resp = await fetch('/api/auth/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, purpose: 'DONOR_REGISTRATION' })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          statusText.textContent = 'Code dispatched!';
+          startResendCountdown();
+        } else {
+          statusText.textContent = res.message || 'Error sending code';
+          resendBtn.disabled = false;
+        }
+      } catch (err) {
+        statusText.textContent = 'Dispatch failed: ' + err.message;
+        resendBtn.disabled = false;
+      }
+    }
+
+    function startResendCountdown() {
+      const btn = document.getElementById('btnResendCode');
+      const timerSpan = document.getElementById('resendTimerSpan');
+      resendCountdown = 30;
+      btn.disabled = true;
+
+      if (resendTimerInterval) clearInterval(resendTimerInterval);
+      resendTimerInterval = setInterval(() => {
+        resendCountdown--;
+        if (timerSpan) timerSpan.textContent = resendCountdown;
+        if (resendCountdown <= 0) {
+          clearInterval(resendTimerInterval);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-redo"></i> Resend Code';
+          document.getElementById('resendStatusText').textContent = '';
+        }
+      }, 1000);
+    }
+
+    /* Verification & Final Submission */
+    async function completeDonorRegistration() {
+      const codeInp = document.getElementById('verifyCode');
+      const codeErr = document.getElementById('verifyCodeErr');
+      const termsChk = document.getElementById('termsConsent');
+      const ageChk = document.getElementById('ageConsent');
+      const termsErr = document.getElementById('termsConsentErr');
+      const ageErr = document.getElementById('ageConsentErr');
+
+      codeErr.textContent = '';
+      termsErr.textContent = '';
+      ageErr.textContent = '';
+
+      const code = codeInp.value.trim();
+      if (!code || !/^\d{6}$/.test(code)) {
+        codeErr.textContent = 'Please enter the 6-digit code received via email.';
+        return;
+      }
+      if (!termsChk.checked) {
+        termsErr.textContent = 'You must agree to the Terms of Service and Privacy Policy.';
+        return;
+      }
+      if (!ageChk.checked) {
+        ageErr.textContent = 'You must confirm that you are 18 years of age or older.';
+        return;
+      }
+
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const btnReg = document.getElementById('btnCompleteRegister');
+      const txt = document.getElementById('btnRegText');
+      const spin = document.getElementById('btnRegSpinner');
+
+      btnReg.disabled = true;
+      txt.style.display = 'none';
+      spin.style.display = 'inline-block';
+
+      // 1. Verify code
+      try {
+        const vResp = await fetch('/api/auth/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, code: code, purpose: 'DONOR_REGISTRATION' })
+        });
+        const vRes = await vResp.json();
+        if (!vRes.success || !vRes.data || !vRes.data.verificationToken) {
+          codeErr.textContent = vRes.message || 'Incorrect verification code.';
+          btnReg.disabled = false;
+          txt.style.display = 'inline-block';
+          spin.style.display = 'none';
+          return;
+        }
+
+        emailVerificationToken = vRes.data.verificationToken;
+
+        // 2. Submit complete payload
+        const payload = {
+          firstName: document.getElementById('firstName').value.trim(),
+          lastName: document.getElementById('lastName').value.trim(),
+          email: email,
+          phone: document.getElementById('phone').value.trim().replace(/\s+/g, ''),
+          password: document.getElementById('password').value,
+          gender: document.querySelector('input[name="gender"]:checked')?.value,
+          dateOfBirth: document.getElementById('dob').value,
+          bloodType: document.getElementById('bloodType').value || 'Not sure',
+          weight: parseFloat(document.getElementById('weight').value),
+          lastDonation: document.getElementById('lastDonation').value || null,
+          availabilityPref: document.getElementById('availabilityPref').value,
+          pushNotif: document.getElementById('pushNotif').checked,
+          emailNotif: document.getElementById('emailNotif').checked,
+          city: document.getElementById('city').value.trim(),
+          state: document.getElementById('state').value,
+          pincode: document.getElementById('pincode').value.trim(),
+          address: document.getElementById('locality').value.trim() || null,
+          latitude: document.getElementById('lat').value ? parseFloat(document.getElementById('lat').value) : null,
+          longitude: document.getElementById('lng').value ? parseFloat(document.getElementById('lng').value) : null,
+          publicSearchOptIn: document.getElementById('publicSearchOptIn').checked,
+          emailToken: emailVerificationToken,
+          feverNow: document.querySelector('input[name="feverNow"]:checked')?.value === 'yes',
+          antibioticsNow: document.querySelector('input[name="antibioticsNow"]:checked')?.value === 'yes',
+          surgery6m: document.querySelector('input[name="surgery6m"]:checked')?.value === 'yes',
+          tattoo6m: document.querySelector('input[name="tattoo6m"]:checked')?.value === 'yes',
+          vaccine4w: document.querySelector('input[name="vaccine4w"]:checked')?.value === 'yes',
+          travelOutside: document.querySelector('input[name="travelOutside"]:checked')?.value === 'yes',
+          pregnantNursing: document.querySelector('input[name="pregnantNursing"]:checked')?.value === 'yes',
+          chronicConditions: document.querySelector('input[name="chronicConditions"]:checked')?.value === 'yes'
+        };
+
+        const regResp = await fetch('/api/donors/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const regRes = await regResp.json();
+
+        if (regRes.success) {
+          sessionStorage.removeItem('red404_donor_reg_draft');
+
+          const donorData = regRes.data?.donor || {};
+          const donorId = regRes.data?.donorId || donorData.donorId || donorData.donor_id || 'DONOR';
+          const token = regRes.data?.token || ('SESSION-DONOR-' + donorId);
+
+          sessionStorage.setItem('donor_session', JSON.stringify({ user: donorData, role: 'DONOR', userId: donorId }));
+          sessionStorage.setItem('donorUser', JSON.stringify(donorData));
+          sessionStorage.setItem('red404_token', token);
+          sessionStorage.setItem('donorToken', token);
+
+          // Render Success Screen
+          document.getElementById('donorStepper').style.display = 'none';
+          document.getElementById('donorRegisterForm').style.display = 'none';
+          const succView = document.getElementById('donorSuccessView');
+          succView.style.display = 'block';
+
+          document.getElementById('successSmartId').textContent = donorId;
+
+          // Render QR Code
+          const qrContainer = document.getElementById('successQrContainer');
+          qrContainer.innerHTML = '';
+          if (typeof QRCode !== 'undefined') {
+            new QRCode(qrContainer, {
+              text: regRes.data?.qrToken || donorId,
+              width: 140,
+              height: 140,
+              colorDark: '#0f1012',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.M
+            });
+          }
+        } else {
+          codeErr.textContent = regRes.message || 'Registration failed. Please try again.';
+          btnReg.disabled = false;
+          txt.style.display = 'inline-block';
+          spin.style.display = 'none';
+        }
+      } catch (err) {
+        codeErr.textContent = 'Network error: ' + err.message;
+        btnReg.disabled = false;
+        txt.style.display = 'inline-block';
+        spin.style.display = 'none';
+      }
+    }
+  </script>
 </body>
 </html>

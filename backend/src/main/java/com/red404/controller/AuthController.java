@@ -9,6 +9,7 @@ import com.red404.util.JsonUtil;
 import com.red404.util.UserAgentUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -191,6 +192,40 @@ public class AuthController {
             session.invalidate();
         }
         return ResponseEntity.ok(new ApiResponse(true, "Logged out", null));
+    }
+
+    @Autowired
+    private com.red404.service.EmailVerificationService emailVerificationService;
+
+    @PostMapping({"/send-code", "/send-verification-code"})
+    public ResponseEntity<ApiResponse> sendVerificationCode(@RequestBody JsonNode body, HttpServletRequest request) {
+        String email = JsonUtil.text(body, "email");
+        String purpose = JsonUtil.text(body, "purpose");
+        if (purpose == null || purpose.isBlank()) purpose = "DONOR_REGISTRATION";
+        String clientIp = GeoLocationUtil.getClientIp(request);
+
+        Map<String, Object> result = emailVerificationService.sendVerificationCode(email, purpose, clientIp);
+        boolean success = Boolean.TRUE.equals(result.get("success"));
+        if (!success) {
+            return ResponseEntity.status("rate_limit_exceeded".equals(result.get("code")) ? HttpStatus.TOO_MANY_REQUESTS : HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(false, (String) result.get("message"), result));
+        }
+        return ResponseEntity.ok(new ApiResponse(true, (String) result.get("message"), result));
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<ApiResponse> verifyCode(@RequestBody JsonNode body) {
+        String email = JsonUtil.text(body, "email");
+        String code = JsonUtil.text(body, "code");
+        String purpose = JsonUtil.text(body, "purpose");
+        if (purpose == null || purpose.isBlank()) purpose = "DONOR_REGISTRATION";
+
+        Map<String, Object> result = emailVerificationService.verifyCode(email, code, purpose);
+        boolean success = Boolean.TRUE.equals(result.get("success"));
+        if (!success) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, (String) result.get("message"), result));
+        }
+        return ResponseEntity.ok(new ApiResponse(true, (String) result.get("message"), result));
     }
 
     @PostMapping("/forgot-password")

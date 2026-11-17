@@ -2,13 +2,31 @@ package com.red404.util;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.Set;
+
 /**
  * Utility for BCrypt password hashing and verification with backward-compatibility
- * for legacy plain text passwords.
+ * for legacy plain text passwords, plus common password blacklist checks.
  */
 public class PasswordUtil {
 
     private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder(12);
+
+    private static final Set<String> COMMON_PASSWORDS = Set.of(
+            "12345678", "password", "password1", "password123", "123456789", "1234567890",
+            "admin123", "admin1234", "welcome1", "welcome123", "qwerty123", "letmein1", "secret123",
+            "hospital123", "red404123", "red404admin", "iloveyou", "monkey123", "dragon123", "master123",
+            "changeme", "football", "sunshine", "princess", "trustno1", "passw0rd", "abc12345"
+    );
+
+    /**
+     * Checks if a password matches a known dictionary or common password pattern.
+     */
+    public static boolean isCommonPassword(String password) {
+        if (password == null || password.isBlank()) return true;
+        String clean = password.trim().toLowerCase();
+        return COMMON_PASSWORDS.contains(clean);
+    }
 
     /**
      * Hashes a raw password with BCrypt (12 rounds).

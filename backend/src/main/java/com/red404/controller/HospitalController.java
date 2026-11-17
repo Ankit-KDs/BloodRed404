@@ -17,16 +17,25 @@ import com.red404.util.DistanceCalculator;
 import com.red404.util.JsonUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import com.red404.dao.ConsentDao;
+import com.red404.service.DocumentStorageService;
+import com.red404.service.EmailVerificationService;
+import com.red404.util.GeoLocationUtil;
+import com.red404.util.PasswordUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +53,13 @@ public class HospitalController {
     private final com.red404.dao.BloodRequestNotificationDao notificationDao = new com.red404.dao.BloodRequestNotificationDao();
     private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
     private final com.red404.dao.HealthCheckDao healthCheckDao = new com.red404.dao.HealthCheckDao();
+    private final ConsentDao consentDao = new ConsentDao();
+
+    @Autowired(required = false)
+    private EmailVerificationService emailVerificationService;
+
+    @Autowired(required = false)
+    private DocumentStorageService documentStorageService;
 
     private static final Map<Integer, List<Long>> LOOKUP_RATE_LIMITS = new java.util.concurrent.ConcurrentHashMap<>();
     private static final int MAX_LOOKUPS_PER_MINUTE = 30;
@@ -596,78 +612,193 @@ public class HospitalController {
 
     // ======================== POST ========================
 
+    @PostMapping(value = "/upload-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> uploadDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "docType", required = false) String docType) {
+        try {
+            if (documentStorageService == null) {
+                documentStorageService = new DocumentStorageService();
+            }
+            Map<String, Object> result = documentStorageService.storeDocument(file, docType);
+            return ResponseEntity.ok(new ApiResponse(true, "Document uploaded successfully.", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        } catch (Exception e) {
+            log.error("Document upload failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to upload document: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
-            String email = JsonUtil.text(body, "hospitalEmail").trim().toLowerCase();
-            String adminEmail = JsonUtil.text(body, "adminEmail").trim().toLowerCase();
-            String hospitalPhone = JsonUtil.text(body, "hospitalPhone").trim().replaceAll("\\s+", "");
-            String adminPhone = JsonUtil.text(body, "adminPhone").trim().replaceAll("\\s+", "");
-            if (hospitalDao.emailExists(email)) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(new ApiResponse(false, "Hospital email already registered."));
+            String hospitalName = JsonUtil.text(body, "hospitalName").trim();
+            String registrationNo = JsonUtil.text(body, "registrationNo").trim();
+            String hospitalType = JsonUtil.text(body, "hospitalType").trim();
+            if (hospitalName.isEmpty() || registrationNo.isEmpty() || hospitalType.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Hospital name, registration number, and hospital type are required."));
             }
+
             List<String> services = new ArrayList<>();
             if (body.has("services") && body.get("services").isArray()) {
                 for (JsonNode node : body.get("services")) {
                     services.add(node.asText());
                 }
             }
-            Map<String, Object> hospital = new HashMap<>();
-            hospital.put("hospitalName", JsonUtil.text(body, "hospitalName").trim());
-            hospital.put("registrationNo", JsonUtil.text(body, "registrationNo").trim());
-            hospital.put("hospitalType", JsonUtil.text(body, "hospitalType"));
-            hospital.put("beds", JsonUtil.asInt(body, "beds", 0));
-            hospital.put("bloodBankLicense", JsonUtil.textOrNull(body, "bloodBankLicense"));
-            hospital.put("hospitalEmail", email);
-            hospital.put("hospitalPhone", hospitalPhone);
-            hospital.put("website", JsonUtil.textOrNull(body, "website"));
-            hospital.put("services", String.join(",", services));
-            hospital.put("adminName", (JsonUtil.text(body, "adminFirstName") + " " + JsonUtil.text(body, "adminLastName")).trim());
-            hospital.put("adminDesignation", JsonUtil.text(body, "adminDesignation"));
-            hospital.put("adminPhone", adminPhone);
-            hospital.put("adminEmail", adminEmail);
-            hospital.put("password", JsonUtil.text(body, "password"));
-            hospital.put("emergencyContact", JsonUtil.text(body, "emergencyContact"));
-            hospital.put("address", JsonUtil.text(body, "address"));
-            hospital.put("landmark", JsonUtil.textOrNull(body, "landmark"));
-            hospital.put("city", JsonUtil.text(body, "city"));
-            hospital.put("state", JsonUtil.text(body, "state"));
-            hospital.put("pincode", JsonUtil.text(body, "pincode"));
-            Double latitude = JsonUtil.asDouble(body, "latitude");
-            Double longitude = JsonUtil.asDouble(body, "longitude");
-
-            // Strict backend validation: hospital location coordinates are required and must be within valid range
-            if (latitude == null || longitude == null || latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0) {
+            boolean hasBloodBank = services.stream().anyMatch(s -> s.equalsIgnoreCase("bloodbank") || s.equalsIgnoreCase("Blood Bank"));
+            String bloodBankLicense = JsonUtil.textOrNull(body, "bloodBankLicense");
+            if (hasBloodBank && (bloodBankLicense == null || bloodBankLicense.trim().isEmpty())) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Valid latitude (between -90 and 90) and longitude (between -180 and 180) are required for hospital location."));
+                        .body(new ApiResponse(false, "Blood Bank License Number is required for hospitals offering Blood Bank services."));
             }
 
+            String email = JsonUtil.text(body, "hospitalEmail").trim().toLowerCase();
+            if (email.isEmpty()) {
+                email = JsonUtil.text(body, "email").trim().toLowerCase();
+            }
+            String adminEmail = JsonUtil.text(body, "adminEmail").trim().toLowerCase();
+            if (adminEmail.isEmpty()) adminEmail = email;
+
+            if (email.isEmpty() || !email.contains("@")) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "A valid official hospital email address is required."));
+            }
+
+            // Verify email token (Step 2)
+            String emailToken = JsonUtil.textOrNull(body, "emailToken");
+            if (emailToken == null || emailToken.isBlank()) {
+                emailToken = JsonUtil.textOrNull(body, "verificationToken");
+            }
+            boolean codeVerified = emailVerificationService != null &&
+                    emailVerificationService.validateAndConsumeToken(email, emailToken, "HOSPITAL_REGISTRATION");
+            if (!codeVerified) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Official hospital email must be verified with the 6-digit code before submitting registration."));
+            }
+
+            // Duplicate checks (Leak-proof: do not reveal existing account details)
+            if (hospitalDao.emailExists(email)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Registration could not be completed with the provided institutional details. If your institution has already registered or submitted an application, please contact RED404 support."));
+            }
+
+            String hospitalPhone = JsonUtil.text(body, "hospitalPhone").trim().replaceAll("\\s+", "").replaceAll("[-+]", "");
+            if (hospitalPhone.startsWith("91") && hospitalPhone.length() == 12) hospitalPhone = hospitalPhone.substring(2);
+            String adminPhone = JsonUtil.text(body, "adminPhone").trim().replaceAll("\\s+", "").replaceAll("[-+]", "");
+            if (adminPhone.startsWith("91") && adminPhone.length() == 12) adminPhone = adminPhone.substring(2);
+            String emergencyContact = JsonUtil.text(body, "emergencyContact").trim().replaceAll("\\s+", "").replaceAll("[-+]", "");
+            if (emergencyContact.startsWith("91") && emergencyContact.length() == 12) emergencyContact = emergencyContact.substring(2);
+
+            if (hospitalPhone.length() != 10 || adminPhone.length() != 10 || emergencyContact.length() != 10) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Please provide valid 10-digit phone numbers for hospital, administrator, and 24x7 emergency hotline."));
+            }
+
+            String password = JsonUtil.text(body, "password").trim();
+            if (password.length() < 10) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Password must be at least 10 characters for hospital institutional security."));
+            }
+            if (PasswordUtil.isCommonPassword(password)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Password is too common. Please set a secure password of at least 10 characters."));
+            }
+
+            String adminName = JsonUtil.text(body, "adminName").trim();
+            if (adminName.isEmpty()) {
+                adminName = (JsonUtil.text(body, "adminFirstName") + " " + JsonUtil.text(body, "adminLastName")).trim();
+            }
+            String adminDesignation = JsonUtil.text(body, "adminDesignation").trim();
+            if (adminName.isEmpty() || adminDesignation.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Authorised administrator name and designation are required."));
+            }
+
+            String address = JsonUtil.text(body, "address").trim();
+            String city = JsonUtil.text(body, "city").trim();
+            String state = JsonUtil.text(body, "state").trim();
+            String pincode = JsonUtil.text(body, "pincode").trim();
+            if (address.isEmpty() || city.isEmpty() || state.isEmpty() || pincode.isEmpty() || !pincode.matches("\\d{6}")) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Valid address, city, state, and 6-digit PIN code are required."));
+            }
+
+            Double latitude = JsonUtil.asDouble(body, "latitude");
+            Double longitude = JsonUtil.asDouble(body, "longitude");
+            if (latitude == null || longitude == null || latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Valid hospital location coordinates are required. Please pin your entrance on the map."));
+            }
+
+            String website = JsonUtil.textOrNull(body, "website");
+            if (website != null && !website.isBlank() && !website.startsWith("http://") && !website.startsWith("https://")) {
+                website = "https://" + website.trim();
+            }
+
+            // Documents
+            String documentsJson = null;
+            if (body.has("documents")) {
+                documentsJson = body.get("documents").toString();
+            }
+
+            // Generate application reference number
+            String appRef = "REF-HOSP-2026-" + Long.toHexString(Double.doubleToLongBits(Math.random())).substring(0, 6).toUpperCase();
+
+            Map<String, Object> hospital = new HashMap<>();
+            hospital.put("hospitalName", hospitalName);
+            hospital.put("registrationNo", registrationNo);
+            hospital.put("hospitalType", hospitalType);
+            hospital.put("beds", JsonUtil.asInt(body, "beds", 0));
+            hospital.put("bloodBankLicense", bloodBankLicense);
+            hospital.put("hospitalEmail", email);
+            hospital.put("hospitalPhone", hospitalPhone);
+            hospital.put("website", website);
+            hospital.put("services", String.join(",", services));
+            hospital.put("adminName", adminName);
+            hospital.put("adminDesignation", adminDesignation);
+            hospital.put("adminPhone", adminPhone);
+            hospital.put("adminEmail", adminEmail);
+            hospital.put("password", password);
+            hospital.put("emergencyContact", emergencyContact);
+            hospital.put("emergencyPublic", JsonUtil.asBoolean(body, "emergencyPublic", true));
+            hospital.put("eraktkoshId", JsonUtil.textOrNull(body, "eraktkoshId"));
+            hospital.put("address", address);
+            hospital.put("landmark", JsonUtil.textOrNull(body, "landmark"));
+            hospital.put("city", city);
+            hospital.put("state", state);
+            hospital.put("pincode", pincode);
             hospital.put("latitude", latitude);
             hospital.put("longitude", longitude);
             hospital.put("zone", JsonUtil.textOrNull(body, "zone"));
             hospital.put("operatingHours", JsonUtil.textOrNull(body, "operatingHours") == null ? "24x7" : JsonUtil.text(body, "operatingHours"));
             hospital.put("zoneRadius", JsonUtil.asInt(body, "zoneRadius", 10));
-            hospital.put("smsNotif", JsonUtil.asBoolean(body, "smsNotif", true));
-            hospital.put("pushNotif", JsonUtil.asBoolean(body, "pushNotif", true));
-            hospital.put("emailNotif", JsonUtil.asBoolean(body, "emailNotif", false));
+            hospital.put("smsNotif", false);
+            hospital.put("pushNotif", true);
+            hospital.put("emailNotif", true);
+            hospital.put("verificationStatus", "pending_review");
+            hospital.put("applicationRef", appRef);
+            hospital.put("documentsJson", documentsJson);
 
             if (hospitalDao.insert(hospital)) {
-                Map<String, Object> registeredHosp = hospitalDao.findByLogin(email, (String) hospital.get("password"));
-                if (registeredHosp == null) {
-                    registeredHosp = hospital;
-                }
-                HttpSession session = request.getSession(true);
-                session.setAttribute("hospitalUser", registeredHosp);
-                session.setAttribute("role", "HOSPITAL");
-                Map<String, Object> wrapper = new HashMap<>();
-                wrapper.put("hospital", registeredHosp);
-                wrapper.put("token", "SESSION-HOSPITAL-" + registeredHosp.get("id"));
+                // Store consent record
+                consentDao.recordConsent("HOSPITAL", appRef, "v1.0", "v1.0", true, false, true,
+                        GeoLocationUtil.getClientIp(request), request.getHeader("User-Agent"));
+
+                Map<String, Object> respData = new LinkedHashMap<>();
+                respData.put("status", "pending_review");
+                respData.put("applicationRef", appRef);
+                respData.put("hospitalName", hospitalName);
+                respData.put("hospitalEmail", email);
+                respData.put("message", "Application received. Our verification team will review your credentials within 24-48 business hours.");
+
                 return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new ApiResponse(true, "Hospital Registered Successfully!", wrapper));
+                        .body(new ApiResponse(true, "Application received. Our verification team will review your institutional credentials within 24-48 business hours.", respData));
             } else {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Registration Failed."));
+                        .body(new ApiResponse(false, "Hospital Registration Failed. Please try again."));
             }
         } catch (Exception e) {
             return serverError(e);

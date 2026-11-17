@@ -354,6 +354,10 @@ function initDonorRegisterForm() {
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if (typeof window.completeDonorRegistration === 'function') {
+      window.completeDonorRegistration();
+      return;
+    }
     if (!validateDonorStep(3)) return;
 
     const submitBtn = document.getElementById('submitBtn');
@@ -610,6 +614,10 @@ function initHospitalRegisterForm() {
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if (typeof window.submitHospitalRegistration === 'function') {
+      window.submitHospitalRegistration();
+      return;
+    }
     if (!validateHospStep(3)) return;
 
     const submitBtn = document.getElementById('hospSubmitBtn');

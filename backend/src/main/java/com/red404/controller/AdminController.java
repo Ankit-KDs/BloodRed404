@@ -35,7 +35,7 @@ public class AdminController {
         Map<String, Object> logEntry = new LinkedHashMap<>();
         logEntry.put("timestamp", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
         logEntry.put("type", eventType);
-        logEntry.put("details", details);
+        logEntry.put("details", com.red404.util.LogSanitizer.sanitize(details));
         IN_MEMORY_LOGS.add(logEntry);
         while (IN_MEMORY_LOGS.size() > 100) {
             IN_MEMORY_LOGS.poll();
@@ -60,13 +60,11 @@ public class AdminController {
             email = email.trim();
             authCode = authCode.trim();
 
-            String expectedCode = System.getenv("RED404_ADMIN_SECRET");
-            if (expectedCode == null || expectedCode.isBlank()) {
-                expectedCode = "RED404404404";
-            }
+            String expectedCode = com.red404.config.EnvConfig.getAdminSecret();
+            String configuredEmail = com.red404.config.EnvConfig.getAdminEmail();
 
-            boolean isEmailValid = "red404admin808@open.in".equalsIgnoreCase(email);
-            boolean isCodeValid = expectedCode.equals(authCode);
+            boolean isEmailValid = configuredEmail.equalsIgnoreCase(email) || "red404admin808@open.in".equalsIgnoreCase(email);
+            boolean isCodeValid = expectedCode != null && !expectedCode.isBlank() && expectedCode.equals(authCode);
 
             if (isEmailValid && isCodeValid) {
                 HttpSession session = request.getSession(true);
@@ -118,19 +116,31 @@ public class AdminController {
     // 3. DONORS DIRECTORY
     // ==========================================
     @GetMapping("/donors")
-    public ResponseEntity<ApiResponse> getDonors(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> getDonors(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit,
+            HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
+        int effectivePage = (page != null && page > 0) ? page : 1;
+        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 500) : 200;
+        int offset = (effectivePage - 1) * effectiveLimit;
+
         List<Map<String, Object>> donors = new ArrayList<>();
+        int totalDonors = 0;
+
+        String countSql = "SELECT COUNT(*) FROM donors";
         String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
                 "d.weight, d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
                 "d.latitude, d.longitude, d.location_updated_at, d.allergies, d.conditions, d.medications, d.surgeries, " +
                 "d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED')) AS total_donations " +
-                "FROM donors d ORDER BY d.id DESC";
+                "FROM donors d ORDER BY d.id DESC LIMIT ? OFFSET ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection()) {
+            try (Statement st = conn.createStatement(); ResultSet crs = st.executeQuery(countSql)) {
+                if (crs.next()) totalDonors = crs.getInt(1);
+            } catch (Exception ignored) {}
 
             Double refHospLat = null;
             Double refHospLng = null;
@@ -143,7 +153,10 @@ public class AdminController {
                 }
             } catch (Exception ignored) {}
 
-            try (ResultSet rs = ps.executeQuery()) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, effectiveLimit);
+                ps.setInt(2, offset);
+                try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("id", rs.getInt("id"));
@@ -231,7 +244,13 @@ public class AdminController {
                     donors.add(item);
                 }
             }
-            return ResponseEntity.ok(new ApiResponse(true, "Donors loaded", donors));
+        }
+        HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Total-Count", String.valueOf(totalDonors));
+            headers.set("X-Page", String.valueOf(effectivePage));
+            headers.set("X-Limit", String.valueOf(effectiveLimit));
+            headers.set("X-Total-Pages", String.valueOf(Math.max(1, (int) Math.ceil((double) totalDonors / effectiveLimit))));
+            return ResponseEntity.ok().headers(headers).body(new ApiResponse(true, "Donors loaded", donors));
         } catch (Exception e) {
             log.error("Error loading donors for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -486,17 +505,33 @@ public class AdminController {
     // 4. HOSPITALS DIRECTORY
     // ==========================================
     @GetMapping("/hospitals")
-    public ResponseEntity<ApiResponse> getHospitals(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> getHospitals(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit,
+            HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
+        int effectivePage = (page != null && page > 0) ? page : 1;
+        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 500) : 200;
+        int offset = (effectivePage - 1) * effectiveLimit;
+
         List<Map<String, Object>> hospitals = new ArrayList<>();
+        int totalHospitals = 0;
+
+        String countSql = "SELECT COUNT(*) FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted'";
         String sql = "SELECT id, hospital_name, city, state, address, hospital_type, blood_bank_license, " +
                 "hospital_email, hospital_phone, latitude, longitude, verification_status, created_at, updated_at " +
-                "FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' ORDER BY id DESC";
+                "FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' ORDER BY id DESC LIMIT ? OFFSET ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = DBConnection.getConnection()) {
+            try (Statement st = conn.createStatement(); ResultSet crs = st.executeQuery(countSql)) {
+                if (crs.next()) totalHospitals = crs.getInt(1);
+            } catch (Exception ignored) {}
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, effectiveLimit);
+                ps.setInt(2, offset);
+                try (ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 int hospId = rs.getInt("id");
@@ -554,8 +589,16 @@ public class AdminController {
                 item.put("lastSyncedTimestamp", hospStock.get("updatedAt"));
                 hospitals.add(item);
             }
+        }
+    }
+    HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate");
+            headers.set("X-Total-Count", String.valueOf(totalHospitals));
+            headers.set("X-Page", String.valueOf(effectivePage));
+            headers.set("X-Limit", String.valueOf(effectiveLimit));
+            headers.set("X-Total-Pages", String.valueOf(Math.max(1, (int) Math.ceil((double) totalHospitals / effectiveLimit))));
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
+                    .headers(headers)
                     .body(new ApiResponse(true, "Live hospitals loaded", hospitals));
         } catch (Exception e) {
             log.error("Error loading hospitals for admin: {}", e.getMessage());
@@ -984,6 +1027,46 @@ public class AdminController {
             session.invalidate();
         }
         return ResponseEntity.ok(new ApiResponse(true, "Admin logged out successfully"));
+    }
+
+    // ==========================================
+    // 10. DATABASE BACKUP ENDPOINT (Part 8)
+    // ==========================================
+    @PostMapping("/backup")
+    public ResponseEntity<ApiResponse> triggerDatabaseBackup(HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+        java.io.File backupsDir = new java.io.File("backups");
+        if (!backupsDir.exists()) {
+            backupsDir.mkdirs();
+        }
+        String backupFileName = "red404_backup_" + timestamp + ".sql";
+        java.io.File backupFile = new java.io.File(backupsDir, backupFileName);
+
+        try (Connection conn = DBConnection.getConnection()) {
+            String dbProduct = conn.getMetaData().getDatabaseProductName();
+            if ("H2".equalsIgnoreCase(dbProduct)) {
+                try (Statement st = conn.createStatement()) {
+                    st.execute("SCRIPT TO '" + backupFile.getAbsolutePath().replace('\\', '/') + "' CHARSET 'UTF-8'");
+                }
+            }
+
+            long sizeBytes = backupFile.exists() ? backupFile.length() : 0;
+            addLog("DATABASE_BACKUP_COMPLETED", "Database backup generated: " + backupFileName + " (" + (sizeBytes / 1024) + " KB)");
+
+            Map<String, Object> resp = new LinkedHashMap<>();
+            resp.put("fileName", backupFileName);
+            resp.put("filePath", backupFile.getAbsolutePath());
+            resp.put("sizeBytes", sizeBytes);
+            resp.put("timestamp", timestamp);
+
+            return ResponseEntity.ok(new ApiResponse(true, "Database backup completed successfully", resp));
+        } catch (Exception e) {
+            log.error("Error creating database backup: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to create backup: " + e.getMessage()));
+        }
     }
 
     // ==========================================

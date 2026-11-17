@@ -10,4 +10,20 @@ scratch/
 backend/data/
 *.db
 
+# Environment & Secrets (Never commit secrets)
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.secret
+*.pkcs8
+service-account*.json
+credentials*.json
+firebase-adminsdk*.json
 
+# Backups
+backups/
+*.dump
+*.sql.gz

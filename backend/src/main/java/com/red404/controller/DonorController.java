@@ -10,6 +10,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.LinkedHashMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.red404.dao.ConsentDao;
+import com.red404.service.EmailVerificationService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -53,6 +59,10 @@ public class DonorController {
     private final com.red404.dao.DonationDriveDao donationDriveDao = new com.red404.dao.DonationDriveDao();
     private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
     private final com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
+    private final ConsentDao consentDao = new ConsentDao();
+
+    @Autowired(required = false)
+    private EmailVerificationService emailVerificationService;
 
     // ======================== GET ========================
 
@@ -650,122 +660,163 @@ public class DonorController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
+            String firstName = JsonUtil.text(body, "firstName").trim();
+            String lastName = JsonUtil.text(body, "lastName").trim();
+            if (firstName.isEmpty() || lastName.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "First name and last name are required."));
+            }
+
             String email = JsonUtil.text(body, "email").trim().toLowerCase();
-            String phone = JsonUtil.text(body, "phone").trim().replaceAll("\\s+", "");
+            if (email.isEmpty() || !email.contains("@")) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "A valid email address is required."));
+            }
+
+            String phone = JsonUtil.text(body, "phone").trim().replaceAll("\\s+", "").replaceAll("[-+]", "");
+            if (phone.startsWith("91") && phone.length() == 12) {
+                phone = phone.substring(2);
+            }
+            if (phone.length() != 10 || !phone.matches("\\d{10}")) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Please provide a valid 10-digit mobile number."));
+            }
+
             String password = JsonUtil.text(body, "password").trim();
+            if (password.length() < 8) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Password must be at least 8 characters."));
+            }
+            if (PasswordUtil.isCommonPassword(password)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "The password you entered is too common. Please choose a more secure password."));
+            }
+
             String gender = JsonUtil.text(body, "gender").trim();
             if (gender.isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Gender is required for donor registration (Male, Female, or Other)."));
+                        .body(new ApiResponse(false, "Gender is required (Male, Female, or Other)."));
             }
 
-            Map<String, Object> existing = donorDao.findByEmail(email);
-            if (existing != null) {
-                String exPhone = existing.get("phone") != null ? existing.get("phone").toString() : "";
-                String exCity = existing.get("city") != null ? existing.get("city").toString() : "";
-                boolean isDefaultSeed = "ak30kr02@gmail.com".equalsIgnoreCase(email) || exPhone.isEmpty() || "9876543210".equals(exPhone) || "Meerut".equalsIgnoreCase(exCity);
-                if (isDefaultSeed || PasswordUtil.checkPassword(password, existing.get("password") != null ? existing.get("password").toString() : "")) {
-                    int existingId = ((Number) existing.get("id")).intValue();
-                    Map<String, Object> fields = new HashMap<>();
-                    String fullName = (JsonUtil.text(body, "firstName") + " " + JsonUtil.text(body, "lastName")).trim();
-                    fields.put("name", fullName);
-                    fields.put("phone", phone);
-                    fields.put("password", PasswordUtil.hashPassword(password));
-                    Date dob = JsonUtil.asDate(body, "dateOfBirth");
-                    fields.put("dob", dob);
-                    fields.put("gender", JsonUtil.text(body, "gender"));
-                    fields.put("blood_type", JsonUtil.text(body, "bloodType"));
-                    fields.put("weight", JsonUtil.asDouble(body, "weight"));
-                    fields.put("last_donation", JsonUtil.asDate(body, "lastDonation"));
-                    fields.put("availability", JsonUtil.textOrNull(body, "availability") == null ? "Available" : JsonUtil.text(body, "availability"));
-                    fields.put("address", JsonUtil.text(body, "address"));
-                    fields.put("city", JsonUtil.text(body, "city"));
-                    fields.put("state", JsonUtil.text(body, "state"));
-                    fields.put("pincode", JsonUtil.text(body, "pincode"));
-                    fields.put("latitude", JsonUtil.asDouble(body, "latitude"));
-                    fields.put("longitude", JsonUtil.asDouble(body, "longitude"));
-                    fields.put("zone", JsonUtil.textOrNull(body, "zone"));
-
-                    // Also synchronize Smart Donor ID with registered Date of Birth
-                    String existingDonorId = (String) existing.get("donor_id");
-                    if (existingDonorId == null || existingDonorId.isBlank()) {
-                        try (Connection conn = DBConnection.getConnection()) {
-                            existingDonorId = com.red404.util.DonorIdGenerator.generateUniqueDonorId(conn, fullName, dob);
-                            try (PreparedStatement ps = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
-                                ps.setString(1, existingDonorId);
-                                ps.setInt(2, existingId);
-                                ps.executeUpdate();
-                            }
-                        }
-                    } else if (dob != null) {
-                        String syncd = com.red404.util.DonorIdGenerator.updateDonorIdDob(existingDonorId, dob, fullName);
-                        if (syncd != null && !syncd.equalsIgnoreCase(existingDonorId)) {
-                            try (Connection conn = DBConnection.getConnection();
-                                 PreparedStatement ps = conn.prepareStatement("UPDATE donors SET donor_id = ? WHERE id = ?")) {
-                                ps.setString(1, syncd);
-                                ps.setInt(2, existingId);
-                                ps.executeUpdate();
-                                existingDonorId = syncd;
-                            }
-                        }
-                    }
-
-                    donorDao.updateProfile(existingId, fields);
-                    Map<String, Object> registeredDonor = donorDao.findById(existingId);
-                    if (registeredDonor == null) registeredDonor = existing;
-
-                    HttpSession session = request.getSession(true);
-                    session.setAttribute("user", registeredDonor);
-                    session.setAttribute("role", "DONOR");
-                    String donorIdStr = registeredDonor.get("donorId") != null ? registeredDonor.get("donorId").toString() : String.valueOf(existingId);
-
-                    Map<String, Object> wrapper = new HashMap<>();
-                    wrapper.put("donor", registeredDonor);
-                    wrapper.put("donorId", donorIdStr);
-                    wrapper.put("token", "SESSION-DONOR-" + donorIdStr);
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .body(new ApiResponse(true, "Donor Registered Successfully!", wrapper));
-                } else {
-                    return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .body(new ApiResponse(false, "Email already registered. Please login."));
-                }
+            Date dob = JsonUtil.asDate(body, "dateOfBirth");
+            if (dob == null) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Date of birth is required."));
+            }
+            LocalDate birthDate = dob.toLocalDate();
+            LocalDate today = LocalDate.now();
+            int age = Period.between(birthDate, today).getYears();
+            if (age < 18) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "You must be at least 18 years of age to register as a donor."));
+            }
+            if (age > 65) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Maximum donor registration age is 65 years."));
             }
 
+            // Verify email token (Step 4)
+            String emailToken = JsonUtil.textOrNull(body, "emailToken");
+            if (emailToken == null || emailToken.isBlank()) {
+                emailToken = JsonUtil.textOrNull(body, "verificationToken");
+            }
+            boolean codeVerified = emailVerificationService != null &&
+                    emailVerificationService.validateAndConsumeToken(email, emailToken, "DONOR_REGISTRATION");
+            if (!codeVerified) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Email verification required. Please verify the 6-digit code sent to your email."));
+            }
+
+            // Duplicate checks
             if (donorDao.emailOrPhoneExists(email, phone)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(new ApiResponse(false, "Phone number already registered."));
+                        .body(new ApiResponse(false, "An account with this email or phone number is already registered. Please login."));
             }
+
+            // Health questions processing
+            boolean feverNow = JsonUtil.asBoolean(body, "feverNow", false);
+            boolean antibioticsNow = JsonUtil.asBoolean(body, "antibioticsNow", false);
+            boolean surgery6m = JsonUtil.asBoolean(body, "surgery6m", false);
+            boolean tattoo6m = JsonUtil.asBoolean(body, "tattoo6m", false);
+            boolean vaccine4w = JsonUtil.asBoolean(body, "vaccine4w", false);
+            boolean travelOutside = JsonUtil.asBoolean(body, "travelOutside", false);
+            boolean pregnantNursing = JsonUtil.asBoolean(body, "pregnantNursing", false);
+            boolean chronicConditions = JsonUtil.asBoolean(body, "chronicConditions", false);
+            boolean hospitalReviewNeeded = feverNow || antibioticsNow || surgery6m || tattoo6m || vaccine4w || travelOutside || pregnantNursing || chronicConditions;
+
+            Map<String, Object> healthMap = new LinkedHashMap<>();
+            healthMap.put("feverNow", feverNow);
+            healthMap.put("antibioticsNow", antibioticsNow);
+            healthMap.put("surgery6m", surgery6m);
+            healthMap.put("tattoo6m", tattoo6m);
+            healthMap.put("vaccine4w", vaccine4w);
+            healthMap.put("travelOutside", travelOutside);
+            healthMap.put("pregnantNursing", pregnantNursing);
+            healthMap.put("chronicConditions", chronicConditions);
+            String healthAnswersJson;
+            try {
+                healthAnswersJson = JsonUtil.mapper().writeValueAsString(healthMap);
+            } catch (Exception ex) {
+                healthAnswersJson = "{}";
+            }
+
+            String rawBloodType = JsonUtil.text(body, "bloodType").trim();
+            String bloodType = rawBloodType.isEmpty() ? "Not sure" : rawBloodType;
+            String bloodGroupStatus = (bloodType.equalsIgnoreCase("Not sure") || bloodType.equalsIgnoreCase("UNKNOWN")) ? "unconfirmed" : "self_declared";
+
+            String city = JsonUtil.text(body, "city").trim();
+            String state = JsonUtil.text(body, "state").trim();
+            String pincode = JsonUtil.text(body, "pincode").trim();
+            if (city.isEmpty() || state.isEmpty() || pincode.isEmpty() || !pincode.matches("\\d{6}")) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Valid city, state, and 6-digit PIN code are required."));
+            }
+
+            boolean publicSearchOptIn = JsonUtil.asBoolean(body, "publicSearchOptIn", false);
+
             Map<String, Object> donor = new HashMap<>();
-            donor.put("name", (JsonUtil.text(body, "firstName") + " " + JsonUtil.text(body, "lastName")).trim());
+            donor.put("name", (firstName + " " + lastName).trim());
             donor.put("email", email);
             donor.put("phone", phone);
-            donor.put("dob", JsonUtil.asDate(body, "dateOfBirth"));
-            donor.put("gender", JsonUtil.text(body, "gender"));
+            donor.put("dob", dob);
+            donor.put("gender", gender);
             donor.put("password", password);
-            donor.put("bloodType", JsonUtil.text(body, "bloodType"));
+            donor.put("bloodType", bloodType);
+            donor.put("blood_group_status", bloodGroupStatus);
             donor.put("weight", JsonUtil.asDouble(body, "weight"));
             donor.put("lastDonation", JsonUtil.asDate(body, "lastDonation"));
+            donor.put("lastDonationSelfReported", JsonUtil.asDate(body, "lastDonation"));
             donor.put("availability", JsonUtil.textOrNull(body, "availability") == null ? "Available" : JsonUtil.text(body, "availability"));
-            donor.put("address", JsonUtil.text(body, "address"));
-            donor.put("city", JsonUtil.text(body, "city"));
-            donor.put("state", JsonUtil.text(body, "state"));
-            donor.put("pincode", JsonUtil.text(body, "pincode"));
+            donor.put("availabilityPref", JsonUtil.textOrNull(body, "availabilityPref") == null ? "Any time" : JsonUtil.text(body, "availabilityPref"));
+            donor.put("address", JsonUtil.textOrNull(body, "address"));
+            donor.put("city", city);
+            donor.put("state", state);
+            donor.put("pincode", pincode);
             donor.put("latitude", JsonUtil.asDouble(body, "latitude"));
             donor.put("longitude", JsonUtil.asDouble(body, "longitude"));
-            donor.put("zone", JsonUtil.textOrNull(body, "zone"));
-            donor.put("smsNotif", JsonUtil.asBoolean(body, "smsNotif", true));
+            donor.put("smsNotif", false);
             donor.put("pushNotif", JsonUtil.asBoolean(body, "pushNotif", true));
-            donor.put("emailNotif", JsonUtil.asBoolean(body, "emailNotif", false));
+            donor.put("emailNotif", JsonUtil.asBoolean(body, "emailNotif", true));
+            donor.put("hospitalReviewNeeded", hospitalReviewNeeded);
+            donor.put("healthAnswersJson", healthAnswersJson);
+            donor.put("emailVerified", true);
+            donor.put("publicSearchOptIn", publicSearchOptIn);
+            donor.put("publicDisplayName", firstName);
 
             if (donorDao.insert(donor)) {
                 Map<String, Object> registeredDonor = donorDao.findByLogin(email, password);
                 if (registeredDonor == null) {
                     registeredDonor = donor;
                 }
+                String donorIdStr = registeredDonor.get("donorId") != null ? registeredDonor.get("donorId").toString() : registeredDonor.get("id").toString();
+
+                // Store consent record
+                consentDao.recordConsent("DONOR", donorIdStr, "v1.0", "v1.0", true, publicSearchOptIn, true,
+                        GeoLocationUtil.getClientIp(request), request.getHeader("User-Agent"));
+
                 HttpSession session = request.getSession(true);
                 session.setAttribute("user", registeredDonor);
                 session.setAttribute("role", "DONOR");
-                String donorIdStr = registeredDonor.get("donorId") != null ? registeredDonor.get("donorId").toString() : registeredDonor.get("id").toString();
 
                 // Audit & track real-time session
                 try {
@@ -780,12 +831,18 @@ public class DonorController {
                 Map<String, Object> wrapper = new HashMap<>();
                 wrapper.put("donor", registeredDonor);
                 wrapper.put("donorId", donorIdStr);
+                wrapper.put("qrToken", registeredDonor.get("qrToken"));
                 wrapper.put("token", "SESSION-DONOR-" + donorIdStr);
+                wrapper.put("nextSteps", List.of(
+                        "Visit your nearest partner hospital to verify your blood group and baseline vitals.",
+                        "Keep your notification preferences active to receive emergency requests nearby.",
+                        "Track your donation gap and eligibility status from your donor dashboard."
+                ));
                 return ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse(true, "Donor Registered Successfully!", wrapper));
             } else {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Registration Failed."));
+                        .body(new ApiResponse(false, "Registration Failed. Please try again."));
             }
         } catch (Exception e) {
             return serverError(e);
