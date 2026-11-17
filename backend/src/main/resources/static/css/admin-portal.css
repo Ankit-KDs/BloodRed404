@@ -1382,32 +1382,169 @@ body.admin-body {
 ============================================================ */
 
 .admin-profile-modal-box {
-  background: rgba(11, 15, 25, 0.97) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 35px rgba(59, 130, 246, 0.18) !important;
-  border-radius: 20px !important;
-  max-width: 680px !important;
-  width: 94% !important;
-  padding: 30px 28px !important;
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9) !important;
+  border-radius: 14px !important;
+  min-width: 640px !important;
+  max-width: 760px !important;
+  width: 95% !important;
+  padding: 26px 24px 0 !important;
   position: relative !important;
   overflow: hidden !important;
   text-align: left !important;
   animation: stealthModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  max-height: 92vh !important;
+  max-height: 94vh !important;
   display: flex !important;
   flex-direction: column !important;
+  font-size: 14px !important;
+  color: #f1f5f9 !important;
 }
 
 .admin-profile-modal-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #e63946, #3b82f6, #10b981, transparent);
+  display: none !important;
+}
+
+/* Status Subtabs (Part 5) */
+.admin-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+  overflow-x: auto;
+}
+.admin-subtab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.admin-subtab-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+}
+.admin-subtab-btn.active {
+  color: #f8fafc;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+.subtab-count {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.admin-subtab-btn.active .subtab-count {
+  background: #3b82f6;
+  color: #ffffff;
+}
+.admin-nav-pending-badge {
+  background: #f59e0b;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+
+/* Status pills */
+.hosp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.hosp-status-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.hosp-status-needs-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+.hosp-status-verified {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.hosp-status-rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.hosp-status-suspended {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+}
+
+/* Document cards */
+.admin-doc-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  gap: 12px;
+}
+.admin-doc-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #f8fafc;
+}
+.btn-doc-action {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+.btn-doc-action:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+/* Sticky Action Bar */
+.profile-modal-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  background: #0f172a !important;
+  border-top: 1px solid #334155 !important;
+  padding: 14px 0 !important;
+  margin-top: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  z-index: 20 !important;
 }
 
 .admin-profile-modal-box .modal-close {
@@ -1797,13 +1934,16 @@ body.admin-body {
     min-width: 760px;
   }
 
-  /* Modal on Mobile */
+  /* Modal on Mobile (Full Screen on Phone - Part 5) */
   .admin-profile-modal-box {
-    width: 96% !important;
-    max-width: 96% !important;
-    padding: 20px 14px 16px !important;
-    border-radius: 16px !important;
-    max-height: 94vh !important;
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    padding: 16px 14px 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
   }
 
   .profile-scroll-body {

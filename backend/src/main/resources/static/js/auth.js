@@ -739,8 +739,11 @@ function initHospitalLoginForm() {
       sessionStorage.setItem('hospitalUser', JSON.stringify(hosp));
       sessionStorage.setItem('red404_hospitalToken', hToken);
       sessionStorage.setItem('hospitalToken', hToken);
+      const rawStatus = (hosp.verificationStatus || hosp.verification_status || result.data.status || '').toLowerCase();
+      const isVerified = rawStatus === 'verified' || rawStatus === 'approved';
+      const redirectTarget = result.data.redirectUrl || (isVerified ? 'hospital-dashboard.html' : 'hospital-status.html');
       showToast('Login successful! Redirecting...', 'success', 1500);
-      setTimeout(() => { window.location.href = 'hospital-dashboard.html'; }, 1500);
+      setTimeout(() => { window.location.href = redirectTarget; }, 1500);
     } else {
       showToast(result.error || 'Invalid credentials. Please try again.', 'error');
       shakeInput(document.getElementById('hospLoginPassword'));

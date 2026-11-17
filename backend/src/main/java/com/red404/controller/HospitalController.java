@@ -55,6 +55,54 @@ public class HospitalController {
     private final com.red404.dao.HealthCheckDao healthCheckDao = new com.red404.dao.HealthCheckDao();
     private final ConsentDao consentDao = new ConsentDao();
 
+    private final com.red404.service.HospitalVerificationService hospitalVerificationService = new com.red404.service.HospitalVerificationService();
+
+    private boolean isHospitalVerified(Map<String, Object> hospital) {
+        if (hospital == null) return false;
+        String status = (String) hospital.get("verificationStatus");
+        if (status == null) status = (String) hospital.get("verification_status");
+        return "verified".equalsIgnoreCase(status != null ? status.trim() : "");
+    }
+
+    private ResponseEntity<ApiResponse> forbiddenNotVerified(String status) {
+        String norm = com.red404.service.HospitalVerificationService.normalizeStatus(status);
+        Map<String, Object> errData = new LinkedHashMap<>();
+        errData.put("error", "Hospital is not verified.");
+        errData.put("code", "hospital_not_verified");
+        errData.put("status", norm);
+        errData.put("verificationStatus", norm);
+        errData.put("message", "Hospital account requires verification before accessing clinical features.");
+        ApiResponse resp = new ApiResponse(false, "Hospital is not verified.", "Hospital is not verified.", "hospital_not_verified", errData);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(resp);
+    }
+
+    private ResponseEntity<ApiResponse> checkHospitalVerified(HttpServletRequest request) {
+        Integer hospitalId = getHospitalId(request);
+        if (hospitalId == null) {
+            Map<String, Object> sessionHosp = requireHospital(request);
+            if (sessionHosp != null && sessionHosp.get("id") != null) {
+                hospitalId = ((Number) sessionHosp.get("id")).intValue();
+            }
+        }
+        if (hospitalId == null) {
+            return unauthorized();
+        }
+        try {
+            Map<String, Object> hospital = hospitalDao.findById(hospitalId);
+            if (hospital == null) {
+                return unauthorized();
+            }
+            if (!isHospitalVerified(hospital)) {
+                String status = (String) hospital.get("verificationStatus");
+                return forbiddenNotVerified(status);
+            }
+        } catch (Exception e) {
+            return serverError(e);
+        }
+        return null;
+    }
+
+
     @Autowired(required = false)
     private EmailVerificationService emailVerificationService;
 
@@ -149,6 +197,232 @@ public class HospitalController {
         }
     }
 
+
+    // ======================== STATUS & APPLICATION MANAGEMENT ========================
+
+    @GetMapping({"/status", "/application-status"})
+    public ResponseEntity<ApiResponse> getApplicationStatus(HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
+
+            Map<String, Object> hospital = hospitalDao.findById(hospitalId);
+            if (hospital == null) return unauthorized();
+
+            String rawStatus = (String) hospital.get("verificationStatus");
+            String normStatus = com.red404.service.HospitalVerificationService.normalizeStatus(rawStatus);
+
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("id", hospital.get("id"));
+            result.put("status", normStatus);
+            result.put("verificationStatus", normStatus);
+            result.put("isVerified", "verified".equals(normStatus));
+            result.put("referenceNo", hospital.get("applicationRef"));
+            result.put("hospitalName", hospital.get("hospitalName"));
+            result.put("hospitalType", hospital.get("hospitalType"));
+            result.put("registrationNo", hospital.get("registrationNo"));
+            result.put("bloodBankLicense", hospital.get("bloodBankLicense"));
+            result.put("services", hospital.get("services"));
+            result.put("beds", hospital.get("beds"));
+            result.put("website", hospital.get("website"));
+            result.put("adminName", hospital.get("adminName"));
+            result.put("adminDesignation", hospital.get("adminDesignation"));
+            result.put("adminPhone", hospital.get("adminPhone"));
+            result.put("adminEmail", hospital.get("adminEmail"));
+            result.put("hospitalEmail", hospital.get("hospitalEmail"));
+            result.put("maskedEmail", maskEmail((String) hospital.get("hospitalEmail")));
+            result.put("hospitalPhone", hospital.get("hospitalPhone"));
+            result.put("emergencyContact", hospital.get("emergencyContact"));
+            result.put("address", hospital.get("address"));
+            result.put("landmark", hospital.get("landmark"));
+            result.put("city", hospital.get("city"));
+            result.put("state", hospital.get("state"));
+            result.put("pincode", hospital.get("pincode"));
+            result.put("operatingHours", hospital.get("operatingHours"));
+            result.put("latitude", hospital.get("latitude"));
+            result.put("longitude", hospital.get("longitude"));
+            result.put("createdAt", hospital.get("createdAt"));
+
+            String docsJson = (String) hospital.get("documentsJson");
+            if (docsJson != null && !docsJson.isBlank()) {
+                try {
+                    result.put("documents", JsonUtil.mapper().readValue(docsJson, Object.class));
+                } catch (Exception ignored) {
+                    result.put("documents", Collections.emptyMap());
+                }
+            } else {
+                result.put("documents", Collections.emptyMap());
+            }
+
+            Map<String, Object> lastChange = hospitalVerificationService.getLastStatusChange(hospitalId);
+            result.put("lastDecision", lastChange);
+            result.put("adminReason", lastChange.get("reason"));
+
+            List<Map<String, Object>> auditLogs = hospitalVerificationService.getAuditLogs(hospitalId);
+            result.put("auditLogs", auditLogs);
+
+            return ok("Application status loaded", result);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping("/application")
+    public ResponseEntity<ApiResponse> getApplicationDetails(HttpServletRequest request) {
+        return getApplicationStatus(request);
+    }
+
+    @RequestMapping(value = "/application", method = {RequestMethod.PUT, RequestMethod.POST})
+    public ResponseEntity<ApiResponse> updateApplicationDetails(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+
+            Map<String, Object> hospital = hospitalDao.findById(hospitalId);
+            if (hospital == null) return unauthorized();
+
+            String status = com.red404.service.HospitalVerificationService.normalizeStatus((String) hospital.get("verificationStatus"));
+            if ("verified".equals(status)) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Application is already verified. Use profile settings."));
+            }
+
+            Map<String, Object> updates = new HashMap<>();
+            String[] allowed = {
+                "hospitalName", "hospitalType", "registrationNo", "bloodBankLicense",
+                "beds", "website", "adminName", "adminDesignation", "adminPhone",
+                "emergencyContact", "address", "landmark", "city", "state", "pincode", "operatingHours"
+            };
+            for (String f : allowed) {
+                if (body.has(f)) updates.put(f, JsonUtil.textOrNull(body, f));
+            }
+            if (body.has("services")) {
+                if (body.get("services").isArray()) {
+                    List<String> sList = new ArrayList<>();
+                    body.get("services").forEach(node -> sList.add(node.asText()));
+                    updates.put("services", String.join(", ", sList));
+                } else {
+                    updates.put("services", body.get("services").asText());
+                }
+            }
+            if (body.has("documents")) {
+                updates.put("documentsJson", JsonUtil.mapper().writeValueAsString(body.get("documents")));
+            }
+
+            hospitalDao.updateHospitalProfile(hospitalId, updates);
+            if (updates.containsKey("documentsJson")) {
+                hospitalDao.updateApplicationDocuments(hospitalId, (String) updates.get("documentsJson"));
+            }
+
+            Map<String, Object> refreshed = hospitalDao.findById(hospitalId);
+            return ok("Application details updated successfully.", refreshed);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/application/resubmit")
+    public ResponseEntity<ApiResponse> resubmitApplication(
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+
+            Map<String, Object> hospital = hospitalDao.findById(hospitalId);
+            if (hospital == null) return unauthorized();
+
+            String currentStatus = com.red404.service.HospitalVerificationService.normalizeStatus((String) hospital.get("verificationStatus"));
+            if (!"needs_info".equals(currentStatus) && !"rejected".equals(currentStatus)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Resubmission is only permitted when status is needs_info or rejected."));
+            }
+
+            if (body != null && body.has("documents")) {
+                hospitalDao.updateApplicationDocuments(hospitalId, JsonUtil.mapper().writeValueAsString(body.get("documents")));
+            }
+
+            String note = (body != null && body.has("note")) ? body.get("note").asText() : "Hospital responded with updated information/documents.";
+            hospitalVerificationService.changeStatus(hospitalId, "pending_review", note, "Hospital", false);
+
+            return ok("Application resubmitted successfully. Our team will review your submission.",
+                    Map.of("id", hospitalId, "status", "pending_review"));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/application/withdraw")
+    public ResponseEntity<ApiResponse> withdrawApplication(HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+
+            Map<String, Object> hospital = hospitalDao.findById(hospitalId);
+            if (hospital == null) return unauthorized();
+
+            hospitalVerificationService.changeStatus(hospitalId, "withdrawn", "Application withdrawn by applicant.", "Hospital", false);
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+            return ok("Application withdrawn successfully.", Map.of("id", hospitalId, "status", "withdrawn"));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/notifications/subscribe")
+    public ResponseEntity<ApiResponse> subscribeNotifications(
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+
+            String endpoint = JsonUtil.textOrNull(body, "endpoint");
+            if (endpoint == null || endpoint.isBlank()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Push endpoint is required."));
+            }
+            String p256dh = body.has("keys") ? JsonUtil.textOrNull(body.get("keys"), "p256dh") : JsonUtil.textOrNull(body, "p256dh");
+            String auth = body.has("keys") ? JsonUtil.textOrNull(body.get("keys"), "auth") : JsonUtil.textOrNull(body, "auth");
+
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "INSERT INTO hospital_push_subscriptions (hospital_id, endpoint, p256dh, auth, created_at) " +
+                                 "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")) {
+                ps.setInt(1, hospitalId);
+                ps.setString(2, endpoint);
+                ps.setString(3, p256dh);
+                ps.setString(4, auth);
+                ps.executeUpdate();
+            } catch (Exception e) {
+                log.warn("Notice saving hospital push subscription: {}", e.getMessage());
+            }
+
+            return ok("Notification subscription saved.", Map.of("subscribed", true));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "your registered email";
+        String[] parts = email.split("@");
+        String user = parts[0];
+        String domain = parts[1];
+        if (user.length() <= 2) return user.charAt(0) + "***@" + domain;
+        return user.charAt(0) + "***" + user.charAt(user.length() - 1) + "@" + domain;
+    }
+
+
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse> getProfile(HttpServletRequest request) {
         try {
@@ -162,17 +436,18 @@ public class HospitalController {
             if (hospitalId == null) {
                 return unauthorized();
             }
-            if (hospitalId != null) {
-                Map<String, Object> profile = hospitalDao.findById(hospitalId);
-                if (profile != null) {
-                    HttpSession session = request.getSession(false);
-                    if (session != null) {
-                        session.setAttribute("hospitalUser", profile);
-                    }
-                    return ok("Profile loaded", profile);
-                }
+            Map<String, Object> profile = hospitalDao.findById(hospitalId);
+            if (profile == null) {
+                return unauthorized();
             }
-            return unauthorized();
+            if (!isHospitalVerified(profile)) {
+                return forbiddenNotVerified((String) profile.get("verificationStatus"));
+            }
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.setAttribute("hospitalUser", profile);
+            }
+            return ok("Profile loaded", profile);
         } catch (Exception e) {
             return serverError(e);
         }
@@ -186,8 +461,9 @@ public class HospitalController {
             @RequestParam(required = false) String bloodType,
             HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) hospitalId = 1;
 
             if (lat == null || lng == null) {
                 Map<String, Object> hospital = hospitalDao.findById(hospitalId);
@@ -217,8 +493,9 @@ public class HospitalController {
     @PostMapping("/requests/send-single")
     public ResponseEntity<ApiResponse> sendSingleDonorRequest(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) hospitalId = 1;
             int donorId = JsonUtil.asInt(body, "donorId", 0);
             if (donorId <= 0) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Valid donor ID is required."));
@@ -282,8 +559,9 @@ public class HospitalController {
     @PostMapping("/requests/broadcast-matching")
     public ResponseEntity<ApiResponse> broadcastMatchingDonors(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) hospitalId = 1;
             List<Integer> donorIds = new ArrayList<>();
             if (body.has("donorIds") && body.get("donorIds").isArray()) {
                 for (JsonNode n : body.get("donorIds")) {
@@ -442,8 +720,10 @@ public class HospitalController {
     }
 
     @GetMapping("/dispatch-log")
-    public ResponseEntity<ApiResponse> getDispatchLog() {
+    public ResponseEntity<ApiResponse> getDispatchLog(HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             List<Map<String, Object>> list = requestDao.listActive();
             enrichAndSanitizeRequests(list);
             return ok("Log loaded", list);
@@ -501,15 +781,20 @@ public class HospitalController {
     }
 
     @PostMapping("/donors/{id}/notify")
-    public ResponseEntity<ApiResponse> notifyDonor(@PathVariable int id) {
+    public ResponseEntity<ApiResponse> notifyDonor(@PathVariable int id, HttpServletRequest request) {
+        ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+        if (gate != null) return gate;
         return ok("Notification sent to donor #" + id, null);
     }
 
     @PostMapping("/requests/{id}/cancel")
     public ResponseEntity<ApiResponse> cancelRequest(
             @PathVariable int id,
-            @RequestBody(required = false) JsonNode body) {
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             String reason = body != null ? JsonUtil.textOrNull(body, "reason") : null;
             if (reason == null || reason.trim().length() < 3) {
                 return ResponseEntity.badRequest()
@@ -525,8 +810,11 @@ public class HospitalController {
     @PostMapping("/requests/{id}/fulfill")
     public ResponseEntity<ApiResponse> fulfillRequest(
             @PathVariable int id,
-            @RequestBody(required = false) JsonNode body) {
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             String note = body != null ? JsonUtil.textOrNull(body, "note") : null;
             if (note == null || note.trim().length() < 3) {
                 return ResponseEntity.badRequest()
@@ -540,8 +828,10 @@ public class HospitalController {
     }
 
     @GetMapping("/requests/{id}/donors")
-    public ResponseEntity<ApiResponse> getRequestDonors(@PathVariable int id) {
+    public ResponseEntity<ApiResponse> getRequestDonors(@PathVariable int id, HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
             return ok("Donors loaded", notifDao.getDonorsForRequest(id));
         } catch (Exception e) {
@@ -552,8 +842,11 @@ public class HospitalController {
     @PostMapping("/requests/{id}/extend-radius")
     public ResponseEntity<ApiResponse> extendRadius(
             @PathVariable int id,
-            @RequestBody JsonNode body) {
+            @RequestBody JsonNode body,
+            HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             double radius = 15.0;
             if (body != null && body.has("radius")) {
                 radius = body.get("radius").asDouble();
@@ -573,6 +866,8 @@ public class HospitalController {
     @PostMapping({"/requests", "/requests/dispatch"})
     public ResponseEntity<ApiResponse> createRequest(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
             if (hospitalId == null || hospitalId <= 0) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -656,6 +951,9 @@ public class HospitalController {
             }
 
             String email = JsonUtil.text(body, "hospitalEmail").trim().toLowerCase();
+            if (email.isEmpty()) {
+                email = JsonUtil.text(body, "officialEmail").trim().toLowerCase();
+            }
             if (email.isEmpty()) {
                 email = JsonUtil.text(body, "email").trim().toLowerCase();
             }
@@ -794,6 +1092,17 @@ public class HospitalController {
                 respData.put("hospitalEmail", email);
                 respData.put("message", "Application received. Our verification team will review your credentials within 24-48 business hours.");
 
+                try {
+                    Map<String, Object> eventData = new LinkedHashMap<>();
+                    eventData.put("id", hosp.get("id"));
+                    eventData.put("hospitalName", hospitalName);
+                    eventData.put("city", city);
+                    eventData.put("status", "pending_review");
+                    eventData.put("applicationRef", appRef);
+                    eventData.put("createdAt", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
+                    AdminController.broadcastAdminEvent("new-hospital-application", eventData);
+                } catch (Exception ignored) {}
+
                 return ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse(true, "Application received. Our verification team will review your institutional credentials within 24-48 business hours.", respData));
             } else {
@@ -819,6 +1128,10 @@ public class HospitalController {
             Map<String, Object> wrapper = new HashMap<>();
             wrapper.put("hospital", hospital);
             wrapper.put("token", "SESSION-HOSPITAL-" + hospital.get("id"));
+            String status = com.red404.service.HospitalVerificationService.normalizeStatus((String) hospital.get("verificationStatus"));
+            wrapper.put("status", status);
+            wrapper.put("isVerified", "verified".equals(status));
+            wrapper.put("redirectUrl", "verified".equals(status) ? "hospital-dashboard.html" : "hospital-status.html");
             return ok("Login Successful", wrapper);
         } catch (Exception e) {
             return serverError(e);
@@ -830,8 +1143,9 @@ public class HospitalController {
     @GetMapping("/inventory")
     public ResponseEntity<ApiResponse> getInventory(HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) hospitalId = 1;
             Map<String, Object> inv = StockService.getHospitalStock(hospitalId);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
@@ -904,8 +1218,9 @@ public class HospitalController {
     @GetMapping("/drives")
     public ResponseEntity<ApiResponse> getDrives(HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) hospitalId = 1;
             List<Map<String, Object>> drives = donationDriveDao.listDrivesForHospital(hospitalId);
             return ok("Donation drives loaded", drives);
         } catch (Exception e) {
@@ -998,8 +1313,9 @@ public class HospitalController {
     @PostMapping("/drives/{id}/cancel")
     public ResponseEntity<ApiResponse> cancelDrive(@PathVariable int id, HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) hospitalId = 1;
             boolean success = donationDriveDao.updateStatus(id, hospitalId, "cancelled");
             return ok("Drive cancelled", success);
         } catch (Exception e) {
@@ -1010,8 +1326,9 @@ public class HospitalController {
     @PostMapping("/drives/{id}/complete")
     public ResponseEntity<ApiResponse> completeDrive(@PathVariable int id, HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) hospitalId = 1;
             // Rule 6: When a drive is marked completed, do NOT auto-change stock. Stock changes only through the Inventory page.
             boolean success = donationDriveDao.updateStatus(id, hospitalId, "completed");
             return ok("Drive marked as completed", success);
@@ -1297,7 +1614,9 @@ public class HospitalController {
     }
 
     @GetMapping("/donation-gaps")
-    public ResponseEntity<ApiResponse> getDonationGaps() {
+    public ResponseEntity<ApiResponse> getDonationGaps(HttpServletRequest request) {
+        ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+        if (gate != null) return gate;
         return ok("Donation gap configuration", DonorEligibilityService.getDonationGapConfig());
     }
 
@@ -1306,8 +1625,9 @@ public class HospitalController {
             @RequestBody JsonNode body,
             HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) return unauthorized();
             int male = JsonUtil.asInt(body, "male", DonorEligibilityService.configuredMaleGap);
             int female = JsonUtil.asInt(body, "female", DonorEligibilityService.configuredFemaleGap);
             int unspec = JsonUtil.asInt(body, "unspecified", DonorEligibilityService.configuredUnspecGap);
@@ -1323,8 +1643,9 @@ public class HospitalController {
             @RequestBody JsonNode body,
             HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) return unauthorized();
             Map<String, Object> hosp = hospitalDao.findById(hospitalId);
             if (hosp == null) return unauthorized();
             String vStatus = (String) hosp.get("verificationStatus");
@@ -1385,10 +1706,9 @@ public class HospitalController {
             @RequestBody JsonNode body,
             HttpServletRequest request) {
         try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
             Integer hospitalId = getHospitalId(request);
-            if (hospitalId == null) {
-                return unauthorized();
-            }
 
             if (body == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Request body is required."));
@@ -1760,10 +2080,10 @@ public class HospitalController {
                 }
             }
 
-            // Sensitive fields check: name or registration number changed
+            // Critical fields check: name, registration number, or blood bank license
             String currentStatus = (String) current.get("verificationStatus");
             if (currentStatus == null) currentStatus = (String) current.get("verification_status");
-            boolean isVerified = "Verified".equalsIgnoreCase(currentStatus);
+            boolean isVerified = "verified".equalsIgnoreCase(currentStatus);
 
             String oldName = (String) current.get("name");
             if (oldName == null) oldName = (String) current.get("hospital_name");
@@ -1773,6 +2093,10 @@ public class HospitalController {
             if (oldReg == null) oldReg = (String) current.get("registration_no");
             String newReg = (String) updates.get("registrationNo");
 
+            String oldLic = (String) current.get("bloodBankLicense");
+            if (oldLic == null) oldLic = (String) current.get("blood_bank_license");
+            String newLic = (String) updates.get("bloodBankLicense");
+
             boolean sensitiveChanged = false;
             if (newName != null && !newName.trim().equalsIgnoreCase(oldName != null ? oldName.trim() : "")) {
                 sensitiveChanged = true;
@@ -1780,9 +2104,19 @@ public class HospitalController {
             if (newReg != null && !newReg.trim().equalsIgnoreCase(oldReg != null ? oldReg.trim() : "")) {
                 sensitiveChanged = true;
             }
+            if (newLic != null && !newLic.trim().equalsIgnoreCase(oldLic != null ? oldLic.trim() : "")) {
+                sensitiveChanged = true;
+            }
 
             if (isVerified && sensitiveChanged) {
-                updates.put("verification_status", "Needs re-verification");
+                updates.put("verification_status", "pending_review");
+                try {
+                    hospitalVerificationService.changeStatus(hospitalId, "pending_review",
+                            "Hospital modified critical fields (name / registration / license); automatic re-verification required",
+                            "Hospital Self-Service", false);
+                } catch (Exception ex) {
+                    log.warn("Automatic re-verification trigger notice: {}", ex.getMessage());
+                }
             }
 
             boolean ok = hospitalDao.updateHospitalProfile(hospitalId, updates);

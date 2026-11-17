@@ -50,6 +50,7 @@ public class EmailVerificationService {
         }
 
         String cleanEmail = email.trim().toLowerCase();
+        String cleanPurpose = purpose != null ? purpose.trim().toUpperCase() : "GENERAL";
 
         // 1. Rate Limiting: Max 5 codes per hour per email and per IP
         RateLimitService.RateLimitResult ipCheck = rateLimitService.checkLimit("code_req_ip:" + clientIp, 5, 3600);
@@ -72,7 +73,7 @@ public class EmailVerificationService {
              PreparedStatement ps = conn.prepareStatement(
                      "SELECT created_at FROM email_verification_codes WHERE email = ? AND purpose = ? ORDER BY id DESC LIMIT 1")) {
             ps.setString(1, cleanEmail);
-            ps.setString(2, purpose);
+            ps.setString(2, cleanPurpose);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Timestamp lastCreated = rs.getTimestamp("created_at");
@@ -104,7 +105,7 @@ public class EmailVerificationService {
                      "INSERT INTO email_verification_codes (email, code_hash, purpose, attempts, expires_at) VALUES (?, ?, ?, 0, ?)")) {
             ps.setString(1, cleanEmail);
             ps.setString(2, codeHash);
-            ps.setString(3, purpose);
+            ps.setString(3, cleanPurpose);
             ps.setTimestamp(4, expiresAt);
             ps.executeUpdate();
         } catch (Exception e) {
@@ -137,6 +138,7 @@ public class EmailVerificationService {
 
         String cleanEmail = email.trim().toLowerCase();
         String cleanCode = code.trim();
+        String cleanPurpose = purpose != null ? purpose.trim().toUpperCase() : "GENERAL";
         String inputHash = sha256(cleanCode);
 
         try (Connection conn = DBConnection.getConnection();
@@ -144,7 +146,7 @@ public class EmailVerificationService {
                      "SELECT id, code_hash, attempts, expires_at, verified_at FROM email_verification_codes " +
                      "WHERE email = ? AND purpose = ? ORDER BY id DESC LIMIT 1")) {
             ps.setString(1, cleanEmail);
-            ps.setString(2, purpose);
+            ps.setString(2, cleanPurpose);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
@@ -224,6 +226,7 @@ public class EmailVerificationService {
         if (email == null || token == null || token.isBlank()) return false;
         String cleanEmail = email.trim().toLowerCase();
         String cleanToken = token.trim();
+        String cleanPurpose = purpose != null ? purpose.trim().toUpperCase() : "GENERAL";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(
@@ -232,7 +235,7 @@ public class EmailVerificationService {
                      "ORDER BY id DESC LIMIT 1")) {
             ps.setString(1, cleanEmail);
             ps.setString(2, cleanToken);
-            ps.setString(3, purpose);
+            ps.setString(3, cleanPurpose);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {

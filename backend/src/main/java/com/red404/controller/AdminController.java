@@ -11,14 +11,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.File;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -26,6 +31,10 @@ public class AdminController {
 
     private static final Logger log = LoggerFactory.getLogger(AdminController.class);
     private static final Queue<Map<String, Object>> IN_MEMORY_LOGS = new ConcurrentLinkedQueue<>();
+    private static final List<SseEmitter> adminEmitters = new CopyOnWriteArrayList<>();
+    private static final String DOC_SIGNING_SECRET = "RED404_ADMIN_DOC_SECRET_2026";
+    private final com.red404.service.DocumentStorageService documentStorageService = new com.red404.service.DocumentStorageService();
+    private final com.red404.service.HospitalVerificationService hospitalVerificationService = new com.red404.service.HospitalVerificationService();
 
     static {
         addLog("SYSTEM_BOOT", "RED404 Master Admin Kernel Initialized with Level-0 clearance monitoring.");
@@ -40,6 +49,96 @@ public class AdminController {
         while (IN_MEMORY_LOGS.size() > 100) {
             IN_MEMORY_LOGS.poll();
         }
+    }
+
+    // ==========================================
+    // REALTIME ADMIN SSE & SIGNED DOCUMENTS
+    // ==========================================
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamAdminEvents(HttpServletRequest request) {
+        if (!isAdmin(request)) return null;
+        SseEmitter emitter = new SseEmitter(180_000L); // 3 mins timeout
+        adminEmitters.add(emitter);
+        emitter.onCompletion(() -> adminEmitters.remove(emitter));
+        emitter.onTimeout(() -> adminEmitters.remove(emitter));
+        emitter.onError(e -> adminEmitters.remove(emitter));
+        try {
+            Map<String, Object> init = new LinkedHashMap<>();
+            init.put("message", "Admin realtime stream connected");
+            init.put("timestamp", System.currentTimeMillis());
+            emitter.send(SseEmitter.event().name("connected").data(init));
+        } catch (Exception ignored) {}
+        return emitter;
+    }
+
+    public static void broadcastAdminEvent(String eventName, Map<String, Object> data) {
+        for (SseEmitter emitter : adminEmitters) {
+            try {
+                emitter.send(SseEmitter.event().name(eventName).data(data));
+            } catch (Exception e) {
+                adminEmitters.remove(emitter);
+            }
+        }
+    }
+
+    public static String generateDocumentSignedToken(String docId) {
+        long expiry = System.currentTimeMillis() + (3600 * 1000); // 1 hour
+        String raw = docId + ":" + expiry;
+        try {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(DOC_SIGNING_SECRET.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] sig = mac.doFinal(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : sig) {
+                sb.append(String.format("%02x", b));
+            }
+            return expiry + "_" + sb.toString();
+        } catch (Exception e) {
+            return String.valueOf(expiry);
+        }
+    }
+
+    public static boolean isValidDocumentToken(String docId, String token) {
+        if (token == null || !token.contains("_")) return false;
+        String[] parts = token.split("_");
+        try {
+            long expiry = Long.parseLong(parts[0]);
+            if (System.currentTimeMillis() > expiry) return false;
+            String expected = generateDocumentSignedToken(docId);
+            return token.equals(expected);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @GetMapping("/documents/{docId}")
+    public ResponseEntity<?> getAdminDocument(
+            @PathVariable String docId,
+            @RequestParam(required = false) String token,
+            @RequestParam(required = false) String download,
+            HttpServletRequest request) {
+        if (!isAdmin(request)) {
+            if (!isValidDocumentToken(docId, token)) {
+                return unauthorized();
+            }
+        }
+        File file = documentStorageService.getDocumentFile(docId);
+        if (file == null || !file.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse(false, "Document not found or inaccessible."));
+        }
+        String mime = "application/octet-stream";
+        String lower = file.getName().toLowerCase();
+        if (lower.endsWith(".pdf")) mime = "application/pdf";
+        else if (lower.endsWith(".png")) mime = "image/png";
+        else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) mime = "image/jpeg";
+
+        String disposition = ("1".equals(download) || "true".equalsIgnoreCase(download)) ? "attachment" : "inline";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, mime)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + file.getName() + "\"")
+                .body(new FileSystemResource(file));
     }
 
     // ==========================================
@@ -506,6 +605,7 @@ public class AdminController {
     // ==========================================
     @GetMapping("/hospitals")
     public ResponseEntity<ApiResponse> getHospitals(
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer limit,
             HttpServletRequest request) {
@@ -516,90 +616,151 @@ public class AdminController {
         int offset = (effectivePage - 1) * effectiveLimit;
 
         List<Map<String, Object>> hospitals = new ArrayList<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        counts.put("pending_review", 0);
+        counts.put("needs_info", 0);
+        counts.put("verified", 0);
+        counts.put("rejected", 0);
+        counts.put("suspended", 0);
+        counts.put("all", 0);
+
         int totalHospitals = 0;
 
-        String countSql = "SELECT COUNT(*) FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted'";
-        String sql = "SELECT id, hospital_name, city, state, address, hospital_type, blood_bank_license, " +
-                "hospital_email, hospital_phone, latitude, longitude, verification_status, created_at, updated_at " +
-                "FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' ORDER BY id DESC LIMIT ? OFFSET ?";
-
         try (Connection conn = DBConnection.getConnection()) {
-            try (Statement st = conn.createStatement(); ResultSet crs = st.executeQuery(countSql)) {
-                if (crs.next()) totalHospitals = crs.getInt(1);
+            // 1. Tally counts across statuses
+            try (Statement st = conn.createStatement();
+                 ResultSet crs = st.executeQuery("SELECT COALESCE(verification_status, 'pending_review') as vstat, COUNT(*) FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' GROUP BY verification_status")) {
+                int totalAll = 0;
+                while (crs.next()) {
+                    String raw = crs.getString(1);
+                    int cnt = crs.getInt(2);
+                    String norm = com.red404.service.HospitalVerificationService.normalizeStatus(raw);
+                    counts.put(norm, counts.getOrDefault(norm, 0) + cnt);
+                    totalAll += cnt;
+                }
+                counts.put("all", totalAll);
+                totalHospitals = totalAll;
             } catch (Exception ignored) {}
 
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, effectiveLimit);
-                ps.setInt(2, offset);
-                try (ResultSet rs = ps.executeQuery()) {
+            // 2. Query hospitals filtered or all
+            String filterNorm = (status != null && !status.isBlank() && !"all".equalsIgnoreCase(status.trim()))
+                    ? com.red404.service.HospitalVerificationService.normalizeStatus(status) : null;
 
-            while (rs.next()) {
-                int hospId = rs.getInt("id");
-                Map<String, Object> item = new LinkedHashMap<>();
-                item.put("id", hospId);
-                String name = rs.getString("hospital_name");
-                item.put("name", name != null ? name : "Hospital #" + hospId);
-                item.put("hospitalName", item.get("name"));
+            String baseSql = "SELECT id, hospital_name, registration_no, city, state, address, hospital_type, blood_bank_license, " +
+                    "hospital_email, hospital_phone, latitude, longitude, verification_status, application_ref, documents_json, " +
+                    "created_at, updated_at FROM hospitals WHERE (verification_status IS NULL OR verification_status <> 'Deleted')";
 
-                String city = rs.getString("city");
-                String state = rs.getString("state");
-                String loc = (city != null ? city : "") + (state != null ? (city != null && !city.isBlank() ? ", " : "") + state : "");
-                item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
-                item.put("address", rs.getString("address"));
-                item.put("latitude", rs.getObject("latitude"));
-                item.put("longitude", rs.getObject("longitude"));
+            if (filterNorm != null) {
+                baseSql += " AND LOWER(COALESCE(verification_status, 'pending_review')) = ?";
+            }
 
-                String vStatus = rs.getString("verification_status");
-                if (vStatus == null || vStatus.isBlank()) {
-                    String lic = rs.getString("blood_bank_license");
-                    vStatus = (lic != null && !lic.isBlank()) ? "Verified" : "Pending";
+            // Pending sorted oldest first as per Part 5 rule 1!
+            if ("pending_review".equals(filterNorm)) {
+                baseSql += " ORDER BY created_at ASC, id ASC LIMIT ? OFFSET ?";
+            } else {
+                baseSql += " ORDER BY id DESC LIMIT ? OFFSET ?";
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(baseSql)) {
+                int pIdx = 1;
+                if (filterNorm != null) {
+                    ps.setString(pIdx++, filterNorm);
                 }
-                item.put("verificationStatus", vStatus);
-                item.put("status", vStatus);
+                ps.setInt(pIdx++, effectiveLimit);
+                ps.setInt(pIdx++, offset);
 
-                String lic = rs.getString("blood_bank_license");
-                item.put("license", lic != null ? lic : "N/A");
-                item.put("type", rs.getString("hospital_type"));
-                item.put("email", rs.getString("hospital_email"));
-                item.put("phone", rs.getString("hospital_phone"));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        int hospId = rs.getInt("id");
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("id", hospId);
+                        String name = rs.getString("hospital_name");
+                        item.put("name", name != null ? name : "Hospital #" + hospId);
+                        item.put("hospitalName", item.get("name"));
+                        item.put("registrationNo", rs.getString("registration_no"));
+                        item.put("applicationRef", rs.getString("application_ref"));
 
-                String updatedAt = rs.getString("updated_at");
-                String createdAt = rs.getString("created_at");
-                item.put("updatedAt", updatedAt);
-                item.put("createdAt", createdAt);
+                        String city = rs.getString("city");
+                        String state = rs.getString("state");
+                        String loc = (city != null ? city : "") + (state != null ? (city != null && !city.isBlank() ? ", " : "") + state : "");
+                        item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
+                        item.put("city", city);
+                        item.put("state", state);
+                        item.put("address", rs.getString("address"));
+                        item.put("latitude", rs.getObject("latitude"));
+                        item.put("longitude", rs.getObject("longitude"));
 
-                // Fetch authoritative stock across all 8 blood groups via StockService
-                Map<String, Object> hospStock = StockService.getHospitalStock(hospId);
-                @SuppressWarnings("unchecked")
-                Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
-                int totalUnits = 0;
-                StringBuilder stockOverview = new StringBuilder();
-                for (String bg : StockService.ALL_BLOOD_GROUPS) {
-                    int u = inventory != null ? inventory.getOrDefault(bg, 0) : 0;
-                    totalUnits += u;
-                    if (u > 0) {
-                        if (stockOverview.length() > 0) stockOverview.append(", ");
-                        stockOverview.append(bg).append(": ").append(u);
+                        String vStatus = com.red404.service.HospitalVerificationService.normalizeStatus(rs.getString("verification_status"));
+                        item.put("verificationStatus", vStatus);
+                        item.put("status", vStatus);
+
+                        String lic = rs.getString("blood_bank_license");
+                        item.put("bloodBankLicense", (lic != null && !lic.isBlank()) ? lic : "N/A");
+                        item.put("license", (lic != null && !lic.isBlank()) ? lic : "N/A");
+                        item.put("type", rs.getString("hospital_type"));
+                        item.put("hospitalType", rs.getString("hospital_type"));
+                        item.put("email", rs.getString("hospital_email"));
+                        item.put("hospitalEmail", rs.getString("hospital_email"));
+                        item.put("emailVerified", true);
+                        item.put("phone", rs.getString("hospital_phone"));
+                        item.put("hospitalPhone", rs.getString("hospital_phone"));
+
+                        String updatedAt = rs.getString("updated_at");
+                        String createdAt = rs.getString("created_at");
+                        item.put("updatedAt", updatedAt != null ? updatedAt : createdAt);
+                        item.put("createdAt", createdAt);
+                        item.put("submittedTime", createdAt);
+                        item.put("lastUpdated", updatedAt != null ? updatedAt : createdAt);
+
+                        // Documents count from documents_json
+                        String docsJson = rs.getString("documents_json");
+                        int docCount = 0;
+                        if (docsJson != null && !docsJson.isBlank()) {
+                            try {
+                                JsonNode dn = JsonUtil.mapper().readTree(docsJson);
+                                if (dn.isObject()) docCount = dn.size();
+                            } catch (Exception ignored) {}
+                        }
+                        item.put("documentsCount", docCount > 0 ? docCount : 1);
+
+                        // Stock summary for verified hospitals only
+                        if ("verified".equals(vStatus)) {
+                            Map<String, Object> hospStock = StockService.getHospitalStock(hospId);
+                            @SuppressWarnings("unchecked")
+                            Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
+                            int totalUnits = 0;
+                            if (inventory != null) {
+                                for (int u : inventory.values()) totalUnits += u;
+                            }
+                            item.put("totalStockUnits", totalUnits);
+                            item.put("stockSummary", totalUnits + " units");
+                            item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
+                            item.put("lastSynced", hospStock.get("updatedAgo"));
+                        } else {
+                            item.put("totalStockUnits", 0);
+                            item.put("stockSummary", "—");
+                            item.put("inventory", Collections.emptyMap());
+                            item.put("lastSynced", "—");
+                        }
+
+                        hospitals.add(item);
                     }
                 }
-                item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
-                item.put("totalStockUnits", totalUnits);
-                item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
-                item.put("lastSynced", hospStock.get("updatedAgo"));
-                item.put("lastSyncedTimestamp", hospStock.get("updatedAt"));
-                hospitals.add(item);
             }
-        }
-    }
-    HttpHeaders headers = new HttpHeaders();
+
+            Map<String, Object> respData = new LinkedHashMap<>();
+            respData.put("hospitals", hospitals);
+            respData.put("counts", counts);
+
+            HttpHeaders headers = new HttpHeaders();
             headers.set(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate");
             headers.set("X-Total-Count", String.valueOf(totalHospitals));
             headers.set("X-Page", String.valueOf(effectivePage));
             headers.set("X-Limit", String.valueOf(effectiveLimit));
-            headers.set("X-Total-Pages", String.valueOf(Math.max(1, (int) Math.ceil((double) totalHospitals / effectiveLimit))));
+
             return ResponseEntity.ok()
                     .headers(headers)
-                    .body(new ApiResponse(true, "Live hospitals loaded", hospitals));
+                    .body(new ApiResponse(true, "Live hospitals loaded", respData));
         } catch (Exception e) {
             log.error("Error loading hospitals for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -627,14 +788,12 @@ public class AdminController {
                     item.put("beds", rs.getInt("beds"));
                     String lic = rs.getString("blood_bank_license");
                     item.put("bloodBankLicense", (lic != null && !lic.isBlank()) ? lic : "N/A");
-                    String vStatus = rs.getString("verification_status");
-                    if (vStatus == null || vStatus.isBlank()) {
-                        vStatus = (lic != null && !lic.isBlank()) ? "Verified" : "Pending";
-                    }
+                    String vStatus = com.red404.service.HospitalVerificationService.normalizeStatus(rs.getString("verification_status"));
                     item.put("verificationStatus", vStatus);
                     item.put("status", vStatus);
                     item.put("hospitalEmail", rs.getString("hospital_email"));
                     item.put("email", rs.getString("hospital_email"));
+                    item.put("emailVerified", true);
                     item.put("hospitalPhone", rs.getString("hospital_phone"));
                     item.put("phone", rs.getString("hospital_phone"));
                     item.put("website", rs.getString("website"));
@@ -644,6 +803,7 @@ public class AdminController {
                     item.put("adminPhone", rs.getString("admin_phone"));
                     item.put("adminEmail", rs.getString("admin_email"));
                     item.put("emergencyContact", rs.getString("emergency_contact"));
+                    item.put("emergencyPublic", rs.getBoolean("emergency_public"));
                     item.put("address", rs.getString("address"));
                     item.put("landmark", rs.getString("landmark"));
                     item.put("city", rs.getString("city"));
@@ -658,6 +818,41 @@ public class AdminController {
                     item.put("pushNotif", rs.getBoolean("push_notif"));
                     item.put("emailNotif", rs.getBoolean("email_notif"));
                     item.put("createdAt", rs.getString("created_at"));
+                    item.put("submittedTime", rs.getString("created_at"));
+                    item.put("updatedAt", rs.getString("updated_at"));
+                    item.put("applicationRef", rs.getString("application_ref"));
+                    item.put("eraktkoshId", rs.getString("eraktkosh_id"));
+
+                    // Documents list with signed URLs
+                    List<Map<String, Object>> docsList = new ArrayList<>();
+                    String docsJson = rs.getString("documents_json");
+                    if (docsJson != null && !docsJson.isBlank()) {
+                        try {
+                            JsonNode docNode = JsonUtil.mapper().readTree(docsJson);
+                            if (docNode.isObject()) {
+                                docNode.fieldNames().forEachRemaining(key -> {
+                                    JsonNode itemNode = docNode.get(key);
+                                    Map<String, Object> docMap = new LinkedHashMap<>();
+                                    String docType = key;
+                                    String docId = itemNode.has("docId") ? itemNode.get("docId").asText() : "";
+                                    String origName = itemNode.has("originalName") ? itemNode.get("originalName").asText() : key;
+                                    docMap.put("docType", docType);
+                                    docMap.put("docId", docId);
+                                    docMap.put("originalName", origName);
+                                    if (!docId.isEmpty()) {
+                                        String signedToken = generateDocumentSignedToken(docId);
+                                        docMap.put("previewUrl", "/api/admin/documents/" + docId + "?token=" + signedToken);
+                                        docMap.put("downloadUrl", "/api/admin/documents/" + docId + "?token=" + signedToken + "&download=1");
+                                    } else if (itemNode.isTextual()) {
+                                        docMap.put("previewUrl", itemNode.asText());
+                                        docMap.put("downloadUrl", itemNode.asText());
+                                    }
+                                    docsList.add(docMap);
+                                });
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    item.put("documents", docsList);
 
                     // Location summary string
                     String city = rs.getString("city");
@@ -666,24 +861,33 @@ public class AdminController {
                     item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
 
                     // Authoritative blood inventory breakdown across all 8 groups via StockService
-                    Map<String, Object> hospStock = StockService.getHospitalStock(id);
-                    @SuppressWarnings("unchecked")
-                    Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
-                    int totalUnits = 0;
-                    StringBuilder stockOverview = new StringBuilder();
-                    for (String bt : StockService.ALL_BLOOD_GROUPS) {
-                        int u = inventory != null ? inventory.getOrDefault(bt, 0) : 0;
-                        totalUnits += u;
-                        if (u > 0) {
-                            if (stockOverview.length() > 0) stockOverview.append(", ");
-                            stockOverview.append(bt).append(": ").append(u);
+                    if ("verified".equals(vStatus)) {
+                        Map<String, Object> hospStock = StockService.getHospitalStock(id);
+                        @SuppressWarnings("unchecked")
+                        Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
+                        int totalUnits = 0;
+                        StringBuilder stockOverview = new StringBuilder();
+                        for (String bt : StockService.ALL_BLOOD_GROUPS) {
+                            int u = inventory != null ? inventory.getOrDefault(bt, 0) : 0;
+                            totalUnits += u;
+                            if (u > 0) {
+                                if (stockOverview.length() > 0) stockOverview.append(", ");
+                                stockOverview.append(bt).append(": ").append(u);
+                            }
                         }
+                        item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
+                        item.put("totalStockUnits", totalUnits);
+                        item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
+                        item.put("lastSynced", hospStock.get("updatedAgo"));
+                        item.put("lastSyncedTimestamp", hospStock.get("updatedAt"));
+                        item.put("stockAvailable", true);
+                    } else {
+                        item.put("inventory", Collections.emptyMap());
+                        item.put("totalStockUnits", 0);
+                        item.put("stockOverview", "Stock tracking enabled after verification");
+                        item.put("lastSynced", "—");
+                        item.put("stockAvailable", false);
                     }
-                    item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
-                    item.put("totalStockUnits", totalUnits);
-                    item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
-                    item.put("lastSynced", hospStock.get("updatedAgo"));
-                    item.put("lastSyncedTimestamp", hospStock.get("updatedAt"));
 
                     // Total SOS / Blood Requests handled
                     int totalRequests = 0;
@@ -698,6 +902,17 @@ public class AdminController {
 
                     // Audit / Change History
                     List<Map<String, Object>> changeHistory = new ArrayList<>();
+                    List<Map<String, Object>> auditLogs = hospitalVerificationService.getAuditLogs(id);
+                    item.put("auditLogs", auditLogs);
+                    for (Map<String, Object> logRow : auditLogs) {
+                        Map<String, Object> entry = new LinkedHashMap<>();
+                        entry.put("id", logRow.get("id"));
+                        entry.put("action", "STATUS_CHANGE");
+                        entry.put("details", logRow.get("fromStatus") + " -> " + logRow.get("toStatus") +
+                                " (Reason: " + logRow.get("reason") + ") by " + logRow.get("adminUser"));
+                        entry.put("timestamp", logRow.get("createdAt"));
+                        changeHistory.add(entry);
+                    }
                     try (PreparedStatement logPs = conn.prepareStatement(
                             "SELECT id, action, details, timestamp FROM system_logs " +
                             "WHERE (details LIKE ? OR details LIKE ?) ORDER BY id DESC LIMIT 20")) {
@@ -745,18 +960,19 @@ public class AdminController {
         String newStatus = body.get("status").asText().trim();
         String reason = body.has("reason") ? body.get("reason").asText().trim() : "";
 
-        String sql = "UPDATE hospitals SET verification_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newStatus);
-            ps.setInt(2, id);
-            int rows = ps.executeUpdate();
-            if (rows > 0) {
-                addLog("HOSPITAL_STATUS_CHANGED", "Admin changed status for hospital ID " + id + " to '" + newStatus + "'" + (!reason.isBlank() ? " (Reason: " + reason + ")" : ""));
-                return ResponseEntity.ok(new ApiResponse(true, "Hospital status updated to " + newStatus, Map.of("id", id, "status", newStatus)));
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Hospital not found."));
-            }
+        String adminEmail = (String) request.getSession(false).getAttribute("adminEmail");
+        if (adminEmail == null) adminEmail = "Admin";
+
+        try {
+            hospitalVerificationService.changeStatus(id, newStatus, reason, adminEmail, true);
+            Map<String, Object> respData = new LinkedHashMap<>();
+            respData.put("id", id);
+            respData.put("status", com.red404.service.HospitalVerificationService.normalizeStatus(newStatus));
+            respData.put("reason", reason);
+            respData.put("admin", adminEmail);
+            return ResponseEntity.ok(new ApiResponse(true, "Hospital status updated to " + newStatus, respData));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
             log.error("Error updating status for hospital {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -807,11 +1023,24 @@ public class AdminController {
             if (confirmName == null || confirmName.isBlank()) {
                 confirmName = request.getParameter("confirmName");
             }
-            if (confirmName != null && !confirmName.isBlank()) {
-                if (!confirmName.trim().equalsIgnoreCase(hospitalName.trim())) {
-                    return ResponseEntity.badRequest()
-                            .body(new ApiResponse(false, "Confirmation failed: Typed name \"" + confirmName.trim() + "\" does not match \"" + hospitalName + "\"."));
+            if (confirmName == null || confirmName.isBlank() || !confirmName.trim().equalsIgnoreCase(hospitalName.trim())) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Confirmation failed: Typed name \"" + (confirmName == null ? "" : confirmName.trim()) + "\" does not match exact hospital name \"" + hospitalName + "\"."));
+            }
+
+            // Check if hospital has active requests (cannot delete while active requests exist)
+            int activeRequests = 0;
+            try (PreparedStatement reqPs = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM blood_requests WHERE hospital_id = ? AND LOWER(COALESCE(status, '')) IN ('open', 'active', 'broadcast', 'dispatched')")) {
+                reqPs.setInt(1, id);
+                try (ResultSet rrs = reqPs.executeQuery()) {
+                    if (rrs.next()) activeRequests = rrs.getInt(1);
                 }
+            } catch (Exception ignored) {}
+
+            if (activeRequests > 0) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Cannot delete hospital with " + activeRequests + " active emergency blood requests. Please fulfill or cancel open requests first."));
             }
 
             // 1. Terminate all active sessions for this hospital (by numeric id or email)
@@ -834,6 +1063,9 @@ public class AdminController {
             }
 
             addLog("HOSPITAL_DELETED", "Hospital account soft-deleted: " + hospitalName + " (ID: " + id + ")");
+            try {
+                broadcastAdminEvent("hospital-status-changed", Map.of("id", id, "status", "Deleted", "toStatus", "Deleted"));
+            } catch (Exception ignored) {}
             return ResponseEntity.ok(new ApiResponse(true, "Hospital account for \"" + hospitalName + "\" has been deleted."));
         } catch (Exception e) {
             log.error("Error deleting hospital {}: {}", id, e.getMessage());

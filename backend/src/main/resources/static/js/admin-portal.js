@@ -234,7 +234,7 @@
   }
 
   /* Privacy-First Name Reveal Toggle */
-  window.toggleRevealName = function(donorId) {
+  window.toggleRevealName = function (donorId) {
     const nameEl = document.getElementById(`donor-name-${donorId}`);
     const iconEl = document.getElementById(`reveal-icon-${donorId}`);
     if (!nameEl) return;
@@ -256,7 +256,7 @@
   };
 
   /* Three Dots (Kebab) Dropdown Toggle - Fixed Positioning to Never Clip */
-  window.toggleKebabMenu = function(event, donorId) {
+  window.toggleKebabMenu = function (event, donorId) {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
@@ -362,7 +362,7 @@
   }
 
   /* View Donor Profile Modal - Immediately fetches 100% fresh live DB data */
-  window.viewDonorProfile = async function(donorId) {
+  window.viewDonorProfile = async function (donorId) {
     document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
 
     currentProfileDonorId = donorId;
@@ -396,7 +396,7 @@
   };
 
   /* Sync Live Button inside Profile Modal */
-  window.refreshCurrentDonorProfile = async function() {
+  window.refreshCurrentDonorProfile = async function () {
     if (!currentProfileDonorId) return;
 
     const btn = document.getElementById('btnRefreshDonorProfile');
@@ -422,7 +422,7 @@
     }
   };
 
-  window.closeDonorProfileModal = function() {
+  window.closeDonorProfileModal = function () {
     const modal = document.getElementById('donorProfileModal');
     if (modal) {
       modal.style.display = 'none';
@@ -431,7 +431,7 @@
   };
 
   /* Send Password Reset Link */
-  window.handleSendPasswordReset = async function() {
+  window.handleSendPasswordReset = async function () {
     if (!currentProfileDonorId) return;
 
     const btn = document.getElementById('btnSendPasswordReset');
@@ -466,7 +466,7 @@
   };
 
   /* Delete Donor from Profile Modal */
-  window.handleDeleteFromModal = async function() {
+  window.handleDeleteFromModal = async function () {
     if (!currentProfileDonorId) return;
     const donor = allDonors.find(d => d.id === currentProfileDonorId);
     const donorName = donor ? donor.name : 'this donor';
@@ -475,7 +475,7 @@
     await window.deleteDonorAccount(did, donorName);
   };
 
-  window.toggleDonor = async function(donorId) {
+  window.toggleDonor = async function (donorId) {
     if (!donorId) return;
     document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
 
@@ -501,7 +501,7 @@
   };
 
   /* DELETE DONOR ACCOUNT - requires double confirmation */
-  window.deleteDonorAccount = async function(donorId, donorName) {
+  window.deleteDonorAccount = async function (donorId, donorName) {
     if (!donorId) return;
     document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
 
@@ -705,7 +705,7 @@
     setSpan('modal-hosp-landmark', hosp.landmark || 'None Specified');
     const cityStatePin = `${hosp.city || '-'}${hosp.state ? ', ' + hosp.state : ''}${hosp.pincode ? ' - ' + hosp.pincode : ''}`;
     setSpan('modal-hosp-city-state-pin', cityStatePin);
-    
+
     // GPS Coordinates with Pin icon or Location not set
     const coordsEl = document.getElementById('modal-hosp-coords');
     if (coordsEl) {
@@ -729,12 +729,12 @@
       stockGrid.innerHTML = '';
       const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       const ADMIN_STOCK_THRESHOLDS = {
-        'O-':  { critical: 4, low: 8 },
-        'O+':  { critical: 4, low: 8 },
-        'A-':  { critical: 3, low: 5 },
-        'A+':  { critical: 3, low: 5 },
-        'B-':  { critical: 3, low: 5 },
-        'B+':  { critical: 3, low: 5 },
+        'O-': { critical: 4, low: 8 },
+        'O+': { critical: 4, low: 8 },
+        'A-': { critical: 3, low: 5 },
+        'A+': { critical: 3, low: 5 },
+        'B-': { critical: 3, low: 5 },
+        'B+': { critical: 3, low: 5 },
         'AB-': { critical: 2, low: 4 },
         'AB+': { critical: 2, low: 4 }
       };
@@ -804,7 +804,7 @@
   }
 
   /* View Hospital Details Modal - Immediately fetches live DB data */
-  window.viewHospitalDetails = async function(hospId) {
+  window.viewHospitalDetails = async function (hospId) {
     if (!hospId) return;
     currentProfileHospitalId = hospId;
 
@@ -837,7 +837,7 @@
   };
 
   /* Sync Live Button inside Hospital Profile Modal */
-  window.refreshCurrentHospitalProfile = async function() {
+  window.refreshCurrentHospitalProfile = async function () {
     if (!currentProfileHospitalId) return;
     const btn = document.getElementById('btnRefreshHospitalProfile');
     const icon = btn?.querySelector('i');
@@ -862,7 +862,7 @@
   };
 
   /* Close Hospital Profile Modal */
-  window.closeHospitalProfileModal = function() {
+  window.closeHospitalProfileModal = function () {
     const modal = document.getElementById('hospitalProfileModal');
     if (modal) {
       modal.style.display = 'none';
@@ -871,7 +871,7 @@
   };
 
   /* Delete Hospital from Profile Modal */
-  window.handleDeleteHospitalFromModal = async function() {
+  window.handleDeleteHospitalFromModal = async function () {
     if (!currentProfileHospitalId) return;
     const hid = currentProfileHospitalId;
     const hosp = allHospitals.find(h => h.id === hid);
@@ -880,7 +880,7 @@
   };
 
   /* UPDATE HOSPITAL VERIFICATION STATUS (Approve, Reject, Request re-verification, Suspend) */
-  window.updateHospitalStatusAction = async function(newStatus) {
+  window.updateHospitalStatusAction = async function (newStatus) {
     if (!currentProfileHospitalId) return;
     const hid = currentProfileHospitalId;
 
@@ -912,7 +912,7 @@
   };
 
   /* DELETE HOSPITAL ACCOUNT - soft delete with typed hospital-name confirmation */
-  window.deleteHospitalAccount = async function(hospId, hospName) {
+  window.deleteHospitalAccount = async function (hospId, hospName) {
     if (!hospId) return;
 
     // Step 1: Warning confirmation
@@ -998,7 +998,7 @@
       card.className = 'feedback-card';
 
       const stars = '★'.repeat(Math.max(1, Math.min(5, fb.rating || 5))) +
-                    '☆'.repeat(5 - Math.max(1, Math.min(5, fb.rating || 5)));
+        '☆'.repeat(5 - Math.max(1, Math.min(5, fb.rating || 5)));
 
       card.innerHTML = `
         <div class="feedback-card-header">
@@ -1078,7 +1078,7 @@
     });
   }
 
-  window.resolveIssue = async function(issueId) {
+  window.resolveIssue = async function (issueId) {
     if (!issueId) return;
     try {
       const res = await fetch(`/api/admin/issues/${issueId}/resolve`, { method: 'POST' });
@@ -1222,13 +1222,13 @@
             const bg = (d.bloodGroup || '').toLowerCase().replace(/\s+/g, '');
 
             return name.includes(q) ||
-                   sid.includes(q) ||
-                   email.includes(q) ||
-                   phone.includes(q) ||
-                   city.includes(q) ||
-                   zone.includes(q) ||
-                   state.includes(q) ||
-                   bg === cleanQ;
+              sid.includes(q) ||
+              email.includes(q) ||
+              phone.includes(q) ||
+              city.includes(q) ||
+              zone.includes(q) ||
+              state.includes(q) ||
+              bg === cleanQ;
           });
         }
 
@@ -1256,7 +1256,7 @@
           const type = (h.hospitalType || h.type || '').toLowerCase();
           const admin = (h.adminName || '').toLowerCase();
           return name.includes(q) || loc.includes(q) || status.includes(q) ||
-                 reg.includes(q) || lic.includes(q) || type.includes(q) || admin.includes(q);
+            reg.includes(q) || lic.includes(q) || type.includes(q) || admin.includes(q);
         });
         if (hospBadge) hospBadge.textContent = filtered.length;
         renderHospitalsTable(filtered);
@@ -1284,13 +1284,13 @@
           if (window.Red404Security) {
             await window.Red404Security.logout('ADMIN');
           } else {
-            try { await fetch('/api/admin/logout', { method: 'POST', headers: { 'X-Red404-Role': 'ADMIN' } }); } catch (_) {}
+            try { await fetch('/api/admin/logout', { method: 'POST', headers: { 'X-Red404-Role': 'ADMIN' } }); } catch (_) { }
             try {
               sessionStorage.removeItem('admin_session');
               sessionStorage.removeItem('red404_super_admin');
               sessionStorage.removeItem('red404_admin_token');
               localStorage.removeItem('admin_session');
-            } catch (_) {}
+            } catch (_) { }
             window.location.replace('donor-login.html');
           }
         }, 600);

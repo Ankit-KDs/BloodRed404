@@ -230,6 +230,13 @@ async function initHospitalProfile() {
     const headers = { 'Accept': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch('/api/hospital/profile', { headers, credentials: 'include' });
+    if (res.status === 403) {
+      const errJson = await res.json().catch(() => ({}));
+      if (errJson.code === 'hospital_not_verified' || (errJson.data && errJson.data.code === 'hospital_not_verified')) {
+        window.location.replace('hospital-status.html');
+        return;
+      }
+    }
     if (res.ok) {
       const data = await res.json();
       profile = data.data || data;
@@ -252,8 +259,19 @@ async function initHospitalProfile() {
     } catch (e) {}
   }
 
+  if (profile) {
+    const rawV = (profile.verificationStatus || profile.verification_status || '').toLowerCase();
+    if (rawV && rawV !== 'verified' && rawV !== 'approved') {
+      window.location.replace('hospital-status.html');
+      return;
+    }
+  }
+
   window.currentHospitalProfile = profile;
   window.hospitalProfileLoaded = true;
+  try {
+    initFirstLoginChecklist(profile);
+  } catch (_) {}
   try {
     window.dispatchEvent(new CustomEvent('hospital-profile-loaded', { detail: profile }));
   } catch (_) {}
@@ -4700,4 +4718,53 @@ async function loadDonationDrives() {
     if (emptyBox) emptyBox.style.display = 'block';
   }
 }
+
+/* ============================================================
+   FIRST-LOGIN CHECKLIST (VERIFIED DASHBOARD ONBOARDING)
+   ============================================================ */
+function initFirstLoginChecklist(profile) {
+  const card = document.getElementById('cardFirstLoginChecklist');
+  if (!card) return;
+
+  const dismissed = sessionStorage.getItem('red404_checklist_dismissed');
+  if (dismissed === 'true') {
+    card.style.display = 'none';
+    return;
+  }
+
+  // Check 1: Stock
+  const stockEl = document.getElementById('statusStockStep');
+  const hasStock = (window.currentHospitalStockUnits && window.currentHospitalStockUnits > 0);
+  if (stockEl) {
+    stockEl.textContent = hasStock ? 'Units recorded' : 'Needs initial units';
+    stockEl.style.color = hasStock ? '#16a34a' : 'var(--text-tertiary)';
+  }
+
+  // Check 2: Location
+  const locEl = document.getElementById('statusLocationStep');
+  const hasLoc = profile && profile.latitude && profile.longitude;
+  if (locEl) {
+    locEl.textContent = hasLoc ? 'Location verified' : 'Pin entrance on map';
+    locEl.style.color = hasLoc ? '#16a34a' : 'var(--text-tertiary)';
+  }
+
+  // Check 3: Emergency number
+  const emEl = document.getElementById('statusEmergencyStep');
+  const hasEm = profile && profile.emergencyContact && profile.emergencyContact.trim().length >= 10;
+  if (emEl) {
+    emEl.textContent = hasEm ? profile.emergencyContact : 'Add 24x7 helpline';
+    emEl.style.color = hasEm ? '#16a34a' : 'var(--text-tertiary)';
+  }
+
+  card.style.display = 'block';
+
+  const btnDismiss = document.getElementById('btnDismissChecklist');
+  if (btnDismiss) {
+    btnDismiss.onclick = () => {
+      sessionStorage.setItem('red404_checklist_dismissed', 'true');
+      card.style.display = 'none';
+    };
+  }
+}
+
 

@@ -321,16 +321,37 @@ public class HospitalDao {
         hospital.put("smsNotif", rs.getBoolean("sms_notif"));
         hospital.put("pushNotif", rs.getBoolean("push_notif"));
         hospital.put("emailNotif", rs.getBoolean("email_notif"));
-        String vStatus = "Verified";
+        String vStatus = "pending_review";
         try {
             String dbStatus = rs.getString("verification_status");
-            if (dbStatus != null && !dbStatus.isBlank()) vStatus = dbStatus;
+            if (dbStatus != null && !dbStatus.isBlank()) {
+                String s = dbStatus.trim().toLowerCase();
+                if ("approved".equals(s) || "active".equals(s) || "verified".equals(s)) {
+                    vStatus = "verified";
+                } else {
+                    vStatus = s;
+                }
+            }
         } catch (Exception ignored) {}
         hospital.put("verificationStatus", vStatus);
         hospital.put("verification_status", vStatus);
+        try { hospital.put("applicationRef", rs.getString("application_ref")); } catch (Exception ignored) {}
+        try { hospital.put("eraktkoshId", rs.getString("eraktkosh_id")); } catch (Exception ignored) {}
+        try { hospital.put("emergencyPublic", rs.getBoolean("emergency_public")); } catch (Exception ignored) {}
+        try { hospital.put("documentsJson", rs.getString("documents_json")); } catch (Exception ignored) {}
         java.sql.Timestamp ts = rs.getTimestamp("created_at");
         hospital.put("createdAt", ts != null ? ts.toString() : null);
         return hospital;
+    }
+
+    public boolean updateApplicationDocuments(int hospitalId, String documentsJson) throws SQLException {
+        String sql = "UPDATE hospitals SET documents_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, documentsJson);
+            ps.setInt(2, hospitalId);
+            return ps.executeUpdate() > 0;
+        }
     }
 
     private static void setDouble(PreparedStatement ps, int index, Double value) throws SQLException {

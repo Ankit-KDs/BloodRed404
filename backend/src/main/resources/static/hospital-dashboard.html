@@ -162,21 +162,45 @@
         </div>
       </div>
 
-      <!-- 3. Start Here Card (Only while no stock exists) -->
-      <div id="cardStartHere" class="start-here-card" style="display: none;">
-        <div class="start-here-content">
+      <!-- 3. First-Login Checklist (3 Steps: Stock, Location, Emergency Number) -->
+      <div id="cardFirstLoginChecklist" class="start-here-card checklist-onboarding-card" style="display: none; margin-bottom: 24px;">
+        <div class="start-here-content" style="width: 100%;">
           <div class="start-here-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           </div>
-          <div>
-            <h3 class="start-here-title">Start here: record your blood stock</h3>
-            <p class="start-here-desc">Your hospital account is verified. Enter your on-hand units in the inventory ledger so the system can monitor deficit thresholds and route emergency requests accurately.</p>
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <h3 class="start-here-title" style="margin-bottom: 4px;">Welcome to RED404: Verified Hospital Setup</h3>
+                <p class="start-here-desc" style="margin: 0;">Complete these 3 essential steps to enable automatic emergency routing and clinical dispatch:</p>
+              </div>
+              <button type="button" id="btnDismissChecklist" class="btn-subtle-dismiss" title="Dismiss checklist" style="background: none; border: none; cursor: pointer; color: var(--text-tertiary); font-size: 13px; padding: 4px 8px; text-decoration: underline;">Dismiss</button>
+            </div>
+            <div class="checklist-steps-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+              <div class="checklist-step-item" id="stepItemStock" style="padding: 10px 14px; background: rgba(0,0,0,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">1. Set blood stock</div>
+                  <div id="statusStockStep" style="font-size: 11px; color: var(--text-tertiary);">Needs initial units</div>
+                </div>
+                <button type="button" class="btn-step-action" onclick="switchTab('tab-inventory')" style="font-size: 12px; padding: 4px 10px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border-default); background: var(--bg-surface);">Manage &rarr;</button>
+              </div>
+              <div class="checklist-step-item" id="stepItemLocation" style="padding: 10px 14px; background: rgba(0,0,0,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">2. Confirm hospital location</div>
+                  <div id="statusLocationStep" style="font-size: 11px; color: var(--text-tertiary);">Pin entrance on map</div>
+                </div>
+                <button type="button" class="btn-step-action" onclick="switchTab('tab-location')" style="font-size: 12px; padding: 4px 10px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border-default); background: var(--bg-surface);">Confirm &rarr;</button>
+              </div>
+              <div class="checklist-step-item" id="stepItemEmergency" style="padding: 10px 14px; background: rgba(0,0,0,0.02); border: 1px solid var(--border-subtle); border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">3. Add emergency number</div>
+                  <div id="statusEmergencyStep" style="font-size: 11px; color: var(--text-tertiary);">24x7 helpline for donors</div>
+                </div>
+                <button type="button" class="btn-step-action" onclick="switchTab('tab-settings')" style="font-size: 12px; padding: 4px 10px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border-default); background: var(--bg-surface);">Update &rarr;</button>
+              </div>
+            </div>
           </div>
         </div>
-        <button type="button" class="btn-primary-action" id="btnStartHereAddStock" onclick="switchTab('tab-inventory')">
-          <span>Add stock</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-        </button>
       </div>
 
       <!-- 4. Active Requests Panel (Full-Width Row) -->

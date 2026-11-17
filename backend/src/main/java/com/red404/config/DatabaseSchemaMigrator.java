@@ -556,6 +556,36 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("deleted_at", "TIMESTAMP NULL DEFAULT NULL");
 
         ensureColumns(conn, "hospitals", requiredColumns);
+
+        try (Statement st = conn.createStatement()) {
+            // Part 3 Migration: Existing verified hospital accounts stay verified
+            st.executeUpdate("UPDATE hospitals SET verification_status = 'verified' " +
+                    "WHERE LOWER(verification_status) IN ('verified', 'approved', 'active')");
+            // Blank or legacy pending values normalize to 'pending_review'
+            st.executeUpdate("UPDATE hospitals SET verification_status = 'pending_review' " +
+                    "WHERE verification_status IS NULL OR TRIM(verification_status) = '' OR LOWER(verification_status) IN ('pending', 'pending_review')");
+
+            // Ensure hospital push subscriptions table exists
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS hospital_push_subscriptions (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "hospital_id INT NOT NULL, " +
+                    "endpoint TEXT NOT NULL, " +
+                    "p256dh TEXT NULL, " +
+                    "auth TEXT NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")");
+
+            // Ensure hospital audit logs table exists
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS hospital_audit_logs (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "hospital_id INT NOT NULL, " +
+                    "admin_user VARCHAR(150) NULL, " +
+                    "from_status VARCHAR(50) NULL, " +
+                    "to_status VARCHAR(50) NOT NULL, " +
+                    "reason TEXT NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")");
+        } catch (Exception ignored) {}
     }
 
     private void migrateBloodRequestsTable(Connection conn) {

@@ -12,6 +12,7 @@
   <!-- Global & Admin Portal Stylesheets -->
   <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
   <link rel="stylesheet" href="css/admin-portal.css?v=20261114_v1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body class="admin-body">
 
@@ -35,6 +36,7 @@
       <button class="admin-tab-btn" data-tab="tab-hospitals" role="tab" aria-selected="false">
         <i class="fas fa-hospital"></i>
         <span>Hospitals</span>
+        <span class="admin-nav-pending-badge" id="nav-hosp-pending-badge" style="display:none;">0</span>
       </button>
       <button class="admin-tab-btn" data-tab="tab-feedback" role="tab" aria-selected="false">
         <i class="fas fa-comment-dots"></i>
@@ -105,29 +107,56 @@
     <section id="tab-hospitals" class="admin-tab-panel" role="tabpanel">
       <div class="admin-panel-header">
         <div class="admin-panel-title-wrap">
-          <h2 class="admin-panel-title">Partner Hospitals &amp; Blood Banks</h2>
+          <h2 class="admin-panel-title">Hospitals &amp; Healthcare Facilities</h2>
           <span class="admin-count-pill" id="hospital-count-badge">-</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <button type="button" class="admin-action-btn" id="btnSyncHospitals" title="Sync live inventory across all facilities" style="padding: 7px 12px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-            <i class="fas fa-arrows-rotate"></i> Sync Stock
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span id="hosp-last-updated" style="font-size: 12px; color: var(--admin-text-muted);">Last updated: Just now</span>
+          <button type="button" class="admin-action-btn" id="btnSyncHospitals" title="Force refetch fresh data from database" style="padding: 7px 12px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-arrows-rotate"></i> Sync
           </button>
           <div class="admin-search-wrap">
             <i class="fas fa-magnifying-glass"></i>
-            <input type="text" id="hospitalSearchInput" class="admin-search-input" placeholder="Search by Hospital Name, City, License..." />
+            <input type="text" id="hospitalSearchInput" class="admin-search-input" placeholder="Search by name, city, registration no..." />
           </div>
         </div>
+      </div>
+
+      <!-- Status Subtabs with Live Counts (Part 5) -->
+      <div class="admin-subtabs" id="hosp-status-subtabs">
+        <button type="button" class="admin-subtab-btn active" data-status="pending_review">
+          Pending <span class="subtab-count" id="count-hosp-pending">0</span>
+        </button>
+        <button type="button" class="admin-subtab-btn" data-status="needs_info">
+          Needs info <span class="subtab-count" id="count-hosp-needs-info">0</span>
+        </button>
+        <button type="button" class="admin-subtab-btn" data-status="verified">
+          Verified <span class="subtab-count" id="count-hosp-verified">0</span>
+        </button>
+        <button type="button" class="admin-subtab-btn" data-status="rejected">
+          Rejected <span class="subtab-count" id="count-hosp-rejected">0</span>
+        </button>
+        <button type="button" class="admin-subtab-btn" data-status="suspended">
+          Suspended <span class="subtab-count" id="count-hosp-suspended">0</span>
+        </button>
+        <button type="button" class="admin-subtab-btn" data-status="all">
+          All <span class="subtab-count" id="count-hosp-all">0</span>
+        </button>
       </div>
 
       <div class="admin-table-container">
         <table class="admin-table">
           <thead>
             <tr>
-              <th>Hospital Name &amp; Location</th>
-              <th>Verification Status</th>
-              <th>Blood Stock Overview</th>
-              <th>Last Synced</th>
-              <th>Action</th>
+              <th>Hospital &amp; City</th>
+              <th>Type</th>
+              <th>Submitted Time</th>
+              <th>Status</th>
+              <th>Email</th>
+              <th>Documents</th>
+              <th>Stock Summary</th>
+              <th>Last Updated</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <!-- Completely empty tbody for real-time Java/MySQL injection -->
@@ -442,12 +471,6 @@
           </div>
         </div>
 
-        <!-- CRITICAL SECURITY RULE: No Password Field Anywhere -->
-        <div class="profile-security-banner">
-          <i class="fas fa-shield-halved"></i>
-          <span><strong>CRITICAL PRIVACY RULE:</strong> Passwords are cryptographically salted and hashed. They are strictly inaccessible and cannot be viewed by admins.</span>
-        </div>
-
       </div>
 
       <!-- Action Buttons -->
@@ -476,224 +499,277 @@
       <div class="profile-modal-header">
         <div class="profile-modal-badge hospital-badge">
           <span class="profile-pulse-dot hospital-pulse"></span>
-          <span>Healthcare Facility Profile</span>
+          <span id="modal-hosp-badge-status">Healthcare Facility Application</span>
         </div>
         <div class="profile-modal-title-row">
           <h3 class="profile-modal-title">
             <i class="fas fa-hospital" style="color: #38bdf8;"></i>
-            <span id="modal-hosp-header-title">Hospital Comprehensive Dossier</span>
+            <span id="modal-hosp-header-title">Hospital Review Dossier</span>
           </h3>
           <button type="button" class="btn-refresh-profile" id="btnRefreshHospitalProfile" onclick="refreshCurrentHospitalProfile()" title="Fetch latest live data from database">
             <i class="fas fa-rotate"></i> <span>Sync Live</span>
           </button>
         </div>
-        <p class="profile-modal-subtitle">Official institutional credentials, clinical services, administrative contact &amp; spatial routing telemetry.</p>
       </div>
 
       <!-- Scrollable Container for All Hospital Registration Details -->
       <div class="profile-scroll-body">
         
-        <!-- SECTION 1: FACILITY CREDENTIALS & INFRASTRUCTURE -->
-        <div class="profile-section-title"><i class="fas fa-building-circle-check"></i> Institutional &amp; Facility Credentials</div>
+        <!-- SECTION 1: APPLICATION -->
+        <div class="profile-section-title"><i class="fas fa-file-signature"></i> Application</div>
         <div class="profile-grid">
-          <!-- Hospital Name -->
+          <div class="profile-item">
+            <span class="profile-label">Current Status</span>
+            <div id="modal-hosp-status-container" style="margin-top: 4px;">
+              <span class="hosp-status-pill hosp-status-pending" id="modal-hosp-status">Pending Review</span>
+            </div>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Submitted Timestamp</span>
+            <span class="profile-val" id="modal-hosp-submitted-at">-</span>
+          </div>
           <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-hospital"></i> Hospital / Blood Bank Name</span>
-            <span class="profile-val smart-id-val" id="modal-hosp-name">-</span>
+            <span class="profile-label">Application Reference Number</span>
+            <span class="profile-val" id="modal-hosp-app-ref" style="font-weight: 600; color: #f8fafc;">-</span>
           </div>
+        </div>
 
-          <!-- Registration Number -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-certificate"></i> Registration / License Number</span>
-            <span class="profile-val" id="modal-hosp-reg-no">-</span>
+        <!-- SECTION 2: FACILITY -->
+        <div class="profile-section-title"><i class="fas fa-building-circle-check"></i> Facility</div>
+        <div class="profile-grid">
+          <div class="profile-item full-width-item">
+            <span class="profile-label">Hospital / Facility Name</span>
+            <span class="profile-val" id="modal-hosp-name" style="font-size: 16px; font-weight: 600; color: #f8fafc;">-</span>
           </div>
-
-          <!-- Facility Type -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-sitemap"></i> Hospital Category / Type</span>
+            <span class="profile-label">Facility Category / Type</span>
             <span class="profile-val" id="modal-hosp-type">-</span>
           </div>
-
-          <!-- Inpatient Beds -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-bed"></i> Total Inpatient Beds</span>
+            <span class="profile-label">Registration Number</span>
+            <span class="profile-val" id="modal-hosp-reg-no" style="font-weight: 600; color: #f8fafc;">-</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Blood Bank Licence No.</span>
+            <span class="profile-val" id="modal-hosp-license">-</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">e-RaktKosh Blood Centre ID</span>
+            <span class="profile-val" id="modal-hosp-eraktkosh">-</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Total Inpatient Beds</span>
             <span class="profile-val" id="modal-hosp-beds">-</span>
           </div>
-
-          <!-- Blood Bank License -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-id-card"></i> Blood Bank License No.</span>
-            <span class="profile-val blood-group-val" id="modal-hosp-license">-</span>
-          </div>
-
-          <!-- Official Email -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-envelope"></i> Official Facility Email</span>
-            <span class="profile-val" id="modal-hosp-email">-</span>
-          </div>
-
-          <!-- Desk Phone -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-phone-volume"></i> Official Desk Phone</span>
-            <span class="profile-val" id="modal-hosp-phone">-</span>
-          </div>
-
-          <!-- Official Website -->
-          <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-globe"></i> Official Portal / Website</span>
+            <span class="profile-label">Official Website</span>
             <span class="profile-val" id="modal-hosp-website">-</span>
           </div>
-
-          <!-- Clinical Services Offered -->
           <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-briefcase-medical"></i> Clinical Services &amp; Specialized Units</span>
+            <span class="profile-label">Clinical Services Offered</span>
             <div class="hosp-services-tags" id="modal-hosp-services">
               <!-- Dynamically populated chips -->
             </div>
           </div>
         </div>
 
-        <!-- SECTION 2: ADMINISTRATIVE POINT OF CONTACT -->
-        <div class="profile-section-title"><i class="fas fa-user-tie"></i> Administrative Authority &amp; Contact</div>
+        <!-- SECTION 3: CONTACT PERSON -->
+        <div class="profile-section-title"><i class="fas fa-user-tie"></i> Contact Person</div>
         <div class="profile-grid">
-          <!-- Authorized Officer Name -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-user-doctor"></i> Authorized Officer Name</span>
+            <span class="profile-label">Authorised Person Name</span>
             <span class="profile-val" id="modal-hosp-admin-name">-</span>
           </div>
-
-          <!-- Officer Designation -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-id-badge"></i> Officer Designation</span>
+            <span class="profile-label">Designation</span>
             <span class="profile-val" id="modal-hosp-admin-designation">-</span>
           </div>
-
-          <!-- Admin Phone -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-phone"></i> Officer Direct Phone</span>
+            <span class="profile-label">Direct Phone</span>
             <span class="profile-val" id="modal-hosp-admin-phone">-</span>
           </div>
-
-          <!-- Admin Official Email -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-envelope-circle-check"></i> Officer Official Email</span>
-            <span class="profile-val" id="modal-hosp-admin-email">-</span>
+            <span class="profile-label">Official Email</span>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+              <span class="profile-val" id="modal-hosp-admin-email" style="margin-top: 0;">-</span>
+              <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; background: rgba(34,197,94,0.15); color: #4ade80; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.3);">
+                <i class="fas fa-circle-check"></i> Verified
+              </span>
+            </div>
           </div>
-
-          <!-- 24/7 Critical Emergency Hotline -->
           <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-truck-medical"></i> 24/7 Critical Emergency Hotline</span>
+            <span class="profile-label">24/7 Critical Emergency Helpline</span>
             <span class="profile-val hotline-highlight" id="modal-hosp-emergency">-</span>
           </div>
         </div>
 
-        <!-- SECTION 3: SPATIAL ROUTING, ADDRESS & DISPATCH -->
-        <div class="profile-section-title"><i class="fas fa-map-location-dot"></i> Spatial Geocoding &amp; Dispatch Routing</div>
+        <!-- SECTION 4: LOCATION -->
+        <div class="profile-section-title"><i class="fas fa-map-location-dot"></i> Location</div>
         <div class="profile-grid">
-          <!-- Street Address -->
           <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-location-dot"></i> Street / Campus Address</span>
+            <span class="profile-label">Campus / Street Address</span>
             <span class="profile-val" id="modal-hosp-address">-</span>
           </div>
-
-          <!-- Landmark -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-landmark"></i> Prominent Landmark</span>
+            <span class="profile-label">Landmark</span>
             <span class="profile-val" id="modal-hosp-landmark">-</span>
           </div>
-
-          <!-- City, State & PIN -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-city"></i> City, State &amp; PIN</span>
+            <span class="profile-label">City, State &amp; PIN</span>
             <span class="profile-val" id="modal-hosp-city-state-pin">-</span>
           </div>
-
-          <!-- GPS Coordinates -->
           <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-crosshairs"></i> GPS Coordinates (Lat / Lng)</span>
+            <span class="profile-label">Operating Hours</span>
+            <span class="profile-val" id="modal-hosp-hours">-</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">GPS Coordinates</span>
             <span class="profile-val" id="modal-hosp-coords">-</span>
           </div>
-
-          <!-- Operating Schedule & Radius -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-clock"></i> Operating Schedule &amp; Zone Radius</span>
-            <span class="profile-val" id="modal-hosp-hours-zone">-</span>
-          </div>
-        </div>
-
-        <!-- SECTION 4: BLOOD STOCK TELEMETRY & SOS ACTIVITY -->
-        <div class="profile-section-title"><i class="fas fa-cubes-stacked"></i> Blood Stock Reserves &amp; SOS Activity</div>
-        <div class="profile-grid">
-          <!-- Total Stock -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-layer-group"></i> Total Units in Reserve</span>
-            <span class="profile-val" id="modal-hosp-total-units">-</span>
-          </div>
-
-          <!-- Total Blood Requests Broadcasted -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-bullhorn"></i> Total SOS Broadcasts</span>
-            <span class="profile-val" id="modal-hosp-total-requests">-</span>
-          </div>
-
-          <!-- Stock Breakdown Grid -->
           <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-flask"></i> Inventory Breakdown by Blood Group</span>
-            <div class="modal-stock-grid" id="modal-hosp-stock-grid">
-              <!-- Dynamically populated blood type units -->
-            </div>
+            <span class="profile-label">Pinned Location Map</span>
+            <div id="modal-hosp-map" style="height: 190px; width: 100%; border-radius: 8px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.1); background: #1e293b;"></div>
           </div>
         </div>
 
-        <!-- SECTION 5: ACCOUNT & VERIFICATION STATUS -->
-        <div class="profile-section-title"><i class="fas fa-clock-rotate-left"></i> Account Audit &amp; System Timestamps</div>
-        <div class="profile-grid">
-          <!-- Verification Status -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-circle-check"></i> Verification Clearance</span>
-            <span class="profile-val" id="modal-hosp-status">-</span>
-          </div>
-
-          <!-- Enrolled Since -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-calendar-days"></i> Enrolled in Network Since</span>
-            <span class="profile-val" id="modal-hosp-created-at">-</span>
-          </div>
+        <!-- SECTION 5: DOCUMENTS -->
+        <div class="profile-section-title"><i class="fas fa-file-pdf"></i> Documents</div>
+        <div id="modal-hosp-docs-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;">
+          <div style="color: var(--admin-text-muted); font-size: 13px;">Loading submitted documents...</div>
         </div>
 
-        <!-- SECTION 5: AUDIT & CHANGE HISTORY -->
-        <div class="profile-section-title" style="margin-top: 16px;"><i class="fas fa-history"></i> Audit &amp; Change History</div>
-        <div id="modal-hosp-change-history" style="max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--admin-border); border-radius: 8px; padding: 10px; font-size: 12px; font-family: var(--admin-font-mono); color: #cbd5e1; margin-bottom: 16px;">
+        <!-- SECTION 6: BLOOD STOCK -->
+        <div class="profile-section-title"><i class="fas fa-cubes-stacked"></i> Blood Stock</div>
+        <div id="modal-hosp-stock-section" style="margin-bottom: 18px;">
+          <!-- Dynamically populated read-only stock table when verified or notice when unverified -->
+        </div>
+
+        <!-- SECTION 7: ACTIVITY TIMELINE -->
+        <div class="profile-section-title"><i class="fas fa-clock-rotate-left"></i> Activity Timeline</div>
+        <div id="modal-hosp-change-history" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--admin-border); border-radius: 8px; padding: 12px; font-size: 13px; color: #cbd5e1; margin-bottom: 18px;">
           <div style="color: var(--admin-text-muted);">Loading audit history...</div>
         </div>
 
-        <!-- CRITICAL SECURITY RULE: No Password Field Anywhere -->
-        <div class="profile-security-banner">
-          <i class="fas fa-shield-halved"></i>
-          <span><strong>CRITICAL PRIVACY RULE:</strong> Facility credentials and administrative passwords are encrypted with BCrypt (Cost Factor 12). Passwords are cryptographically sealed and inaccessible to all portal operators.</span>
+        <!-- DANGER ZONE: SOFT DELETE -->
+        <div style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); border-radius: 8px; padding: 14px; margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <strong style="color: #f87171; font-size: 13px;"><i class="fas fa-triangle-exclamation"></i> Danger Zone</strong>
+              <div style="color: #94a3b8; font-size: 12px; margin-top: 2px;">Permanently deactivate this hospital account and revoke credentials.</div>
+            </div>
+            <button type="button" class="btn-delete-from-modal" id="btnDeleteHospitalFromModal" onclick="openDeleteHospModal()" style="margin: 0;">
+              <i class="fas fa-trash-can"></i> <span>Delete Hospital</span>
+            </button>
+          </div>
         </div>
 
       </div>
 
-      <!-- Action Buttons -->
-      <div class="profile-modal-actions" style="flex-wrap: wrap; gap: 8px;">
-        <button type="button" class="admin-action-btn" id="btnApproveHosp" onclick="updateHospitalStatusAction('Verified')" style="background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #4ade80;">
+      <!-- Sticky Action Bar (Part 5) -->
+      <div class="profile-modal-actions" id="hospActionButtonsBar">
+        <button type="button" class="admin-action-btn" id="btnApproveHosp" onclick="openApproveModal()" style="background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.5); color: #4ade80;">
           <i class="fas fa-check-circle"></i> <span>Approve</span>
         </button>
-        <button type="button" class="admin-action-btn" id="btnRejectHosp" onclick="updateHospitalStatusAction('Rejected')" style="background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); color: #f87171;">
-          <i class="fas fa-times-circle"></i> <span>Reject</span>
+        <button type="button" class="admin-action-btn" id="btnRequestInfoHosp" onclick="openReasonModal('needs_info')" style="background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.5); color: #60a5fa;">
+          <i class="fas fa-circle-question"></i> <span>Request More Info</span>
         </button>
-        <button type="button" class="admin-action-btn" id="btnReverifyHosp" onclick="updateHospitalStatusAction('Needs re-verification')" style="background: rgba(234,179,8,0.15); border-color: rgba(234,179,8,0.4); color: #facc15;">
-          <i class="fas fa-rotate"></i> <span>Request re-verification</span>
+        <button type="button" class="admin-action-btn" id="btnRejectHosp" onclick="openReasonModal('rejected')" style="background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.5); color: #f87171;">
+          <i class="fas fa-ban"></i> <span>Reject</span>
         </button>
-        <button type="button" class="admin-action-btn" id="btnSuspendHosp" onclick="updateHospitalStatusAction('Suspended')" style="background: rgba(249,115,22,0.15); border-color: rgba(249,115,22,0.4); color: #fb923c;">
-          <i class="fas fa-ban"></i> <span>Suspend</span>
+        <button type="button" class="admin-action-btn" id="btnSuspendHosp" onclick="openReasonModal('suspended')" style="background: rgba(249,115,22,0.18); border-color: rgba(249,115,22,0.5); color: #fb923c; display: none;">
+          <i class="fas fa-pause"></i> <span>Suspend</span>
         </button>
-        <button type="button" class="btn-delete-from-modal" id="btnDeleteHospitalFromModal" onclick="handleDeleteHospitalFromModal()" title="Soft Delete Hospital Account">
-          <i class="fas fa-trash-can"></i> <span>Delete Hospital</span>
+        <button type="button" class="admin-action-btn" id="btnReactivateHosp" onclick="openReasonModal('verified')" style="background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.5); color: #4ade80; display: none;">
+          <i class="fas fa-play"></i> <span>Reactivate</span>
         </button>
         <button type="button" class="btn-close-secondary" onclick="closeHospitalProfileModal()" style="margin-left: auto;">
           Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== APPROVAL CHECKLIST MODAL ==================== -->
+  <div class="modal-overlay" id="approveHospModal" style="display:none;" onclick="if(event.target===this) closeApproveModal()">
+    <div class="modal-box" style="max-width: 520px; text-align: left; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+      <h3 style="margin-top:0; color:#f8fafc; font-size:18px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-circle-check" style="color: #22c55e;"></i> Approve Hospital Application
+      </h3>
+      <p style="color:#94a3b8; font-size:14px; margin-bottom:16px;">
+        Please verify the following institutional compliance requirements before approving <strong id="approveModalHospName" style="color:#f8fafc;">Hospital</strong>:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+        <label style="display:flex; align-items:flex-start; gap:10px; font-size:14px; color:#e2e8f0; cursor:pointer;">
+          <input type="checkbox" id="chkApproveDocs" onchange="checkApproveFormValidity()" style="width:18px; height:18px; accent-color:#22c55e; margin-top:2px;">
+          <span><strong>Documents reviewed:</strong> Registration certificate and license are verified and legitimate.</span>
+        </label>
+        <label style="display:flex; align-items:flex-start; gap:10px; font-size:14px; color:#e2e8f0; cursor:pointer;">
+          <input type="checkbox" id="chkApproveReg" onchange="checkApproveFormValidity()" style="width:18px; height:18px; accent-color:#22c55e; margin-top:2px;">
+          <span><strong>Registration number checked:</strong> Validated against healthcare registry records.</span>
+        </label>
+        <label style="display:flex; align-items:flex-start; gap:10px; font-size:14px; color:#e2e8f0; cursor:pointer;">
+          <input type="checkbox" id="chkApproveLoc" onchange="checkApproveFormValidity()" style="width:18px; height:18px; accent-color:#22c55e; margin-top:2px;">
+          <span><strong>Location checked:</strong> Physical facility address and map coordinates confirmed.</span>
+        </label>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">Approval Note / Comments (Optional):</label>
+        <textarea id="txtApproveNote" rows="2" style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; padding:8px 10px; font-size:14px; resize:vertical;" placeholder="e.g. Credentials, registration number and license verified by Medical Board."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn-cancel" onclick="closeApproveModal()" style="padding:8px 14px; border-radius:6px; background:transparent; border:1px solid #475569; color:#cbd5e1; cursor:pointer;">Cancel</button>
+        <button type="button" id="btnConfirmApprove" onclick="executeApproveHospital()" disabled style="padding:8px 16px; border-radius:6px; background:#22c55e; border:none; color:#0f172a; font-weight:600; cursor:not-allowed; opacity:0.5;">
+          Confirm Approval
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== REASON ACTION MODAL (REQUEST INFO / REJECT / SUSPEND / REACTIVATE) ==================== -->
+  <div class="modal-overlay" id="reasonActionModal" style="display:none;" onclick="if(event.target===this) closeReasonModal()">
+    <div class="modal-box" style="max-width: 520px; text-align: left; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+      <h3 id="reasonModalTitle" style="margin-top:0; color:#f8fafc; font-size:18px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-circle-exclamation" style="color: #60a5fa;"></i> Request Additional Information
+      </h3>
+      <p id="reasonModalDesc" style="color:#94a3b8; font-size:14px; margin-bottom:14px;">
+        Select or enter the specific reason/instructions for this decision:
+      </p>
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">Preset Reason:</label>
+        <select id="selPresetReason" onchange="onPresetReasonChange()" style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; padding:8px 10px; font-size:14px;">
+          <!-- Populated dynamically based on target action -->
+        </select>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">Detailed Explanation (Shown to hospital) <span style="color:#ef4444;">*</span>:</label>
+        <textarea id="txtActionReason" rows="3" style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; padding:8px 10px; font-size:14px; resize:vertical;" placeholder="Explain clearly what needs to be fixed or why access was restricted..."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn-cancel" onclick="closeReasonModal()" style="padding:8px 14px; border-radius:6px; background:transparent; border:1px solid #475569; color:#cbd5e1; cursor:pointer;">Cancel</button>
+        <button type="button" id="btnConfirmReasonAction" onclick="executeReasonAction()" style="padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">
+          Submit Decision
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DANGER ZONE DELETE CONFIRMATION MODAL ==================== -->
+  <div class="modal-overlay" id="deleteHospModal" style="display:none;" onclick="if(event.target===this) closeDeleteHospModal()">
+    <div class="modal-box" style="max-width: 480px; text-align: left; background: #0f172a; border: 1px solid #ef4444; border-radius: 12px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+      <h3 style="margin-top:0; color:#ef4444; font-size:18px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-triangle-exclamation"></i> Danger Zone: Soft Delete Hospital
+      </h3>
+      <p style="color:#cbd5e1; font-size:14px; line-height:1.5; margin-bottom:12px;">
+        This will permanently revoke all portal access and soft-delete the institutional account. All active blood requests must be completed or cancelled first.
+      </p>
+      <p style="color:#94a3b8; font-size:14px; margin-bottom:14px;">
+        To confirm, please type <strong id="deleteExpectedName" style="color:#f8fafc; user-select:all;"></strong> below:
+      </p>
+      <input type="text" id="txtDeleteConfirmName" oninput="checkDeleteMatch()" placeholder="Type exact hospital name" style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; padding:8px 10px; font-size:14px; margin-bottom:18px;" />
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" onclick="closeDeleteHospModal()" style="padding:8px 14px; border-radius:6px; background:transparent; border:1px solid #475569; color:#cbd5e1; cursor:pointer;">Cancel</button>
+        <button type="button" id="btnConfirmDeleteHosp" onclick="executeDeleteHospital()" disabled style="padding:8px 16px; border-radius:6px; background:#ef4444; border:none; color:#ffffff; font-weight:600; cursor:not-allowed; opacity:0.5;">
+          Delete Hospital
         </button>
       </div>
     </div>
@@ -704,9 +780,10 @@
     <span>RED404 Super Admin Console &bull; <strong style="color: #94a3b8;">v2.5-admin</strong></span>
   </footer>
 
-  <!-- Shared Common Script & Admin Portal Script -->
+  <!-- Shared Common Script, Leaflet Map & Admin Portal Script -->
   <script src="js/common.js?v=20261114_r2"></script>
-  <script src="js/admin-portal.js?v=20261114_v1"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/admin-portal.js?v=20261117_r8_p5"></script>
 </body>
 </html>
 
