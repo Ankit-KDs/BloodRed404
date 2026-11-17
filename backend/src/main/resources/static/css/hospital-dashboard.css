@@ -179,14 +179,15 @@ a:hover {
 }
 
 .hosp-nav-container {
-  max-width: var(--hosp-max-width);
+  max-width: var(--hosp-max-width, 1920px);
   margin: 0 auto;
-  padding: 0 var(--sp-24);
+  padding: 0 clamp(16px, 3vw, 48px);
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-24);
+  box-sizing: border-box;
 }
 
 /* Brand */
@@ -430,13 +431,14 @@ a:hover {
    4. MAIN PORTAL CONTAINER & TAB PANELS
    ============================================================ */
 .portal-main-container {
-  max-width: var(--hosp-max-width);
+  max-width: var(--hosp-max-width, 1920px);
   margin: 0 auto;
-  padding: var(--sp-32) var(--sp-24) var(--sp-48);
+  padding: var(--sp-24) clamp(16px, 3vw, 48px) var(--sp-48);
   width: 100%;
   flex: 1;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
 }
 
 .portal-tab-content {
@@ -511,11 +513,11 @@ a:hover {
   margin-top: var(--sp-8);
 }
 
-/* 4 Plain Stat Numbers */
+/* Stats Row (Up to 4 Cards Auto-fit) */
 .stats-summary-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-16);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-24);
   margin-bottom: var(--sp-24);
 }
 
@@ -642,13 +644,56 @@ a:hover {
   opacity: 0.45;
 }
 
-/* Dominant Split: Active Requests (Wider) + Send SOS */
-.dash-dominant-split {
+/* Multi-column splits for 1280px+ */
+.dash-active-needs-split {
   display: grid;
-  grid-template-columns: 1.25fr 1fr;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
   gap: var(--sp-24);
   margin-bottom: var(--sp-32);
   align-items: stretch;
+}
+.dash-active-needs-split > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  height: 100%;
+}
+
+.dash-activity-drives-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-24);
+  margin-top: var(--sp-32);
+  align-items: stretch;
+}
+.dash-activity-drives-split > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  height: 100%;
+}
+
+@media (max-width: 1024px) {
+  .dash-active-needs-split,
+  .dash-activity-drives-split {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-24);
+  }
+}
+
+/* Dominant Split: Dispatch form + Live Map */
+.dash-dominant-split {
+  display: grid;
+  grid-template-columns: minmax(420px, 42%) 1fr;
+  gap: var(--sp-24);
+  margin-bottom: var(--sp-32);
+  align-items: stretch;
+  min-height: calc(100vh - 140px);
+}
+@media (max-width: 1024px) {
+  .dash-dominant-split {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
 }
 
 /* Send SOS Form */
@@ -1200,8 +1245,9 @@ a:hover {
 
 .stock-list {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--sp-16);
+  width: 100%;
 }
 
 .stock-card-item {
@@ -2005,15 +2051,16 @@ a:hover {
 }
 
 .hosp-footer-container {
-  max-width: var(--hosp-max-width);
+  max-width: var(--hosp-max-width, 1920px);
   margin: 0 auto;
-  padding: 0 var(--sp-24);
+  padding: 0 clamp(16px, 3vw, 48px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-16);
   font-size: 13px;
   color: var(--hosp-text-muted);
+  box-sizing: border-box;
 }
 
 .footer-status-pill {

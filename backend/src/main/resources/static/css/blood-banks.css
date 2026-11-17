@@ -15,14 +15,20 @@ body.blood-banks-body {
 }
 
 .directory-container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 32px 24px 80px;
+  padding: 32px clamp(16px, 3vw, 48px) 80px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   box-sizing: border-box;
   width: 100%;
+}
+
+@media (min-width: 2560px) {
+  .directory-container {
+    max-width: 1440px;
+  }
 }
 
 /* ==================== HEADER ==================== */

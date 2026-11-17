@@ -58,7 +58,7 @@ body.donor-profile-body {
   height: 74px;
   background: rgba(11, 13, 19, 0.95);
   border-bottom: 1px solid var(--border-glass);
-  padding: 0 1.75rem;
+  padding: 0 clamp(16px, 3vw, 48px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -67,6 +67,16 @@ body.donor-profile-body {
   z-index: 1000;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.profile-workspace-unified {
+  width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 24px clamp(16px, 3vw, 48px) 60px;
+  box-sizing: border-box;
 }
 
 .hub-header-left {

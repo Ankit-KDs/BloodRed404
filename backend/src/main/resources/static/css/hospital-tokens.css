@@ -60,6 +60,7 @@
   --hosp-radius-full: 9999px;
 
   /* Layout */
-  --hosp-max-width: 1200px;
+  --hosp-max-width: 1920px;
+  --hosp-pad-x: clamp(16px, 3vw, 48px);
 }
 

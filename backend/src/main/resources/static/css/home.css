@@ -49,14 +49,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 3rem;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 48px 24px 64px;
+  padding: 48px clamp(16px, 3vw, 48px) 64px;
   width: 100%;
   box-sizing: border-box;
   position: relative;
   z-index: 1;
   overflow: hidden;
+}
+
+@media (min-width: 2560px) {
+  .hero-section {
+    max-width: 1440px;
+  }
 }
 
 /* Hero radial glow background */
@@ -867,7 +873,7 @@
 
 .pane-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   gap: 2.5rem;
 }
@@ -2452,23 +2458,36 @@
 
 /* ==================== RESPONSIVE ==================== */
 
-/* Ultra-wide & 4K Big Screens */
+/* Ultra-wide & 4K Big Screens: Full-width edge-to-edge section backgrounds */
 @media (min-width: 1440px) {
-  .hero-section {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 48px 24px 64px;
-  }
-
+  .hero-section,
   .services-section,
   .about-section,
   .how-it-works-section,
   .stats-section,
   .zones-section,
   .cta-section {
-    max-width: 1200px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-section {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px clamp(16px, 3vw, 48px) 64px;
+  }
+
+  .services-section .container,
+  .about-section .section-container,
+  .how-it-works-section .section-container,
+  .stats-section .section-container,
+  .zones-section .section-container,
+  .cta-section .section-container {
+    max-width: 1280px;
     margin-left: auto;
     margin-right: auto;
+    padding-left: clamp(16px, 3vw, 48px);
+    padding-right: clamp(16px, 3vw, 48px);
   }
 }
 
@@ -2480,7 +2499,34 @@
   .stats-section,
   .zones-section,
   .cta-section {
-    max-width: 1200px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-section {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .services-section .container,
+  .about-section .section-container,
+  .how-it-works-section .section-container,
+  .stats-section .section-container,
+  .zones-section .section-container,
+  .cta-section .section-container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 2560px) {
+  .hero-section,
+  .services-section .container,
+  .about-section .section-container,
+  .how-it-works-section .section-container,
+  .stats-section .section-container,
+  .zones-section .section-container,
+  .cta-section .section-container {
+    max-width: 1440px;
   }
 }
 
