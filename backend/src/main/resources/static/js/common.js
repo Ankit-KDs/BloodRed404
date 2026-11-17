@@ -472,6 +472,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.footer-current-year, #footerCurrentYear').forEach(el => {
     el.textContent = curYear;
   });
+  document.querySelectorAll('.mf-copy').forEach(el => {
+    el.innerHTML = `&copy; ${curYear} RED404`;
+  });
+  document.querySelectorAll('.footer-nav-links span').forEach(el => {
+    if (el.textContent.includes('RED404') && (el.textContent.includes('©') || el.textContent.includes('&copy;'))) {
+      el.innerHTML = `&copy; ${curYear} RED404`;
+    }
+  });
 });
 
 /* ==================== NAVBAR ==================== */
