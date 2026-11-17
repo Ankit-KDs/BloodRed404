@@ -60,10 +60,10 @@ function initAuthParticles() {
 }
 
 /* ==================== STEP NAVIGATION — DONOR ==================== */
-let currentDonorStep = 1;
-let currentHospStep = 1;
-const DONOR_TOTAL_STEPS = 3;
-const HOSP_TOTAL_STEPS = 3;
+var currentDonorStep = window.currentDonorStep || 1;
+var currentHospStep = window.currentHospStep || 1;
+var DONOR_TOTAL_STEPS = window.DONOR_TOTAL_STEPS || 3;
+var HOSP_TOTAL_STEPS = window.HOSP_TOTAL_STEPS || 3;
 
 function initStepNavigation() {
   /* Expose step functions globally for onclick usage in HTML */
