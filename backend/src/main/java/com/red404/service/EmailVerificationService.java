@@ -16,10 +16,15 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.sql.*;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * EmailVerificationService
@@ -75,7 +80,7 @@ public class EmailVerificationService {
             return resp;
         }
 
-        // 2. Cooldown check: 30 seconds
+        // 2. Cooldown check: max 1 per 60 seconds per email (Round 9 Part 4)
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "SELECT created_at FROM email_verification_codes WHERE email = ? AND purpose = ? ORDER BY id DESC LIMIT 1")) {
@@ -86,11 +91,11 @@ public class EmailVerificationService {
                     Timestamp lastCreated = rs.getTimestamp("created_at");
                     if (lastCreated != null) {
                         long elapsedSeconds = (System.currentTimeMillis() - lastCreated.getTime()) / 1000;
-                        if (elapsedSeconds < 30) {
+                        if (elapsedSeconds < 60) {
                             resp.put("success", false);
                             resp.put("code", "cooldown");
-                            resp.put("retryAfter", 30 - elapsedSeconds);
-                            resp.put("message", "Please wait " + (30 - elapsedSeconds) + " seconds before requesting a new code.");
+                            resp.put("retryAfter", 60 - elapsedSeconds);
+                            resp.put("message", "Please wait " + (60 - elapsedSeconds) + " seconds before requesting a new code.");
                             return resp;
                         }
                     }
@@ -266,28 +271,155 @@ public class EmailVerificationService {
         return false;
     }
 
-    private static final java.util.concurrent.atomic.AtomicInteger DAILY_EMAIL_COUNT = new java.util.concurrent.atomic.AtomicInteger(0);
-    private static volatile long LAST_DAILY_RESET = System.currentTimeMillis();
-    private static final java.util.concurrent.ExecutorService EMAIL_EXECUTOR = java.util.concurrent.Executors.newFixedThreadPool(2);
+    // =========================================================================
+    // TASK Round 9 - Part 4: Sending Rules & Priority Queue
+    // =========================================================================
 
-    private synchronized boolean checkAndIncrementDailyLimit(boolean isPriority) {
-        long now = System.currentTimeMillis();
-        if (now - LAST_DAILY_RESET > 86400000L) {
-            DAILY_EMAIL_COUNT.set(0);
-            LAST_DAILY_RESET = now;
+    public static final int PRIORITY_URGENT = 1; // Verification codes (immediate, timeout 5s, 1 retry after 3s)
+    public static final int PRIORITY_HIGH = 2;   // Hospital approved / needs info / rejected / suspended / reactivated
+    public static final int PRIORITY_NORMAL = 3; // Donor welcome, hospital application received
+
+    public static final int DAILY_BUDGET_CAP = 250;
+    public static final int URGENT_SAFETY_CAP = 280;
+
+    private static final PriorityBlockingQueue<EmailTask> EMAIL_PRIORITY_QUEUE = new PriorityBlockingQueue<>();
+    private static final Map<String, Long> STATUS_IDEMPOTENCY_CACHE = new ConcurrentHashMap<>();
+    private static final AtomicInteger IN_MEMORY_DAILY_FALLBACK = new AtomicInteger(0);
+
+    public static class EmailTask implements Comparable<EmailTask> {
+        final int priority;
+        final int targetId;
+        final String targetType; // "hospital" or "donor"
+        final String toEmail;
+        final String templateName;
+        final String eventType;
+        final EmailTemplateService.EmailContent content;
+        final long submittedAt;
+
+        public EmailTask(int priority, int targetId, String targetType, String toEmail,
+                         String templateName, String eventType, EmailTemplateService.EmailContent content) {
+            this.priority = priority;
+            this.targetId = targetId;
+            this.targetType = targetType;
+            this.toEmail = toEmail;
+            this.templateName = templateName;
+            this.eventType = eventType;
+            this.content = content;
+            this.submittedAt = System.currentTimeMillis();
         }
-        int limit = EnvConfig.getAsInt("EMAIL_DAILY_LIMIT", 250);
-        int current = DAILY_EMAIL_COUNT.get();
-        if (current >= limit) {
-            if (isPriority && current < 300) {
-                DAILY_EMAIL_COUNT.incrementAndGet();
-                return true;
+
+        @Override
+        public int compareTo(EmailTask other) {
+            int p = Integer.compare(this.priority, other.priority);
+            if (p != 0) return p;
+            return Long.compare(this.submittedAt, other.submittedAt);
+        }
+    }
+
+    static {
+        // Asynchronous Priority Queue Consumer Worker (Part 4)
+        Thread worker = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    EmailTask task = EMAIL_PRIORITY_QUEUE.take();
+                    processQueuedEmailTask(task);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception ex) {
+                    log.warn("Notice processing queued email task: {}", ex.getMessage());
+                }
             }
-            log.warn("Email daily limit reached ({}/{}). Queued or delayed.", current, limit);
-            return false;
+        }, "RED404-EmailPriorityWorker");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private static void processQueuedEmailTask(EmailTask task) {
+        if (task.toEmail == null || task.toEmail.isBlank()) return;
+
+        // Daily sending budget check: tracked in DB, resets midnight UTC (Part 4)
+        boolean withinBudget = checkAndIncrementDailyBudget(false, task.templateName, task.toEmail);
+        if (!withinBudget) {
+            recordDeliveryLog(task.targetType, task.targetId, "email", task.eventType, "skipped",
+                    "Daily email budget reached (" + DAILY_BUDGET_CAP + "). Skipped.");
+            return;
         }
-        DAILY_EMAIL_COUNT.incrementAndGet();
-        return true;
+
+        boolean isLive = EnvConfig.isEmailLiveMode();
+        if (!isLive) {
+            log.info("[EMAIL LOG MODE] {} email generated for {}: Subject='{}'",
+                    task.templateName, LogSanitizer.maskEmail(task.toEmail), LogSanitizer.sanitize(task.content.getSubject()));
+            recordDeliveryLog(task.targetType, task.targetId, "email", task.eventType, "sent",
+                    "[SIMULATED - LOG MODE] Delivered to " + LogSanitizer.maskEmail(task.toEmail));
+            return;
+        }
+
+        boolean sent = sendViaBrevoStatic(task.toEmail, task.content.getSubject(),
+                task.content.getTextContent(), task.content.getHtmlContent());
+        recordDeliveryLog(task.targetType, task.targetId, "email", task.eventType,
+                sent ? "sent" : "failed", sent ? "Brevo dispatched" : "Brevo failed");
+    }
+
+    /**
+     * Check and increment daily email budget tracked in DB (resets midnight UTC).
+     * Hard budget: 250/day. Verification codes permitted up to 280/day (hard safety cap).
+     */
+    public static synchronized boolean checkAndIncrementDailyBudget(boolean isUrgentVerification, String templateName, String toEmail) {
+        LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
+        java.sql.Date sqlDate = java.sql.Date.valueOf(todayUtc);
+        int currentCount = 0;
+        int budgetCap = EnvConfig.getAsInt("EMAIL_DAILY_LIMIT", DAILY_BUDGET_CAP);
+
+        try (Connection conn = DBConnection.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT sent_count FROM email_daily_stats WHERE stat_date = ? AND category = 'TOTAL'")) {
+                ps.setDate(1, sqlDate);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        currentCount = rs.getInt("sent_count");
+                    }
+                }
+            }
+
+            if (currentCount >= budgetCap) {
+                if (isUrgentVerification && currentCount < URGENT_SAFETY_CAP) {
+                    incrementDbDailyCount(conn, sqlDate);
+                    return true;
+                }
+                log.warn("Daily email budget reached ({}). Skipped {} to {}",
+                        budgetCap, templateName, LogSanitizer.maskEmail(toEmail));
+                return false;
+            }
+
+            incrementDbDailyCount(conn, sqlDate);
+            return true;
+        } catch (Exception e) {
+            log.warn("Notice checking daily email budget in DB: {}", e.getMessage());
+            int inMem = IN_MEMORY_DAILY_FALLBACK.incrementAndGet();
+            if (inMem > URGENT_SAFETY_CAP) return false;
+            if (inMem > budgetCap && !isUrgentVerification) {
+                log.warn("Daily email budget reached ({}). Skipped {} to {}",
+                        budgetCap, templateName, LogSanitizer.maskEmail(toEmail));
+                return false;
+            }
+            return true;
+        }
+    }
+
+    private static void incrementDbDailyCount(Connection conn, java.sql.Date sqlDate) throws SQLException {
+        try (PreparedStatement updatePs = conn.prepareStatement(
+                "UPDATE email_daily_stats SET sent_count = sent_count + 1, updated_at = CURRENT_TIMESTAMP WHERE stat_date = ? AND category = 'TOTAL'")) {
+            updatePs.setDate(1, sqlDate);
+            int affected = updatePs.executeUpdate();
+            if (affected == 0) {
+                try (PreparedStatement insertPs = conn.prepareStatement(
+                        "INSERT INTO email_daily_stats (stat_date, category, sent_count, updated_at) VALUES (?, 'TOTAL', 1, CURRENT_TIMESTAMP)")) {
+                    insertPs.setDate(1, sqlDate);
+                    insertPs.executeUpdate();
+                }
+            }
+        }
     }
 
     public void sendHospitalStatusEmail(String toEmail, String hospitalName, String status, String reason) {
@@ -297,124 +429,86 @@ public class EmailVerificationService {
     public void sendHospitalStatusEmail(int hospitalId, String toEmail, String hospitalName, String status, String reason) {
         if (toEmail == null || toEmail.isBlank()) return;
 
-        EMAIL_EXECUTOR.submit(() -> {
-            try {
-                String normStatus = (status != null) ? status.trim().toLowerCase() : "pending_review";
-                boolean isPriority = "verified".equals(normStatus);
+        String normStatus = (status != null) ? status.trim().toLowerCase() : "pending_review";
+        String cleanEmail = toEmail.trim().toLowerCase();
 
-                if (!checkAndIncrementDailyLimit(isPriority)) {
-                    log.info("Status email to {} delayed due to daily threshold.", LogSanitizer.maskEmail(toEmail));
-                    recordDeliveryLog(hospitalId, "email", normStatus, "delayed", "Daily email threshold reached (queued for next day)");
-                    return;
-                }
+        // 10-Minute Idempotency Check: hash key = email + ":" + template + ":" + status (Part 4)
+        String idempotencyKey = cleanEmail + ":hospital_status:" + normStatus;
+        long now = System.currentTimeMillis();
+        Long lastSent = STATUS_IDEMPOTENCY_CACHE.get(idempotencyKey);
+        if (lastSent != null && (now - lastSent) < 600000L) { // 10 minutes = 600,000 ms
+            log.warn("Suppressed duplicate status email to {} (template: hospital_status, status: {}) within 10-minute idempotency window.",
+                    LogSanitizer.maskEmail(toEmail), normStatus);
+            return;
+        }
+        STATUS_IDEMPOTENCY_CACHE.put(idempotencyKey, now);
 
-                EmailTemplateService.EmailContent content;
-                switch (normStatus) {
-                    case "verified":
-                        content = EmailTemplateService.buildHospitalApprovedEmail(hospitalName);
-                        break;
-                    case "needs_info":
-                        content = EmailTemplateService.buildHospitalNeedsInfoEmail(hospitalName, reason);
-                        break;
-                    case "rejected":
-                        content = EmailTemplateService.buildHospitalRejectedEmail(hospitalName, reason);
-                        break;
-                    case "suspended":
-                        content = EmailTemplateService.buildHospitalSuspendedEmail(hospitalName, reason);
-                        break;
-                    case "reactivated":
-                        content = EmailTemplateService.buildHospitalReactivatedEmail(hospitalName);
-                        break;
-                    default:
-                        return;
-                }
+        // Build Email Content using unified Design System
+        EmailTemplateService.EmailContent content;
+        switch (normStatus) {
+            case "verified":
+                content = EmailTemplateService.buildHospitalApprovedEmail(hospitalName);
+                break;
+            case "needs_info":
+                content = EmailTemplateService.buildHospitalNeedsInfoEmail(hospitalName, reason);
+                break;
+            case "rejected":
+                content = EmailTemplateService.buildHospitalRejectedEmail(hospitalName, reason);
+                break;
+            case "suspended":
+                content = EmailTemplateService.buildHospitalSuspendedEmail(hospitalName, reason);
+                break;
+            case "reactivated":
+                content = EmailTemplateService.buildHospitalReactivatedEmail(hospitalName);
+                break;
+            default:
+                return;
+        }
 
-                boolean isLive = EnvConfig.isEmailLiveMode();
-                if (!isLive) {
-                    log.info("[EMAIL LOG MODE] Status email generated for {} ({}): Subject='{}'",
-                            LogSanitizer.maskEmail(toEmail), normStatus, LogSanitizer.sanitize(content.getSubject()));
-                    recordDeliveryLog(hospitalId, "email", normStatus, "sent", "[SIMULATED - LOG MODE] Delivered to " + LogSanitizer.maskEmail(toEmail));
-                    return;
-                }
-
-                boolean sent = sendViaBrevo(toEmail, content.getSubject(), content.getTextContent(), content.getHtmlContent());
-                recordDeliveryLog(hospitalId, "email", normStatus, sent ? "sent" : "failed", sent ? "Brevo dispatched" : "Brevo failed");
-            } catch (Exception e) {
-                log.warn("Asynchronous status email delivery notice: {}", e.getMessage());
-                recordDeliveryLog(hospitalId, "email", status, "failed", "Error: " + e.getMessage());
-            }
-        });
+        // Priority Queue: High priority for hospital status updates
+        EMAIL_PRIORITY_QUEUE.offer(new EmailTask(
+                PRIORITY_HIGH, hospitalId, "hospital", toEmail, "hospital_status_" + normStatus, normStatus, content
+        ));
     }
 
     public void sendDonorWelcomeEmail(int donorId, String toEmail, String firstName, String donorIdStr, String bloodType, String city, String language) {
         if (toEmail == null || toEmail.isBlank()) return;
 
-        EMAIL_EXECUTOR.submit(() -> {
-            try {
-                if (!checkAndIncrementDailyLimit(false)) {
-                    log.info("Donor welcome email to {} delayed due to daily threshold.", LogSanitizer.maskEmail(toEmail));
-                    return;
-                }
+        EmailTemplateService.EmailContent content = EmailTemplateService.buildDonorWelcomeEmail(
+                firstName, donorIdStr, bloodType, city, language
+        );
 
-                EmailTemplateService.EmailContent content = EmailTemplateService.buildDonorWelcomeEmail(
-                        firstName, donorIdStr, bloodType, city, language
-                );
-
-                boolean isLive = EnvConfig.isEmailLiveMode();
-                if (!isLive) {
-                    log.info("[EMAIL LOG MODE] Donor welcome email generated for {}: Subject='{}'",
-                            LogSanitizer.maskEmail(toEmail), LogSanitizer.sanitize(content.getSubject()));
-                    return;
-                }
-
-                sendViaBrevo(toEmail, content.getSubject(), content.getTextContent(), content.getHtmlContent());
-            } catch (Exception e) {
-                log.warn("Asynchronous donor welcome email delivery notice: {}", e.getMessage());
-            }
-        });
+        // Priority Queue: Normal priority for donor welcome emails
+        EMAIL_PRIORITY_QUEUE.offer(new EmailTask(
+                PRIORITY_NORMAL, donorId, "donor", toEmail, "donor_welcome", "welcome", content
+        ));
     }
 
     public void sendHospitalApplicationReceivedEmail(int hospitalId, String toEmail, String hospitalName, String applicationRef, List<String> docNames) {
         if (toEmail == null || toEmail.isBlank()) return;
 
-        EMAIL_EXECUTOR.submit(() -> {
-            try {
-                if (!checkAndIncrementDailyLimit(false)) {
-                    log.info("Hospital application received email to {} delayed due to daily threshold.", LogSanitizer.maskEmail(toEmail));
-                    return;
-                }
+        EmailTemplateService.EmailContent content = EmailTemplateService.buildHospitalApplicationReceivedEmail(
+                hospitalName, applicationRef, docNames
+        );
 
-                EmailTemplateService.EmailContent content = EmailTemplateService.buildHospitalApplicationReceivedEmail(
-                        hospitalName, applicationRef, docNames
-                );
-
-                boolean isLive = EnvConfig.isEmailLiveMode();
-                if (!isLive) {
-                    log.info("[EMAIL LOG MODE] Hospital application received email generated for {}: Subject='{}'",
-                            LogSanitizer.maskEmail(toEmail), LogSanitizer.sanitize(content.getSubject()));
-                    recordDeliveryLog(hospitalId, "email", "application_received", "sent", "[SIMULATED - LOG MODE] Delivered to " + LogSanitizer.maskEmail(toEmail));
-                    return;
-                }
-
-                boolean sent = sendViaBrevo(toEmail, content.getSubject(), content.getTextContent(), content.getHtmlContent());
-                recordDeliveryLog(hospitalId, "email", "application_received", sent ? "sent" : "failed", sent ? "Brevo dispatched" : "Brevo failed");
-            } catch (Exception e) {
-                log.warn("Asynchronous hospital application email delivery notice: {}", e.getMessage());
-            }
-        });
+        // Priority Queue: Normal priority for application received notifications
+        EMAIL_PRIORITY_QUEUE.offer(new EmailTask(
+                PRIORITY_NORMAL, hospitalId, "hospital", toEmail, "application_received", "application_received", content
+        ));
     }
 
-    private void recordDeliveryLog(int hospitalId, String channel, String eventType, String status, String details) {
-        if (hospitalId <= 0) return;
+    private static void recordDeliveryLog(String targetType, int targetId, String channel, String eventType, String status, String details) {
+        if (targetId <= 0 && !"hospital".equals(targetType) && !"donor".equals(targetType)) return;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "INSERT INTO notification_delivery_logs (target_type, target_id, channel, event_type, status, details, created_at) " +
-                     "VALUES ('hospital', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)")) {
-            ps.setInt(1, hospitalId);
-            ps.setString(2, channel);
-            ps.setString(3, eventType);
-            ps.setString(4, status);
-            ps.setString(5, details);
+                     "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)")) {
+            ps.setString(1, targetType != null ? targetType : "system");
+            ps.setInt(2, Math.max(0, targetId));
+            ps.setString(3, channel);
+            ps.setString(4, eventType);
+            ps.setString(5, status);
+            ps.setString(6, details);
             ps.executeUpdate();
         } catch (Exception e) {
             log.warn("Notice recording notification delivery log: {}", e.getMessage());
@@ -422,8 +516,10 @@ public class EmailVerificationService {
     }
 
     private boolean dispatchEmail(String toEmail, String code, String purpose, String role, String hospitalName, String language) {
-        if (!checkAndIncrementDailyLimit(true)) {
-            log.warn("Daily email limit exceeded for verification code to {}", LogSanitizer.maskEmail(toEmail));
+        // Urgent Priority: verification codes checked against hard safety cap (280)
+        if (!checkAndIncrementDailyBudget(true, "verification_code", toEmail)) {
+            log.warn("Daily email budget reached ({}). Skipped verification code to {}",
+                    URGENT_SAFETY_CAP, LogSanitizer.maskEmail(toEmail));
             return false;
         }
 
@@ -438,10 +534,25 @@ public class EmailVerificationService {
             return true;
         }
 
-        return sendViaBrevo(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
+        // Urgent: sent immediately, timeout 5s, 1 retry after 3s
+        boolean sent = sendViaBrevo(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
+        if (!sent) {
+            log.info("First attempt to dispatch verification code to {} failed. Retrying in 3 seconds...", LogSanitizer.maskEmail(toEmail));
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+            sent = sendViaBrevo(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
+        }
+        return sent;
     }
 
     public boolean sendViaBrevo(String toEmail, String subject, String textContent, String htmlContent) {
+        return sendViaBrevoStatic(toEmail, subject, textContent, htmlContent);
+    }
+
+    public static boolean sendViaBrevoStatic(String toEmail, String subject, String textContent, String htmlContent) {
         String apiKey = EnvConfig.get("BREVO_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
             log.warn("Brevo API key not configured. Cannot dispatch email.");

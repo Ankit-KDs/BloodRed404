@@ -608,6 +608,15 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                     "details TEXT NULL, " +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")");
+
+            // Ensure email daily usage stats table exists (Round 9 Part 4)
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS email_daily_stats (" +
+                    "stat_date DATE NOT NULL, " +
+                    "category VARCHAR(20) NOT NULL DEFAULT 'TOTAL', " +
+                    "sent_count INT NOT NULL DEFAULT 0, " +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "PRIMARY KEY (stat_date, category)" +
+                    ")");
         } catch (Exception ignored) {}
     }
 
