@@ -2165,8 +2165,10 @@ a:hover {
     font-size: 13px;
   }
   .timeline-step .step-label {
-    font-size: 13px;
+    font-size: 10px;
+    line-height: 1.15;
     text-align: center;
+    white-space: normal;
     word-break: break-word;
   }
   .req-item-top {

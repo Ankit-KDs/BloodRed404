@@ -25,7 +25,7 @@
   function loadSessionData() {
     try {
       let user = null;
-      const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
+      const raw = sessionStorage.getItem('red404_donor_session') || sessionStorage.getItem('donor_session') || sessionStorage.getItem('donorUser') || localStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
       if (raw) {
         try {
           const session = JSON.parse(raw);
@@ -38,7 +38,7 @@
       }
 
       if (!user) {
-        const rawSession = localStorage.getItem('red404_session');
+        const rawSession = sessionStorage.getItem('red404_session') || localStorage.getItem('red404_session');
         if (rawSession) {
           try {
             const session = JSON.parse(rawSession);
@@ -274,8 +274,10 @@
               window.updateCommandNav(d);
             }
             try {
-              localStorage.setItem('donor_session', JSON.stringify({ user: d, role: 'DONOR', userId: d.id || d.donorId }));
-              localStorage.setItem('red404_donor_session', JSON.stringify({ user: d }));
+              sessionStorage.setItem('donor_session', JSON.stringify({ user: d, role: 'DONOR', userId: d.id || d.donorId }));
+              sessionStorage.setItem('red404_donor_session', JSON.stringify({ user: d }));
+              sessionStorage.setItem('red404_auth_session', JSON.stringify({ user: d }));
+              sessionStorage.setItem('donorUser', JSON.stringify(d));
             } catch (_) { }
           } else if (json && json.success === false) {
             try {
@@ -327,15 +329,40 @@
       })
       .catch(() => { });
 
-    fetch('/api/donor/blood-requests', { credentials: 'include' })
-      .then(r => r.json())
+    // Initial alert fetch & real-time background sync
+    fetchDonorAlerts();
+    if (!window._donorAlertsInterval) {
+      window._donorAlertsInterval = setInterval(fetchDonorAlerts, 4000);
+    }
+  }
+
+  /**
+   * Fetches authoritative alerts targeted to this donor from /api/donor/alerts (with fallback)
+   */
+  function fetchDonorAlerts() {
+    fetch('/api/donor/alerts', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (json && Array.isArray(json.data)) {
           donorData.activeAlerts = json.data.filter(r => {
-            const s = (r.status || 'New').toUpperCase();
-            return s === 'NEW' || s === 'NOTIFIED' || s === 'ACCEPTED';
+            const s = (r.status || r.notifStatus || 'New').toUpperCase();
+            return s !== 'DECLINED' && s !== 'CANCELLED' && s !== 'FULFILLED' && s !== 'COMPLETED' && s !== 'WITHDRAWN' && s !== 'EXPIRED';
           });
           renderAlerts();
+        } else {
+          // Fallback to /api/donor/blood-requests
+          fetch('/api/donor/blood-requests', { credentials: 'include' })
+            .then(r2 => r2.ok ? r2.json() : null)
+            .then(json2 => {
+              if (json2 && Array.isArray(json2.data)) {
+                donorData.activeAlerts = json2.data.filter(r => {
+                  const s = (r.status || r.notifStatus || 'New').toUpperCase();
+                  return s !== 'DECLINED' && s !== 'CANCELLED' && s !== 'FULFILLED' && s !== 'COMPLETED' && s !== 'WITHDRAWN' && s !== 'EXPIRED';
+                });
+                renderAlerts();
+              }
+            })
+            .catch(() => { });
         }
       })
       .catch(() => { });
@@ -492,9 +519,9 @@
         badgeEl.textContent = 'No active requests';
       }
       summaryContainer.innerHTML = `
-        <p class="action-summary-text clear-status">
+        <p class="action-summary-text clear-status" style="display:flex; align-items:center; gap:8px;">
           <i class="fa-solid fa-circle-check" style="color: #34d399; font-size: 1rem;"></i>
-          No active requests near you
+          <span>No active requests near you</span>
         </p>
       `;
       if (actionContainer) {
@@ -508,24 +535,36 @@
     } else {
       // ACTIVE ALERTS PRESENT
       const count = donorData.activeAlerts.length;
-      if (badgeEl) {
-        badgeEl.className = 'plain-status-text';
-        badgeEl.style.cssText = 'font-size: 12px; color: #f87171; font-weight: 600; background: none; border: none; padding: 0;';
-        badgeEl.textContent = `${count} active ${count === 1 ? 'request' : 'requests'}`;
-      }
       const firstAlert = donorData.activeAlerts[0];
+      const targetReqId = firstAlert.id || firstAlert.requestId || '';
+      const hospitalName = firstAlert.hospitalName || firstAlert.hospital || firstAlert.hospital_name || 'Nearby Hospital';
+      const bloodType = firstAlert.bloodType || firstAlert.blood_type || firstAlert.bloodGroup || donorData.bloodGroup || 'Blood';
+      const distance = (firstAlert.distanceKm != null && firstAlert.distanceKm !== '') ? `${firstAlert.distanceKm} km away` : '';
+      const distanceText = distance ? ` &bull; ${distance}` : '';
+
+      if (badgeEl) {
+        badgeEl.className = 'action-badge';
+        badgeEl.style.cssText = 'background: #dc2626; color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 10px rgba(220,38,38,0.5); letter-spacing: 0.2px; white-space: nowrap;';
+        const badgeLabel = count === 1
+          ? '1 Active Emergency Request Near You'
+          : `${count} Active Emergency Requests Near You`;
+        badgeEl.innerHTML = `<span style="width: 7px; height: 7px; border-radius: 50%; background: #ffffff; display: inline-block; animation: pulseDot 1.5s infinite;"></span> ${badgeLabel}`;
+      }
+
       const summaryText = count === 1
-        ? `1 request needs you at <strong>${firstAlert.hospital || 'Nearby Hospital'}</strong> (${firstAlert.bloodGroup || donorData.bloodGroup}).`
-        : `<strong>${count} requests need you:</strong> Highest priority at <strong>${firstAlert.hospital || 'Nearby Hospital'}</strong>.`;
+        ? `<strong>${escapeHtml(hospitalName)}</strong> requires urgent <strong>${escapeHtml(bloodType)}</strong> blood${distanceText}.`
+        : `<strong>${count} urgent requests:</strong> Priority dispatch for <strong>${escapeHtml(hospitalName)}</strong> (${escapeHtml(bloodType)})${distanceText}.`;
 
       summaryContainer.innerHTML = `
-        <p class="action-summary-text">
+        <p class="action-summary-text" style="color: #fca5a5; font-size: 0.88rem; line-height: 1.45; margin: 0;">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; margin-right: 6px;"></i>
           ${summaryText}
         </p>
       `;
+
       if (actionContainer) {
         actionContainer.innerHTML = `
-          <a href="donor-alerts.html" class="action-footer-link" style="color: #ef4444;" title="See requests">
+          <a href="donor-alerts.html?highlight=${encodeURIComponent(targetReqId)}" class="action-footer-link" style="color: #ef4444; display: inline-flex; align-items: center; gap: 8px; font-weight: 700;" title="See requests">
             <span>See requests (${count} active)</span>
             <i class="fa-solid fa-arrow-right"></i>
           </a>
@@ -583,7 +622,7 @@
                 <span class="log-type-tag">EMERGENCY REQUEST</span>
               </div>
               <div class="log-message">
-                <strong>${escapeHtml(alert.bloodGroup || 'Blood')}</strong> required at <strong>${escapeHtml(alert.hospital || 'Nearby Hospital')}</strong>.
+                <strong>${escapeHtml(alert.bloodType || alert.bloodGroup || 'Blood')}</strong> required at <strong>${escapeHtml(alert.hospitalName || alert.hospital || alert.hospital_name || 'Nearby Hospital')}</strong>.
               </div>
             </div>
           </div>

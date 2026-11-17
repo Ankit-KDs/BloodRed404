@@ -380,17 +380,16 @@ function initDonorRegisterForm() {
         localStorage.setItem('red404_reg_date_' + cleanEmail, regTimestamp);
       }
 
-      if (result.data && result.data.donor) {
-        Auth.saveSession(donorData);
-        Store.set('donorToken', result.data.token);
-      } else {
-        Auth.saveSession(donorData);
-        Store.set('donorToken', 'SESSION-DONOR-1');
-      }
-      localStorage.setItem('donor_session', JSON.stringify({ user: donorData, role: 'DONOR', userId: donorData.id || donorData.donorId }));
-      localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
-      localStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
-      localStorage.setItem('donorUser', JSON.stringify(donorData));
+      const dToken = (result.data && result.data.token) ? result.data.token : ('SESSION-DONOR-' + (donorData.id || donorData.donorId || '1'));
+      Auth.saveSession(donorData);
+      Store.set('donorToken', dToken);
+      sessionStorage.setItem('donor_session', JSON.stringify({ user: donorData, role: 'DONOR', userId: donorData.id || donorData.donorId }));
+      sessionStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
+      sessionStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
+      sessionStorage.setItem('donorUser', JSON.stringify(donorData));
+      sessionStorage.setItem('red404_token', dToken);
+      sessionStorage.setItem('red404_donorToken', dToken);
+      sessionStorage.setItem('donorToken', dToken);
 
       // CRITICAL: Cache in local registered donors registry
       try {
@@ -568,12 +567,16 @@ function initDonorLoginForm() {
         }
       }
 
+      const dToken = result.data.token || ('SESSION-DONOR-' + (currentSmartId || donorData.id || donorData.donorId || '1'));
       Auth.saveSession(donorData);
-      Store.set('donorToken', result.data.token || ('SESSION-DONOR-' + (currentSmartId || '1')));
-      localStorage.setItem('donor_session', JSON.stringify({ user: donorData, role: 'DONOR', userId: donorData.id || donorData.donorId }));
-      localStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
-      localStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
-      localStorage.setItem('donorUser', JSON.stringify(donorData));
+      Store.set('donorToken', dToken);
+      sessionStorage.setItem('donor_session', JSON.stringify({ user: donorData, role: 'DONOR', userId: donorData.id || donorData.donorId }));
+      sessionStorage.setItem('red404_donor_session', JSON.stringify({ user: donorData }));
+      sessionStorage.setItem('red404_auth_session', JSON.stringify({ user: donorData }));
+      sessionStorage.setItem('donorUser', JSON.stringify(donorData));
+      sessionStorage.setItem('red404_token', dToken);
+      sessionStorage.setItem('red404_donorToken', dToken);
+      sessionStorage.setItem('donorToken', dToken);
 
       // Keep local registry updated with authenticated donor
       try {
@@ -620,10 +623,15 @@ function initHospitalRegisterForm() {
     if (result.success) {
       if (result.data && result.data.hospital) {
         const hosp = result.data.hospital;
+        const hToken = result.data.token || ('SESSION-HOSPITAL-' + hosp.id);
         Auth.saveSession(hosp);
-        Store.set('hospitalToken', result.data.token);
-        localStorage.setItem('hospital_session', JSON.stringify({ hospital: hosp, role: 'HOSPITAL', userId: hosp.id }));
-        localStorage.setItem('red404_hospital_session', JSON.stringify(hosp));
+        Store.set('hospitalToken', hToken);
+        sessionStorage.setItem('hospital_session', JSON.stringify({ hospital: hosp, role: 'HOSPITAL', userId: hosp.id }));
+        sessionStorage.setItem('red404_hospital_session', JSON.stringify(hosp));
+        sessionStorage.setItem('red404_hospital_user', JSON.stringify(hosp));
+        sessionStorage.setItem('hospitalUser', JSON.stringify(hosp));
+        sessionStorage.setItem('red404_hospitalToken', hToken);
+        sessionStorage.setItem('hospitalToken', hToken);
         try {
           const list = JSON.parse(localStorage.getItem('red404_registered_hospitals') || '[]');
           if (!list.some(h => (h.id && h.id === hosp.id) || (h.email && h.email === hosp.email))) {
@@ -714,10 +722,15 @@ function initHospitalLoginForm() {
 
     if (result.success) {
       const hosp = result.data.hospital;
+      const hToken = result.data.token || ('SESSION-HOSPITAL-' + hosp.id);
       Auth.saveSession(hosp);
-      Store.set('hospitalToken', result.data.token);
-      localStorage.setItem('hospital_session', JSON.stringify({ hospital: hosp, role: 'HOSPITAL', userId: hosp.id }));
-      localStorage.setItem('red404_hospital_session', JSON.stringify(hosp));
+      Store.set('hospitalToken', hToken);
+      sessionStorage.setItem('hospital_session', JSON.stringify({ hospital: hosp, role: 'HOSPITAL', userId: hosp.id }));
+      sessionStorage.setItem('red404_hospital_session', JSON.stringify(hosp));
+      sessionStorage.setItem('red404_hospital_user', JSON.stringify(hosp));
+      sessionStorage.setItem('hospitalUser', JSON.stringify(hosp));
+      sessionStorage.setItem('red404_hospitalToken', hToken);
+      sessionStorage.setItem('hospitalToken', hToken);
       showToast('Login successful! Redirecting...', 'success', 1500);
       setTimeout(() => { window.location.href = 'hospital-dashboard.html'; }, 1500);
     } else {

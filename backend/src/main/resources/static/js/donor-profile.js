@@ -153,7 +153,7 @@
       let userData = session ? (session.user || session) : null;
       if (!userData) {
         try {
-          const s = localStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session');
+          const s = sessionStorage.getItem('donor_session') || sessionStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_auth_session') || sessionStorage.getItem('donorUser') || localStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session');
           if (s) {
             const parsed = JSON.parse(s);
             userData = parsed.user || parsed;

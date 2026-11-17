@@ -175,12 +175,26 @@ public class BloodRequestNotificationDao {
     public boolean updateDonorResponse(int requestId, int donorId, String status) throws SQLException {
         ensureTableExists();
         String sql = "UPDATE blood_request_notifications SET status = ?, responded_at = CURRENT_TIMESTAMP WHERE request_id = ? AND donor_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status.toUpperCase());
-            ps.setInt(2, requestId);
-            ps.setInt(3, donorId);
-            return ps.executeUpdate() > 0;
+        try (Connection conn = DBConnection.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, status.toUpperCase());
+                ps.setInt(2, requestId);
+                ps.setInt(3, donorId);
+                if (ps.executeUpdate() > 0) {
+                    return true;
+                }
+            }
+            if (donorId > 0) {
+                String insertSql = "INSERT INTO blood_request_notifications (request_id, donor_id, hospital_id, blood_type, units_requested, patient_name, notes, status, notified_at, responded_at) " +
+                        "SELECT id, ?, hospital_id, blood_type, units_requested, patient_name, '', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM blood_requests WHERE id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                    ps.setInt(1, donorId);
+                    ps.setString(2, status.toUpperCase());
+                    ps.setInt(3, requestId);
+                    return ps.executeUpdate() > 0;
+                }
+            }
+            return false;
         }
     }
 
@@ -212,7 +226,7 @@ public class BloodRequestNotificationDao {
 
     public Map<String, Object> getAcceptedDonorForRequest(int requestId) {
         ensureTableExists();
-        String sql = "SELECT n.status, d.id as donor_pk, d.name, d.blood_type, d.phone, d.latitude, d.longitude, " +
+        String sql = "SELECT n.status, d.id as donor_pk, d.donor_id, d.name, d.email, d.blood_type, d.phone, d.latitude, d.longitude, " +
                      "br.latitude as hosp_lat, br.longitude as hosp_lng " +
                      "FROM blood_request_notifications n " +
                      "JOIN donors d ON n.donor_id = d.id " +
@@ -225,10 +239,14 @@ public class BloodRequestNotificationDao {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("donorId", rs.getInt("donor_pk"));
-                    map.put("donorName", rs.getString("name"));
+                    String dId = rs.getString("donor_id");
+                    map.put("donorId", dId != null && !dId.isBlank() ? dId : "DNR-" + rs.getInt("donor_pk"));
+                    map.put("donorName", maskDonorName(rs.getString("name"), rs.getString("email")));
                     map.put("donorBloodType", rs.getString("blood_type"));
                     map.put("donorPhone", rs.getString("phone"));
+                    map.put("phone", rs.getString("phone"));
+                    map.put("donorEmail", rs.getString("email"));
+                    map.put("email", rs.getString("email"));
 
                     Object dLatObj = rs.getObject("latitude");
                     Object dLngObj = rs.getObject("longitude");
@@ -265,17 +283,38 @@ public class BloodRequestNotificationDao {
     }
 
     public static String maskDonorName(String fullName) {
-        if (fullName == null || fullName.isBlank()) return "Donor";
-        String[] parts = fullName.trim().split("\\s+");
-        if (parts.length == 1) return parts[0];
-        return parts[0] + " " + parts[parts.length - 1].substring(0, 1).toUpperCase() + ".";
+        return maskDonorName(fullName, null);
+    }
+
+    public static String maskDonorName(String fullName, String email) {
+        if (fullName != null && !fullName.isBlank() && !"Donor".equalsIgnoreCase(fullName.trim())) {
+            String[] parts = fullName.trim().split("\\s+");
+            if (parts.length == 1) return parts[0];
+            return parts[0] + " " + parts[parts.length - 1].substring(0, 1).toUpperCase() + ".";
+        }
+        if (email != null && email.contains("@")) {
+            String prefix = email.substring(0, email.indexOf('@')).replace('.', ' ').replace('_', ' ');
+            String[] parts = prefix.trim().split("\\s+");
+            if (parts.length >= 2) {
+                return capitalize(parts[0]) + " " + parts[1].substring(0, 1).toUpperCase() + ".";
+            } else if (parts.length == 1 && !parts[0].isBlank()) {
+                return capitalize(parts[0]);
+            }
+        }
+        return "Donor";
+    }
+
+    private static String capitalize(String s) {
+        if (s == null || s.isBlank()) return "Available";
+        String str = s.trim();
+        return Character.toUpperCase(str.charAt(0)) + str.substring(1).toLowerCase();
     }
 
     public List<Map<String, Object>> getDonorsForRequest(int requestId) {
         ensureTableExists();
         List<Map<String, Object>> list = new ArrayList<>();
         String sql = "SELECT n.id, n.status as notif_status, n.notified_at, n.responded_at, " +
-                     "d.id as donor_pk, d.donor_id, d.name, d.blood_type, d.phone, d.latitude, d.longitude, " +
+                     "d.id as donor_pk, d.donor_id, d.name, d.email, d.blood_type, d.phone, d.latitude, d.longitude, " +
                      "br.latitude as hosp_lat, br.longitude as hosp_lng, br.status as req_status " +
                      "FROM blood_request_notifications n " +
                      "JOIN donors d ON n.donor_id = d.id " +
@@ -292,7 +331,7 @@ public class BloodRequestNotificationDao {
                     String reqStatus = rs.getString("req_status");
                     map.put("id", rs.getInt("id"));
                     map.put("donorId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("donor_pk"));
-                    map.put("donorName", maskDonorName(rs.getString("name")));
+                    map.put("donorName", maskDonorName(rs.getString("name"), rs.getString("email")));
                     map.put("bloodType", rs.getString("blood_type"));
                     map.put("status", notifStatus);
                     
@@ -317,8 +356,10 @@ public class BloodRequestNotificationDao {
                     boolean isDonorAccepted = notifStatus != null && (notifStatus.equalsIgnoreCase("ACCEPTED") || notifStatus.equalsIgnoreCase("ARRIVED") || notifStatus.equalsIgnoreCase("DONATED"));
                     if (isReqActive && isDonorAccepted) {
                         map.put("phone", rs.getString("phone"));
+                        map.put("email", rs.getString("email"));
                     } else {
                         map.put("phone", null);
+                        map.put("email", null);
                     }
 
                     Object notifAt = rs.getObject("notified_at");
@@ -337,7 +378,9 @@ public class BloodRequestNotificationDao {
     public Map<String, Object> getRequestMetrics(int requestId) {
         Map<String, Object> res = new HashMap<>();
         res.put("notified", 0);
+        res.put("totalNotified", 0);
         res.put("accepted", 0);
+        res.put("declined", 0);
         res.put("arrived", 0);
         res.put("firstResponseTime", null);
         res.put("firstResponseMin", null);
@@ -346,22 +389,31 @@ public class BloodRequestNotificationDao {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, requestId);
-            int notified = 0;
+            int totalNotified = 0;
+            int activeNotified = 0;
             int accepted = 0;
+            int declined = 0;
             int arrived = 0;
             Long firstRespSec = null;
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    notified++;
+                    totalNotified++;
                     String st = rs.getString("status");
                     if (st != null) {
                         String stUpper = st.toUpperCase();
+                        if (stUpper.equals("DECLINED")) {
+                            declined++;
+                        } else {
+                            activeNotified++;
+                        }
                         if (stUpper.equals("ACCEPTED") || stUpper.equals("ARRIVED") || stUpper.equals("DONATED")) {
                             accepted++;
                         }
                         if (stUpper.equals("ARRIVED") || stUpper.equals("DONATED")) {
                             arrived++;
                         }
+                    } else {
+                        activeNotified++;
                     }
                     if (firstRespSec == null && rs.getTimestamp("notified_at") != null && rs.getTimestamp("responded_at") != null) {
                         long diff = (rs.getTimestamp("responded_at").getTime() - rs.getTimestamp("notified_at").getTime()) / 1000L;
@@ -371,8 +423,10 @@ public class BloodRequestNotificationDao {
                     }
                 }
             }
-            res.put("notified", notified);
+            res.put("notified", activeNotified);
+            res.put("totalNotified", totalNotified);
             res.put("accepted", accepted);
+            res.put("declined", declined);
             res.put("arrived", arrived);
             if (firstRespSec != null) {
                 long mins = Math.max(1, Math.round(firstRespSec / 60.0));
@@ -504,11 +558,5 @@ public class BloodRequestNotificationDao {
             log.warn("Error withdrawing open notifications for donor {}: {}", donorId, e.getMessage());
             return 0;
         }
-    }
-
-    private static String capitalize(String str) {
-        if (str == null || str.isBlank()) return "Available";
-        String s = str.trim().toLowerCase();
-        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 }

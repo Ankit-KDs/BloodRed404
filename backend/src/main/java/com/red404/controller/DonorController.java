@@ -78,7 +78,7 @@ public class DonorController {
             }
             if (donorProfile == null) {
                 HttpSession s = request.getSession(false);
-                if (s != null) {
+                if (s != null && s.getAttribute("user") != null) {
                     try { s.invalidate(); } catch (Exception ignored) {}
                 }
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -883,18 +883,18 @@ public class DonorController {
     }
 
     @PostMapping("/blood-requests/{requestId}/accept")
-    public ResponseEntity<ApiResponse> acceptRequest(@PathVariable int requestId, HttpServletRequest request) {
-        return handleRequestAction(requestId, "Accepted", request);
+    public ResponseEntity<ApiResponse> acceptRequest(@PathVariable int requestId, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+        return handleRequestAction(requestId, "Accepted", body, request);
     }
 
     @PostMapping("/blood-requests/{requestId}/decline")
-    public ResponseEntity<ApiResponse> declineRequest(@PathVariable int requestId, HttpServletRequest request) {
-        return handleRequestAction(requestId, "Declined", request);
+    public ResponseEntity<ApiResponse> declineRequest(@PathVariable int requestId, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+        return handleRequestAction(requestId, "Declined", body, request);
     }
 
     @PostMapping("/blood-requests/{requestId}/withdraw")
-    public ResponseEntity<ApiResponse> withdrawRequest(@PathVariable int requestId, HttpServletRequest request) {
-        return handleRequestAction(requestId, "Withdrawn", request);
+    public ResponseEntity<ApiResponse> withdrawRequest(@PathVariable int requestId, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+        return handleRequestAction(requestId, "Withdrawn", body, request);
     }
 
     @PostMapping({"/donations/record", "/record-donation"})
@@ -1397,11 +1397,22 @@ public class DonorController {
 
     // ======================== HELPERS ========================
 
-    private ResponseEntity<ApiResponse> handleRequestAction(int requestId, String status, HttpServletRequest request) {
+    private ResponseEntity<ApiResponse> handleRequestAction(int requestId, String status, Map<String, Object> body, HttpServletRequest request) {
         try {
+            int donorId = 0;
+            if (body != null && body.containsKey("donorId") && body.get("donorId") != null) {
+                try {
+                    donorId = Integer.parseInt(body.get("donorId").toString());
+                } catch (Exception ignored) {}
+            }
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
-            int donorId = ((Number) donor.get("id")).intValue();
+            if (donor != null && donor.get("id") != null && donorId <= 0) {
+                donorId = ((Number) donor.get("id")).intValue();
+            }
+            if (donorId <= 0) return unauthorized();
+            if (donor == null) {
+                donor = donorDao.findById(donorId);
+            }
 
             com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
             if ("Accepted".equalsIgnoreCase(status)) {
@@ -1439,6 +1450,28 @@ public class DonorController {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> requireDonor(HttpServletRequest request) {
+        // 1. Tab-isolated authentication via Authorization header, X-Red404-Token, or X-Donor-Id
+        String authHeader = request.getHeader("Authorization");
+        String token = request.getHeader("X-Red404-Token");
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+        }
+        if (token != null && token.startsWith("SESSION-DONOR-")) {
+            String donorIdentifier = token.substring("SESSION-DONOR-".length()).trim();
+            try {
+                Map<String, Object> donor = donorDao.findByIdOrDonorId(donorIdentifier);
+                if (donor != null) return donor;
+            } catch (Exception ignored) {}
+        }
+        String xDonor = request.getHeader("X-Donor-Id");
+        if (xDonor != null && !xDonor.isBlank()) {
+            try {
+                Map<String, Object> donor = donorDao.findByIdOrDonorId(xDonor.trim());
+                if (donor != null) return donor;
+            } catch (Exception ignored) {}
+        }
+
+        // 2. Fall back to HttpSession (for backward compatibility if no token passed)
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             return null;

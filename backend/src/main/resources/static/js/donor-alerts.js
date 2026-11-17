@@ -411,11 +411,22 @@
     }
 
     // State 2: Requests exist — loop through records and render cards
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightId = urlParams.get('highlight');
+
     let html = '';
     activeRequests.forEach((req, idx) => {
       const hospitalName = req.hospitalName || 'Hospital';
       const distance = req.distanceKm != null ? req.distanceKm : '0';
       const rawStatus = (req.status || 'New').toUpperCase();
+
+      const isHighlighted = Boolean(highlightId && (String(req.id) === String(highlightId) || String(req.requestId) === String(highlightId)));
+      const highlightStyles = isHighlighted
+        ? 'border: 2px solid #ef4444 !important; box-shadow: 0 0 25px rgba(239, 68, 68, 0.65) !important; background: linear-gradient(135deg, rgba(35, 12, 18, 0.95) 0%, rgba(20, 10, 15, 0.98) 100%) !important;'
+        : '';
+      const targetedBadge = isHighlighted
+        ? '<span class="target-highlight-tag" style="background:#dc2626; color:#ffffff; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(220,38,38,0.5);"><i class="fa-solid fa-bullseye"></i> TARGETED FOR YOU</span>'
+        : '';
 
       // Normalize status to one of: New, Accepted, Declined, Withdrawn, Expired, Fulfilled
       let displayStatus = 'New';
@@ -496,12 +507,13 @@
       metaParts.push(`Status: <span style="font-weight:700; color:#fff;">${displayStatus}</span>`);
 
       html += `
-        <div class="emergency-sos-card" id="req-card-${req.id}" style="margin-bottom:16px;">
+        <div class="emergency-sos-card" id="req-card-${req.id}" style="margin-bottom:16px; ${highlightStyles}">
           <div class="sos-card-top">
             <div class="sos-hosp-info">
               <div class="sos-hosp-title-row" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <i class="fas fa-hospital-alt sos-hosp-icon"></i>
                 <h3 class="sos-hosp-name" style="margin:0;">${escapeHtml(hospitalName.toUpperCase())}</h3>
+                ${targetedBadge}
                 <span class="sos-distance-pill">${distance}km</span>
                 <span style="${statusBadgeStyle} padding:2px 10px; border-radius:6px; font-size:12px; font-weight:700;">${displayStatus}</span>
               </div>
@@ -538,6 +550,18 @@
     });
 
     feedContainer.innerHTML = html;
+
+    // Scroll to and highlight card if specified in query string
+    try {
+      if (highlightId) {
+        setTimeout(() => {
+          const targetCard = document.getElementById(`req-card-${highlightId}`);
+          if (targetCard) {
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 120);
+      }
+    } catch (_) { }
   }
 
   // ======================== 7. DYNAMIC STANDBY UI ========================
@@ -817,11 +841,15 @@
       selected.status = 'Accepted';
     }
 
+    const donorId = currentDonor ? (currentDonor.id || currentDonor.donorId) : null;
+    const payload = JSON.stringify({ donorId: donorId });
+    const postHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+
     try {
-      await fetch(`/api/donor/blood-requests/${requestId}/accept`, { method: 'POST', credentials: 'include' });
+      await fetch(`/api/donor/blood-requests/${requestId}/accept`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
     try {
-      await fetch(`/api/requests/${requestId}/accept`, { method: 'POST', credentials: 'include' });
+      await fetch(`/api/requests/${requestId}/accept`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
 
     showToast('Alert accepted! Hospital dispatch and rescue team notified.', 'success');
@@ -834,11 +862,15 @@
     if (selected) {
       selected.status = 'Withdrawn';
     }
+    const donorId = currentDonor ? (currentDonor.id || currentDonor.donorId) : null;
+    const payload = JSON.stringify({ donorId: donorId });
+    const postHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+
     try {
-      await fetch(`/api/donor/blood-requests/${requestId}/withdraw`, { method: 'POST', credentials: 'include' });
+      await fetch(`/api/donor/blood-requests/${requestId}/withdraw`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
     try {
-      await fetch(`/api/requests/${requestId}/withdraw`, { method: 'POST', credentials: 'include' });
+      await fetch(`/api/requests/${requestId}/withdraw`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
 
     showToast('You withdrew from this request. The hospital has been notified.', 'info');
@@ -851,11 +883,15 @@
     if (selected) {
       selected.status = 'Declined';
     }
+    const donorId = currentDonor ? (currentDonor.id || currentDonor.donorId) : null;
+    const payload = JSON.stringify({ donorId: donorId });
+    const postHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+
     try {
-      await fetch(`/api/donor/blood-requests/${requestId}/decline`, { method: 'POST', credentials: 'include' });
+      await fetch(`/api/donor/blood-requests/${requestId}/decline`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
     try {
-      await fetch(`/api/requests/${requestId}/decline`, { method: 'POST', credentials: 'include' });
+      await fetch(`/api/requests/${requestId}/decline`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
 
     showToast('Alert dismissed.', 'info');

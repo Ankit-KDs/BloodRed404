@@ -773,11 +773,31 @@ function getRelativeTime(timestamp) {
 function initDashboard() {
   loadDashboardData();
 
-  document.getElementById('btnRetryActiveReq')?.addEventListener('click', loadDashboardData);
-  document.getElementById('btnRetryStock')?.addEventListener('click', loadDashboardData);
+  document.getElementById('btnRetryActiveReq')?.addEventListener('click', () => loadDashboardData());
+  document.getElementById('btnRetryStock')?.addEventListener('click', () => loadDashboardData());
+
+  // Part 1: Real-time short-polling refresh every 3-5 s for #dashboard and #records / My Requests view
+  if (!window.activeRequestSyncTimer) {
+    window.activeRequestSyncTimer = setInterval(() => {
+      if (!document.hidden) {
+        const activeTab = document.querySelector('.portal-tab-content.active');
+        const activeTabId = activeTab ? activeTab.id : 'tab-dashboard';
+        if (activeTabId === 'tab-dashboard') {
+          loadDashboardData(true);
+        } else if (activeTabId === 'tab-records') {
+          loadRecordsTable(true);
+        }
+
+        const drawer = document.getElementById('requestDetailDrawer');
+        if (drawer && drawer.classList.contains('open') && window.selectedRequest) {
+          loadRequestDonorsList(window.selectedRequest.id);
+        }
+      }
+    }, 3500);
+  }
 }
 
-async function loadDashboardData() {
+async function loadDashboardData(isSilent = false) {
   const activeReqLoading = document.getElementById('activeReqLoading');
   const activeReqError = document.getElementById('activeReqError');
   const activeReqList = document.getElementById('activeReqList');
@@ -793,12 +813,14 @@ async function loadDashboardData() {
   const activityFeedList = document.getElementById('activityFeedList');
   const activityFeedEmpty = document.getElementById('activityFeedEmpty');
 
-  // Set loading states
-  if (activeReqLoading) activeReqLoading.style.display = 'block';
-  if (activeReqError) activeReqError.style.display = 'none';
-  if (stockLoading) stockLoading.style.display = 'block';
-  if (stockError) stockError.style.display = 'none';
-  if (activityLoading) activityLoading.style.display = 'block';
+  // Set loading states ONLY if not silent short-polling
+  if (!isSilent) {
+    if (activeReqLoading) activeReqLoading.style.display = 'block';
+    if (activeReqError) activeReqError.style.display = 'none';
+    if (stockLoading) stockLoading.style.display = 'block';
+    if (stockError) stockError.style.display = 'none';
+    if (activityLoading) activityLoading.style.display = 'block';
+  }
 
   let inventoryMap = null;
   let activeRequests = [];
@@ -1108,11 +1130,130 @@ function renderActiveRequests(requests) {
     const relTime = getRelativeTime(r.created_at || r.createdAt);
     const status = (r.status || 'Active').toUpperCase();
 
+    const notified = r.notifiedCount ?? r.donorsNotified ?? 0;
+    const accepted = r.acceptedCount ?? r.donorsAccepted ?? 0;
+    const declined = r.declinedCount ?? r.donorsDeclined ?? 0;
+
     // 5-Stage timeline determination
     const isArrived = status === 'ARRIVED';
     const isOnTheWay = isArrived || status === 'ON_THE_WAY' || status === 'IN_TRANSIT';
     const isAccepted = isOnTheWay || status === 'ACCEPTED';
     const isNotified = isAccepted || status === 'NOTIFIED' || status === 'ACTIVE' || status === 'OPEN';
+
+    // Extract responding/targeted donors for this request
+    const reqDonors = (Array.isArray(r.respondingDonors) && r.respondingDonors.length > 0)
+      ? r.respondingDonors
+      : ((Array.isArray(r.donors) && r.donors.length > 0) ? r.donors : []);
+
+    const donorsToRender = reqDonors.length > 0
+      ? reqDonors
+      : (r.donorName || r.donorId ? [{
+          donorId: r.donorId || 'DNR-001',
+          donorName: r.donorName || 'Targeted Donor',
+          bloodType: r.donorBloodType || bloodType,
+          status: r.status || (accepted > 0 ? 'ACCEPTED' : (declined > 0 ? 'DECLINED' : 'NOTIFIED')),
+          distanceKm: r.donorDistance,
+          phone: r.donorPhone || r.phone,
+          email: r.donorEmail || r.email
+        }] : []);
+
+    let donorDetailsHtml = '';
+    if (donorsToRender.length > 0) {
+      donorDetailsHtml = `
+        <div class="active-req-donors-box" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; margin: 10px 0 12px 0;">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fa-solid fa-users-viewfinder" style="color: #38bdf8; margin-right: 5px;"></i> Responding Donors</span>
+            <span style="font-size: 11px; color: #38bdf8; font-family: monospace;">${donorsToRender.length} ${donorsToRender.length === 1 ? 'Donor' : 'Donors'}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${donorsToRender.map(d => {
+              const dStatus = (d.status || 'PENDING').toUpperCase();
+              let badgeBg = 'rgba(56,189,248,0.15)';
+              let badgeColor = '#38bdf8';
+              let badgeBorder = 'rgba(56,189,248,0.3)';
+              let statusLabel = 'Pending';
+
+              if (dStatus === 'ACCEPTED' || dStatus === 'DONATED') {
+                badgeBg = 'rgba(34,197,94,0.15)';
+                badgeColor = '#22c55e';
+                badgeBorder = 'rgba(34,197,94,0.3)';
+                statusLabel = 'Accepted';
+              } else if (dStatus === 'DECLINED') {
+                badgeBg = 'rgba(239,68,68,0.15)';
+                badgeColor = '#f87171';
+                badgeBorder = 'rgba(239,68,68,0.3)';
+                statusLabel = 'Declined';
+              } else if (dStatus === 'ARRIVED') {
+                badgeBg = 'rgba(168,85,247,0.15)';
+                badgeColor = '#c084fc';
+                badgeBorder = 'rgba(168,85,247,0.3)';
+                statusLabel = 'Arrived';
+              } else if (dStatus === 'NOTIFIED') {
+                statusLabel = 'Notified';
+              }
+
+              const distInfo = (d.distanceKm != null && d.distanceKm !== '') ? `${d.distanceKm} km away` : '';
+              const etaInfo = d.etaMinutes ? ` (${d.etaMinutes} min)` : '';
+              const distanceDisplay = distInfo ? `<span style="color: #94a3b8; font-size: 11px; margin-left: 6px;">&bull; ${distInfo}${etaInfo}</span>` : '';
+
+              const isAcceptedDonor = dStatus === 'ACCEPTED' || dStatus === 'ARRIVED' || dStatus === 'DONATED';
+              let contactSection = '';
+              if (isAcceptedDonor && (d.phone || d.email)) {
+                contactSection = `
+                  <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                    ${d.phone ? `
+                      <a href="tel:${escapeHtml(d.phone)}" class="btn-call-donor" style="background: #059669; color: #fff; text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-phone"></i>
+                        <span>Call ${escapeHtml(d.phone)}</span>
+                      </a>
+                    ` : ''}
+                    ${d.email ? `
+                      <a href="mailto:${escapeHtml(d.email)}" style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>${escapeHtml(d.email)}</span>
+                      </a>
+                    ` : ''}
+                  </div>
+                `;
+              } else if (dStatus === 'DECLINED') {
+                contactSection = `
+                  <div style="font-size: 11px; color: #f87171; margin-top: 4px;">
+                    <i class="fa-solid fa-circle-xmark" style="margin-right: 4px;"></i> Donor declined this request.
+                  </div>
+                `;
+              } else {
+                contactSection = `
+                  <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                    <i class="fa-solid fa-shield-halved" style="margin-right: 4px;"></i> Contact details masked until donor accepts.
+                  </div>
+                `;
+              }
+
+              return `
+                <div class="responding-donor-item" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 10px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); padding: 1px 6px; border-radius: 4px;">
+                        ${escapeHtml(d.donorId || 'DNR')}
+                      </span>
+                      <strong style="color: #fff; font-size: 12.5px;">${escapeHtml(d.donorName || 'Donor')}</strong>
+                      <span style="background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
+                        ${escapeHtml(d.bloodType || bloodType)}
+                      </span>
+                      ${distanceDisplay}
+                    </div>
+                    <span style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">
+                      ${statusLabel}
+                    </span>
+                  </div>
+                  ${contactSection}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div class="active-req-item" data-id="${r.id}">
@@ -1125,6 +1266,22 @@ function renderActiveRequests(requests) {
             </div>
           </div>
           <span class="req-status-chip">${status}</span>
+        </div>
+
+        <div class="active-req-metrics-bar" style="display: flex; gap: 8px; margin: 8px 0 12px 0; font-size: 12px; flex-wrap: wrap;">
+          <span style="color: #38bdf8; background: rgba(56,189,248,0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.2);">
+            📢 <strong>${notified}</strong> Active Notified
+          </span>
+          ${accepted > 0 ? `
+            <span style="color: #22c55e; background: rgba(34,197,94,0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.2);">
+              ✅ <strong>${accepted}</strong> Accepted
+            </span>
+          ` : ''}
+          ${declined > 0 ? `
+            <span style="color: #f87171; background: rgba(248,113,113,0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(248,113,113,0.2);">
+              ❌ <strong>${declined}</strong> Declined
+            </span>
+          ` : ''}
         </div>
 
         <div class="request-timeline">
@@ -1150,23 +1307,7 @@ function renderActiveRequests(requests) {
           </div>
         </div>
 
-        ${(isAccepted && r.donorName) ? `
-          <div class="accepted-donor-bar">
-            <div class="adb-left">
-              ${getDropBadgeSvg(r.donorBloodType || bloodType, 'ok')}
-              <div>
-                <div class="adb-name">Accepted Donor: <strong>${escapeHtml(r.donorName)}</strong></div>
-                <div class="adb-meta">${r.donorDistance != null ? `${r.donorDistance} km away &bull; ` : ''}En route to hospital</div>
-              </div>
-            </div>
-            ${(r.donorPhone || r.phone) ? `
-              <a href="tel:${escapeHtml(r.donorPhone || r.phone)}" class="btn-call-donor">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                <span>Call donor</span>
-              </a>
-            ` : ''}
-          </div>
-        ` : ''}
+        ${donorDetailsHtml}
 
         <div class="req-item-actions">
           ${isArrived ? `<button type="button" class="btn-action-checkin" onclick="switchTab('tab-checkin')">Start check-in</button>` : ''}
@@ -2310,13 +2451,13 @@ function initRecords() {
   loadRecordsTable();
 }
 
-async function loadRecordsTable() {
+async function loadRecordsTable(isSilent = false) {
   const tbody = document.getElementById('recordsTableBody');
   const emptyBox = document.getElementById('recordsEmptyState');
   const errorBox = document.getElementById('recordsErrorState');
   if (!tbody) return;
 
-  if (errorBox) errorBox.style.display = 'none';
+  if (errorBox && !isSilent) errorBox.style.display = 'none';
 
   try {
     const res = await fetch('/api/hospital/requests/history', { credentials: 'include' });
@@ -2334,12 +2475,12 @@ async function loadRecordsTable() {
         recordsAll = [];
       }
     } else {
-      if (errorBox) errorBox.style.display = 'block';
+      if (errorBox && !isSilent) errorBox.style.display = 'block';
       return;
     }
   } catch (e) {
     console.error('Records fetch error:', e);
-    if (errorBox) errorBox.style.display = 'block';
+    if (errorBox && !isSilent) errorBox.style.display = 'block';
     return;
   }
 
@@ -2514,9 +2655,10 @@ function renderRecordsPage() {
     const radiusStr = `${radiusVal} km`;
 
     // Counts
-    const notified = r.donorsNotified ?? 0;
-    const accepted = r.donorsAccepted ?? 0;
-    const arrived = r.donorsArrived ?? 0;
+    const notified = r.donorsNotified ?? r.notifiedCount ?? 0;
+    const accepted = r.donorsAccepted ?? r.acceptedCount ?? 0;
+    const arrived = r.donorsArrived ?? r.arrivedCount ?? 0;
+    const declined = r.donorsDeclined ?? r.declinedCount ?? 0;
 
     // First response time
     const respTimeStr = r.firstResponseTime || ((status === 'Open' || status === 'Active') ? '<span style="color:#f59e0b;">Pending</span>' : '-');
@@ -2543,7 +2685,12 @@ function renderRecordsPage() {
         <td><span class="mono-data">${units}</span></td>
         <td><span class="chip-status ${urgClass}">${urgLabel}</span></td>
         <td><span class="chip-status ${statusClass}">${status}</span></td>
-        <td><strong style="color: ${accepted > 0 ? '#22c55e' : '#cbd5e1'}; font-family: 'JetBrains Mono', monospace;">${accepted}</strong> <span style="color: var(--hosp-text-muted);">/</span> <span class="mono-data">${notified}</span></td>
+        <td>
+          <strong style="color: ${accepted > 0 ? '#22c55e' : '#cbd5e1'}; font-family: 'JetBrains Mono', monospace;">${accepted}</strong>
+          <span style="color: var(--hosp-text-muted);">/</span>
+          <span class="mono-data">${notified}</span>
+          ${declined > 0 ? `<div style="font-size: 11px; color: #f87171;">(${declined} declined)</div>` : ''}
+        </td>
       </tr>
     `;
   }).join('');
@@ -2660,6 +2807,7 @@ function closeRequestDrawer() {
   if (drawer) drawer.style.display = 'none';
   if (backdrop) backdrop.style.display = 'none';
   selectedRequest = null;
+  window.selectedRequest = null;
 }
 
 function renderRequestTimeline(r) {
@@ -2674,11 +2822,14 @@ function renderRequestTimeline(r) {
   const isArrived = status === 'arrived' || isFulfilled;
 
   const dateStr = r.created_at ? new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  const notified = r.donorsNotified ?? r.notifiedCount ?? 0;
+  const accepted = r.donorsAccepted ?? r.acceptedCount ?? 0;
+  const declined = r.donorsDeclined ?? r.declinedCount ?? 0;
 
   const steps = [
     { title: 'Sent & Dispatched', time: dateStr, done: true, color: '#38bdf8' },
-    { title: `Notified (${r.donorsNotified ?? 0} donors)`, time: `${(r.radiusKm || 10)} km radius`, done: (r.donorsNotified ?? 0) > 0, color: '#38bdf8' },
-    { title: `Accepted (${r.donorsAccepted ?? 0} confirmed)`, time: r.firstResponseTime ? `First response: ${r.firstResponseTime}` : (isAccepted ? 'Confirmed' : 'Awaiting response'), done: isAccepted, color: '#22c55e' },
+    { title: `Notified (${notified} active)`, time: `${declined > 0 ? `${declined} declined &bull; ` : ''}${(r.radiusKm || 10)} km radius`, done: (notified > 0 || accepted > 0), color: '#38bdf8' },
+    { title: `Accepted (${accepted} confirmed)`, time: r.firstResponseTime ? `First response: ${r.firstResponseTime}` : (isAccepted ? 'Confirmed' : 'Awaiting response'), done: isAccepted, color: '#22c55e' },
     { title: 'Arrived at Facility', time: isArrived ? 'Donor at check-in' : 'In transit / Pending', done: isArrived, color: '#38bdf8' }
   ];
 
@@ -2726,32 +2877,56 @@ async function loadRequestDonorsList(reqId) {
       container.innerHTML = donors.map(d => {
         const dStatus = (d.status || 'NOTIFIED').toUpperCase();
         let statusBadgeClass = 'normal';
-        if (dStatus === 'ACCEPTED' || dStatus === 'DONATED') statusBadgeClass = 'available';
-        else if (dStatus === 'ARRIVED') statusBadgeClass = 'accepted';
-        else if (dStatus === 'DECLINED') statusBadgeClass = 'low';
-        else if (dStatus === 'EXPIRED') statusBadgeClass = 'expired';
+        let statusLabel = 'Notified';
+        if (dStatus === 'ACCEPTED' || dStatus === 'DONATED') { statusBadgeClass = 'available'; statusLabel = 'Accepted'; }
+        else if (dStatus === 'ARRIVED') { statusBadgeClass = 'accepted'; statusLabel = 'Arrived'; }
+        else if (dStatus === 'DECLINED') { statusBadgeClass = 'low'; statusLabel = 'Declined'; }
+        else if (dStatus === 'EXPIRED') { statusBadgeClass = 'expired'; statusLabel = 'Expired'; }
 
-        const distStr = d.distanceKm !== null ? `${d.distanceKm} km` : '';
+        const distStr = d.distanceKm !== null ? `${d.distanceKm} km away` : '';
         const etaStr = d.etaMinutes !== null ? `(${d.etaMinutes} min)` : '';
+        const isAcceptedDonor = dStatus === 'ACCEPTED' || dStatus === 'ARRIVED' || dStatus === 'DONATED';
 
-        // Phone: Revealed ONLY if donor accepted an active request (Rule 4.4)
-        const phoneHtml = d.phone
-          ? `<a href="tel:${d.phone}" class="btn-secondary" style="padding: 2px 8px; font-size: 11px; color: #34d399; border-color: rgba(52,211,153,0.3); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-               Call donor
-             </a>`
-          : '';
+        let contactSection = '';
+        if (isAcceptedDonor && (d.phone || d.email)) {
+          contactSection = `
+            <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
+              ${d.phone ? `
+                <a href="tel:${escapeHtml(d.phone)}" class="btn-call-donor" style="background: #059669; color: #fff; text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-phone"></i>
+                  <span>Call ${escapeHtml(d.phone)}</span>
+                </a>
+              ` : ''}
+              ${d.email ? `
+                <a href="mailto:${escapeHtml(d.email)}" style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-envelope"></i>
+                  <span>${escapeHtml(d.email)}</span>
+                </a>
+              ` : ''}
+            </div>
+          `;
+        } else if (dStatus === 'DECLINED') {
+          contactSection = `<div style="font-size: 11px; color: #f87171; margin-top: 5px;"><i class="fa-solid fa-circle-xmark"></i> Donor declined this request.</div>`;
+        } else {
+          contactSection = `<div style="font-size: 11px; color: #94a3b8; margin-top: 5px;"><i class="fa-solid fa-shield-halved"></i> Contact details masked until donor accepts.</div>`;
+        }
 
         return `
-          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--hosp-border); border-radius: 8px; padding: 10px 12px; font-size: 12.5px;">
-            <div>
-              <div style="font-weight: 600; color: #fff;">${escapeHtml(d.donorName || 'Donor')} <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 4px;">(${escapeHtml(d.bloodType || '')})</span></div>
-              <div style="font-size: 11.5px; color: var(--hosp-text-muted);">${distStr} ${etaStr}</div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--hosp-border); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); padding: 1px 6px; border-radius: 4px;">
+                  ${escapeHtml(d.donorId || 'DNR')}
+                </span>
+                <strong style="color: #fff; font-size: 13px;">${escapeHtml(d.donorName || 'Donor')}</strong>
+                <span style="background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
+                  ${escapeHtml(d.bloodType || '')}
+                </span>
+                ${distStr ? `<span style="font-size: 11.5px; color: var(--hosp-text-muted);">&bull; ${distStr} ${etaStr}</span>` : ''}
+              </div>
+              <span class="chip-status ${statusBadgeClass}" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">${statusLabel}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="chip-status ${statusBadgeClass}" style="font-size: 11px; padding: 2px 6px;">${dStatus}</span>
-              ${phoneHtml}
-            </div>
+            ${contactSection}
           </div>
         `;
       }).join('');
@@ -3083,7 +3258,7 @@ function initDonorCheckin() {
     }
 
     try {
-      const raw = localStorage.getItem('red404_hospital_user') || sessionStorage.getItem('red404_hospital_user');
+      const raw = sessionStorage.getItem('red404_hospital_user') || sessionStorage.getItem('hospital_session') || sessionStorage.getItem('red404_hospital_session') || localStorage.getItem('red404_hospital_user');
       if (raw) {
         const u = JSON.parse(raw);
         const userCandidates = [u.adminName, u.admin_name, u.staffName, u.staff_name, u.contactPerson];

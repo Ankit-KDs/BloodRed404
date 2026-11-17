@@ -14,7 +14,7 @@
     // 1. Session lookup
     let user = null;
     try {
-      const raw = localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
+      const raw = sessionStorage.getItem('red404_donor_session') || sessionStorage.getItem('donor_session') || sessionStorage.getItem('donorUser') || localStorage.getItem('red404_donor_session') || localStorage.getItem('donorUser');
       if (raw) {
         const session = JSON.parse(raw);
         user = session.user || session;
@@ -23,7 +23,7 @@
         user = Auth.getSession();
       }
       if (!user) {
-        const rawSession = localStorage.getItem('red404_session');
+        const rawSession = sessionStorage.getItem('red404_session') || localStorage.getItem('red404_session');
         if (rawSession) {
           const session = JSON.parse(rawSession);
           user = session.user || session;

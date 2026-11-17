@@ -74,7 +74,7 @@
     let donorId = user.donorId || user.donor_id || (typeof user.id === 'string' && user.id.startsWith('DNR-') ? user.id : null);
     if (!donorId) {
       try {
-        const sess = JSON.parse(localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || '{}');
+        const sess = JSON.parse(sessionStorage.getItem('red404_donor_session') || sessionStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session') || '{}');
         const su = sess.user || sess;
         if (su && (su.donorId || su.donor_id)) donorId = su.donorId || su.donor_id;
       } catch (_) {}
@@ -108,14 +108,14 @@
     // 1. Load active user session if available
     let session = null;
     try {
-      const raw = localStorage.getItem('donor_session') || sessionStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session') || sessionStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session') || localStorage.getItem('donorUser');
+      const raw = sessionStorage.getItem('red404_donor_session') || sessionStorage.getItem('donor_session') || sessionStorage.getItem('red404_auth_session') || sessionStorage.getItem('donorUser') || localStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session') || localStorage.getItem('red404_auth_session') || localStorage.getItem('donorUser');
       if (raw) session = JSON.parse(raw);
       if (!session && typeof Auth !== 'undefined' && Auth.getSession) {
         const u = Auth.getSession();
         if (u) session = { user: u };
       }
       if (!session) {
-        const rawSession = localStorage.getItem('red404_session');
+        const rawSession = sessionStorage.getItem('red404_session') || localStorage.getItem('red404_session');
         if (rawSession) session = JSON.parse(rawSession);
       }
     } catch (e) {

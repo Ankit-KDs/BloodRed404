@@ -28,21 +28,41 @@ public class AuthController {
 
     @GetMapping("/check-session")
     public ResponseEntity<ApiResponse> checkSession(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String token = request.getHeader("X-Red404-Token");
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+        }
+        Map<String, Object> tokenDonor = null;
+        Map<String, Object> tokenHospital = null;
+        if (token != null && token.startsWith("SESSION-DONOR-")) {
+            try {
+                String dId = token.substring("SESSION-DONOR-".length()).trim();
+                tokenDonor = new com.red404.dao.DonorDao().findByIdOrDonorId(dId);
+            } catch (Exception ignored) {}
+        } else if (token != null && token.startsWith("SESSION-HOSPITAL-")) {
+            try {
+                int hId = Integer.parseInt(token.substring("SESSION-HOSPITAL-".length()).trim());
+                tokenHospital = new com.red404.dao.HospitalDao().findById(hId);
+            } catch (Exception ignored) {}
+        }
+
         HttpSession session = request.getSession(false);
-        if (session == null) {
+        if (tokenDonor == null && tokenHospital == null && session == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse(false, "No active session"));
         }
 
-        // Check if session was terminated from another device
-        if (!sessionDao.isSessionActive(session.getId())) {
+        // Check if session was terminated from another device (only if session exists and no explicit token)
+        if (session != null && tokenDonor == null && tokenHospital == null && !sessionDao.isSessionActive(session.getId())) {
             session.invalidate();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse(false, "Session was terminated from another device. Please log in again."));
         }
 
-        Object user = session.getAttribute("user");
-        Object hospital = session.getAttribute("hospitalUser");
+        Object user = tokenDonor != null ? tokenDonor : (session != null ? session.getAttribute("user") : null);
+        Object hospital = tokenHospital != null ? tokenHospital : (session != null ? session.getAttribute("hospitalUser") : null);
+        String resolvedRole = tokenDonor != null ? "DONOR" : (tokenHospital != null ? "HOSPITAL" : (session != null && session.getAttribute("role") != null ? session.getAttribute("role").toString() : null));
         if (user == null && hospital == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse(false, "No active session"));
@@ -134,7 +154,7 @@ public class AuthController {
         } catch (Exception ignored) {}
 
         Map<String, Object> data = new HashMap<>();
-        data.put("role", session.getAttribute("role"));
+        data.put("role", resolvedRole != null ? resolvedRole : (session != null ? session.getAttribute("role") : null));
         data.put("donor", user);
         data.put("hospital", hospital);
         if (user instanceof Map<?, ?> donor) {

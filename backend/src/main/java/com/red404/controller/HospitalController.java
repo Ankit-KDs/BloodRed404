@@ -442,6 +442,27 @@ public class HospitalController {
         for (Map<String, Object> reqItem : list) {
             int reqId = reqItem.get("id") != null ? ((Number) reqItem.get("id")).intValue() : 0;
             String reqStatus = reqItem.get("status") != null ? reqItem.get("status").toString() : "";
+
+            if (reqId > 0) {
+                Map<String, Object> metrics = notifDao.getRequestMetrics(reqId);
+                reqItem.put("donorsNotified", metrics.get("notified"));
+                reqItem.put("notifiedCount", metrics.get("notified"));
+                reqItem.put("totalNotified", metrics.get("totalNotified"));
+                reqItem.put("donorsAccepted", metrics.get("accepted"));
+                reqItem.put("acceptedCount", metrics.get("accepted"));
+                reqItem.put("donorsDeclined", metrics.get("declined"));
+                reqItem.put("declinedCount", metrics.get("declined"));
+                reqItem.put("donorsArrived", metrics.get("arrived"));
+                reqItem.put("arrivedCount", metrics.get("arrived"));
+                if (metrics.get("firstResponseTime") != null) {
+                    reqItem.put("firstResponseTime", metrics.get("firstResponseTime"));
+                    reqItem.put("firstResponseMin", metrics.get("firstResponseMin"));
+                }
+                List<Map<String, Object>> donors = notifDao.getDonorsForRequest(reqId);
+                reqItem.put("donors", donors);
+                reqItem.put("respondingDonors", donors);
+            }
+
             Map<String, Object> acceptedDonor = (reqId > 0) ? notifDao.getAcceptedDonorForRequest(reqId) : null;
             if (acceptedDonor != null) {
                 reqItem.put("donorId", acceptedDonor.get("donorId"));
@@ -450,9 +471,13 @@ public class HospitalController {
                 reqItem.put("donorDistance", acceptedDonor.get("donorDistance"));
                 reqItem.put("donorPhone", acceptedDonor.get("donorPhone"));
                 reqItem.put("phone", acceptedDonor.get("donorPhone"));
+                reqItem.put("donorEmail", acceptedDonor.get("donorEmail"));
+                reqItem.put("email", acceptedDonor.get("donorEmail"));
             } else if (!"Accepted".equalsIgnoreCase(reqStatus) && !"On the way".equalsIgnoreCase(reqStatus) && !"Arrived".equalsIgnoreCase(reqStatus)) {
                 reqItem.remove("donorPhone");
                 reqItem.remove("phone");
+                reqItem.remove("donorEmail");
+                reqItem.remove("email");
                 reqItem.remove("contact_number");
                 reqItem.remove("contactNumber");
             }
@@ -1717,29 +1742,50 @@ public class HospitalController {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> getHospitalFromSession(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String token = request.getHeader("X-Red404-Token");
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+        }
+        if (token != null && token.startsWith("SESSION-HOSPITAL-")) {
+            try {
+                int hid = Integer.parseInt(token.substring("SESSION-HOSPITAL-".length()).trim());
+                Map<String, Object> h = hospitalDao.findById(hid);
+                if (h != null) return h;
+            } catch (Exception ignored) {}
+        }
+        String xHosp = request.getHeader("X-Hospital-Id");
+        if (xHosp != null && !xHosp.isBlank()) {
+            try {
+                int hid = Integer.parseInt(xHosp.trim());
+                Map<String, Object> h = hospitalDao.findById(hid);
+                if (h != null) return h;
+            } catch (Exception ignored) {}
+        }
         HttpSession session = request.getSession(false);
         return session != null ? (Map<String, Object>) session.getAttribute("hospitalUser") : null;
     }
 
     private Integer getHospitalId(HttpServletRequest request) {
-        Map<String, Object> h = getHospitalFromSession(request);
-        if (h != null && h.get("id") instanceof Number num) {
-            return num.intValue();
-        }
         String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7).trim();
-            if (token.startsWith("SESSION-HOSPITAL-")) {
-                try {
-                    return Integer.parseInt(token.substring("SESSION-HOSPITAL-".length()));
-                } catch (NumberFormatException ignored) {}
-            }
+        String token = request.getHeader("X-Red404-Token");
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+        }
+        if (token != null && token.startsWith("SESSION-HOSPITAL-")) {
+            try {
+                return Integer.parseInt(token.substring("SESSION-HOSPITAL-".length()).trim());
+            } catch (NumberFormatException ignored) {}
         }
         String xHosp = request.getHeader("X-Hospital-Id");
         if (xHosp != null && !xHosp.isBlank()) {
             try {
                 return Integer.parseInt(xHosp.trim());
             } catch (NumberFormatException ignored) {}
+        }
+        Map<String, Object> h = getHospitalFromSession(request);
+        if (h != null && h.get("id") instanceof Number num) {
+            return num.intValue();
         }
         return null;
     }

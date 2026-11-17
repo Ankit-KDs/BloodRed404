@@ -121,16 +121,48 @@ public class BloodRequestController {
     }
 
     @PostMapping("/{id}/accept")
-    public ResponseEntity<ApiResponse> accept(@PathVariable int id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> accept(@PathVariable int id, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         try {
             int donorId = 0;
-            HttpSession session = request.getSession(false);
-            if (session != null && session.getAttribute("user") != null) {
-                Object u = session.getAttribute("user");
-                if (u instanceof Map) {
-                    Object dId = ((Map<?, ?>) u).get("id");
-                    if (dId instanceof Number) {
-                        donorId = ((Number) dId).intValue();
+            if (body != null && body.containsKey("donorId") && body.get("donorId") != null) {
+                try {
+                    donorId = Integer.parseInt(body.get("donorId").toString());
+                } catch (Exception ignored) {}
+            }
+            if (donorId <= 0) {
+                String authHeader = request.getHeader("Authorization");
+                String token = request.getHeader("X-Red404-Token");
+                if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+                    token = authHeader.substring(7).trim();
+                }
+                if (token != null && token.startsWith("SESSION-DONOR-")) {
+                    String dStr = token.substring("SESSION-DONOR-".length()).trim();
+                    try {
+                        Map<String, Object> d = new com.red404.dao.DonorDao().findByIdOrDonorId(dStr);
+                        if (d != null && d.get("id") instanceof Number num) {
+                            donorId = num.intValue();
+                        }
+                    } catch (Exception ignored) {}
+                }
+                String xDonor = request.getHeader("X-Donor-Id");
+                if (donorId <= 0 && xDonor != null && !xDonor.isBlank()) {
+                    try {
+                        Map<String, Object> d = new com.red404.dao.DonorDao().findByIdOrDonorId(xDonor.trim());
+                        if (d != null && d.get("id") instanceof Number num) {
+                            donorId = num.intValue();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+            if (donorId <= 0) {
+                HttpSession session = request.getSession(false);
+                if (session != null && session.getAttribute("user") != null) {
+                    Object u = session.getAttribute("user");
+                    if (u instanceof Map) {
+                        Object dId = ((Map<?, ?>) u).get("id");
+                        if (dId instanceof Number) {
+                            donorId = ((Number) dId).intValue();
+                        }
                     }
                 }
             }
@@ -147,6 +179,7 @@ public class BloodRequestController {
             }
             requestDao.updateStatus(id, "Accepted");
             Map<String, Object> req = requestDao.findById(id);
+            HttpSession session = request.getSession(false);
             if (session != null) {
                 session.setAttribute("activeMission", req);
             }
@@ -157,18 +190,53 @@ public class BloodRequestController {
     }
 
     @PostMapping("/{id}/decline")
-    public ResponseEntity<ApiResponse> decline(@PathVariable int id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> decline(@PathVariable int id, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         try {
-            HttpSession session = request.getSession(false);
-            if (session != null && session.getAttribute("user") != null) {
-                Object u = session.getAttribute("user");
-                if (u instanceof Map) {
-                    Object dId = ((Map<?, ?>) u).get("id");
-                    if (dId instanceof Number) {
-                        int donorId = ((Number) dId).intValue();
-                        new com.red404.dao.BloodRequestNotificationDao().updateDonorResponse(id, donorId, "DECLINED");
+            int donorId = 0;
+            if (body != null && body.containsKey("donorId") && body.get("donorId") != null) {
+                try {
+                    donorId = Integer.parseInt(body.get("donorId").toString());
+                } catch (Exception ignored) {}
+            }
+            if (donorId <= 0) {
+                String authHeader = request.getHeader("Authorization");
+                String token = request.getHeader("X-Red404-Token");
+                if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+                    token = authHeader.substring(7).trim();
+                }
+                if (token != null && token.startsWith("SESSION-DONOR-")) {
+                    String dStr = token.substring("SESSION-DONOR-".length()).trim();
+                    try {
+                        Map<String, Object> d = new com.red404.dao.DonorDao().findByIdOrDonorId(dStr);
+                        if (d != null && d.get("id") instanceof Number num) {
+                            donorId = num.intValue();
+                        }
+                    } catch (Exception ignored) {}
+                }
+                String xDonor = request.getHeader("X-Donor-Id");
+                if (donorId <= 0 && xDonor != null && !xDonor.isBlank()) {
+                    try {
+                        Map<String, Object> d = new com.red404.dao.DonorDao().findByIdOrDonorId(xDonor.trim());
+                        if (d != null && d.get("id") instanceof Number num) {
+                            donorId = num.intValue();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+            if (donorId <= 0) {
+                HttpSession session = request.getSession(false);
+                if (session != null && session.getAttribute("user") != null) {
+                    Object u = session.getAttribute("user");
+                    if (u instanceof Map) {
+                        Object dId = ((Map<?, ?>) u).get("id");
+                        if (dId instanceof Number) {
+                            donorId = ((Number) dId).intValue();
+                        }
                     }
                 }
+            }
+            if (donorId > 0) {
+                new com.red404.dao.BloodRequestNotificationDao().updateDonorResponse(id, donorId, "DECLINED");
             }
             return ok("Request declined", null);
         } catch (Exception e) {
@@ -204,6 +272,22 @@ public class BloodRequestController {
 
     @SuppressWarnings("unchecked")
     private Integer hospitalIdFromSession(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String token = request.getHeader("X-Red404-Token");
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+        }
+        if (token != null && token.startsWith("SESSION-HOSPITAL-")) {
+            try {
+                return Integer.parseInt(token.substring("SESSION-HOSPITAL-".length()).trim());
+            } catch (NumberFormatException ignored) {}
+        }
+        String xHosp = request.getHeader("X-Hospital-Id");
+        if (xHosp != null && !xHosp.isBlank()) {
+            try {
+                return Integer.parseInt(xHosp.trim());
+            } catch (NumberFormatException ignored) {}
+        }
         HttpSession session = request.getSession(false);
         if (session == null) return null;
         Object hospital = session.getAttribute("hospitalUser");
