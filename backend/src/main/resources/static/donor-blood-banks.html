@@ -130,100 +130,157 @@
     <!-- Header Section -->
     <header class="directory-header">
       <div class="header-content">
-        <h1 class="directory-title" data-i18n="bloodBanks.title">Verified Blood Bank Directory</h1>
-        <p class="directory-subtitle" data-i18n="bloodBanks.subtitle">
+        <h1 class="directory-title">Find nearby blood banks</h1>
+        <p class="directory-subtitle">
           Real-time blood stock and reserves across verified partner hospitals near you.
         </p>
       </div>
 
-      <!-- Quick Summary Stats -->
-      <div class="header-stats-strip">
+      <!-- Quick Summary Stats (Hidden on page load; revealed only after search) -->
+      <div class="header-stats-strip" id="headerStatsStrip" style="display: none;">
         <div class="h-stat-item">
           <span class="h-stat-num" id="statHospitalsCount">--</span>
-          <span class="h-stat-lbl" data-i18n="bloodBanks.statHospitals">Verified Hospitals</span>
+          <span class="h-stat-lbl">Verified Hospitals</span>
         </div>
         <div class="h-stat-item">
           <span class="h-stat-num" id="statUnitsCount">--</span>
-          <span class="h-stat-lbl" data-i18n="bloodBanks.statUnits">Available Units</span>
+          <span class="h-stat-lbl">Available Units</span>
         </div>
         <div class="h-stat-item">
           <span class="h-stat-num" id="statCitiesCount">--</span>
-          <span class="h-stat-lbl" data-i18n="bloodBanks.statCities">Cities Covered</span>
+          <span class="h-stat-lbl">Cities Covered</span>
         </div>
       </div>
     </header>
 
     <!-- Controls Card (Search + Location + Filter) -->
     <section class="directory-controls-card">
-      <div class="search-primary-row">
-        <!-- Text Search -->
-        <div class="search-input-wrap">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" id="searchInput" class="search-input"
-            placeholder="Search by hospital name, city, or pincode..." autocomplete="off" />
-          <button type="button" id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="Clear search">
-            <i class="fas fa-times"></i>
-          </button>
+      <form id="directorySearchForm" onsubmit="event.preventDefault();">
+        <!-- Row 1: State & City Dropdowns -->
+        <div class="search-form-grid">
+          <div class="form-group-item">
+            <label for="stateSelect" class="form-label"><i class="fas fa-map-location-dot"></i> State / UT</label>
+            <select id="stateSelect" class="search-select">
+              <option value="">Select State or UT...</option>
+              <!-- Populated dynamically with all 36 Indian States and UTs -->
+            </select>
+          </div>
+
+          <div class="form-group-item">
+            <label for="citySelect" class="form-label"><i class="fas fa-city"></i> City / District</label>
+            <select id="citySelect" class="search-select" disabled>
+              <option value="">Choose a state first</option>
+            </select>
+          </div>
         </div>
 
-        <!-- Near Me Button -->
-        <button type="button" id="nearMeBtn" class="btn btn-near-me">
-          <i class="fas fa-location-crosshairs"></i>
-          <span data-i18n="bloodBanks.nearMe">Near me</span>
-        </button>
-      </div>
+        <!-- Row 2: Name/PIN & Blood Group -->
+        <div class="search-form-grid search-form-grid-second">
+          <div class="form-group-item search-input-group">
+            <label for="searchInput" class="form-label"><i class="fas fa-hospital"></i> Hospital Name or PIN Code (Optional)</label>
+            <div class="search-input-wrap">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="searchInput" class="search-input"
+                placeholder="Hospital name or 6-digit PIN code..." autocomplete="off" />
+              <button type="button" id="clearSearchBtn" class="clear-search-btn" style="display: none;" title="Clear search">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group-item">
+            <label for="bloodGroupSelect" class="form-label"><i class="fas fa-droplet"></i> Blood Group (Optional)</label>
+            <select id="bloodGroupSelect" class="search-select">
+              <option value="ALL" selected>Any group</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 3: Action Buttons -->
+        <div class="search-actions-row">
+          <button type="submit" id="searchBtn" class="btn btn-primary btn-search-main">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+          </button>
+          <button type="button" id="nearMeBtn" class="btn btn-near-me">
+            <i class="fas fa-location-crosshairs"></i>
+            <span>Near me</span>
+          </button>
+          <button type="button" id="resetFiltersBtn" class="btn btn-outline btn-reset" style="display: none;">
+            <i class="fas fa-rotate-left"></i>
+            <span>Reset</span>
+          </button>
+        </div>
+      </form>
 
       <!-- Location Status Chip (if Near Me active) -->
       <div id="locationStatusChip" class="location-status-chip" style="display: none;">
         <span class="loc-chip-dot"></span>
-        <span class="loc-chip-text" id="locationStatusText">Using your approximate location</span>
+        <span class="loc-chip-text" id="locationStatusText">Using your saved location</span>
+        <button type="button" class="loc-chip-action" id="switchLocationBtn" title="Change location">Change</button>
         <button type="button" class="loc-chip-close" id="clearLocationBtn" title="Clear location">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
-      <!-- Filter Row: Blood Group Selector -->
-      <div class="blood-group-filter-row">
-        <span class="filter-label" data-i18n="bloodBanks.filterLabel">Filter by Available Group:</span>
-        <div class="blood-group-chips" id="bloodGroupChips">
-          <button type="button" class="bg-chip active" data-bg="ALL" data-i18n="bloodBanks.allGroups">All Groups</button>
-          <button type="button" class="bg-chip" data-bg="A+">A+</button>
-          <button type="button" class="bg-chip" data-bg="A-">A-</button>
-          <button type="button" class="bg-chip" data-bg="B+">B+</button>
-          <button type="button" class="bg-chip" data-bg="B-">B-</button>
-          <button type="button" class="bg-chip" data-bg="AB+">AB+</button>
-          <button type="button" class="bg-chip" data-bg="AB-">AB-</button>
-          <button type="button" class="bg-chip" data-bg="O+">O+</button>
-          <button type="button" class="bg-chip" data-bg="O-">O-</button>
+      <!-- Manual PIN Code Fallback Box -->
+      <div id="manualPinBox" class="manual-pin-fallback-box" style="display: none;">
+        <div class="manual-pin-header">
+          <i class="fas fa-info-circle"></i>
+          <span>Location unavailable. Enter your 6-digit PIN code to find blood banks near you:</span>
+        </div>
+        <div class="manual-pin-row">
+          <input type="text" id="manualPinInput" class="manual-pin-input" placeholder="e.g. 263136" maxlength="6" />
+          <button type="button" id="manualPinSubmitBtn" class="btn btn-primary btn-sm">Find by PIN</button>
+          <button type="button" id="manualPinCancelBtn" class="btn btn-outline btn-sm">Cancel</button>
         </div>
       </div>
     </section>
 
-    <!-- Results Status Line -->
-    <div class="results-meta-bar">
+    <!-- Results Status Line (Hidden on page load) -->
+    <div class="results-meta-bar" id="resultsMetaBar" style="display: none;">
       <span class="results-count-text" id="resultsCountText"></span>
-      <span class="results-note" id="resultsNoteText" data-i18n="bloodBanks.resultsNote">Stock updated directly by each partner hospital.</span>
+      <span class="results-note" id="resultsNoteText">Stock updated directly by each partner hospital.</span>
     </div>
 
-    <!-- Hospitals List / Grid (Search Gated by Part 4) -->
-    <div class="hospitals-grid" id="hospitalsGrid">
-      <!-- Dynamically populated hospital cards or initial prompt state -->
+    <!-- Initial Hint State (Visible on open before first search) -->
+    <div class="directory-hint-card" id="initialHintState">
+      <div class="hint-icon"><i class="fas fa-search-location"></i></div>
+      <p class="hint-text">Choose a state or use Near me, then press Search</p>
+    </div>
+
+    <!-- Hospitals List / Grid (Populated after Search) -->
+    <div class="hospitals-grid" id="hospitalsGrid" style="display: none;">
+      <!-- Dynamically populated hospital cards -->
+    </div>
+
+    <!-- Pagination Controls (10 per page) -->
+    <div class="pagination-bar" id="paginationControls" style="display: none;">
+      <!-- Dynamically rendered pagination -->
     </div>
 
     <!-- Empty State -->
     <div class="empty-state-card" id="emptyState" style="display: none;">
       <div class="empty-icon"><i class="fas fa-hospital-alt"></i></div>
-      <h3 class="empty-title" data-i18n="bloodBanks.emptyTitle">No verified blood banks found</h3>
-      <p class="empty-desc" id="emptyDesc" data-i18n="bloodBanks.emptyDesc">No verified hospitals match your search criteria. Try a different city or blood group.</p>
-      <button type="button" class="btn btn-outline" id="resetFiltersBtn" data-i18n="bloodBanks.resetFilters">Reset Search Filters</button>
+      <h3 class="empty-title">No verified hospitals match</h3>
+      <p class="empty-desc" id="emptyDesc">No verified hospitals match. Try another city or a nearby state.</p>
+      <button type="button" class="btn btn-outline" id="emptyResetBtn">Try another search</button>
     </div>
 
     <!-- Error State -->
     <div class="error-state-card" id="errorState" style="display: none;">
-      <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
-      <h3 class="error-title" data-i18n="bloodBanks.errorTitle">Failed to load directory</h3>
-      <p class="error-desc" data-i18n="bloodBanks.errorDesc">Unable to connect to hospital network. Please check your connection and try again.</p>
-      <button type="button" class="btn btn-primary" id="retryFetchBtn" data-i18n="bloodBanks.retry">Retry</button>
+      <div class="error-icon"><i class="fas fa-triangle-exclamation"></i></div>
+      <h3 class="error-title">Unable to Load Blood Banks</h3>
+      <p class="error-desc">There was an issue communicating with the directory service. Please try again.</p>
+      <button type="button" class="btn btn-primary" id="retryFetchBtn">Retry</button>
     </div>
 
   </main>

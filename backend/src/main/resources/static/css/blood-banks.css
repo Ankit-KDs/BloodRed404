@@ -80,7 +80,7 @@ body.blood-banks-body {
 }
 
 .h-stat-lbl {
-  font-size: 0.8rem;
+  font-size: 13px;
   color: #9b9a96;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -96,6 +96,60 @@ body.blood-banks-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.search-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.search-form-grid-second {
+  margin-top: 12px;
+}
+
+.form-group-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search-input-group {
+  flex: 2;
+}
+
+.form-label {
+  font-size: 13px;
+  color: #9b9a96;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.search-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0f1012;
+  border: 1px solid #2a2c31;
+  border-radius: 10px;
+  color: #ecebe8;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
+.search-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #141518;
+}
+
+.search-select:focus {
+  border-color: #3ecf8e;
 }
 
 .search-primary-row {
@@ -156,11 +210,57 @@ body.blood-banks-body {
   color: #ecebe8;
 }
 
+.search-actions-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.btn-search-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  background: #e63946;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-search-main:hover {
+  background: #d62828;
+}
+
+.btn-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid #2a2c31;
+  border-radius: 10px;
+  color: #9b9a96;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-reset:hover {
+  border-color: #ecebe8;
+  color: #ecebe8;
+}
+
 .btn-near-me {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 18px;
+  padding: 11px 18px;
   background: #23252a;
   color: #ecebe8;
   border: 1px solid #2a2c31;
@@ -204,17 +304,120 @@ body.blood-banks-body {
   border-radius: 50%;
 }
 
+.loc-chip-action {
+  background: #2a2c31;
+  border: 1px solid rgba(62, 207, 142, 0.4);
+  color: #3ecf8e;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.15s;
+}
+
+.loc-chip-action:hover {
+  background: #3ecf8e;
+  color: #0f1012;
+}
+
 .loc-chip-close {
   background: transparent;
   border: none;
   color: #9b9a96;
   cursor: pointer;
   padding: 0 0 0 4px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .loc-chip-close:hover {
   color: #ecebe8;
+}
+
+/* Manual PIN Code Fallback Box */
+.manual-pin-fallback-box {
+  background: #1c1d22;
+  border: 1px solid #2a2c31;
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.manual-pin-header {
+  font-size: 13.5px;
+  color: #ecebe8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manual-pin-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.manual-pin-input {
+  max-width: 200px;
+  padding: 8px 12px;
+  background: #0f1012;
+  border: 1px solid #2a2c31;
+  border-radius: 8px;
+  color: #ecebe8;
+  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  outline: none;
+}
+
+.manual-pin-input:focus {
+  border-color: #3ecf8e;
+}
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+/* Initial Hint Card */
+.directory-hint-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background: #17181b;
+  border: 1px solid #2a2c31;
+  border-radius: 14px;
+  margin: 12px 0;
+}
+
+.directory-hint-card .hint-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(229, 56, 59, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #e5383b;
+  font-size: 22px;
+}
+
+.directory-hint-card .hint-text {
+  font-size: 15px;
+  color: #ecebe8;
+  font-weight: 500;
+  margin: 0;
+  max-width: 540px;
+  line-height: 1.5;
 }
 
 /* Blood Group Filters */
@@ -264,7 +467,7 @@ body.blood-banks-body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 13.5px;
   color: #9b9a96;
   padding: 0 4px;
 }
@@ -272,6 +475,7 @@ body.blood-banks-body {
 .results-count-text {
   font-weight: 600;
   color: #ecebe8;
+  font-size: 14px;
 }
 
 /* ==================== HOSPITALS GRID & CARDS ==================== */
@@ -333,9 +537,9 @@ body.blood-banks-body {
   background: rgba(62, 207, 142, 0.12);
   color: #3ecf8e;
   border: 1px solid rgba(62, 207, 142, 0.3);
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -346,9 +550,9 @@ body.blood-banks-body {
   background: #23252a;
   color: #ecebe8;
   border: 1px solid #2a2c31;
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -380,10 +584,17 @@ body.blood-banks-body {
   color: #3ecf8e;
   text-decoration: none;
   font-weight: 600;
+  font-size: 13.5px;
 }
 
 .hosp-phone-link:hover {
   text-decoration: underline;
+}
+
+.phone-label-desc {
+  font-size: 13px;
+  color: #9b9a96;
+  margin-left: 6px;
 }
 
 .hosp-meta-row {
@@ -415,6 +626,7 @@ body.blood-banks-body {
 .inv-total-units {
   font-weight: 600;
   color: #ecebe8;
+  font-size: 13px;
 }
 
 .blood-groups-grid {
@@ -451,11 +663,11 @@ body.blood-banks-body {
 }
 
 .bg-stock-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 1px 5px;
+  padding: 2px 6px;
   border-radius: 4px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .bg-stock-label.label-ok {
@@ -466,6 +678,11 @@ body.blood-banks-body {
 .bg-stock-label.label-low {
   background: rgba(230, 57, 70, 0.15);
   color: #e63946;
+}
+
+.bg-stock-label.label-none {
+  background: rgba(155, 154, 150, 0.15);
+  color: #9b9a96;
 }
 
 .bg-units-count {
@@ -504,6 +721,61 @@ body.blood-banks-body {
   background: #2a2c31;
   border-color: #ecebe8;
   color: #ffffff;
+}
+
+/* ==================== PAGINATION BAR ==================== */
+.pagination-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #2a2c31;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  padding: 8px 14px;
+  background: #17181b;
+  border: 1px solid #2a2c31;
+  border-radius: 8px;
+  color: #ecebe8;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: #3ecf8e;
+  color: #3ecf8e;
+}
+
+.pagination-btn.active {
+  background: #ecebe8;
+  color: #0f1012;
+  border-color: #ecebe8;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+  color: #9b9a96;
+  padding: 0 4px;
+  font-size: 13.5px;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: #9b9a96;
+  margin-left: 12px;
 }
 
 /* ==================== EMPTY & ERROR STATES ==================== */
@@ -671,7 +943,7 @@ body.blood-banks-body {
 }
 
 .dropdown-sub {
-  font-size: 12px;
+  font-size: 13px;
   color: #9b9a96;
 }
 
@@ -732,12 +1004,20 @@ body.blood-banks-body {
     font-size: 1.5rem;
   }
 
-  .search-primary-row {
+  .search-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .search-actions-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .btn-near-me {
+  .btn-search-main,
+  .btn-near-me,
+  .btn-reset {
+    width: 100%;
     justify-content: center;
   }
 
@@ -748,5 +1028,16 @@ body.blood-banks-body {
   .header-stats-strip {
     width: 100%;
     justify-content: space-around;
+  }
+
+  .pagination-bar {
+    gap: 6px;
+  }
+
+  .pagination-info {
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+    margin-top: 6px;
   }
 }
