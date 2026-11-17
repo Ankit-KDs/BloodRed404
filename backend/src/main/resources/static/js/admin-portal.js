@@ -160,7 +160,7 @@
 
       tr.innerHTML = `
         <!-- Column 1: Smart ID & Burned-ID Privacy -->
-        <td>
+        <td data-label="Smart ID">
           <div class="smart-id-cell">
             <span class="smart-id-tag">${escapeHtml(d.smartId || '-')}</span>
             <div class="donor-name-reveal-wrap">
@@ -173,12 +173,12 @@
         </td>
 
         <!-- Column 2: Blood Group -->
-        <td>
+        <td data-label="Blood Group">
           <span class="blood-type-tag">${escapeHtml(d.bloodGroup || d.bloodType || '-')}</span>
         </td>
 
         <!-- Column 3: Registered City & Last Seen -->
-        <td>
+        <td data-label="Location">
           <div class="donor-zone-cell" style="display: flex; flex-direction: column; gap: 3px;">
             <span class="donor-city-val" style="font-size: 13px; color: #f8fafc;"><strong style="color: #94a3b8; font-size: 11px; text-transform: uppercase;">Registered:</strong> ${escapeHtml(registeredCity)}</span>
             <span class="donor-subzone-val" style="font-size: 12px; color: #94a3b8;"><strong style="color: #38bdf8; font-size: 11px; text-transform: uppercase;">Last Seen:</strong> ${escapeHtml(zoneDisplay !== 'Location not shared' ? zoneDisplay + ' • ' : '')}${escapeHtml(lastSeen)}</span>
@@ -186,12 +186,12 @@
         </td>
 
         <!-- Column 4: Total Donations -->
-        <td style="font-family: var(--admin-font-mono); font-weight: 600; color: #ffffff;">
+        <td data-label="Donations" style="font-family: var(--admin-font-mono); font-weight: 600; color: #ffffff;">
           ${Number(d.totalDonations || 0)}
         </td>
 
         <!-- Column 5: Status (Direct Interactive Clickable Toggle) -->
-        <td>
+        <td data-label="Status">
           <button type="button" 
                   class="status-badge-btn status-badge-${statusClass}" 
                   onclick="window.toggleDonor(${d.id})" 
@@ -202,7 +202,7 @@
         </td>
 
         <!-- Column 6: Actions (Direct Profile Button + Direct Delete Button + Kebab Menu) -->
-        <td>
+        <td data-label="Actions">
           <div class="admin-actions-cell">
             <button type="button" class="btn-view-profile" onclick="window.viewDonorProfile(${d.id})" title="View Full Dossier">
               <i class="fas fa-id-card"></i>
@@ -718,42 +718,42 @@
       const safeHospName = (h.name || h.hospitalName || 'Hospital').replace(/'/g, "\\'");
 
       tr.innerHTML = `
-        <td>
+        <td data-label="Hospital">
           <div style="font-weight: 600; color: #f8fafc; font-size: 14px;">${escapeHtml(h.name || h.hospitalName || '-')}</div>
           <div style="font-size: 12px; color: var(--admin-text-muted); margin-top: 2px;">
             <i class="fas fa-location-dot" style="font-size: 11px;"></i> ${escapeHtml(h.location || h.city || 'Location Not Specified')}
           </div>
         </td>
-        <td style="font-size: 13px; color: #cbd5e1;">
+        <td data-label="Type" style="font-size: 13px; color: #cbd5e1;">
           ${escapeHtml(h.type || h.hospitalType || 'Facility')}
         </td>
-        <td style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(h.createdAt || h.submittedTime || ''))}">
+        <td data-label="Submitted" style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(h.createdAt || h.submittedTime || ''))}">
           ${formatRelativeTime(h.createdAt || h.submittedTime)}
         </td>
-        <td>
+        <td data-label="Status">
           <span class="hosp-status-pill hosp-status-${meta.cls}">
             <i class="fas fa-${meta.icon}"></i> ${escapeHtml(meta.label)}
           </span>
         </td>
-        <td style="font-size: 13px; color: #cbd5e1;">
+        <td data-label="Email" style="font-size: 13px; color: #cbd5e1;">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span>${escapeHtml(h.email || h.hospitalEmail || '-')}</span>
             <i class="fas fa-circle-check" style="color: #4ade80; font-size: 12px;" title="Official Email Verified"></i>
           </div>
         </td>
-        <td style="font-size: 13px; color: #cbd5e1;">
+        <td data-label="Documents" style="font-size: 13px; color: #cbd5e1;">
           <span style="display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
             <i class="fas fa-file-lines" style="color: #94a3b8; font-size: 11px;"></i>
             <span>${h.documentsCount != null ? h.documentsCount : 0} docs</span>
           </span>
         </td>
-        <td style="font-size: 13px; color: #f8fafc; font-family: var(--admin-font-mono);">
+        <td data-label="Stock" style="font-size: 13px; color: #f8fafc; font-family: var(--admin-font-mono);">
           ${isVerified ? escapeHtml(h.stockSummary || '0 Units') : '<span style="color: var(--admin-text-muted);">—</span>'}
         </td>
-        <td style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(h.updatedAt || h.createdAt || ''))}">
+        <td data-label="Updated" style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(h.updatedAt || h.createdAt || ''))}">
           ${formatRelativeTime(h.updatedAt || h.createdAt)}
         </td>
-        <td>
+        <td data-label="Actions">
           <div style="display: inline-flex; align-items: center; gap: 8px;">
             <button type="button" class="admin-action-btn" onclick="window.viewHospitalDetails(${h.id})" title="Review Hospital Application & Facility Dossier">
               <i class="fas fa-eye"></i> Details
@@ -764,6 +764,13 @@
           </div>
         </td>
       `;
+
+      // Tap card anywhere on mobile opens the details modal
+      tr.addEventListener('click', (e) => {
+        if (!e.target.closest('button') && !e.target.closest('a')) {
+          window.viewHospitalDetails(h.id);
+        }
+      });
       tbody.appendChild(tr);
     });
   }

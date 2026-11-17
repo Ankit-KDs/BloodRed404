@@ -244,29 +244,29 @@
 
       return `
         <tr>
-          <td>
+          <td data-label="Date">
             <strong style="color: #ffffff;">${dDate}</strong>
           </td>
-          <td>
+          <td data-label="Hospital">
             <div class="hosp-info-cell">
               <span class="hosp-info-name">${hosp}</span>
               ${rec.location ? `<span class="hosp-info-loc"><i class="fa-solid fa-location-dot" style="font-size:0.7rem;margin-right:4px;"></i>${rec.location}</span>` : ''}
               ${vitalsSummary ? `<div class="hosp-info-vitals" style="font-size:11px;color:#9b9a96;margin-top:3px;"><i class="fa-solid fa-heart-pulse" style="font-size:10px;margin-right:4px;color:#3ecf8e;"></i>${escapeHtml(vitalsSummary)}</div>` : ''}
             </div>
           </td>
-          <td>
+          <td data-label="Blood Group">
             <span class="blood-group-tag" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; color:#ef4444; font-size:14px; background:rgba(239,68,68,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(239,68,68,0.25);">
               <i class="fa-solid fa-droplet" style="font-size:11px;"></i>
               <span>${escapeHtml(bGroup)}</span>
             </span>
           </td>
-          <td>
+          <td data-label="Volume">
             <strong style="color: #ffffff;">${vol}</strong>
           </td>
-          <td>
+          <td data-label="Record ID">
             <span class="ref-code">${ref}</span>
           </td>
-          <td style="text-align: right;">
+          <td data-label="Certificate" style="text-align: right;">
             <a href="/api/donor/certificate?refCode=${encodeURIComponent(ref)}&hospital=${encodeURIComponent(hosp)}&date=${encodeURIComponent(dDate)}&bloodType=${encodeURIComponent(bGroup)}&volume=${encodeURIComponent(vol)}" target="_blank" class="btn-cert-download" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
               <i class="fa-solid fa-download"></i>
               <span>Download certificate</span>

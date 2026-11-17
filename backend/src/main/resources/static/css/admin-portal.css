@@ -1438,14 +1438,14 @@ body.admin-body {
   display: none !important;
 }
 
-/* Status Subtabs (Part 5) */
+/* Status Subtabs (Part 5 & Part 3 Mobile Wrapping Pills) */
 .admin-subtabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 10px;
-  overflow-x: auto;
 }
 .admin-subtab-btn {
   background: transparent;
@@ -1692,7 +1692,7 @@ body.admin-body {
   padding-right: 6px;
   margin: 12px 0 16px 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(230, 57, 70, 0.3) rgba(255, 255, 255, 0.02);
+  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.02);
 }
 
 .profile-scroll-body::-webkit-scrollbar {
@@ -1700,7 +1700,7 @@ body.admin-body {
 }
 
 .profile-scroll-body::-webkit-scrollbar-thumb {
-  background: rgba(230, 57, 70, 0.35);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 4px;
 }
 
@@ -1880,7 +1880,14 @@ body.admin-body {
 
 /* Mobile & Tablet Styles (Screens <= 900px) */
 @media (max-width: 900px) {
+  body {
+    padding-top: 0 !important;
+  }
+
   .admin-navbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000;
     height: auto;
     padding: 12px 14px;
     flex-direction: column;
@@ -1907,8 +1914,11 @@ body.admin-body {
   }
 
   .admin-tab-btn {
-    padding: 7px 12px;
-    font-size: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
     flex-shrink: 0;
   }
 
@@ -1941,17 +1951,18 @@ body.admin-body {
 
   .admin-search-input {
     width: 100%;
-    font-size: 14px;
+    font-size: 16px;
+    min-height: 44px;
   }
 
-  /* Table Horizontal Scrolling on Mobile/Tablet */
+  /* Table on Tablet & Mobile (Neutral Scrollbar) */
   .admin-table-responsive {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: 12px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(230, 57, 70, 0.3) rgba(255, 255, 255, 0.02);
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.02);
   }
 
   .admin-table-responsive::-webkit-scrollbar {
@@ -1959,13 +1970,101 @@ body.admin-body {
   }
 
   .admin-table-responsive::-webkit-scrollbar-thumb {
-    background: rgba(230, 57, 70, 0.4);
+    background: rgba(255, 255, 255, 0.25);
     border-radius: 4px;
   }
 
   .admin-table {
     min-width: 760px;
   }
+}
+
+/* Phones (Screens <= 768px): Card List Transformation */
+@media (max-width: 768px) {
+  .admin-table-responsive {
+    overflow-x: visible;
+  }
+
+  .admin-table {
+    min-width: 100% !important;
+    width: 100% !important;
+    display: block !important;
+  }
+
+  .admin-table thead {
+    display: none !important;
+  }
+
+  .admin-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .admin-table tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    background: rgba(15, 23, 42, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    width: 100% !important;
+    cursor: pointer;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .admin-table tbody tr:hover {
+    background: rgba(30, 41, 59, 0.85) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+  }
+
+  .admin-table tbody tr td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 6px 0 !important;
+    border: none !important;
+    font-size: 13.5px !important;
+    width: 100% !important;
+    text-align: right !important;
+    box-sizing: border-box !important;
+  }
+
+  .admin-table tbody tr td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #94a3b8;
+    text-align: left;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .admin-table tbody tr td:first-child {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .admin-table tbody tr td:last-child {
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-top: 10px !important;
+    margin-top: 4px !important;
+  }
+
+  .admin-action-btn,
+  .btn-view-profile,
+  .status-badge-btn {
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
 
   /* Modal on Mobile (Full Screen on Phone - Part 5) */
   .admin-profile-modal-box {

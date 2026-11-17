@@ -2229,10 +2229,68 @@ a:hover {
     gap: var(--sp-4);
     font-size: 13px;
   }
+  /* Table-to-card transformation for hospital tables on mobile (My Requests, Matching Donors, Inventory, Check-in) */
   .table-wrap {
     width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: visible;
+  }
+  .hosp-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  .hosp-table thead {
+    display: none !important;
+  }
+  .hosp-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+  .hosp-table tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    background: var(--hosp-surface, #111a2e) !important;
+    border: 1px solid var(--hosp-border, #223153) !important;
+    border-radius: var(--hosp-radius-card, 12px) !important;
+    padding: var(--sp-16, 16px) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .hosp-table tbody tr td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 6px 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    font-size: 13.5px !important;
+    width: 100% !important;
+    text-align: right !important;
+    box-sizing: border-box !important;
+  }
+  .hosp-table tbody tr td:last-child {
+    border-bottom: none !important;
+    padding-top: 10px !important;
+  }
+  .hosp-table tbody tr td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--hosp-text-muted, #94a3b8);
+    text-align: left;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  /* Touch target and mobile input zoom prevention */
+  .hosp-btn, .hosp-action-btn, .hosp-tab-link, .hosp-mobile-menu-btn, .hosp-nav-btn {
+    min-height: 44px !important;
+  }
+  .hosp-input, .hosp-select {
+    font-size: 16px !important;
+    min-height: 44px !important;
   }
   .hosp-footer-container {
     flex-direction: column;

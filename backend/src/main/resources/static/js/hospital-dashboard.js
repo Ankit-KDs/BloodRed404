@@ -2119,12 +2119,12 @@ function initDispatchRadar() {
 
       return `
         <tr data-donor-id="${d.id}" style="cursor: pointer;">
-          <td><strong>${escapeHtml(name)}</strong></td>
-          <td><div style="display:inline-flex; align-items:center;">${getDropBadgeSvg(blood, '')} ${matchPill} ${unverifiedTag}</div></td>
-          <td><span class="mono-data">${dist}</span></td>
-          <td><span class="mono-data">${eta}</span></td>
-          <td class="donor-status-cell">${statusBadge}</td>
-          <td class="donor-action-cell">${actionBtn}</td>
+          <td data-label="Donor"><strong>${escapeHtml(name)}</strong></td>
+          <td data-label="Blood Group"><div style="display:inline-flex; align-items:center;">${getDropBadgeSvg(blood, '')} ${matchPill} ${unverifiedTag}</div></td>
+          <td data-label="Distance"><span class="mono-data">${dist}</span></td>
+          <td data-label="ETA"><span class="mono-data">${eta}</span></td>
+          <td data-label="Status" class="donor-status-cell">${statusBadge}</td>
+          <td data-label="Action" class="donor-action-cell">${actionBtn}</td>
         </tr>
       `;
     }).join('');
@@ -2309,25 +2309,25 @@ async function loadInventoryTable() {
 
         return `
           <tr>
-            <td>
+            <td data-label="Blood Group">
               <div style="display: flex; align-items: center; gap: 10px;">
                 ${getDropBadgeSvg(type, isCritical ? 'critical' : (isLow ? 'low' : ''))}
                 <strong>${type}</strong>
               </div>
             </td>
-            <td><span class="stat-number" style="font-size: 16px;">${hasUnits ? units : '-'}</span> units</td>
-            <td>
+            <td data-label="Units"><span class="stat-number" style="font-size: 16px;">${hasUnits ? units : '-'}</span> units</td>
+            <td data-label="Status">
               <span class="chip-status ${hasUnits ? (isCritical ? 'critical' : (isLow ? 'low' : 'available')) : 'pending'}">
                 ${hasUnits ? (isCritical ? 'Critical deficit' : (isLow ? 'Low stock' : 'Sufficient')) : 'Not set'}
               </span>
             </td>
-            <td style="min-width: 140px;">
+            <td data-label="Capacity" style="min-width: 140px;">
               <div class="stock-bar-track" style="margin-bottom: 4px;">
                 <div class="stock-bar-fill ${isCritical ? 'critical' : (isLow ? 'low' : 'ok')}" style="width: ${hasUnits ? percent : 0}%;"></div>
               </div>
               <span style="font-size: 13px; color: var(--hosp-text-muted); font-family: var(--font-mono);">${hasUnits ? `${percent}% capacity` : 'Unconfigured'}</span>
             </td>
-            <td>
+            <td data-label="Adjust">
               <div class="stock-stepper-mini">
                 <button type="button" class="btn-mini-adjust btn-inv-dec" data-type="${type}" aria-label="Decrease ${type} unit">
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 8a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1z"/></svg>
@@ -2686,20 +2686,20 @@ function renderRecordsPage() {
 
     return `
       <tr class="req-row-clickable" onclick="handleRequestRowClick(${r.id})" style="cursor: pointer;" title="Click to view request timeline and donors">
-        <td><strong style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${idFormatted}</strong></td>
-        <td>
+        <td data-label="Request ID"><strong style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${idFormatted}</strong></td>
+        <td data-label="Date/Time">
           <div style="font-weight: 600; color: #fff;">${relTime}</div>
           <div style="font-size: 11.5px; color: var(--hosp-text-muted);">${dateStr} ${timeStr}</div>
         </td>
-        <td>
+        <td data-label="Patient">
           <div style="font-weight: 500; color: #fff;">${pName}</div>
           ${wInfo}
         </td>
-        <td>${getDropBadgeSvg(blood, '')}</td>
-        <td><span class="mono-data">${units}</span></td>
-        <td><span class="chip-status ${urgClass}">${urgLabel}</span></td>
-        <td><span class="chip-status ${statusClass}">${status}</span></td>
-        <td>
+        <td data-label="Blood Group">${getDropBadgeSvg(blood, '')}</td>
+        <td data-label="Units"><span class="mono-data">${units}</span></td>
+        <td data-label="Urgency"><span class="chip-status ${urgClass}">${urgLabel}</span></td>
+        <td data-label="Status"><span class="chip-status ${statusClass}">${status}</span></td>
+        <td data-label="Donors Notified">
           <strong style="color: ${accepted > 0 ? '#22c55e' : '#cbd5e1'}; font-family: 'JetBrains Mono', monospace;">${accepted}</strong>
           <span style="color: var(--hosp-text-muted);">/</span>
           <span class="mono-data">${notified}</span>
