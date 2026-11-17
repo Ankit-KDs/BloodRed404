@@ -883,10 +883,16 @@
         if (hasValidCoords) {
           if (!modalHospMap) {
             modalHospMap = L.map('modal-hosp-map', { zoomControl: true }).setView([lat, lng], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; OpenStreetMap contributors',
-              maxZoom: 19
-            }).addTo(modalHospMap);
+            if (window.Red404Map) {
+              const res = window.Red404Map.createTileLayer('dark', null, mapContainer);
+              if (res && res.layer) res.layer.addTo(modalHospMap);
+              if (res && res.isDark) mapContainer.classList.add('dark-map');
+            } else {
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+              }).addTo(modalHospMap);
+            }
             modalHospMarker = L.marker([lat, lng]).addTo(modalHospMap);
           } else {
             modalHospMap.setView([lat, lng], 14);

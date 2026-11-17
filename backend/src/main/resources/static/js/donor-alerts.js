@@ -22,39 +22,9 @@
   let donorMarker = null;
   let hospitalMarker = null;
   let routePolyline = null;
-  let activeLayerKey = localStorage.getItem('red404_map_layer') || 'google-dark';
-
-  // Google Maps & OSM Tile Layer Configurations
-  const MAP_LAYERS = {
-    'google-dark': {
-      name: 'Google Dark',
-      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: true
-    },
-    'google-roads': {
-      name: 'Google Roads',
-      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: false
-    },
-    'google-hybrid': {
-      name: 'Google Satellite',
-      url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: false
-    },
-    'osm': {
-      name: 'OpenStreetMap',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      subdomains: ['a', 'b', 'c'],
-      maxZoom: 19,
-      darkFilter: false
-    }
-  };
+  let activeLayerKey = localStorage.getItem('red404_map_layer') || 'dark';
+  if (activeLayerKey === 'google-dark') activeLayerKey = 'dark';
+  if (activeLayerKey === 'google-roads' || activeLayerKey === 'osm') activeLayerKey = 'map';
 
   // DOM Elements
   const donorGreetingName = document.getElementById('donorGreetingName');
@@ -498,7 +468,9 @@
 
       const metaParts = [];
       if (req.urgencyLevel) {
-        metaParts.push(`<b>${escapeHtml(req.urgencyLevel.toUpperCase())} SOS</b>`);
+        const rawU = (req.urgencyLevel || '').toString().toLowerCase().trim();
+        const formattedU = rawU === 'critical' ? 'Critical' : (rawU === 'urgent' ? 'Urgent' : 'Normal');
+        metaParts.push(`<b>Urgency: ${formattedU}</b>`);
       }
       metaParts.push(`Units: ${req.units || 1}`);
       if (req.neededWithinMinutes) {
@@ -633,31 +605,34 @@
     `;
   }
 
-  // ======================== 8. GOOGLE MAPS RADAR ENGINE ========================
+  // ======================== 8. UNIFIED MAP ENGINE ========================
   function setRadarMapLayer(layerKey) {
     if (!leafletMap) return;
-    const cfg = MAP_LAYERS[layerKey] || MAP_LAYERS['google-dark'];
+    if (layerKey === 'google-dark') layerKey = 'dark';
+    if (layerKey === 'google-roads' || layerKey === 'osm') layerKey = 'map';
+
     activeLayerKey = layerKey;
     try {
       localStorage.setItem('red404_map_layer', layerKey);
     } catch (_) { }
 
-    if (currentTileLayer) {
-      leafletMap.removeLayer(currentTileLayer);
-    }
-
-    currentTileLayer = L.tileLayer(cfg.url, {
-      maxZoom: cfg.maxZoom,
-      subdomains: cfg.subdomains,
-      attribution: ''
-    }).addTo(leafletMap);
-
     const mapContainer = document.getElementById('proximityMap');
-    if (mapContainer) {
-      if (cfg.darkFilter) {
-        mapContainer.classList.add('dark-map');
-      } else {
-        mapContainer.classList.remove('dark-map');
+    const result = window.Red404Map
+      ? window.Red404Map.createTileLayer(layerKey, null, mapContainer)
+      : null;
+
+    if (result && result.layer) {
+      if (currentTileLayer) {
+        try { leafletMap.removeLayer(currentTileLayer); } catch (_) {}
+      }
+      currentTileLayer = result.layer;
+      currentTileLayer.addTo(leafletMap);
+      if (mapContainer) {
+        if (result.isDark) {
+          mapContainer.classList.add('dark-map');
+        } else {
+          mapContainer.classList.remove('dark-map');
+        }
       }
     }
 
@@ -682,13 +657,22 @@
       // Apply initial layer
       setRadarMapLayer(activeLayerKey);
 
-      // Setup layer switch buttons
-      document.querySelectorAll('.rlb-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const layerKey = btn.getAttribute('data-layer');
-          setRadarMapLayer(layerKey);
+      // Setup layer switch buttons with Red404Map
+      const layerBar = document.querySelector('.radar-layer-bar');
+      if (layerBar && window.Red404Map) {
+        window.Red404Map.setupLayerBar(layerBar, leafletMap, (k) => setRadarMapLayer(k));
+      } else {
+        document.querySelectorAll('.rlb-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const layerKey = btn.getAttribute('data-layer');
+            setRadarMapLayer(layerKey);
+          });
         });
+      }
+
+      window.addEventListener('resize', () => {
+        if (leafletMap) leafletMap.invalidateSize();
       });
 
       // Setup zoom & recenter controls

@@ -411,6 +411,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/common.js?v=20261113_v40"></script>
+  <script src="js/map-core.js?v=20261117_v1"></script>
   <script src="js/i18n.js?v=20261115_v1"></script>
   <script src="js/command-nav.js?v=20261113_v40"></script>
   <script src="js/donor-location-sync.js?v=20261114_v1"></script>
@@ -494,19 +495,24 @@
     function renderNavigationView() {
       // Initialize map instance if not already initialized
       if (!map) {
-        map = L.map('routeMap', {
-          center: [donorCoords.lat, donorCoords.lng],
-          zoom: 14,
-          zoomControl: true,
-          attributionControl: false
-        });
-
-        // Accurate Google Maps Road Tiles
-        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-          maxZoom: 20,
-          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-          attribution: ''
-        }).addTo(map);
+        if (window.Red404Map) {
+          map = window.Red404Map.initMap('routeMap', {
+            center: [donorCoords.lat, donorCoords.lng],
+            zoom: 14,
+            initialLayer: 'dark'
+          });
+        } else {
+          map = L.map('routeMap', {
+            center: [donorCoords.lat, donorCoords.lng],
+            zoom: 14,
+            zoomControl: true,
+            attributionControl: false
+          });
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+        }
       }
 
       const hasActiveMission = Boolean(

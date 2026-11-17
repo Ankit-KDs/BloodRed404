@@ -1449,63 +1449,43 @@ function initDispatchRadar() {
   let matchingDonors = [];
   let isSearching = false;
 
-  // Real Google Maps / Leaflet State
+  // Unified Map / Leaflet State
   let leafletMap = null;
   let currentTileLayer = null;
-  let activeLayerKey = 'google-dark';
+  let activeLayerKey = localStorage.getItem('red404_hosp_map_layer') || 'dark';
+  if (activeLayerKey === 'google-dark') activeLayerKey = 'dark';
+  if (activeLayerKey === 'google-roads') activeLayerKey = 'map';
   let hospitalMarker = null;
   let donorMarkers = {};
   let zoneCircles = [];
   let hospitalCoords = null;
 
-  const MAP_LAYERS = {
-    'google-dark': {
-      name: 'Google Dark',
-      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: true
-    },
-    'google-roads': {
-      name: 'Google Roads',
-      url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: false
-    },
-    'google-hybrid': {
-      name: 'Google Satellite',
-      url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-      maxZoom: 20,
-      darkFilter: false
-    }
-  };
-
   function setRadarMapLayer(layerKey) {
     if (!leafletMap) return;
-    const cfg = MAP_LAYERS[layerKey] || MAP_LAYERS['google-dark'];
+    if (layerKey === 'google-dark') layerKey = 'dark';
+    if (layerKey === 'google-roads') layerKey = 'map';
     activeLayerKey = layerKey;
     try {
       localStorage.setItem('red404_hosp_map_layer', layerKey);
     } catch (_) {}
 
-    if (currentTileLayer) {
-      leafletMap.removeLayer(currentTileLayer);
-    }
-
-    currentTileLayer = L.tileLayer(cfg.url, {
-      maxZoom: cfg.maxZoom,
-      subdomains: cfg.subdomains,
-      attribution: ''
-    }).addTo(leafletMap);
-
     const mapContainer = document.getElementById('hospitalRadarMap');
-    if (mapContainer) {
-      if (cfg.darkFilter) {
-        mapContainer.classList.add('dark-map');
-      } else {
-        mapContainer.classList.remove('dark-map');
+    const result = window.Red404Map
+      ? window.Red404Map.createTileLayer(layerKey, null, mapContainer)
+      : null;
+
+    if (result && result.layer) {
+      if (currentTileLayer) {
+        try { leafletMap.removeLayer(currentTileLayer); } catch (_) {}
+      }
+      currentTileLayer = result.layer;
+      currentTileLayer.addTo(leafletMap);
+      if (mapContainer) {
+        if (result.isDark) {
+          mapContainer.classList.add('dark-map');
+        } else {
+          mapContainer.classList.remove('dark-map');
+        }
       }
     }
 
@@ -1551,43 +1531,49 @@ function initDispatchRadar() {
 
     const selectedRadiusKm = dispRadiusEl ? parseFloat(dispRadiusEl.value) || 10 : 10;
 
-    // 5 km zone (red)
-    const z1 = L.circle([lat, lng], {
-      radius: 5000,
-      color: '#e5383b',
-      weight: selectedRadiusKm === 5 ? 3.0 : 1.5,
-      dashArray: selectedRadiusKm === 5 ? null : '4, 4',
-      fillColor: '#e5383b',
-      fillOpacity: selectedRadiusKm === 5 ? 0.12 : 0.03
-    }).addTo(leafletMap);
+    if (window.Red404Map && typeof window.Red404Map.drawDistanceRings === 'function') {
+      zoneCircles = window.Red404Map.drawDistanceRings(leafletMap, [lat, lng], selectedRadiusKm);
+    } else {
+      // 5 km zone (blue)
+      const z1 = L.circle([lat, lng], {
+        radius: 5000,
+        color: '#3b82f6',
+        weight: selectedRadiusKm === 5 ? 2.5 : 1.2,
+        dashArray: selectedRadiusKm === 5 ? null : '4, 6',
+        fillColor: '#3b82f6',
+        fillOpacity: selectedRadiusKm === 5 ? 0.09 : 0.02
+      }).addTo(leafletMap);
 
-    // 10 km zone (amber)
-    const z2 = L.circle([lat, lng], {
-      radius: 10000,
-      color: '#f59e0b',
-      weight: selectedRadiusKm === 10 ? 3.0 : 1.5,
-      dashArray: selectedRadiusKm === 10 ? null : '4, 4',
-      fillColor: '#f59e0b',
-      fillOpacity: selectedRadiusKm === 10 ? 0.10 : 0.02
-    }).addTo(leafletMap);
+      // 10 km zone
+      const z2 = L.circle([lat, lng], {
+        radius: 10000,
+        color: '#3b82f6',
+        weight: selectedRadiusKm === 10 ? 2.5 : 1.2,
+        dashArray: selectedRadiusKm === 10 ? null : '4, 6',
+        fillColor: '#3b82f6',
+        fillOpacity: selectedRadiusKm === 10 ? 0.09 : 0.02
+      }).addTo(leafletMap);
 
-    // 20 km zone (grey)
-    const z3 = L.circle([lat, lng], {
-      radius: 20000,
-      color: '#71706c',
-      weight: selectedRadiusKm === 20 ? 3.0 : 1.5,
-      dashArray: selectedRadiusKm === 20 ? null : '4, 4',
-      fillColor: '#71706c',
-      fillOpacity: selectedRadiusKm === 20 ? 0.08 : 0.015
-    }).addTo(leafletMap);
+      // 20 km zone
+      const z3 = L.circle([lat, lng], {
+        radius: 20000,
+        color: '#3b82f6',
+        weight: selectedRadiusKm === 20 ? 2.5 : 1.2,
+        dashArray: selectedRadiusKm === 20 ? null : '4, 6',
+        fillColor: '#3b82f6',
+        fillOpacity: selectedRadiusKm === 20 ? 0.09 : 0.02
+      }).addTo(leafletMap);
 
-    zoneCircles = [z1, z2, z3];
+      zoneCircles = [z1, z2, z3];
+    }
 
-    // Emphasize selected radius and fit map so the selected circle is fully visible (Step 1 requirement 6)
-    const activeCircle = selectedRadiusKm === 5 ? z1 : (selectedRadiusKm === 20 ? z3 : z2);
-    try {
-      leafletMap.fitBounds(activeCircle.getBounds(), { padding: [35, 35] });
-    } catch (_) {}
+    // Emphasize selected radius and fit map so the selected circle is fully visible
+    const circleToFit = zoneCircles.find(c => c.getRadius && Math.round(c.getRadius()) === Math.round(selectedRadiusKm * 1000));
+    if (circleToFit) {
+      try {
+        leafletMap.fitBounds(circleToFit.getBounds(), { padding: [35, 35] });
+      } catch (_) {}
+    }
   }
 
   function initMapIfReady() {
@@ -1650,8 +1636,13 @@ function initDispatchRadar() {
       attributionControl: false
     });
 
-    const savedLayer = localStorage.getItem('red404_hosp_map_layer') || 'google-dark';
+    const savedLayer = localStorage.getItem('red404_hosp_map_layer') || 'dark';
     setRadarMapLayer(savedLayer);
+
+    const layerBar = document.getElementById('radarLayerBar');
+    if (layerBar && window.Red404Map) {
+      window.Red404Map.setupLayerBar(layerBar, leafletMap, (k) => setRadarMapLayer(k));
+    }
 
     // Place Hospital marker at center
     const hospIcon = L.divIcon({

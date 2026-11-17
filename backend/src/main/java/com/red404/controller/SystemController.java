@@ -120,6 +120,20 @@ public class SystemController {
         return emitter;
     }
 
+    @GetMapping({"/map-config", "/config/map"})
+    public ResponseEntity<ApiResponse> getMapConfig() {
+        Map<String, Object> cfg = new LinkedHashMap<>();
+        cfg.put("tileUrl", com.red404.config.EnvConfig.get("MAP_TILE_URL", "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
+        cfg.put("attribution", com.red404.config.EnvConfig.get("MAP_TILE_ATTRIBUTION", "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"));
+        cfg.put("maxZoom", com.red404.config.EnvConfig.getAsInt("MAP_TILE_MAXZOOM", 19));
+        cfg.put("subdomains", com.red404.config.EnvConfig.get("MAP_TILE_SUBDOMAINS", "abc"));
+        String satUrl = com.red404.config.EnvConfig.get("MAP_SATELLITE_URL");
+        cfg.put("satelliteUrl", (satUrl != null && !satUrl.isBlank()) ? satUrl.trim() : null);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=60")
+                .body(new ApiResponse(true, "Map configuration loaded", cfg));
+    }
+
     public static void broadcastStockUpdate(Map<String, Object> stockData) {
         PlatformMetricsService.getInstance().invalidateCache();
         Map<String, Object> payload = stockData != null ? stockData : PlatformMetricsService.getInstance().getPublicNationalBloodStock();

@@ -3696,3 +3696,31 @@ html[lang="hi"] .dropdown-item {
 small {
   font-size: 13px !important;
 }
+
+/* Shared Map Component Styles (Part 1) */
+.dark-map .leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(115%) saturate(0.85);
+}
+
+.map-tile-fallback-banner {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Ensure minimum map container heights across all maps (Part 1 Requirement 5) */
+#hospitalRadarMap,
+#proximityMap,
+#routeMap,
+#locPickerMap,
+#modal-hosp-map {
+  min-height: 320px;
+}
+
+@media (max-width: 480px) {
+  #hospitalRadarMap,
+  #proximityMap,
+  #routeMap,
+  #locPickerMap,
+  #modal-hosp-map {
+    min-height: 260px;
+  }
+}

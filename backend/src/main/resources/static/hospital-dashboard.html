@@ -485,18 +485,18 @@
           </form>
         </article>
 
-        <!-- Right: Spatial Radar Map (Real Google Map) -->
+        <!-- Right: Map -->
         <article class="hosp-card">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-8);">
             <div>
-              <h2 class="card-title">Spatial Radar</h2>
-              <p class="card-subtitle">Hospital Center: Zone 1 (5km), Zone 2 (10km), Zone 3 (20km)</p>
+              <h2 class="card-title">Map</h2>
+              <p class="card-subtitle">Distance rings: 5, 10 and 20 km</p>
             </div>
-            <!-- Map Layer Switcher (Google Dark, Roads, Satellite) -->
+            <!-- Map Layer Switcher (Dark, Map, Satellite) -->
             <div class="radar-layer-bar" id="radarLayerBar" role="group" aria-label="Map Layer Selection">
-              <button type="button" class="rlb-btn active" data-layer="google-dark" title="Google Maps - Tactical Night Mode">Google Dark</button>
-              <button type="button" class="rlb-btn" data-layer="google-roads" title="Google Maps - Standard Roads">Roads</button>
-              <button type="button" class="rlb-btn" data-layer="google-hybrid" title="Google Maps - Satellite Imagery">Satellite</button>
+              <button type="button" class="rlb-btn active" data-layer="dark" title="Dark Map"><i class="fas fa-moon"></i> Dark</button>
+              <button type="button" class="rlb-btn" data-layer="map" title="Standard Map"><i class="fas fa-map"></i> Map</button>
+              <button type="button" class="rlb-btn" data-layer="satellite" title="Satellite Imagery" style="display:none;">Satellite</button>
             </div>
           </div>
 
@@ -1405,6 +1405,7 @@
   <!-- Scripts -->
   <script src="js/common.js?v=20261117_r8_p4"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/map-core.js?v=20261117_v1"></script>
   <script src="js/location-picker.js?v=20261114_r2"></script>
   <script src="js/hospital-dashboard.js?v=20261117_r8_p4"></script>
 </body>

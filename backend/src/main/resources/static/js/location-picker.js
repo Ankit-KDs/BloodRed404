@@ -231,11 +231,17 @@
         attributionControl: false
       });
 
-      // Google Maps Tile Layer
-      L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-        maxZoom: 20
-      }).addTo(map);
+      // Shared Base Map Tile Layer
+      if (window.Red404Map) {
+        const res = window.Red404Map.createTileLayer('dark', null, mapEl);
+        if (res && res.layer) res.layer.addTo(map);
+        if (res && res.isDark) mapEl.classList.add('dark-map');
+      } else {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+      }
 
       // Map click places / moves the pin
       map.on('click', function(e) {

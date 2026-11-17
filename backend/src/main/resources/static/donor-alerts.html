@@ -229,29 +229,24 @@
     <aside class="hub-radar-panel">
       <div class="radar-panel-header">
         <div>
-          <span class="rph-title">LIVE RADAR PROXIMITY MAP</span>
-          <div class="rph-sub">Real-Time Google Maps Engine</div>
+          <span class="rph-title">MAP</span>
+          <div class="rph-sub">Distance rings: 5, 10 and 20 km</div>
         </div>
         <span class="rph-badge" id="radarActiveBadge">No active requests</span>
       </div>
 
-      <!-- Map Layer Switcher: Google Dark / Roads / Satellite / OSM -->
+      <!-- Map Layer Switcher: Dark / Map / Satellite -->
       <div class="radar-layer-bar" onclick="event.stopPropagation()">
         <span class="rlb-label"><i class="fas fa-layer-group"></i> MAP:</span>
         <div class="rlb-btn-group">
-          <button type="button" class="rlb-btn active" data-layer="google-dark"
-            title="Google Maps - Tactical Night Mode">
-            <i class="fab fa-google"></i> Google Dark
+          <button type="button" class="rlb-btn active" data-layer="dark" title="Dark Map">
+            <i class="fas fa-moon"></i> Dark
           </button>
-          <button type="button" class="rlb-btn" data-layer="google-roads" title="Google Maps - Standard Road Map">
-            <i class="fas fa-road"></i> Roads
+          <button type="button" class="rlb-btn" data-layer="map" title="Standard Map">
+            <i class="fas fa-map"></i> Map
           </button>
-          <button type="button" class="rlb-btn" data-layer="google-hybrid"
-            title="Google Maps - Satellite Imagery + Road Overlay">
+          <button type="button" class="rlb-btn" data-layer="satellite" title="Satellite Imagery" style="display:none;">
             <i class="fas fa-satellite"></i> Satellite
-          </button>
-          <button type="button" class="rlb-btn" data-layer="osm" title="OpenStreetMap - Open Global Road Network">
-            <i class="fas fa-globe-americas"></i> OSM
           </button>
         </div>
       </div>
@@ -260,16 +255,16 @@
         <!-- Interactive Leaflet Map Container -->
         <div id="proximityMap" class="dark-map"></div>
 
-        <!-- Overlaid High-Tech Radar HUD Rings & Scanner -->
+        <!-- Overlaid Radar HUD Rings & Scanner -->
         <div class="radar-hud-overlay">
           <div class="radar-scope-circle rsc-zone1">
-            <span class="rsc-zone1-lbl">Zone 1 (0-5km)</span>
+            <span class="rsc-zone1-lbl">5 km</span>
           </div>
           <div class="radar-scope-circle rsc-zone2">
-            <span class="rsc-zone2-lbl">Zone 2 (5-10km)</span>
+            <span class="rsc-zone2-lbl">10 km</span>
           </div>
           <div class="radar-scope-circle rsc-zone3">
-            <span class="rsc-zone3-lbl">Zone 3 (10-20km)</span>
+            <span class="rsc-zone3-lbl">20 km</span>
           </div>
           <div class="radar-scanner-sweep" id="radarScannerSweep" style="display: none;"></div>
         </div>
@@ -285,9 +280,8 @@
       </div>
 
       <div class="radar-panel-footer">
-        <span>Route Engine: <b>ON</b></span>
-        <span>Zone 1–3 Active</span>
-        <span><i class="fas fa-lock" style="color:var(--green-neon);margin-right:2px"></i> Encrypted</span>
+        <span>Map</span>
+        <span>Distance rings: 5, 10 and 20 km</span>
       </div>
     </aside>
 
@@ -324,6 +318,7 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/map-core.js?v=20261117_v1"></script>
 
   <!-- RED404 Scripts -->
   <script src="js/common.js?v=20261117_r8_p4"></script>
