@@ -1487,33 +1487,79 @@
         if (typeof LocationPicker !== 'undefined') {
           const currentAddr = document.getElementById('editDonorAddress')?.value || currentDonor.address || '';
           LocationPicker.openModal({
+            role: 'donor',
+            opener: btnSyncGps,
             initialLat: currentDonor.latitude || 28.3486,
             initialLng: currentDonor.longitude || 79.5619,
             initialAddress: currentAddr,
-            onConfirm: function(data) {
+            onConfirm: async function(data) {
               if (data.lat && data.lng) {
                 currentDonor.latitude = data.lat;
                 currentDonor.longitude = data.lng;
-                if (noticeEl) {
-                  noticeEl.textContent = `Coordinates: ${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}`;
-                  noticeEl.style.color = '#22c55e';
-                }
+              }
+              const displayArea = data.areaName || data.address || [data.city, data.state].filter(Boolean).join(', ') || 'Location saved';
+              if (noticeEl) {
+                noticeEl.textContent = displayArea;
+                noticeEl.style.color = '#38bdf8';
               }
               if (data.address) {
+                currentDonor.address = data.address;
                 const addrInput = document.getElementById('editDonorAddress');
                 if (addrInput) addrInput.value = data.address;
               }
               if (data.city) {
+                currentDonor.city = data.city;
                 const cityInput = document.getElementById('editDonorCity');
                 if (cityInput) cityInput.value = data.city;
               }
               if (data.state) {
+                currentDonor.state = data.state;
                 const stateInput = document.getElementById('editDonorState');
                 if (stateInput) stateInput.value = data.state;
               }
               if (data.pincode) {
+                currentDonor.pincode = data.pincode;
                 const pinInput = document.getElementById('editDonorPincode');
                 if (pinInput) pinInput.value = data.pincode;
+              }
+
+              // Update profile immediately via API
+              try {
+                const hdrs = (typeof getSettingsHeaders === 'function') ? getSettingsHeaders() : { 'Content-Type': 'application/json' };
+                await fetch('/api/donors/location', {
+                  method: 'POST',
+                  headers: hdrs,
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    latitude: data.lat,
+                    longitude: data.lng,
+                    address: data.address || '',
+                    city: data.city || '',
+                    state: data.state || '',
+                    pincode: data.pincode || ''
+                  })
+                });
+              } catch (_) {}
+
+              // Update session storage
+              try {
+                const raw = sessionStorage.getItem('red404_donor_session') || sessionStorage.getItem('donor_session');
+                if (raw) {
+                  const s = JSON.parse(raw);
+                  const u = s.user || s.donor || s;
+                  u.latitude = data.lat;
+                  u.longitude = data.lng;
+                  if (data.address) u.address = data.address;
+                  if (data.city) u.city = data.city;
+                  if (data.state) u.state = data.state;
+                  if (data.pincode) u.pincode = data.pincode;
+                  sessionStorage.setItem('red404_donor_session', JSON.stringify(s));
+                  sessionStorage.setItem('donor_session', JSON.stringify(s));
+                }
+              } catch (_) {}
+
+              if (typeof showToast === 'function') {
+                showToast('Location saved', 'success', 2500);
               }
             }
           });

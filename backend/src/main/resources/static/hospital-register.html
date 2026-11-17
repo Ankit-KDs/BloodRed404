@@ -875,6 +875,7 @@
       if (!container || regPicker || typeof LocationPicker === 'undefined') return;
 
       regPicker = LocationPicker.mountInline(container, {
+        role: 'hospital',
         initialAddress: document.getElementById('address').value || '',
         onConfirm: function(data) {
           document.getElementById('lat').value = data.lat.toFixed(6);

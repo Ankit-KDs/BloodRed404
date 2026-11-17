@@ -464,6 +464,7 @@ function openHospitalLocationPicker(onSuccessCallback) {
   const currentAddr = prof ? (prof.address || '') : '';
 
   LocationPicker.openModal({
+    role: 'hospital',
     initialLat: currentLat,
     initialLng: currentLng,
     initialAddress: currentAddr,
