@@ -718,7 +718,7 @@ public class AdminController {
                         if (docsJson != null && !docsJson.isBlank()) {
                             try {
                                 JsonNode dn = JsonUtil.mapper().readTree(docsJson);
-                                if (dn.isObject()) docCount = dn.size();
+                                if (dn.isObject() || dn.isArray()) docCount = dn.size();
                             } catch (Exception ignored) {}
                         }
                         item.put("documentsCount", docCount > 0 ? docCount : 1);
@@ -829,7 +829,23 @@ public class AdminController {
                     if (docsJson != null && !docsJson.isBlank()) {
                         try {
                             JsonNode docNode = JsonUtil.mapper().readTree(docsJson);
-                            if (docNode.isObject()) {
+                            if (docNode.isArray()) {
+                                for (JsonNode itemNode : docNode) {
+                                    Map<String, Object> docMap = new LinkedHashMap<>();
+                                    String docType = itemNode.has("docType") ? itemNode.get("docType").asText() : "Document";
+                                    String docId = itemNode.has("docId") ? itemNode.get("docId").asText() : "";
+                                    String origName = itemNode.has("originalName") ? itemNode.get("originalName").asText() : docType;
+                                    docMap.put("docType", docType);
+                                    docMap.put("docId", docId);
+                                    docMap.put("originalName", origName);
+                                    if (!docId.isEmpty()) {
+                                        String signedToken = generateDocumentSignedToken(docId);
+                                        docMap.put("previewUrl", "/api/admin/documents/" + docId + "?token=" + signedToken);
+                                        docMap.put("downloadUrl", "/api/admin/documents/" + docId + "?token=" + signedToken + "&download=1");
+                                    }
+                                    docsList.add(docMap);
+                                }
+                            } else if (docNode.isObject()) {
                                 docNode.fieldNames().forEachRemaining(key -> {
                                     JsonNode itemNode = docNode.get(key);
                                     Map<String, Object> docMap = new LinkedHashMap<>();

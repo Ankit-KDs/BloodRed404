@@ -1094,7 +1094,10 @@ public class HospitalController {
 
                 try {
                     Map<String, Object> eventData = new LinkedHashMap<>();
-                    eventData.put("id", hosp.get("id"));
+                    Map<String, Object> created = hospitalDao.findByEmail(email);
+                    if (created != null && created.get("id") != null) {
+                        eventData.put("id", created.get("id"));
+                    }
                     eventData.put("hospitalName", hospitalName);
                     eventData.put("city", city);
                     eventData.put("status", "pending_review");

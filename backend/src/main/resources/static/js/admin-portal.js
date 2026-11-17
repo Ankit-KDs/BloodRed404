@@ -17,6 +17,8 @@
     initTabNavigation();
     initSearchFilters();
     initControls();
+    initHospitalSubtabs();
+    initAdminEventStream();
     // Initial active tab load
     loadTabContent('tab-donors');
     // Background health check
@@ -543,27 +545,158 @@
   };
 
   /* ==================== 4. TAB 2: HOSPITALS ==================== */
-  async function loadHospitals() {
-    const tbody = document.getElementById('hospital-table-body');
-    const badge = document.getElementById('hospital-count-badge');
-    if (!tbody) return;
+  let hospActiveStatusTab = 'pending_review';
+  let hospCounts = { pending_review: 0, needs_info: 0, verified: 0, rejected: 0, suspended: 0, all: 0 };
+  let currentProfileHospitalId = null;
+  let currentActionTargetStatus = null;
+  let deleteTargetHospId = null;
+  let deleteTargetHospName = '';
+  let modalHospMap = null;
+  let modalHospMarker = null;
 
-    try {
-      const res = await fetch('/api/admin/hospitals');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
-      allHospitals = Array.isArray(json.data) ? json.data : [];
+  function initHospitalSubtabs() {
+    const subtabs = document.querySelectorAll('#hosp-status-subtabs button[data-status]');
+    subtabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        subtabs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        hospActiveStatusTab = btn.getAttribute('data-status') || 'pending_review';
+        loadHospitals();
+      });
+    });
+  }
 
-      if (badge) badge.textContent = allHospitals.length;
-      renderHospitalsTable(allHospitals);
-    } catch (err) {
-      console.warn('Notice loading hospitals:', err);
-      renderEmptyTable(tbody, 5, 'No registered hospitals found in MySQL database.');
-      if (badge) badge.textContent = '0';
+  function updateSubtabBadges(counts) {
+    if (!counts) return;
+    const setBadge = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(val != null ? val : 0);
+    };
+
+    setBadge('count-hosp-pending', counts.pending_review);
+    setBadge('count-hosp-needs-info', counts.needs_info);
+    setBadge('count-hosp-verified', counts.verified);
+    setBadge('count-hosp-rejected', counts.rejected);
+    setBadge('count-hosp-suspended', counts.suspended);
+    setBadge('count-hosp-all', counts.all);
+
+    // Nav pending badge
+    const navPendingBadge = document.getElementById('nav-hosp-pending-badge');
+    if (navPendingBadge) {
+      const pendingCount = counts.pending_review || 0;
+      if (pendingCount > 0) {
+        navPendingBadge.textContent = String(pendingCount);
+        navPendingBadge.style.display = 'inline-block';
+      } else {
+        navPendingBadge.style.display = 'none';
+      }
+    }
+
+    // Header count badge
+    const headerBadge = document.getElementById('hospital-count-badge');
+    if (headerBadge) {
+      const activeCount = counts[hospActiveStatusTab] != null ? counts[hospActiveStatusTab] : (counts.all || 0);
+      headerBadge.textContent = String(activeCount);
     }
   }
 
-  let currentProfileHospitalId = null;
+  async function loadHospitals(isManual = false) {
+    const tbody = document.getElementById('hospital-table-body');
+    const syncBtn = document.getElementById('btnSyncHospitals');
+    if (isManual && syncBtn) {
+      syncBtn.disabled = true;
+      syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+    }
+
+    try {
+      const url = `/api/admin/hospitals?status=${encodeURIComponent(hospActiveStatusTab)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+
+      const data = json.data || {};
+      if (data.counts) {
+        hospCounts = data.counts;
+        updateSubtabBadges(hospCounts);
+      }
+
+      allHospitals = Array.isArray(data.hospitals) ? data.hospitals : (Array.isArray(data) ? data : []);
+
+      const lastUpdatedEl = document.getElementById('hosp-last-updated');
+      if (lastUpdatedEl) {
+        lastUpdatedEl.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+      }
+
+      filterAndRenderHospitals();
+      if (isManual) {
+        showToast('Hospital records synced live from database.', 'success');
+      }
+    } catch (err) {
+      console.warn('Notice loading hospitals:', err);
+      if (tbody) renderEmptyTable(tbody, 9, 'Unable to load hospitals. Check server connection.');
+      if (isManual) {
+        showToast('Failed to sync hospitals from database.', 'error');
+      }
+    } finally {
+      if (isManual && syncBtn) {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = '<i class="fas fa-arrows-rotate"></i> Sync';
+      }
+    }
+  }
+
+  function filterAndRenderHospitals() {
+    const searchInput = document.getElementById('hospitalSearchInput');
+    const q = (searchInput?.value || '').trim().toLowerCase();
+
+    let list = allHospitals.slice();
+
+    if (q) {
+      list = list.filter(h => {
+        const name = (h.name || h.hospitalName || '').toLowerCase();
+        const city = (h.city || h.location || '').toLowerCase();
+        const reg = (h.registrationNo || '').toLowerCase();
+        const lic = (h.bloodBankLicense || '').toLowerCase();
+        const email = (h.email || h.hospitalEmail || '').toLowerCase();
+        const type = (h.type || h.hospitalType || '').toLowerCase();
+        return name.includes(q) || city.includes(q) || reg.includes(q) || lic.includes(q) || email.includes(q) || type.includes(q);
+      });
+    }
+
+    // Sort: if pending_review, sort oldest first (createdAt ASC)
+    if (hospActiveStatusTab === 'pending_review') {
+      list.sort((a, b) => {
+        const tA = new Date(a.createdAt || a.submittedTime || 0).getTime();
+        const tB = new Date(b.createdAt || b.submittedTime || 0).getTime();
+        return tA - tB;
+      });
+    } else {
+      list.sort((a, b) => {
+        const tA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const tB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return tB - tA;
+      });
+    }
+
+    renderHospitalsTable(list);
+  }
+
+  function getStatusMeta(statusRaw) {
+    const s = (statusRaw || 'pending_review').toLowerCase().trim();
+    switch (s) {
+      case 'verified':
+        return { label: 'Verified', cls: 'verified', icon: 'circle-check' };
+      case 'needs_info':
+        return { label: 'Needs Info', cls: 'needs-info', icon: 'circle-question' };
+      case 'rejected':
+        return { label: 'Rejected', cls: 'rejected', icon: 'ban' };
+      case 'suspended':
+        return { label: 'Suspended', cls: 'suspended', icon: 'pause' };
+      case 'pending_review':
+      default:
+        return { label: 'Pending Review', cls: 'pending', icon: 'clock' };
+    }
+  }
 
   function renderHospitalsTable(hospitals) {
     const tbody = document.getElementById('hospital-table-body');
@@ -571,42 +704,58 @@
     tbody.innerHTML = '';
 
     if (!hospitals || hospitals.length === 0) {
-      renderEmptyTable(tbody, 5, 'No partner hospitals or blood banks registered yet.');
+      renderEmptyTable(tbody, 9, 'No hospitals found for this status.');
       return;
     }
 
     hospitals.forEach(h => {
       const tr = document.createElement('tr');
-      const isVerified = (h.verificationStatus || '').toLowerCase() === 'verified';
+      const meta = getStatusMeta(h.verificationStatus || h.status);
+      const isVerified = (h.verificationStatus || h.status || '').toLowerCase() === 'verified';
       const safeHospName = (h.name || h.hospitalName || 'Hospital').replace(/'/g, "\\'");
 
       tr.innerHTML = `
         <td>
-          <div style="font-weight: 700; color: #ffffff;">${escapeHtml(h.name || h.hospitalName || '-')}</div>
-          <div style="font-size: 11px; color: var(--admin-text-muted);">
-            <i class="fas fa-location-dot"></i> ${escapeHtml(h.location || 'Location Not Specified')}
+          <div style="font-weight: 600; color: #f8fafc; font-size: 14px;">${escapeHtml(h.name || h.hospitalName || '-')}</div>
+          <div style="font-size: 12px; color: var(--admin-text-muted); margin-top: 2px;">
+            <i class="fas fa-location-dot" style="font-size: 11px;"></i> ${escapeHtml(h.location || h.city || 'Location Not Specified')}
           </div>
         </td>
-        <td>
-          <span class="status-pill ${isVerified ? 'status-verified' : 'status-pending'}">
-            <i class="fas fa-${isVerified ? 'circle-check' : 'clock'}"></i>
-            ${escapeHtml(h.verificationStatus || 'Pending')}
-          </span>
+        <td style="font-size: 13px; color: #cbd5e1;">
+          ${escapeHtml(h.type || h.hospitalType || 'Facility')}
+        </td>
+        <td style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(h.createdAt || h.submittedTime || ''))}">
+          ${formatRelativeTime(h.createdAt || h.submittedTime)}
         </td>
         <td>
-          <span style="font-family: var(--admin-font-mono); font-size: 12px; color: #f8fafc;">
-            ${escapeHtml(h.stockOverview || '0 Units')}
+          <span class="hosp-status-pill hosp-status-${meta.cls}">
+            <i class="fas fa-${meta.icon}"></i> ${escapeHtml(meta.label)}
           </span>
         </td>
-        <td style="font-size: 11px; color: var(--admin-text-muted); font-family: var(--admin-font-mono);" title="${escapeHtml(String(h.lastSynced || h.createdAt))}">
-          ${formatRelativeTime(h.lastSynced || h.createdAt)}
+        <td style="font-size: 13px; color: #cbd5e1;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span>${escapeHtml(h.email || h.hospitalEmail || '-')}</span>
+            <i class="fas fa-circle-check" style="color: #4ade80; font-size: 12px;" title="Official Email Verified"></i>
+          </div>
+        </td>
+        <td style="font-size: 13px; color: #cbd5e1;">
+          <span style="display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
+            <i class="fas fa-file-lines" style="color: #94a3b8; font-size: 11px;"></i>
+            <span>${h.documentsCount != null ? h.documentsCount : 0} docs</span>
+          </span>
+        </td>
+        <td style="font-size: 13px; color: #f8fafc; font-family: var(--admin-font-mono);">
+          ${isVerified ? escapeHtml(h.stockSummary || '0 Units') : '<span style="color: var(--admin-text-muted);">—</span>'}
+        </td>
+        <td style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(h.updatedAt || h.createdAt || ''))}">
+          ${formatRelativeTime(h.updatedAt || h.createdAt)}
         </td>
         <td>
           <div style="display: inline-flex; align-items: center; gap: 8px;">
-            <button class="admin-action-btn" onclick="window.viewHospitalDetails(${h.id})" title="View Complete Registration & Facility Dossier">
+            <button type="button" class="admin-action-btn" onclick="window.viewHospitalDetails(${h.id})" title="Review Hospital Application & Facility Dossier">
               <i class="fas fa-eye"></i> Details
             </button>
-            <button class="admin-action-btn btn-danger-action" onclick="window.deleteHospitalAccount(${h.id}, '${safeHospName}')" title="Permanently Delete Hospital Account">
+            <button type="button" class="admin-action-btn btn-danger-action" onclick="window.openDeleteHospModal(${h.id}, '${safeHospName}')" title="Delete Hospital">
               <i class="fas fa-trash-can"></i>
             </button>
           </div>
@@ -616,7 +765,7 @@
     });
   }
 
-  /* Populate all fields in the comprehensive hospital dossier modal */
+  /* Populate all fields in the 7 plain sections of the comprehensive dossier */
   function populateHospitalProfileModal(hosp) {
     if (!hosp) return;
     const setSpan = (id, val) => {
@@ -624,22 +773,29 @@
       if (el) el.textContent = (val !== null && val !== undefined && String(val).trim()) ? String(val).trim() : '-';
     };
 
-    // Header Title
+    // Header Title & Badge
     const headerTitle = document.getElementById('modal-hosp-header-title');
     if (headerTitle) {
       headerTitle.textContent = hosp.name || hosp.hospitalName || 'Hospital Comprehensive Dossier';
     }
 
-    // 1. Institutional & Facility Credentials
-    setSpan('modal-hosp-name', hosp.name || hosp.hospitalName);
-    setSpan('modal-hosp-reg-no', hosp.registrationNo);
-    setSpan('modal-hosp-type', hosp.hospitalType || hosp.type || 'General Healthcare Facility');
-    setSpan('modal-hosp-beds', hosp.beds ? `${hosp.beds} Beds` : 'Not Specified');
-    setSpan('modal-hosp-license', (hosp.bloodBankLicense && hosp.bloodBankLicense !== 'N/A') ? hosp.bloodBankLicense : 'No Dedicated License Recorded');
-    setSpan('modal-hosp-email', hosp.hospitalEmail || hosp.email);
-    setSpan('modal-hosp-phone', hosp.hospitalPhone || hosp.phone);
+    // SECTION 1: APPLICATION
+    const meta = getStatusMeta(hosp.verificationStatus || hosp.status);
+    const statusContainer = document.getElementById('modal-hosp-status-container');
+    if (statusContainer) {
+      statusContainer.innerHTML = `<span class="hosp-status-pill hosp-status-${meta.cls}" id="modal-hosp-status"><i class="fas fa-${meta.icon}"></i> ${escapeHtml(meta.label)}</span>`;
+    }
+    setSpan('modal-hosp-submitted-at', formatTimestamp(hosp.createdAt || hosp.submittedTime));
+    setSpan('modal-hosp-app-ref', hosp.applicationRef || 'N/A');
 
-    // Website link or text
+    // SECTION 2: FACILITY
+    setSpan('modal-hosp-name', hosp.name || hosp.hospitalName);
+    setSpan('modal-hosp-type', hosp.hospitalType || hosp.type || 'General Healthcare Facility');
+    setSpan('modal-hosp-reg-no', hosp.registrationNo);
+    setSpan('modal-hosp-license', (hosp.bloodBankLicense && hosp.bloodBankLicense !== 'N/A') ? hosp.bloodBankLicense : 'No Dedicated License Recorded');
+    setSpan('modal-hosp-eraktkosh', hosp.eraktkoshId || '-');
+    setSpan('modal-hosp-beds', hosp.beds ? `${hosp.beds} Beds` : 'Not Specified');
+
     const websiteEl = document.getElementById('modal-hosp-website');
     if (websiteEl) {
       const web = hosp.website;
@@ -680,153 +836,228 @@
       };
 
       if (serviceList.length === 0) {
-        servicesEl.innerHTML = `<span style="font-size: 11px; color: var(--admin-text-muted);">Standard Clinical & Emergency Services</span>`;
+        servicesEl.innerHTML = `<span style="font-size: 12px; color: var(--admin-text-muted);">Standard Clinical & Emergency Services</span>`;
       } else {
         serviceList.forEach(s => {
           const key = s.toLowerCase().trim();
-          const meta = serviceMeta[key] || { label: s.charAt(0).toUpperCase() + s.slice(1), icon: 'circle-check' };
+          const sm = serviceMeta[key] || { label: s.charAt(0).toUpperCase() + s.slice(1), icon: 'circle-check' };
           const chip = document.createElement('span');
           chip.className = 'hosp-service-chip';
-          chip.innerHTML = `<i class="fas fa-${meta.icon}"></i> ${escapeHtml(meta.label)}`;
+          chip.innerHTML = `<i class="fas fa-${sm.icon}"></i> ${escapeHtml(sm.label)}`;
           servicesEl.appendChild(chip);
         });
       }
     }
 
-    // 2. Administrative Point of Contact
+    // SECTION 3: CONTACT PERSON
     setSpan('modal-hosp-admin-name', hosp.adminName || 'Not recorded');
     setSpan('modal-hosp-admin-designation', hosp.adminDesignation || 'Hospital Administrator');
     setSpan('modal-hosp-admin-phone', hosp.adminPhone || hosp.phone);
     setSpan('modal-hosp-admin-email', hosp.adminEmail || hosp.email);
     setSpan('modal-hosp-emergency', hosp.emergencyContact || hosp.hospitalPhone || '24/7 Emergency Hotline Unlisted');
 
-    // 3. Spatial Routing & Address
+    // SECTION 4: LOCATION
     setSpan('modal-hosp-address', hosp.address || 'Address Not Recorded');
     setSpan('modal-hosp-landmark', hosp.landmark || 'None Specified');
     const cityStatePin = `${hosp.city || '-'}${hosp.state ? ', ' + hosp.state : ''}${hosp.pincode ? ' - ' + hosp.pincode : ''}`;
     setSpan('modal-hosp-city-state-pin', cityStatePin);
+    setSpan('modal-hosp-hours', hosp.operatingHours || '24x7 Emergency Services');
 
-    // GPS Coordinates with Pin icon or Location not set
     const coordsEl = document.getElementById('modal-hosp-coords');
+    const lat = hosp.latitude != null ? parseFloat(hosp.latitude) : NaN;
+    const lng = hosp.longitude != null ? parseFloat(hosp.longitude) : NaN;
+    const hasValidCoords = !isNaN(lat) && !isNaN(lng);
+
     if (coordsEl) {
-      if (hosp.latitude != null && hosp.longitude != null && !isNaN(hosp.latitude) && !isNaN(hosp.longitude)) {
-        coordsEl.innerHTML = `<i class="fas fa-map-pin" style="color: #38bdf8;"></i> ${parseFloat(hosp.latitude).toFixed(6)}, ${parseFloat(hosp.longitude).toFixed(6)}`;
+      if (hasValidCoords) {
+        coordsEl.innerHTML = `<i class="fas fa-map-pin" style="color: #38bdf8;"></i> ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       } else {
-        coordsEl.innerHTML = `<span style="color: var(--admin-text-muted);">Location not set</span>`;
+        coordsEl.innerHTML = `<span style="color: var(--admin-text-muted);">Location coordinates not set</span>`;
       }
     }
 
-    const hoursZone = `${hosp.operatingHours || '24x7'} • Radius: ${hosp.zoneRadius || 10} km (${hosp.zone || 'Standard Zone'})`;
-    setSpan('modal-hosp-hours-zone', hoursZone);
-
-    // 4. Blood Stock & SOS Activity
-    setSpan('modal-hosp-total-units', `${Number(hosp.totalStockUnits || 0)} Units in Reserve`);
-    setSpan('modal-hosp-total-requests', `${Number(hosp.totalRequests || 0)} SOS Requests Broadcasted`);
-
-    // Stock Breakdown Grid (Fixed canonical order: A+, A-, B+, B-, AB+, AB-, O+, O-)
-    const stockGrid = document.getElementById('modal-hosp-stock-grid');
-    if (stockGrid) {
-      stockGrid.innerHTML = '';
-      const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-      const ADMIN_STOCK_THRESHOLDS = {
-        'O-': { critical: 4, low: 8 },
-        'O+': { critical: 4, low: 8 },
-        'A-': { critical: 3, low: 5 },
-        'A+': { critical: 3, low: 5 },
-        'B-': { critical: 3, low: 5 },
-        'B+': { critical: 3, low: 5 },
-        'AB-': { critical: 2, low: 4 },
-        'AB+': { critical: 2, low: 4 }
-      };
-      const inv = hosp.inventory || {};
-      bloodTypes.forEach(bt => {
-        const units = Number(inv[bt] || 0);
-        const th = ADMIN_STOCK_THRESHOLDS[bt] || { critical: 3, low: 5 };
-        let statusState = 'ok';
-        let statusLabel = 'OK';
-        if (units <= th.critical) {
-          statusState = 'critical';
-          statusLabel = 'Critical';
-        } else if (units <= th.low) {
-          statusState = 'low';
-          statusLabel = 'Low';
+    // Leaflet map setup
+    const mapContainer = document.getElementById('modal-hosp-map');
+    if (mapContainer && typeof L !== 'undefined') {
+      try {
+        if (hasValidCoords) {
+          if (!modalHospMap) {
+            modalHospMap = L.map('modal-hosp-map', { zoomControl: true }).setView([lat, lng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors',
+              maxZoom: 19
+            }).addTo(modalHospMap);
+            modalHospMarker = L.marker([lat, lng]).addTo(modalHospMap);
+          } else {
+            modalHospMap.setView([lat, lng], 14);
+            if (modalHospMarker) {
+              modalHospMarker.setLatLng([lat, lng]);
+            } else {
+              modalHospMarker = L.marker([lat, lng]).addTo(modalHospMap);
+            }
+          }
+          modalHospMarker.bindPopup(`<b>${escapeHtml(hosp.name || hosp.hospitalName || 'Hospital Entrance')}</b><br>${escapeHtml(hosp.address || '')}`).openPopup();
+          setTimeout(() => {
+            if (modalHospMap) modalHospMap.invalidateSize();
+          }, 250);
+        } else if (modalHospMap) {
+          modalHospMap.setView([20.5937, 78.9629], 5);
         }
-
-        const item = document.createElement('div');
-        item.className = `modal-stock-item ${statusState}`;
-        item.style.display = 'flex';
-        item.style.flexDirection = 'column';
-        item.style.alignItems = 'center';
-        item.style.gap = '4px';
-        item.style.padding = '8px';
-        item.style.borderRadius = '8px';
-        item.style.background = 'rgba(255, 255, 255, 0.03)';
-        item.style.border = '1px solid rgba(255, 255, 255, 0.08)';
-        item.innerHTML = `
-          <span class="blood-drop-badge ${statusState}" aria-label="Blood group ${bt}">
-            <span class="drop-text">${bt}</span>
-          </span>
-          <div class="modal-stock-qty ${units === 0 ? 'zero' : ''}" style="font-weight: 700; font-size: 14px; color: #f8fafc;">
-            ${units} <span style="font-size: 10px; font-weight: normal; opacity: 0.8;">Units</span>
-          </div>
-          <span class="stock-status-pill status-${statusState}">${statusLabel}</span>
-        `;
-        stockGrid.appendChild(item);
-      });
+      } catch (mapErr) {
+        console.warn('Notice initializing map:', mapErr);
+      }
     }
 
-    // 5. Account & Verification Status
-    const isVerified = (hosp.verificationStatus || '').toLowerCase() === 'verified';
-    const statusEl = document.getElementById('modal-hosp-status');
-    if (statusEl) {
-      statusEl.innerHTML = `<span class="status-pill ${isVerified ? 'status-verified' : 'status-pending'}"><i class="fas fa-${isVerified ? 'circle-check' : 'clock'}"></i> ${escapeHtml(hosp.verificationStatus || 'Pending Verification')}</span>`;
-    }
-    setSpan('modal-hosp-created-at', formatTimestamp(hosp.createdAt));
-
-    // 6. Audit & Change History Logs
-    const historyEl = document.getElementById('modal-hosp-change-history');
-    if (historyEl) {
-      const logs = hosp.changeHistory || [];
-      if (logs.length === 0) {
-        historyEl.innerHTML = `<div style="color: var(--admin-text-muted);">No audit change logs recorded for this facility yet.</div>`;
+    // SECTION 5: DOCUMENTS
+    const docsContainer = document.getElementById('modal-hosp-docs-container');
+    if (docsContainer) {
+      docsContainer.innerHTML = '';
+      const docs = hosp.documents || [];
+      if (!Array.isArray(docs) || docs.length === 0) {
+        docsContainer.innerHTML = `<div style="color: var(--admin-text-muted); font-size: 13px; padding: 8px 0;">No uploaded compliance documents on file for this facility.</div>`;
       } else {
-        historyEl.innerHTML = logs.map(l => `
-          <div style="padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; gap: 8px;">
-            <div>
-              <strong style="color: #38bdf8;">[${escapeHtml(l.action || 'LOG')}]</strong>
-              <span style="color: #cbd5e1;">${escapeHtml(l.details || '')}</span>
+        const docTypeTitles = {
+          registrationCertificate: 'Hospital Registration Certificate',
+          bloodBankLicense: 'Blood Bank License',
+          authorisationLetter: 'Authorisation Letter / ID',
+          idProof: 'Government ID of Authorised Signatory'
+        };
+
+        docs.forEach(d => {
+          const title = docTypeTitles[d.docType] || d.docType || 'Compliance Document';
+          const fileName = d.originalName || d.docId || 'document.pdf';
+          const card = document.createElement('div');
+          card.className = 'admin-doc-card';
+          card.innerHTML = `
+            <div class="admin-doc-info">
+              <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 20px;"></i>
+              <div>
+                <div style="font-weight: 600; color: #f8fafc; font-size: 13px;">${escapeHtml(title)}</div>
+                <div style="font-size: 11px; color: #94a3b8; font-family: var(--admin-font-mono);">${escapeHtml(fileName)}</div>
+              </div>
             </div>
-            <span style="color: var(--admin-text-muted); font-size: 11px; white-space: nowrap;">${formatTimestamp(l.timestamp)}</span>
+            <div style="display: flex; gap: 8px;">
+              <a href="${escapeHtml(d.previewUrl || '#')}" target="_blank" rel="noopener noreferrer" class="btn-doc-action" title="Preview document in new tab">
+                <i class="fas fa-eye"></i> <span>Preview</span>
+              </a>
+              <a href="${escapeHtml(d.downloadUrl || '#')}" class="btn-doc-action" download title="Download document directly">
+                <i class="fas fa-download"></i> <span>Download</span>
+              </a>
+            </div>
+          `;
+          docsContainer.appendChild(card);
+        });
+      }
+    }
+
+    // SECTION 6: BLOOD STOCK
+    const isVerified = (hosp.verificationStatus || hosp.status || '').toLowerCase() === 'verified';
+    const stockSection = document.getElementById('modal-hosp-stock-section');
+    if (stockSection) {
+      if (!isVerified) {
+        stockSection.innerHTML = `
+          <div style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; color: #94a3b8; font-size: 13px; text-align: center;">
+            <i class="fas fa-lock" style="margin-right: 6px; color: #fbbf24;"></i>
+            Blood stock management is available only after hospital verification is approved.
+          </div>
+        `;
+      } else {
+        const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        const inv = hosp.inventory || {};
+        const totalUnits = Number(hosp.totalStockUnits || 0);
+
+        let gridHtml = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="font-size: 13px; color: #cbd5e1;">Live Reserve: <strong style="color: #f8fafc;">${totalUnits} Units</strong></span>
+            <span style="font-size: 11px; color: var(--admin-text-muted);">Verified Read-Only View</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); gap: 8px;">
+        `;
+
+        bloodTypes.forEach(bt => {
+          const units = Number(inv[bt] || 0);
+          let state = 'ok';
+          let stateColor = '#4ade80';
+          if (units <= 2) {
+            state = 'critical';
+            stateColor = '#f87171';
+          } else if (units <= 5) {
+            state = 'low';
+            stateColor = '#fbbf24';
+          }
+
+          gridHtml += `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);">
+              <span style="font-weight: 700; font-size: 13px; color: ${stateColor};">${bt}</span>
+              <div style="font-weight: 700; font-size: 15px; color: #f8fafc;">${units}</div>
+              <span style="font-size: 10px; color: var(--admin-text-muted);">Units</span>
+            </div>
+          `;
+        });
+        gridHtml += `</div>`;
+        stockSection.innerHTML = gridHtml;
+      }
+    }
+
+    // SECTION 7: ACTIVITY TIMELINE
+    const timelineEl = document.getElementById('modal-hosp-change-history');
+    if (timelineEl) {
+      const logs = hosp.auditLogs || hosp.changeHistory || [];
+      if (!Array.isArray(logs) || logs.length === 0) {
+        timelineEl.innerHTML = `<div style="color: var(--admin-text-muted); font-size: 13px;">No audit change logs recorded for this facility yet.</div>`;
+      } else {
+        timelineEl.innerHTML = logs.map(l => `
+          <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 3px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+              <strong style="color: #38bdf8; font-size: 12px;">[${escapeHtml(l.action || l.toStatus || 'AUDIT')}]</strong>
+              <span style="color: var(--admin-text-muted); font-size: 11px;">${formatTimestamp(l.timestamp || l.createdAt)}</span>
+            </div>
+            <div style="color: #cbd5e1; font-size: 12px;">${escapeHtml(l.details || l.reason || 'Status updated')}</div>
+            <div style="color: #64748b; font-size: 11px;">Admin: ${escapeHtml(l.adminEmail || l.admin || 'System')}</div>
           </div>
         `).join('');
       }
     }
+
+    // STICKY ACTION BAR BUTTON VISIBILITY
+    const normStatus = (hosp.verificationStatus || hosp.status || 'pending_review').toLowerCase().trim();
+    const btnApprove = document.getElementById('btnApproveHosp');
+    const btnRequestInfo = document.getElementById('btnRequestInfoHosp');
+    const btnReject = document.getElementById('btnRejectHosp');
+    const btnSuspend = document.getElementById('btnSuspendHosp');
+    const btnReactivate = document.getElementById('btnReactivateHosp');
+
+    if (btnApprove) btnApprove.style.display = (normStatus === 'pending_review' || normStatus === 'needs_info' || normStatus === 'rejected') ? 'inline-flex' : 'none';
+    if (btnRequestInfo) btnRequestInfo.style.display = (normStatus !== 'suspended') ? 'inline-flex' : 'none';
+    if (btnReject) btnReject.style.display = (normStatus === 'pending_review' || normStatus === 'needs_info' || normStatus === 'suspended') ? 'inline-flex' : 'none';
+    if (btnSuspend) btnSuspend.style.display = (normStatus === 'verified') ? 'inline-flex' : 'none';
+    if (btnReactivate) btnReactivate.style.display = (normStatus === 'suspended') ? 'inline-flex' : 'none';
   }
 
   /* View Hospital Details Modal - Immediately fetches live DB data */
-  window.viewHospitalDetails = async function (hospId) {
+  window.viewHospitalDetails = async function (hospId, isBackgroundRefresh = false) {
     if (!hospId) return;
     currentProfileHospitalId = hospId;
 
-    // 1. First populate from cache for instant display
     const cached = allHospitals.find(item => item.id === hospId);
     if (cached) {
       populateHospitalProfileModal(cached);
     }
 
     const modal = document.getElementById('hospitalProfileModal');
-    if (modal) {
+    if (modal && !isBackgroundRefresh) {
       modal.style.display = 'flex';
+      setTimeout(() => {
+        if (modalHospMap) modalHospMap.invalidateSize();
+      }, 250);
     }
 
-    // 2. Fetch fresh live data from database
     try {
       const res = await fetch(`/api/admin/hospitals/${hospId}`);
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
           populateHospitalProfileModal(json.data);
-          // Sync cache
           const idx = allHospitals.findIndex(item => item.id === hospId);
           if (idx !== -1) allHospitals[idx] = Object.assign(allHospitals[idx], json.data);
         }
@@ -844,18 +1075,10 @@
     if (icon) icon.classList.add('fa-spin');
 
     try {
-      const res = await fetch(`/api/admin/hospitals/${currentProfileHospitalId}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          populateHospitalProfileModal(json.data);
-          const idx = allHospitals.findIndex(item => item.id === currentProfileHospitalId);
-          if (idx !== -1) allHospitals[idx] = Object.assign(allHospitals[idx], json.data);
-          showToast('Hospital dossier synced live with database', 'info', 1500);
-        }
-      }
+      await window.viewHospitalDetails(currentProfileHospitalId, true);
+      showToast('Hospital dossier synced live with database.', 'info', 1500);
     } catch (_) {
-      showToast('Connection error syncing hospital profile', 'error');
+      showToast('Connection error syncing hospital profile.', 'error');
     } finally {
       if (icon) icon.classList.remove('fa-spin');
     }
@@ -864,44 +1087,222 @@
   /* Close Hospital Profile Modal */
   window.closeHospitalProfileModal = function () {
     const modal = document.getElementById('hospitalProfileModal');
-    if (modal) {
-      modal.style.display = 'none';
-    }
+    if (modal) modal.style.display = 'none';
     currentProfileHospitalId = null;
   };
 
-  /* Delete Hospital from Profile Modal */
-  window.handleDeleteHospitalFromModal = async function () {
+  /* ==================== APPROVAL COMPLIANCE CHECKLIST MODAL ==================== */
+  window.openApproveModal = function () {
     if (!currentProfileHospitalId) return;
-    const hid = currentProfileHospitalId;
-    const hosp = allHospitals.find(h => h.id === hid);
-    const hospName = hosp ? (hosp.name || hosp.hospitalName) : 'this facility';
-    await window.deleteHospitalAccount(hid, hospName);
+    const hosp = allHospitals.find(h => h.id === currentProfileHospitalId);
+    const hospName = hosp ? (hosp.name || hosp.hospitalName) : 'Hospital';
+
+    const nameEl = document.getElementById('approveModalHospName');
+    if (nameEl) nameEl.textContent = hospName;
+
+    const chk1 = document.getElementById('chkApproveDocs');
+    const chk2 = document.getElementById('chkApproveReg');
+    const chk3 = document.getElementById('chkApproveLoc');
+    const note = document.getElementById('txtApproveNote');
+
+    if (chk1) chk1.checked = false;
+    if (chk2) chk2.checked = false;
+    if (chk3) chk3.checked = false;
+    if (note) note.value = '';
+
+    window.checkApproveFormValidity();
+
+    const modal = document.getElementById('approveHospModal');
+    if (modal) modal.style.display = 'flex';
   };
 
-  /* UPDATE HOSPITAL VERIFICATION STATUS (Approve, Reject, Request re-verification, Suspend) */
-  window.updateHospitalStatusAction = async function (newStatus) {
-    if (!currentProfileHospitalId) return;
-    const hid = currentProfileHospitalId;
+  window.closeApproveModal = function () {
+    const modal = document.getElementById('approveHospModal');
+    if (modal) modal.style.display = 'none';
+  };
 
-    let reason = '';
-    if (newStatus !== 'Verified') {
-      const promptRes = window.prompt(`Enter reason or notes for setting status to "${newStatus}":`);
-      if (promptRes === null) return; // cancelled
-      reason = promptRes.trim();
+  window.checkApproveFormValidity = function () {
+    const chk1 = document.getElementById('chkApproveDocs');
+    const chk2 = document.getElementById('chkApproveReg');
+    const chk3 = document.getElementById('chkApproveLoc');
+    const btn = document.getElementById('btnConfirmApprove');
+
+    const isValid = chk1 && chk1.checked && chk2 && chk2.checked && chk3 && chk3.checked;
+    if (btn) {
+      btn.disabled = !isValid;
+      btn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+      btn.style.opacity = isValid ? '1' : '0.5';
     }
+  };
+
+  window.executeApproveHospital = async function () {
+    if (!currentProfileHospitalId) return;
+    const noteEl = document.getElementById('txtApproveNote');
+    const reason = noteEl?.value?.trim() || 'Compliance verification complete: registration certificate, license, and physical location validated.';
 
     try {
-      showToast(`Updating status to ${newStatus}...`, 'info', 1500);
-      const res = await fetch(`/api/admin/hospitals/${hid}/status`, {
+      showToast('Approving hospital application...', 'info', 1500);
+      const res = await fetch(`/api/admin/hospitals/${currentProfileHospitalId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, reason: reason })
+        body: JSON.stringify({ status: 'verified', reason: reason })
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
-        showToast(`Hospital verification status updated to "${newStatus}"`, 'success', 3000);
-        await window.refreshCurrentHospitalProfile();
+        showToast('Hospital approved and granted full network access.', 'success', 3500);
+        window.closeApproveModal();
+        await window.viewHospitalDetails(currentProfileHospitalId, true);
+        await loadHospitals();
+      } else {
+        showToast(data.message || 'Failed to approve hospital.', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error updating hospital status.', 'error');
+    }
+  };
+
+  /* ==================== REASON ACTION MODAL (REQUEST INFO / REJECT / SUSPEND / REACTIVATE) ==================== */
+  const REASON_PRESETS = {
+    needs_info: [
+      'Registration document is unreadable or blurry',
+      'Blood bank license is expired or missing state seal',
+      'Registration number does not match official state registry records',
+      'Physical location or campus map pin requires clarification',
+      'Authorisation letter missing hospital superintendent signature',
+      'Other / Custom note'
+    ],
+    rejected: [
+      'Facility credentials could not be verified with health ministry',
+      'Fraudulent or non-authentic documentation uploaded',
+      'Duplicate facility registration of an existing registered hospital',
+      'Facility does not meet minimum clinical criteria for blood network',
+      'Other / Custom note'
+    ],
+    suspended: [
+      'Temporary administrative review pending compliance audit',
+      'Reported blood bank license suspension by state authority',
+      'Inaccurate blood stock reporting or clinical protocol issue',
+      'Emergency helpline unreachable repeatedly during active dispatch',
+      'Other / Custom note'
+    ],
+    verified: [
+      'Re-verification completed successfully after document update',
+      'Suspension lifted following satisfactory compliance audit',
+      'Administrative review concluded with approved credentials',
+      'Other / Custom note'
+    ]
+  };
+
+  window.openReasonModal = function (targetStatus) {
+    if (!currentProfileHospitalId) return;
+    currentActionTargetStatus = targetStatus;
+
+    const titleEl = document.getElementById('reasonModalTitle');
+    const descEl = document.getElementById('reasonModalDesc');
+    const selEl = document.getElementById('selPresetReason');
+    const txtEl = document.getElementById('txtActionReason');
+    const btnEl = document.getElementById('btnConfirmReasonAction');
+
+    let titleText = 'Submit Decision';
+    let titleIcon = 'circle-exclamation';
+    let titleColor = '#60a5fa';
+    let btnText = 'Submit Decision';
+    let btnBg = '#3b82f6';
+    let btnColor = '#ffffff';
+
+    if (targetStatus === 'needs_info') {
+      titleText = 'Request Additional Information';
+      titleIcon = 'circle-question';
+      titleColor = '#60a5fa';
+      btnText = 'Request Info';
+      btnBg = '#3b82f6';
+    } else if (targetStatus === 'rejected') {
+      titleText = 'Reject Hospital Application';
+      titleIcon = 'ban';
+      titleColor = '#f87171';
+      btnText = 'Reject Application';
+      btnBg = '#ef4444';
+    } else if (targetStatus === 'suspended') {
+      titleText = 'Suspend Hospital Account';
+      titleIcon = 'pause';
+      titleColor = '#fb923c';
+      btnText = 'Suspend Account';
+      btnBg = '#f97316';
+    } else if (targetStatus === 'verified') {
+      titleText = 'Reactivate Hospital Account';
+      titleIcon = 'circle-check';
+      titleColor = '#4ade80';
+      btnText = 'Reactivate Account';
+      btnBg = '#22c55e';
+      btnColor = '#0f172a';
+    }
+
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fas fa-${titleIcon}" style="color: ${titleColor};"></i> ${escapeHtml(titleText)}`;
+    }
+    if (descEl) {
+      descEl.textContent = `Select or type the specific reason/instructions for setting status to "${targetStatus}":`;
+    }
+    if (btnEl) {
+      btnEl.textContent = btnText;
+      btnEl.style.background = btnBg;
+      btnEl.style.color = btnColor;
+    }
+
+    // Populate presets
+    const presets = REASON_PRESETS[targetStatus] || ['Other / Custom note'];
+    if (selEl) {
+      selEl.innerHTML = presets.map((p, idx) => `<option value="${escapeHtml(p)}" ${idx === 0 ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
+    }
+    if (txtEl) {
+      txtEl.value = presets[0] && !presets[0].startsWith('Other') ? presets[0] : '';
+    }
+
+    const modal = document.getElementById('reasonActionModal');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeReasonModal = function () {
+    const modal = document.getElementById('reasonActionModal');
+    if (modal) modal.style.display = 'none';
+    currentActionTargetStatus = null;
+  };
+
+  window.onPresetReasonChange = function () {
+    const selEl = document.getElementById('selPresetReason');
+    const txtEl = document.getElementById('txtActionReason');
+    if (!selEl || !txtEl) return;
+    const val = selEl.value;
+    if (val.startsWith('Other')) {
+      txtEl.value = '';
+      txtEl.focus();
+    } else {
+      txtEl.value = val;
+    }
+  };
+
+  window.executeReasonAction = async function () {
+    if (!currentProfileHospitalId || !currentActionTargetStatus) return;
+    const txtEl = document.getElementById('txtActionReason');
+    const reason = txtEl?.value?.trim();
+    if (!reason) {
+      showToast('Please provide a reason or instructions before submitting.', 'error');
+      if (txtEl) txtEl.focus();
+      return;
+    }
+
+    try {
+      showToast(`Submitting status decision: ${currentActionTargetStatus}...`, 'info', 1500);
+      const res = await fetch(`/api/admin/hospitals/${currentProfileHospitalId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: currentActionTargetStatus, reason: reason })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(`Hospital status updated to "${currentActionTargetStatus}".`, 'success', 3500);
+        window.closeReasonModal();
+        await window.viewHospitalDetails(currentProfileHospitalId, true);
         await loadHospitals();
       } else {
         showToast(data.message || 'Failed to update hospital status.', 'error');
@@ -911,50 +1312,133 @@
     }
   };
 
-  /* DELETE HOSPITAL ACCOUNT - soft delete with typed hospital-name confirmation */
-  window.deleteHospitalAccount = async function (hospId, hospName) {
-    if (!hospId) return;
+  /* ==================== DANGER ZONE DELETE CONFIRMATION MODAL ==================== */
+  window.openDeleteHospModal = function (hospId, hospName) {
+    const targetId = hospId || currentProfileHospitalId;
+    if (!targetId) return;
 
-    // Step 1: Warning confirmation
-    const confirmed = window.confirm(
-      `⚠️ DELETE HOSPITAL ACCOUNT\n\nYou are about to delete the hospital account of:\n"${hospName}"\n\nThis will soft-delete the facility, revoke access, and terminate active sessions.\n\nClick OK to continue to name confirmation, or Cancel to abort.`
-    );
-    if (!confirmed) {
-      showToast('Deletion cancelled.', 'info', 2000);
-      return;
+    deleteTargetHospId = targetId;
+    if (hospName) {
+      deleteTargetHospName = hospName;
+    } else {
+      const h = allHospitals.find(item => item.id === targetId);
+      deleteTargetHospName = h ? (h.name || h.hospitalName) : (document.getElementById('modal-hosp-name')?.textContent || 'Hospital');
     }
 
-    // Step 2: Strict security typing confirmation (exact hospital name)
-    const typedConfirm = window.prompt(
-      `Security Confirmation Required:\n\nType the EXACT hospital name to confirm deletion:\n"${hospName}"`
-    );
-    if (!typedConfirm || typedConfirm.trim().toLowerCase() !== hospName.trim().toLowerCase()) {
-      showToast(`Deletion aborted. You must type "${hospName}" exactly to confirm.`, 'error', 3500);
-      return;
+    const expectedEl = document.getElementById('deleteExpectedName');
+    if (expectedEl) expectedEl.textContent = deleteTargetHospName;
+
+    const inputEl = document.getElementById('txtDeleteConfirmName');
+    if (inputEl) {
+      inputEl.value = '';
     }
+
+    window.checkDeleteMatch();
+
+    const modal = document.getElementById('deleteHospModal');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeDeleteHospModal = function () {
+    const modal = document.getElementById('deleteHospModal');
+    if (modal) modal.style.display = 'none';
+    deleteTargetHospId = null;
+    deleteTargetHospName = '';
+  };
+
+  window.checkDeleteMatch = function () {
+    const inputEl = document.getElementById('txtDeleteConfirmName');
+    const btn = document.getElementById('btnConfirmDeleteHosp');
+    if (!inputEl || !btn) return;
+
+    const typed = inputEl.value.trim().toLowerCase();
+    const expected = deleteTargetHospName.trim().toLowerCase();
+    const isMatch = (typed === expected && expected.length > 0);
+
+    btn.disabled = !isMatch;
+    btn.style.cursor = isMatch ? 'pointer' : 'not-allowed';
+    btn.style.opacity = isMatch ? '1' : '0.5';
+  };
+
+  window.executeDeleteHospital = async function () {
+    if (!deleteTargetHospId) return;
+    const inputEl = document.getElementById('txtDeleteConfirmName');
+    const confirmName = inputEl?.value?.trim() || '';
 
     try {
       showToast('Deleting hospital account and terminating active sessions...', 'info', 2500);
-      const res = await fetch(`/api/admin/hospitals/${hospId}/delete`, {
+      const res = await fetch(`/api/admin/hospitals/${deleteTargetHospId}/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirmName: typedConfirm.trim() })
+        body: JSON.stringify({ confirmName: confirmName })
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
-        showToast(`Hospital "${hospName}" has been deleted.`, 'success', 4000);
-        closeHospitalProfileModal();
-        allHospitals = allHospitals.filter(item => item.id !== hospId);
-        const badge = document.getElementById('hospital-count-badge');
-        if (badge) badge.textContent = allHospitals.length;
-        renderHospitalsTable(allHospitals);
+        showToast(`Hospital "${deleteTargetHospName}" has been soft-deleted.`, 'success', 4000);
+        window.closeDeleteHospModal();
+        if (currentProfileHospitalId === deleteTargetHospId) {
+          window.closeHospitalProfileModal();
+        }
+        await loadHospitals();
       } else {
-        showToast(data.message || 'Failed to delete hospital account.', 'error');
+        showToast(data.message || 'Failed to delete hospital account.', 'error', 4500);
       }
     } catch (err) {
       showToast('Connection error while deleting hospital account.', 'error');
     }
   };
+
+  /* ==================== REALTIME SSE STREAM (/api/admin/stream) ==================== */
+  function initAdminEventStream() {
+    if (typeof EventSource === 'undefined') {
+      console.warn('SSE not supported in this browser environment.');
+      return;
+    }
+
+    try {
+      const es = new EventSource('/api/admin/stream');
+
+      es.addEventListener('new-hospital-application', (evt) => {
+        try {
+          const data = JSON.parse(evt.data || '{}');
+          showToast(`New hospital application: ${data.hospitalName || 'New Facility'} (${data.city || 'Location'})`, 'info', 5000);
+          loadHospitals(false);
+        } catch (_) {
+          loadHospitals(false);
+        }
+      });
+
+      es.addEventListener('hospital-status-changed', (evt) => {
+        try {
+          const data = JSON.parse(evt.data || '{}');
+          loadHospitals(false);
+          if (currentProfileHospitalId && data.hospitalId === currentProfileHospitalId) {
+            window.viewHospitalDetails(currentProfileHospitalId, true);
+          }
+        } catch (_) {
+          loadHospitals(false);
+        }
+      });
+
+      es.addEventListener('hospital-deleted', (evt) => {
+        try {
+          const data = JSON.parse(evt.data || '{}');
+          loadHospitals(false);
+          if (currentProfileHospitalId && data.hospitalId === currentProfileHospitalId) {
+            window.closeHospitalProfileModal();
+          }
+        } catch (_) {
+          loadHospitals(false);
+        }
+      });
+
+      es.onerror = () => {
+        // Browser handles reconnection automatically
+      };
+    } catch (sseErr) {
+      console.warn('Notice setting up admin event stream:', sseErr);
+    }
+  }
 
   /* ==================== 5. TAB 3: FEEDBACK ==================== */
   async function loadFeedback() {
@@ -1238,28 +1722,9 @@
     }
 
     const hospSearch = document.getElementById('hospitalSearchInput');
-    const hospBadge = document.getElementById('hospital-count-badge');
     if (hospSearch) {
-      hospSearch.addEventListener('input', e => {
-        const q = (e.target.value || '').trim().toLowerCase();
-        if (!q) {
-          if (hospBadge) hospBadge.textContent = allHospitals.length;
-          renderHospitalsTable(allHospitals);
-          return;
-        }
-        const filtered = allHospitals.filter(h => {
-          const name = (h.name || h.hospitalName || '').toLowerCase();
-          const loc = (h.location || h.city || '').toLowerCase();
-          const status = (h.verificationStatus || '').toLowerCase();
-          const reg = (h.registrationNo || '').toLowerCase();
-          const lic = (h.bloodBankLicense || h.license || '').toLowerCase();
-          const type = (h.hospitalType || h.type || '').toLowerCase();
-          const admin = (h.adminName || '').toLowerCase();
-          return name.includes(q) || loc.includes(q) || status.includes(q) ||
-            reg.includes(q) || lic.includes(q) || type.includes(q) || admin.includes(q);
-        });
-        if (hospBadge) hospBadge.textContent = filtered.length;
-        renderHospitalsTable(filtered);
+      hospSearch.addEventListener('input', () => {
+        filterAndRenderHospitals();
       });
     }
   }
@@ -1359,17 +1824,7 @@
   const btnSyncHosp = document.getElementById('btnSyncHospitals');
   if (btnSyncHosp) {
     btnSyncHosp.addEventListener('click', async () => {
-      btnSyncHosp.disabled = true;
-      btnSyncHosp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
-      try {
-        await loadHospitals();
-        showToast('Hospital inventory & records synced with live database', 'success');
-      } catch (e) {
-        showToast('Failed to sync hospital stock', 'error');
-      } finally {
-        btnSyncHosp.disabled = false;
-        btnSyncHosp.innerHTML = '<i class="fas fa-arrows-rotate"></i> Sync Stock';
-      }
+      await loadHospitals(true);
     });
   }
 

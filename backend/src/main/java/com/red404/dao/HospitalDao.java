@@ -131,6 +131,17 @@ public class HospitalDao {
         }
     }
 
+    public Map<String, Object> findByEmail(String email) throws SQLException {
+        String sql = "SELECT * FROM hospitals WHERE LOWER(hospital_email) = LOWER(?) LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapHospital(rs) : null;
+            }
+        }
+    }
+
     public List<Map<String, Object>> listAll() throws SQLException {
         String sql = "SELECT * FROM hospitals ORDER BY hospital_name ASC";
         try (Connection conn = DBConnection.getConnection();
