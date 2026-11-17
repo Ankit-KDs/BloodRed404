@@ -1248,6 +1248,27 @@ public class HospitalController {
                 respData.put("hospitalEmail", email);
                 respData.put("message", "Application received. Our verification team will review your credentials within 24-48 business hours.");
 
+                // Dispatch Design System Hospital Application Received Email (Part 2 & 3)
+                try {
+                    if (emailVerificationService != null && email != null && !email.isBlank()) {
+                        List<String> docNames = new ArrayList<>();
+                        JsonNode docsNode = body.get("documents");
+                        if (docsNode != null && docsNode.isArray()) {
+                            for (JsonNode docItem : docsNode) {
+                                String dName = JsonUtil.textOrNull(docItem, "name");
+                                if (dName == null) dName = JsonUtil.textOrNull(docItem, "type");
+                                if (dName != null && !dName.isBlank()) docNames.add(dName);
+                            }
+                        }
+                        Map<String, Object> createdHosp = hospitalDao.findByEmail(email);
+                        int hospId = (createdHosp != null && createdHosp.get("id") instanceof Number)
+                                ? ((Number) createdHosp.get("id")).intValue() : 0;
+                        emailVerificationService.sendHospitalApplicationReceivedEmail(hospId, email, hospitalName, appRef, docNames);
+                    }
+                } catch (Exception ex) {
+                    log.warn("Notice initiating hospital application received email: {}", ex.getMessage());
+                }
+
                 try {
                     Map<String, Object> eventData = new LinkedHashMap<>();
                     Map<String, Object> created = hospitalDao.findByEmail(email);

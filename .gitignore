@@ -27,3 +27,7 @@ firebase-adminsdk*.json
 backups/
 *.dump
 *.sql.gz
+
+# Email Previews
+email-previews/
+.email-previews/

@@ -197,14 +197,22 @@ public class AuthController {
     @Autowired
     private com.red404.service.EmailVerificationService emailVerificationService;
 
-    @PostMapping({"/send-code", "/send-verification-code"})
+    @PostMapping({"/send-code", "/send-verification-code"} )
     public ResponseEntity<ApiResponse> sendVerificationCode(@RequestBody JsonNode body, HttpServletRequest request) {
         String email = JsonUtil.text(body, "email");
         String purpose = JsonUtil.text(body, "purpose");
         if (purpose == null || purpose.isBlank()) purpose = "DONOR_REGISTRATION";
         String clientIp = GeoLocationUtil.getClientIp(request);
 
-        Map<String, Object> result = emailVerificationService.sendVerificationCode(email, purpose, clientIp);
+        String role = JsonUtil.textOrNull(body, "role");
+        String hospitalName = JsonUtil.textOrNull(body, "hospitalName");
+        if (hospitalName == null) hospitalName = JsonUtil.textOrNull(body, "name");
+        String language = JsonUtil.textOrNull(body, "language");
+        if (language == null) language = JsonUtil.textOrNull(body, "lang");
+
+        Map<String, Object> result = emailVerificationService.sendVerificationCode(
+                email, purpose, clientIp, role, hospitalName, language
+        );
         boolean success = Boolean.TRUE.equals(result.get("success"));
         if (!success) {
             String code = (String) result.get("code");

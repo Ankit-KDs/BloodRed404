@@ -52,6 +52,8 @@ import com.red404.service.RateLimitService;
 @RequestMapping({"/api/donors", "/api/donor"})
 public class DonorController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DonorController.class);
+
     public static final int FRESHNESS_HOURS = DonorDao.FRESHNESS_HOURS;
 
     private final DonorDao donorDao = new DonorDao();
@@ -841,6 +843,23 @@ public class DonorController {
                     String location = GeoLocationUtil.resolveLocation(ip);
                     sessionDao.recordSession(session.getId(), donorIdStr, "DONOR", ip, ua, device, browser, location);
                 } catch (Exception ignored) {}
+
+                // Dispatch Design System Donor Welcome Email (Part 2 & 3)
+                try {
+                    if (emailVerificationService != null && email != null && !email.isBlank()) {
+                        String lang = JsonUtil.textOrNull(body, "language");
+                        if (lang == null) lang = JsonUtil.textOrNull(body, "lang");
+                        int dId = 0;
+                        if (registeredDonor.get("id") instanceof Number) {
+                            dId = ((Number) registeredDonor.get("id")).intValue();
+                        }
+                        emailVerificationService.sendDonorWelcomeEmail(
+                                dId, email, firstName, donorIdStr, bloodType, city, lang
+                        );
+                    }
+                } catch (Exception ex) {
+                    log.warn("Notice initiating donor welcome email: {}", ex.getMessage());
+                }
 
                 Map<String, Object> wrapper = new HashMap<>();
                 wrapper.put("donor", registeredDonor);

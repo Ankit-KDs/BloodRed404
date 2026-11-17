@@ -18,6 +18,7 @@ import java.sql.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,6 +43,10 @@ public class EmailVerificationService {
     private RateLimitService rateLimitService;
 
     public Map<String, Object> sendVerificationCode(String email, String purpose, String clientIp) {
+        return sendVerificationCode(email, purpose, clientIp, null, null, null);
+    }
+
+    public Map<String, Object> sendVerificationCode(String email, String purpose, String clientIp, String role, String hospitalName, String language) {
         Map<String, Object> resp = new LinkedHashMap<>();
         if (email == null || email.isBlank() || !email.contains("@")) {
             resp.put("success", false);
@@ -51,6 +56,8 @@ public class EmailVerificationService {
 
         String cleanEmail = email.trim().toLowerCase();
         String cleanPurpose = purpose != null ? purpose.trim().toUpperCase() : "GENERAL";
+        String resolvedRole = (role != null && !role.isBlank()) ? role.trim().toLowerCase()
+                : (cleanPurpose.contains("HOSPITAL") ? "hospital" : "donor");
 
         // 1. Rate Limiting: Max 5 codes per hour per email and per IP
         RateLimitService.RateLimitResult ipCheck = rateLimitService.checkLimit("code_req_ip:" + clientIp, 5, 3600);
@@ -115,10 +122,10 @@ public class EmailVerificationService {
             return resp;
         }
 
-        // 5. Dispatch Email (Brevo REST API or dev simulator)
-        boolean sent = dispatchEmail(cleanEmail, codeStr, purpose);
+        // 5. Dispatch Email (Design System Template A)
+        boolean sent = dispatchEmail(cleanEmail, codeStr, cleanPurpose, resolvedRole, hospitalName, language);
         if (!sent) {
-            log.info("[EMAIL SIMULATOR] To: {} | Purpose: {} | 6-Digit Code: {}", LogSanitizer.maskEmail(cleanEmail), purpose, codeStr);
+            log.info("[EMAIL SIMULATOR] To: {} | Role: {} | 6-Digit Code: {}", LogSanitizer.maskEmail(cleanEmail), resolvedRole, codeStr);
         }
 
         resp.put("success", true);
@@ -301,136 +308,98 @@ public class EmailVerificationService {
                     return;
                 }
 
-                String subject;
-                String textContent;
-                String htmlContent;
-                String safeName = (hospitalName != null && !hospitalName.isBlank()) ? hospitalName.trim() : "Hospital";
-
-                // Deep links constructed exclusively via AppUrlService (never host header / never hardcoded localhost)
-                String loginUrl = AppUrlService.appUrl("hospitalLogin");
-                String statusDeepLink = AppUrlService.appUrl("hospitalLogin", Map.of("next", "hospitalStatus"));
-
+                EmailTemplateService.EmailContent content;
                 switch (normStatus) {
                     case "verified":
-                        subject = "Your hospital " + safeName + " is verified on RED404";
-                        textContent = "Your hospital " + safeName + " is verified on RED404. You can now log in and start using the platform.\n\n" +
-                                "Log in: " + loginUrl + "\n\n" +
-                                "RED404 Emergency Blood Rescue Network";
-                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
-                                "<h2 style=\"color:#0f172a;\">Welcome to RED404</h2>" +
-                                "<p style=\"font-size:15px;color:#334155;\">Your hospital <strong>" + escapeJson(safeName) + "</strong> is verified on RED404. You can now log in and start using the platform.</p>" +
-                                "<div style=\"margin:24px 0;\"><a href=\"" + loginUrl + "\" style=\"background:#22c55e;color:#0f172a;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Log in</a></div>" +
-                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        content = EmailTemplateService.buildHospitalApprovedEmail(hospitalName);
                         break;
                     case "needs_info":
-                        subject = "Action Required: Additional Information Needed for " + safeName;
-                        textContent = "The RED404 review team has requested additional information for your hospital application:\n\n" +
-                                (reason != null ? reason : "Please review documentation and credentials.") + "\n\n" +
-                                "Please log in and open your Status page to update your application:\n" +
-                                statusDeepLink + "\n\n" +
-                                "RED404 Emergency Blood Rescue Network";
-                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
-                                "<h2 style=\"color:#0f172a;\">Action Required: Hospital Verification</h2>" +
-                                "<p style=\"font-size:15px;color:#334155;\">The review team has requested additional information for <strong>" + escapeJson(safeName) + "</strong>:</p>" +
-                                "<blockquote style=\"background:#f8fafc;border-left:4px solid #3b82f6;margin:16px 0;padding:12px;\">" + escapeJson(reason != null ? reason : "") + "</blockquote>" +
-                                "<p style=\"font-size:14px;color:#334155;\">Please log in and open your Status page to review instructions and replace documents:</p>" +
-                                "<div style=\"margin:20px 0;\"><a href=\"" + statusDeepLink + "\" style=\"background:#3b82f6;color:#ffffff;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Open Status Page</a></div>" +
-                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        content = EmailTemplateService.buildHospitalNeedsInfoEmail(hospitalName, reason);
                         break;
                     case "rejected":
-                        subject = "RED404 Hospital Application Status Update";
-                        textContent = "Your hospital application for " + safeName + " could not be approved at this time.\n\n" +
-                                "Reason: " + (reason != null ? reason : "Credentials could not be verified.") + "\n\n" +
-                                "Please log in and open your Status page to review the feedback and update your application:\n" +
-                                statusDeepLink + "\n\n" +
-                                "RED404 Emergency Blood Rescue Network";
-                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
-                                "<h2 style=\"color:#0f172a;\">Hospital Application Status</h2>" +
-                                "<p style=\"font-size:15px;color:#334155;\">Your hospital application for <strong>" + escapeJson(safeName) + "</strong> could not be approved at this time.</p>" +
-                                "<blockquote style=\"background:#f8fafc;border-left:4px solid #ef4444;margin:16px 0;padding:12px;\">Reason: " + escapeJson(reason != null ? reason : "") + "</blockquote>" +
-                                "<p style=\"font-size:14px;color:#334155;\">Please log in to review the feedback and update your application:</p>" +
-                                "<div style=\"margin:20px 0;\"><a href=\"" + statusDeepLink + "\" style=\"background:#ef4444;color:#ffffff;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Open Status Page</a></div>" +
-                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        content = EmailTemplateService.buildHospitalRejectedEmail(hospitalName, reason);
                         break;
                     case "suspended":
-                        subject = "Important Notice: Hospital Account Suspended on RED404";
-                        textContent = "Your hospital account for " + safeName + " has been temporarily suspended.\n\n" +
-                                "Reason: " + (reason != null ? reason : "Administrative review.") + "\n\n" +
-                                "Please contact RED404 Support for assistance: support@red404.org\n\n" +
-                                "RED404 Emergency Blood Rescue Network";
-                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
-                                "<h2 style=\"color:#b91c1c;\">Account Suspension Notice</h2>" +
-                                "<p style=\"font-size:15px;color:#334155;\">Your hospital account for <strong>" + escapeJson(safeName) + "</strong> has been temporarily suspended.</p>" +
-                                "<blockquote style=\"background:#fef2f2;border-left:4px solid #f97316;margin:16px 0;padding:12px;\">Reason: " + escapeJson(reason != null ? reason : "") + "</blockquote>" +
-                                "<p style=\"font-size:14px;color:#334155;\">If you believe this is in error, please contact RED404 support at <a href=\"mailto:support@red404.org\">support@red404.org</a>.</p>" +
-                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        content = EmailTemplateService.buildHospitalSuspendedEmail(hospitalName, reason);
                         break;
                     case "reactivated":
-                        subject = "Your hospital " + safeName + " has been reactivated on RED404";
-                        textContent = "Your hospital " + safeName + " has been reactivated on RED404. You can now log in and resume using the platform.\n\n" +
-                                "Log in: " + loginUrl + "\n\n" +
-                                "RED404 Emergency Blood Rescue Network";
-                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
-                                "<h2 style=\"color:#0f172a;\">Hospital Account Reactivated</h2>" +
-                                "<p style=\"font-size:15px;color:#334155;\">Your hospital <strong>" + escapeJson(safeName) + "</strong> has been reactivated on RED404. You can now log in and resume using the platform.</p>" +
-                                "<div style=\"margin:24px 0;\"><a href=\"" + loginUrl + "\" style=\"background:#22c55e;color:#0f172a;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Log in</a></div>" +
-                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        content = EmailTemplateService.buildHospitalReactivatedEmail(hospitalName);
                         break;
                     default:
                         return;
                 }
 
-                // Check EMAIL_MODE (Part 1 dev safety: in non-prod default is log)
                 boolean isLive = EnvConfig.isEmailLiveMode();
                 if (!isLive) {
                     log.info("[EMAIL LOG MODE] Status email generated for {} ({}): Subject='{}'",
-                            LogSanitizer.maskEmail(toEmail), normStatus, LogSanitizer.sanitize(subject));
+                            LogSanitizer.maskEmail(toEmail), normStatus, LogSanitizer.sanitize(content.getSubject()));
                     recordDeliveryLog(hospitalId, "email", normStatus, "sent", "[SIMULATED - LOG MODE] Delivered to " + LogSanitizer.maskEmail(toEmail));
                     return;
                 }
 
-                // Dispatch via Brevo
-                String apiKey = EnvConfig.get("BREVO_API_KEY");
-                if (apiKey != null && !apiKey.isBlank()) {
-                    String senderEmail = EnvConfig.getEmailFromAddress();
-                    String senderName = EnvConfig.get("EMAIL_FROM_NAME", "RED404");
-                    String dispatchToEmail = toEmail;
-                    String redirectTo = EnvConfig.getEmailRedirectTo();
-                    if (redirectTo != null && !redirectTo.isBlank()) {
-                        dispatchToEmail = redirectTo;
-                        log.info("Redirecting status email intended for {} to {}",
-                                LogSanitizer.maskEmail(toEmail), LogSanitizer.maskEmail(dispatchToEmail));
-                    }
-
-                    URL url = new URL("https://api.brevo.com/v3/smtp/email");
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("api-key", apiKey);
-                    conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("Accept", "application/json");
-                    conn.setDoOutput(true);
-                    conn.setConnectTimeout(5000);
-                    conn.setReadTimeout(5000);
-
-                    String payload = String.format(
-                            "{\"sender\":{\"name\":\"%s\",\"email\":\"%s\"},\"to\":[{\"email\":\"%s\"}],\"subject\":\"%s\",\"textContent\":\"%s\",\"htmlContent\":\"%s\"}",
-                            escapeJson(senderName), escapeJson(senderEmail), escapeJson(dispatchToEmail),
-                            escapeJson(subject), escapeJson(textContent), escapeJson(htmlContent)
-                    );
-
-                    try (OutputStream os = conn.getOutputStream()) {
-                        os.write(payload.getBytes(StandardCharsets.UTF_8));
-                    }
-                    int code = conn.getResponseCode();
-                    log.info("Brevo status email sent to {}: HTTP {}", LogSanitizer.maskEmail(dispatchToEmail), code);
-                    recordDeliveryLog(hospitalId, "email", normStatus, code < 400 ? "sent" : "failed", "Brevo HTTP " + code);
-                } else {
-                    log.info("[DEV / NO BREVO KEY] Status email generated for {} ({}): Subject='{}'", LogSanitizer.maskEmail(toEmail), normStatus, subject);
-                    recordDeliveryLog(hospitalId, "email", normStatus, "sent", "[SIMULATED] Delivered to " + LogSanitizer.maskEmail(toEmail));
-                }
+                boolean sent = sendViaBrevo(toEmail, content.getSubject(), content.getTextContent(), content.getHtmlContent());
+                recordDeliveryLog(hospitalId, "email", normStatus, sent ? "sent" : "failed", sent ? "Brevo dispatched" : "Brevo failed");
             } catch (Exception e) {
                 log.warn("Asynchronous status email delivery notice: {}", e.getMessage());
                 recordDeliveryLog(hospitalId, "email", status, "failed", "Error: " + e.getMessage());
+            }
+        });
+    }
+
+    public void sendDonorWelcomeEmail(int donorId, String toEmail, String firstName, String donorIdStr, String bloodType, String city, String language) {
+        if (toEmail == null || toEmail.isBlank()) return;
+
+        EMAIL_EXECUTOR.submit(() -> {
+            try {
+                if (!checkAndIncrementDailyLimit(false)) {
+                    log.info("Donor welcome email to {} delayed due to daily threshold.", LogSanitizer.maskEmail(toEmail));
+                    return;
+                }
+
+                EmailTemplateService.EmailContent content = EmailTemplateService.buildDonorWelcomeEmail(
+                        firstName, donorIdStr, bloodType, city, language
+                );
+
+                boolean isLive = EnvConfig.isEmailLiveMode();
+                if (!isLive) {
+                    log.info("[EMAIL LOG MODE] Donor welcome email generated for {}: Subject='{}'",
+                            LogSanitizer.maskEmail(toEmail), LogSanitizer.sanitize(content.getSubject()));
+                    return;
+                }
+
+                sendViaBrevo(toEmail, content.getSubject(), content.getTextContent(), content.getHtmlContent());
+            } catch (Exception e) {
+                log.warn("Asynchronous donor welcome email delivery notice: {}", e.getMessage());
+            }
+        });
+    }
+
+    public void sendHospitalApplicationReceivedEmail(int hospitalId, String toEmail, String hospitalName, String applicationRef, List<String> docNames) {
+        if (toEmail == null || toEmail.isBlank()) return;
+
+        EMAIL_EXECUTOR.submit(() -> {
+            try {
+                if (!checkAndIncrementDailyLimit(false)) {
+                    log.info("Hospital application received email to {} delayed due to daily threshold.", LogSanitizer.maskEmail(toEmail));
+                    return;
+                }
+
+                EmailTemplateService.EmailContent content = EmailTemplateService.buildHospitalApplicationReceivedEmail(
+                        hospitalName, applicationRef, docNames
+                );
+
+                boolean isLive = EnvConfig.isEmailLiveMode();
+                if (!isLive) {
+                    log.info("[EMAIL LOG MODE] Hospital application received email generated for {}: Subject='{}'",
+                            LogSanitizer.maskEmail(toEmail), LogSanitizer.sanitize(content.getSubject()));
+                    recordDeliveryLog(hospitalId, "email", "application_received", "sent", "[SIMULATED - LOG MODE] Delivered to " + LogSanitizer.maskEmail(toEmail));
+                    return;
+                }
+
+                boolean sent = sendViaBrevo(toEmail, content.getSubject(), content.getTextContent(), content.getHtmlContent());
+                recordDeliveryLog(hospitalId, "email", "application_received", sent ? "sent" : "failed", sent ? "Brevo dispatched" : "Brevo failed");
+            } catch (Exception e) {
+                log.warn("Asynchronous hospital application email delivery notice: {}", e.getMessage());
             }
         });
     }
@@ -452,21 +421,30 @@ public class EmailVerificationService {
         }
     }
 
-    private boolean dispatchEmail(String toEmail, String code, String purpose) {
+    private boolean dispatchEmail(String toEmail, String code, String purpose, String role, String hospitalName, String language) {
         if (!checkAndIncrementDailyLimit(true)) {
             log.warn("Daily email limit exceeded for verification code to {}", LogSanitizer.maskEmail(toEmail));
             return false;
         }
 
+        EmailTemplateService.EmailContent emailContent = EmailTemplateService.buildVerificationCodeEmail(
+                code, role, hospitalName, LogSanitizer.maskEmail(toEmail), language
+        );
+
         boolean isLive = EnvConfig.isEmailLiveMode();
         if (!isLive) {
-            log.info("[EMAIL LOG MODE] Verification code generated for {} (Purpose: {}). Email delivery suppressed in log mode.",
-                    LogSanitizer.maskEmail(toEmail), purpose);
+            log.info("[EMAIL LOG MODE] Verification code generated for {} (Role: {}, Purpose: {}). Delivery suppressed in log mode.",
+                    LogSanitizer.maskEmail(toEmail), role, purpose);
             return true;
         }
 
+        return sendViaBrevo(toEmail, emailContent.getSubject(), emailContent.getTextContent(), emailContent.getHtmlContent());
+    }
+
+    public boolean sendViaBrevo(String toEmail, String subject, String textContent, String htmlContent) {
         String apiKey = EnvConfig.get("BREVO_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
+            log.warn("Brevo API key not configured. Cannot dispatch email.");
             return false;
         }
 
@@ -476,7 +454,7 @@ public class EmailVerificationService {
         String redirectTo = EnvConfig.getEmailRedirectTo();
         if (redirectTo != null && !redirectTo.isBlank()) {
             dispatchToEmail = redirectTo;
-            log.info("Redirecting verification email intended for {} to {}",
+            log.info("Redirecting email intended for {} to {}",
                     LogSanitizer.maskEmail(toEmail), LogSanitizer.maskEmail(dispatchToEmail));
         }
 
@@ -491,15 +469,17 @@ public class EmailVerificationService {
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
 
-            String subject = "Your RED404 Verification Code: " + code;
-            String textContent = "Welcome to RED404 Emergency Blood Network.\n\n" +
-                    "Your 6-digit verification code is: " + code + "\n\n" +
-                    "This code will expire in 10 minutes. If you did not request this, please ignore this email.";
+            String replyToEmail = EnvConfig.getSupportEmail();
+            String replyToJson = "";
+            if (replyToEmail != null && !replyToEmail.isBlank()) {
+                replyToJson = String.format(",\"replyTo\":{\"email\":\"%s\",\"name\":\"RED404 Support\"}", escapeJson(replyToEmail));
+            }
 
             String payload = String.format(
-                    "{\"sender\":{\"name\":\"%s\",\"email\":\"%s\"},\"to\":[{\"email\":\"%s\"}],\"subject\":\"%s\",\"textContent\":\"%s\"}",
+                    "{\"sender\":{\"name\":\"%s\",\"email\":\"%s\"},\"to\":[{\"email\":\"%s\"}]%s,\"subject\":\"%s\",\"textContent\":\"%s\",\"htmlContent\":\"%s\"}",
                     escapeJson(senderName), escapeJson(senderEmail), escapeJson(dispatchToEmail),
-                    escapeJson(subject), escapeJson(textContent)
+                    replyToJson,
+                    escapeJson(subject), escapeJson(textContent), escapeJson(htmlContent)
             );
 
             try (OutputStream os = conn.getOutputStream()) {
@@ -507,9 +487,10 @@ public class EmailVerificationService {
             }
 
             int codeResp = conn.getResponseCode();
+            log.info("Brevo email dispatched to {}: HTTP {}", LogSanitizer.maskEmail(dispatchToEmail), codeResp);
             return codeResp >= 200 && codeResp < 300;
         } catch (Exception e) {
-            log.warn("Brevo email delivery failed: {}", e.getMessage());
+            log.warn("Brevo email delivery notice: {}", e.getMessage());
             return false;
         }
     }
