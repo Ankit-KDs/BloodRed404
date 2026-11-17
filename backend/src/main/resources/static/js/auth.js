@@ -599,7 +599,35 @@ function initDonorLoginForm() {
       } catch (_) { }
 
       showToast('Login successful! Redirecting...', 'success', 1500);
-      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+
+      // Check allowlisted 'next' query parameter (prevent open redirects)
+      const params = new URLSearchParams(window.location.search);
+      const nextParam = (params.get('next') || '').trim();
+      let safeNextTarget = null;
+      if (nextParam) {
+        const allowlist = {
+          'donorDashboard': 'dashboard.html',
+          'dashboard.html': 'dashboard.html',
+          '/dashboard.html': 'dashboard.html',
+          'donorProfile': 'donor-profile.html',
+          'donor-profile.html': 'donor-profile.html',
+          '/donor-profile.html': 'donor-profile.html',
+          'donorAlerts': 'donor-alerts.html',
+          'donor-alerts.html': 'donor-alerts.html',
+          '/donor-alerts.html': 'donor-alerts.html',
+          'myDonations': 'my-donations.html',
+          'my-donations.html': 'my-donations.html',
+          '/my-donations.html': 'my-donations.html',
+          'donationHistory': 'donation-history.html',
+          'donation-history.html': 'donation-history.html',
+          '/donation-history.html': 'donation-history.html'
+        };
+        if (!nextParam.includes('://') && !nextParam.startsWith('//') && !nextParam.toLowerCase().startsWith('javascript:') && allowlist[nextParam]) {
+          safeNextTarget = allowlist[nextParam];
+        }
+      }
+      const redirectTarget = safeNextTarget || 'dashboard.html';
+      setTimeout(() => { window.location.href = redirectTarget; }, 1500);
     } else {
       showToast(result.error || 'Invalid credentials or account does not exist.', 'error');
       shakeInput(document.getElementById('loginPassword'));
@@ -741,7 +769,38 @@ function initHospitalLoginForm() {
       sessionStorage.setItem('hospitalToken', hToken);
       const rawStatus = (hosp.verificationStatus || hosp.verification_status || result.data.status || '').toLowerCase();
       const isVerified = rawStatus === 'verified' || rawStatus === 'approved';
-      const redirectTarget = result.data.redirectUrl || (isVerified ? 'hospital-dashboard.html' : 'hospital-status.html');
+
+      // Check allowlisted 'next' query parameter (prevent open redirects)
+      const params = new URLSearchParams(window.location.search);
+      const nextParam = (params.get('next') || '').trim();
+      let safeNextTarget = null;
+      if (nextParam) {
+        const allowlist = {
+          'hospitalStatus': 'hospital-status.html',
+          'hospital-status.html': 'hospital-status.html',
+          '/hospital-status.html': 'hospital-status.html',
+          'hospitalDashboard': 'hospital-dashboard.html',
+          'hospital-dashboard.html': 'hospital-dashboard.html',
+          '/hospital-dashboard.html': 'hospital-dashboard.html',
+          'hospitalProfile': 'hospital-profile.html',
+          'hospital-profile.html': 'hospital-profile.html',
+          '/hospital-profile.html': 'hospital-profile.html'
+        };
+        if (!nextParam.includes('://') && !nextParam.startsWith('//') && !nextParam.toLowerCase().startsWith('javascript:') && allowlist[nextParam]) {
+          safeNextTarget = allowlist[nextParam];
+        }
+      }
+
+      let redirectTarget;
+      if (isVerified) {
+        // A verified hospital always proceeds directly to its dashboard
+        redirectTarget = 'hospital-dashboard.html';
+      } else if (safeNextTarget) {
+        redirectTarget = safeNextTarget;
+      } else {
+        redirectTarget = result.data.redirectUrl || 'hospital-status.html';
+      }
+
       showToast('Login successful! Redirecting...', 'success', 1500);
       setTimeout(() => { window.location.href = redirectTarget; }, 1500);
     } else {
