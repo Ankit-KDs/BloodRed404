@@ -259,7 +259,187 @@ public class EmailVerificationService {
         return false;
     }
 
+    private static final java.util.concurrent.atomic.AtomicInteger DAILY_EMAIL_COUNT = new java.util.concurrent.atomic.AtomicInteger(0);
+    private static volatile long LAST_DAILY_RESET = System.currentTimeMillis();
+    private static final java.util.concurrent.ExecutorService EMAIL_EXECUTOR = java.util.concurrent.Executors.newFixedThreadPool(2);
+
+    private synchronized boolean checkAndIncrementDailyLimit(boolean isPriority) {
+        long now = System.currentTimeMillis();
+        if (now - LAST_DAILY_RESET > 86400000L) {
+            DAILY_EMAIL_COUNT.set(0);
+            LAST_DAILY_RESET = now;
+        }
+        int limit = EnvConfig.getAsInt("EMAIL_DAILY_LIMIT", 250);
+        int current = DAILY_EMAIL_COUNT.get();
+        if (current >= limit) {
+            if (isPriority && current < 300) {
+                DAILY_EMAIL_COUNT.incrementAndGet();
+                return true;
+            }
+            log.warn("Email daily limit reached ({}/{}). Queued or delayed.", current, limit);
+            return false;
+        }
+        DAILY_EMAIL_COUNT.incrementAndGet();
+        return true;
+    }
+
+    public void sendHospitalStatusEmail(String toEmail, String hospitalName, String status, String reason) {
+        sendHospitalStatusEmail(0, toEmail, hospitalName, status, reason);
+    }
+
+    public void sendHospitalStatusEmail(int hospitalId, String toEmail, String hospitalName, String status, String reason) {
+        if (toEmail == null || toEmail.isBlank()) return;
+
+        EMAIL_EXECUTOR.submit(() -> {
+            try {
+                String appBaseUrl = EnvConfig.get("APP_BASE_URL", "http://localhost:8080");
+                if (appBaseUrl.endsWith("/")) appBaseUrl = appBaseUrl.substring(0, appBaseUrl.length() - 1);
+
+                String normStatus = (status != null) ? status.trim().toLowerCase() : "pending_review";
+                boolean isPriority = "verified".equals(normStatus);
+
+                if (!checkAndIncrementDailyLimit(isPriority)) {
+                    log.info("Status email to {} delayed due to daily threshold.", LogSanitizer.maskEmail(toEmail));
+                    recordDeliveryLog(hospitalId, "email", normStatus, "delayed", "Daily email threshold reached (queued for next day)");
+                    return;
+                }
+
+                String subject;
+                String textContent;
+                String htmlContent;
+                String safeName = (hospitalName != null && !hospitalName.isBlank()) ? hospitalName.trim() : "Hospital";
+
+                switch (normStatus) {
+                    case "verified":
+                        subject = "Your hospital " + safeName + " is verified on RED404";
+                        textContent = "Your hospital " + safeName + " is verified on RED404. You can now log in and start using the platform.\n\n" +
+                                "Log in: " + appBaseUrl + "/hospital-login.html\n\n" +
+                                "RED404 Emergency Blood Rescue Network";
+                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
+                                "<h2 style=\"color:#0f172a;\">Welcome to RED404</h2>" +
+                                "<p style=\"font-size:15px;color:#334155;\">Your hospital <strong>" + escapeJson(safeName) + "</strong> is verified on RED404. You can now log in and start using the platform.</p>" +
+                                "<div style=\"margin:24px 0;\"><a href=\"" + appBaseUrl + "/hospital-login.html\" style=\"background:#22c55e;color:#0f172a;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Log in</a></div>" +
+                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        break;
+                    case "needs_info":
+                        subject = "Action Required: Additional Information Needed for " + safeName;
+                        textContent = "The RED404 review team has requested additional information for your hospital application:\n\n" +
+                                (reason != null ? reason : "Please review documentation and credentials.") + "\n\n" +
+                                "Please log in and open your Status page to update your application:\n" +
+                                appBaseUrl + "/hospital-status.html\n\n" +
+                                "RED404 Emergency Blood Rescue Network";
+                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
+                                "<h2 style=\"color:#0f172a;\">Action Required: Hospital Verification</h2>" +
+                                "<p style=\"font-size:15px;color:#334155;\">The review team has requested additional information for <strong>" + escapeJson(safeName) + "</strong>:</p>" +
+                                "<blockquote style=\"background:#f8fafc;border-left:4px solid #3b82f6;margin:16px 0;padding:12px;\">" + escapeJson(reason != null ? reason : "") + "</blockquote>" +
+                                "<p style=\"font-size:14px;color:#334155;\">Please log in and open your Status page to review instructions and replace documents:</p>" +
+                                "<div style=\"margin:20px 0;\"><a href=\"" + appBaseUrl + "/hospital-status.html\" style=\"background:#3b82f6;color:#ffffff;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Open Status Page</a></div>" +
+                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        break;
+                    case "rejected":
+                        subject = "RED404 Hospital Application Status Update";
+                        textContent = "Your hospital application for " + safeName + " could not be approved at this time.\n\n" +
+                                "Reason: " + (reason != null ? reason : "Credentials could not be verified.") + "\n\n" +
+                                "Please log in and open your Status page to review the feedback and update your application:\n" +
+                                appBaseUrl + "/hospital-status.html\n\n" +
+                                "RED404 Emergency Blood Rescue Network";
+                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
+                                "<h2 style=\"color:#0f172a;\">Hospital Application Status</h2>" +
+                                "<p style=\"font-size:15px;color:#334155;\">Your hospital application for <strong>" + escapeJson(safeName) + "</strong> could not be approved at this time.</p>" +
+                                "<blockquote style=\"background:#f8fafc;border-left:4px solid #ef4444;margin:16px 0;padding:12px;\">Reason: " + escapeJson(reason != null ? reason : "") + "</blockquote>" +
+                                "<p style=\"font-size:14px;color:#334155;\">Please log in to review the feedback and update your application:</p>" +
+                                "<div style=\"margin:20px 0;\"><a href=\"" + appBaseUrl + "/hospital-status.html\" style=\"background:#ef4444;color:#ffffff;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Open Status Page</a></div>" +
+                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        break;
+                    case "suspended":
+                        subject = "Important Notice: Hospital Account Suspended on RED404";
+                        textContent = "Your hospital account for " + safeName + " has been temporarily suspended.\n\n" +
+                                "Reason: " + (reason != null ? reason : "Administrative review.") + "\n\n" +
+                                "Please contact RED404 Support for assistance: support@red404.org\n\n" +
+                                "RED404 Emergency Blood Rescue Network";
+                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
+                                "<h2 style=\"color:#b91c1c;\">Account Suspension Notice</h2>" +
+                                "<p style=\"font-size:15px;color:#334155;\">Your hospital account for <strong>" + escapeJson(safeName) + "</strong> has been temporarily suspended.</p>" +
+                                "<blockquote style=\"background:#fef2f2;border-left:4px solid #f97316;margin:16px 0;padding:12px;\">Reason: " + escapeJson(reason != null ? reason : "") + "</blockquote>" +
+                                "<p style=\"font-size:14px;color:#334155;\">If you believe this is in error, please contact RED404 support at <a href=\"mailto:support@red404.org\">support@red404.org</a>.</p>" +
+                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        break;
+                    case "reactivated":
+                        subject = "Your hospital " + safeName + " has been reactivated on RED404";
+                        textContent = "Your hospital " + safeName + " has been reactivated on RED404. You can now log in and resume using the platform.\n\n" +
+                                "Log in: " + appBaseUrl + "/hospital-login.html\n\n" +
+                                "RED404 Emergency Blood Rescue Network";
+                        htmlContent = "<div style=\"font-family:sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;\">" +
+                                "<h2 style=\"color:#0f172a;\">Hospital Account Reactivated</h2>" +
+                                "<p style=\"font-size:15px;color:#334155;\">Your hospital <strong>" + escapeJson(safeName) + "</strong> has been reactivated on RED404. You can now log in and resume using the platform.</p>" +
+                                "<div style=\"margin:24px 0;\"><a href=\"" + appBaseUrl + "/hospital-login.html\" style=\"background:#22c55e;color:#0f172a;font-weight:600;padding:12px 24px;border-radius:6px;text-decoration:none;\">Log in</a></div>" +
+                                "<p style=\"font-size:12px;color:#64748b;\">RED404 Emergency Blood Rescue Network</p></div>";
+                        break;
+                    default:
+                        return;
+                }
+
+                // Dispatch via Brevo
+                String apiKey = EnvConfig.get("BREVO_API_KEY");
+                if (apiKey != null && !apiKey.isBlank()) {
+                    String senderEmail = EnvConfig.get("EMAIL_FROM_ADDRESS", "no-reply@red404.org");
+                    String senderName = EnvConfig.get("EMAIL_FROM_NAME", "RED404 Blood Network");
+                    URL url = new URL("https://api.brevo.com/v3/smtp/email");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("api-key", apiKey);
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("Accept", "application/json");
+                    conn.setDoOutput(true);
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(5000);
+
+                    String payload = String.format(
+                            "{\"sender\":{\"name\":\"%s\",\"email\":\"%s\"},\"to\":[{\"email\":\"%s\"}],\"subject\":\"%s\",\"textContent\":\"%s\",\"htmlContent\":\"%s\"}",
+                            escapeJson(senderName), escapeJson(senderEmail), escapeJson(toEmail),
+                            escapeJson(subject), escapeJson(textContent), escapeJson(htmlContent)
+                    );
+
+                    try (OutputStream os = conn.getOutputStream()) {
+                        os.write(payload.getBytes(StandardCharsets.UTF_8));
+                    }
+                    int code = conn.getResponseCode();
+                    log.info("Brevo status email sent to {}: HTTP {}", LogSanitizer.maskEmail(toEmail), code);
+                    recordDeliveryLog(hospitalId, "email", normStatus, code < 400 ? "sent" : "failed", "Brevo HTTP " + code);
+                } else {
+                    log.info("[DEV / NO BREVO KEY] Status email generated for {} ({}): Subject='{}'", LogSanitizer.maskEmail(toEmail), normStatus, subject);
+                    recordDeliveryLog(hospitalId, "email", normStatus, "sent", "[SIMULATED] Delivered to " + LogSanitizer.maskEmail(toEmail));
+                }
+            } catch (Exception e) {
+                log.warn("Asynchronous status email delivery notice: {}", e.getMessage());
+                recordDeliveryLog(hospitalId, "email", status, "failed", "Error: " + e.getMessage());
+            }
+        });
+    }
+
+    private void recordDeliveryLog(int hospitalId, String channel, String eventType, String status, String details) {
+        if (hospitalId <= 0) return;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "INSERT INTO notification_delivery_logs (target_type, target_id, channel, event_type, status, details, created_at) " +
+                     "VALUES ('hospital', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)")) {
+            ps.setInt(1, hospitalId);
+            ps.setString(2, channel);
+            ps.setString(3, eventType);
+            ps.setString(4, status);
+            ps.setString(5, details);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            log.warn("Notice recording notification delivery log: {}", e.getMessage());
+        }
+    }
+
     private boolean dispatchEmail(String toEmail, String code, String purpose) {
+        if (!checkAndIncrementDailyLimit(true)) {
+            log.warn("Daily email limit exceeded for verification code to {}", LogSanitizer.maskEmail(toEmail));
+            return false;
+        }
+
         String apiKey = EnvConfig.get("BREVO_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
             return false;

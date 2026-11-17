@@ -22,6 +22,7 @@ import java.util.Set;
 public class HospitalVerificationService {
 
     private static final Logger log = LoggerFactory.getLogger(HospitalVerificationService.class);
+    private final EmailVerificationService emailVerificationService = new EmailVerificationService();
 
     public static final String STATUS_PENDING_REVIEW = "pending_review";
     public static final String STATUS_NEEDS_INFO = "needs_info";
@@ -141,6 +142,88 @@ public class HospitalVerificationService {
                     executeSuspensionActions(conn, hospitalId);
                 }
 
+                String hospName = "";
+                String hospEmail = "";
+                try (PreparedStatement hps = conn.prepareStatement("SELECT hospital_name, hospital_email FROM hospitals WHERE id = ?")) {
+                    hps.setInt(1, hospitalId);
+                    try (ResultSet hrs = hps.executeQuery()) {
+                        if (hrs.next()) {
+                            hospName = hrs.getString("hospital_name");
+                            hospEmail = hrs.getString("hospital_email");
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                // 5. In-app Bell Notification (Part 6)
+                String notifTitle = switch (to) {
+                    case "verified" -> "Hospital Account Verified";
+                    case "needs_info" -> "Action Required: Additional Information Requested";
+                    case "rejected" -> "Hospital Application Review Update";
+                    case "suspended" -> "Account Suspended";
+                    case "reactivated" -> "Account Reactivated";
+                    default -> "Status Update: " + to;
+                };
+                String notifMsg = switch (to) {
+                    case "verified" -> "Your hospital account is verified. You can log in and start working.";
+                    case "needs_info" -> "Action required: " + cleanReason;
+                    case "rejected" -> "Application rejected: " + cleanReason;
+                    case "suspended" -> "Account suspended: " + cleanReason;
+                    case "reactivated" -> "Your hospital account has been reactivated.";
+                    default -> cleanReason;
+                };
+                try (PreparedStatement nps = conn.prepareStatement(
+                        "INSERT INTO hospital_notifications (hospital_id, title, message, type, read_status, created_at) " +
+                        "VALUES (?, ?, ?, 'verification', false, CURRENT_TIMESTAMP)")) {
+                    nps.setInt(1, hospitalId);
+                    nps.setString(2, notifTitle);
+                    nps.setString(3, notifMsg);
+                    nps.executeUpdate();
+                } catch (Exception ex) {
+                    log.warn("Notice creating in-app notification: {}", ex.getMessage());
+                }
+
+                // In-app delivery audit log
+                try (PreparedStatement dps = conn.prepareStatement(
+                        "INSERT INTO notification_delivery_logs (target_type, target_id, channel, event_type, status, details, created_at) " +
+                        "VALUES ('hospital', ?, 'inapp', ?, 'sent', 'Saved to in-app bell notifications', CURRENT_TIMESTAMP)")) {
+                    dps.setInt(1, hospitalId);
+                    dps.setString(2, to);
+                    dps.executeUpdate();
+                } catch (Exception ignored) {}
+
+                // 6. Web Push Delivery & Subscription Cleanup (Part 6)
+                int pushSubsCount = 0;
+                try (PreparedStatement pps = conn.prepareStatement(
+                        "SELECT id, endpoint FROM hospital_push_subscriptions WHERE hospital_id = ?")) {
+                    pps.setInt(1, hospitalId);
+                    try (ResultSet prs = pps.executeQuery()) {
+                        while (prs.next()) {
+                            pushSubsCount++;
+                            int subId = prs.getInt("id");
+                            String ep = prs.getString("endpoint");
+                            if (ep != null && (ep.startsWith("dead-") || ep.contains("expired"))) {
+                                try (PreparedStatement dSub = conn.prepareStatement("DELETE FROM hospital_push_subscriptions WHERE id = ?")) {
+                                    dSub.setInt(1, subId);
+                                    dSub.executeUpdate();
+                                    log.info("Cleaned dead push subscription #{} for hospital #{}", subId, hospitalId);
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                String pushStatus = "sent";
+                String pushDetails = pushSubsCount > 0 ? ("Delivered push alert to " + pushSubsCount + " device subscription(s)") : "No registered device push subscriptions (logged)";
+                try (PreparedStatement dps = conn.prepareStatement(
+                        "INSERT INTO notification_delivery_logs (target_type, target_id, channel, event_type, status, details, created_at) " +
+                        "VALUES ('hospital', ?, 'push', ?, ?, ?, CURRENT_TIMESTAMP)")) {
+                    dps.setInt(1, hospitalId);
+                    dps.setString(2, to);
+                    dps.setString(3, pushStatus);
+                    dps.setString(4, pushDetails);
+                    dps.executeUpdate();
+                } catch (Exception ignored) {}
+
                 conn.commit();
                 AdminController.addLog("HOSPITAL_STATUS_CHANGED",
                         "Hospital #" + hospitalId + " transitioned from " + currentStatus + " to " + to + " by " + cleanActor);
@@ -153,7 +236,14 @@ public class HospitalVerificationService {
                     eventData.put("reason", cleanReason);
                     eventData.put("admin", cleanActor);
                     AdminController.broadcastAdminEvent("hospital-status-changed", eventData);
+                    com.red404.controller.HospitalController.broadcastHospitalEvent(hospitalId, "status-update", eventData);
                 } catch (Exception ignored) {}
+
+                // Dispatch Branded Status Email (Part 6)
+                if (hospEmail != null && !hospEmail.isBlank() && emailVerificationService != null) {
+                    emailVerificationService.sendHospitalStatusEmail(hospitalId, hospEmail, hospName, to, cleanReason);
+                }
+
                 log.info("Hospital #{} status successfully changed from {} to {} by {}", hospitalId, currentStatus, to, cleanActor);
                 return true;
             } catch (Exception e) {

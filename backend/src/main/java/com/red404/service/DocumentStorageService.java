@@ -96,6 +96,45 @@ public class DocumentStorageService {
         return null;
     }
 
+    public boolean deleteDocument(String docId) {
+        if (docId == null || docId.isBlank()) return false;
+        File[] files = storageDir.listFiles((dir, name) -> name.startsWith(docId));
+        boolean anyDeleted = false;
+        if (files != null) {
+            for (File f : files) {
+                if (f.delete()) {
+                    anyDeleted = true;
+                    log.info("Deleted secure document file: {}", f.getName());
+                }
+            }
+        }
+        return anyDeleted;
+    }
+
+    public void deleteHospitalDocuments(String documentsJson) {
+        if (documentsJson == null || documentsJson.isBlank()) return;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = com.red404.util.JsonUtil.mapper();
+            com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(documentsJson);
+            if (node.isObject()) {
+                node.fields().forEachRemaining(entry -> {
+                    com.fasterxml.jackson.databind.JsonNode docNode = entry.getValue();
+                    if (docNode.has("docId")) {
+                        deleteDocument(docNode.get("docId").asText());
+                    }
+                });
+            } else if (node.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode item : node) {
+                    if (item.has("docId")) {
+                        deleteDocument(item.get("docId").asText());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice deleting hospital documents: {}", e.getMessage());
+        }
+    }
+
     private String detectMimeType(byte[] bytes) {
         // PDF: %PDF- (25 50 44 46)
         if (bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {

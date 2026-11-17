@@ -88,6 +88,22 @@ public class EnvConfig {
         return defaultValue;
     }
 
+    public static int getAsInt(String key, int defaultValue) {
+        String val = get(key);
+        if (val == null || val.isBlank()) return defaultValue;
+        try {
+            return Integer.parseInt(val.trim());
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    public static boolean getAsBoolean(String key, boolean defaultValue) {
+        String val = get(key);
+        if (val == null || val.isBlank()) return defaultValue;
+        return Boolean.parseBoolean(val.trim());
+    }
+
     public static boolean isProduction() {
         String env = get("ENVIRONMENT", "");
         String profile = get("SPRING_PROFILES_ACTIVE", "");

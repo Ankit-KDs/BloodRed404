@@ -585,6 +585,29 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                     "reason TEXT NULL, " +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")");
+
+            // Ensure hospital in-app bell notifications table exists (Part 6)
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS hospital_notifications (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "hospital_id INT NOT NULL, " +
+                    "title VARCHAR(255) NOT NULL, " +
+                    "message TEXT NOT NULL, " +
+                    "type VARCHAR(50) DEFAULT 'verification', " +
+                    "read_status BOOLEAN DEFAULT FALSE, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")");
+
+            // Ensure notification delivery audit log table exists (Part 6: email, push, in-app)
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS notification_delivery_logs (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "target_type VARCHAR(20) NOT NULL, " +
+                    "target_id INT NOT NULL, " +
+                    "channel VARCHAR(20) NOT NULL, " +
+                    "event_type VARCHAR(50) NOT NULL, " +
+                    "status VARCHAR(30) NOT NULL, " +
+                    "details TEXT NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")");
         } catch (Exception ignored) {}
     }
 

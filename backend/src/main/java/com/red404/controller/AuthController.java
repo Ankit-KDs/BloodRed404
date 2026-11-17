@@ -207,8 +207,15 @@ public class AuthController {
         Map<String, Object> result = emailVerificationService.sendVerificationCode(email, purpose, clientIp);
         boolean success = Boolean.TRUE.equals(result.get("success"));
         if (!success) {
-            return ResponseEntity.status("rate_limit_exceeded".equals(result.get("code")) ? HttpStatus.TOO_MANY_REQUESTS : HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse(false, (String) result.get("message"), result));
+            String code = (String) result.get("code");
+            if ("rate_limit_exceeded".equals(code) || "cooldown".equals(code)) {
+                Object retry = result.get("retryAfter");
+                int retrySec = (retry instanceof Number) ? ((Number) retry).intValue() : 30;
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .header("Retry-After", String.valueOf(retrySec))
+                        .body(new ApiResponse(false, (String) result.get("message"), result));
+            }
+            return ResponseEntity.badRequest().body(new ApiResponse(false, (String) result.get("message"), result));
         }
         return ResponseEntity.ok(new ApiResponse(true, (String) result.get("message"), result));
     }

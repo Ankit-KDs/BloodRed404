@@ -14,7 +14,29 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStatus();
   initStatusActions();
   startLivePolling();
+  initServiceWorkerAndPush();
+  initHospitalEventStream();
 });
+
+function initServiceWorkerAndPush() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+function initHospitalEventStream() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    const es = new EventSource('/api/hospitals/stream');
+    es.addEventListener('status-update', () => {
+      loadStatus();
+    });
+    es.addEventListener('hospital-status-changed', () => {
+      loadStatus();
+    });
+    es.onerror = () => {};
+  } catch (_) {}
+}
 
 function getAuthHeaders() {
   const headers = { 'Accept': 'application/json' };
@@ -257,13 +279,44 @@ function initStatusActions() {
   if (btnNotify) {
     btnNotify.addEventListener('click', async () => {
       if (!('Notification' in window)) {
-        alert('Web push notifications are not supported in this browser.');
+        alert('Web push notifications are not supported directly in this browser (on iOS Safari, add this site to your Home Screen first). All status updates are always sent to your official registered email as backup.');
         return;
       }
 
       try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
+          let pushEndpoint = 'web-push-' + (currentStatusData ? currentStatusData.id : 'device') + '-' + Date.now();
+          let p256dhKey = 'p256dh_' + Math.random().toString(36).substring(2);
+          let authKey = 'auth_' + Math.random().toString(36).substring(2);
+
+          // Try real push subscription if SW registration has PushManager
+          try {
+            if ('serviceWorker' in navigator) {
+              const reg = await navigator.serviceWorker.ready;
+              if (reg && reg.pushManager) {
+                // Fetch public VAPID key
+                const vRes = await fetch('/api/hospitals/push/vapid-public-key');
+                const vJson = await vRes.json();
+                const pubKey = (vJson && vJson.data && vJson.data.publicKey) || null;
+                if (pubKey) {
+                  const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: pubKey
+                  }).catch(() => null);
+                  if (sub) {
+                    pushEndpoint = sub.endpoint;
+                    const subJson = sub.toJSON();
+                    if (subJson.keys) {
+                      p256dhKey = subJson.keys.p256dh || p256dhKey;
+                      authKey = subJson.keys.auth || authKey;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (_) {}
+
           // Subscribe to backend
           const subRes = await fetch('/api/hospitals/notifications/subscribe', {
             method: 'POST',
@@ -272,8 +325,8 @@ function initStatusActions() {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              endpoint: 'web-push-' + (currentStatusData ? currentStatusData.id : 'client'),
-              keys: { p256dh: 'sample_p256dh', auth: 'sample_auth' }
+              endpoint: pushEndpoint,
+              keys: { p256dh: p256dhKey, auth: authKey }
             }),
             credentials: 'include'
           });
@@ -283,8 +336,8 @@ function initStatusActions() {
             btnNotify.disabled = true;
             btnNotify.style.background = '#16a34a';
           }
-        } else {
-          alert('Notification permission was declined in browser settings.');
+        } else if (permission === 'denied') {
+          alert('Notifications are blocked in your browser settings. To receive browser alerts, please allow notifications for this site. In the meantime, all status updates will still be sent to your registered email.');
         }
       } catch (e) {
         console.warn('Push registration error:', e);

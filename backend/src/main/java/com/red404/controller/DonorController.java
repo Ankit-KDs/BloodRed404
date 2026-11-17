@@ -46,6 +46,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import com.red404.service.PublicSearchService;
+import com.red404.service.RateLimitService;
 
 @RestController
 @RequestMapping({"/api/donors", "/api/donor"})
@@ -60,6 +61,7 @@ public class DonorController {
     private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
     private final com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
     private final ConsentDao consentDao = new ConsentDao();
+    private final RateLimitService rateLimitService = new RateLimitService();
 
     @Autowired(required = false)
     private EmailVerificationService emailVerificationService;
@@ -660,6 +662,15 @@ public class DonorController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
+            // Part 7: Rate limit - 10 donor registrations per hour per IP
+            String clientIp = GeoLocationUtil.getClientIp(request);
+            RateLimitService.RateLimitResult regCheck = rateLimitService.checkLimit("register_donor_ip:" + clientIp, 10, 3600);
+            if (!regCheck.allowed) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .header("Retry-After", String.valueOf(regCheck.retryAfterSeconds))
+                        .body(new ApiResponse(false, "Too many donor registrations from this network. Please try again later."));
+            }
+
             String firstName = JsonUtil.text(body, "firstName").trim();
             String lastName = JsonUtil.text(body, "lastName").trim();
             if (firstName.isEmpty() || lastName.isEmpty()) {
@@ -671,6 +682,10 @@ public class DonorController {
             if (email.isEmpty() || !email.contains("@")) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "A valid email address is required."));
+            }
+            if (!com.red404.util.SecurityValidationUtil.isValidEmail(email)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "A valid email address is required (disposable email domains are not accepted)."));
             }
 
             String phone = JsonUtil.text(body, "phone").trim().replaceAll("\\s+", "").replaceAll("[-+]", "");
@@ -687,7 +702,7 @@ public class DonorController {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Password must be at least 8 characters."));
             }
-            if (PasswordUtil.isCommonPassword(password)) {
+            if (PasswordUtil.isCommonPassword(password) || com.red404.util.SecurityValidationUtil.isCommonPassword(password)) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "The password you entered is too common. Please choose a more secure password."));
             }
@@ -852,13 +867,28 @@ public class DonorController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
+            String clientIp = GeoLocationUtil.getClientIp(request);
             String identifier = JsonUtil.text(body, "identifier").trim();
             if (identifier.isEmpty()) {
                 identifier = JsonUtil.text(body, "email").trim();
             }
+            String cleanId = identifier.toLowerCase();
+
+            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and per IP
+            RateLimitService.RateLimitResult ipLock = rateLimitService.checkLimit("login_lock_ip:" + clientIp, 10, 900);
+            RateLimitService.RateLimitResult accLock = rateLimitService.checkLimit("login_lock_donor:" + cleanId, 10, 900);
+            if (!ipLock.allowed || !accLock.allowed) {
+                long retryAfter = Math.max(ipLock.retryAfterSeconds, accLock.retryAfterSeconds);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .header("Retry-After", String.valueOf(retryAfter))
+                        .body(new ApiResponse(false, "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
+            }
+
             String password = JsonUtil.text(body, "password").trim();
             Map<String, Object> donor = donorDao.findByLogin(identifier, password);
             if (donor == null) {
+                rateLimitService.checkLimit("login_fail_ip:" + clientIp, 10, 900);
+                rateLimitService.checkLimit("login_fail_donor:" + cleanId, 10, 900);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Invalid credentials. Please try again."));
             }

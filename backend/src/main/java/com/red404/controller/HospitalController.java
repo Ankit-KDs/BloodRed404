@@ -22,6 +22,9 @@ import com.red404.service.DocumentStorageService;
 import com.red404.service.EmailVerificationService;
 import com.red404.util.GeoLocationUtil;
 import com.red404.util.PasswordUtil;
+import com.red404.config.EnvConfig;
+import com.red404.service.RateLimitService;
+import com.red404.util.SecurityValidationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,15 +32,20 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 // Hospital Controller endpoints
 @RestController
@@ -45,6 +53,30 @@ import java.util.Map;
 public class HospitalController {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HospitalController.class);
+
+    private static final Map<Integer, List<SseEmitter>> hospitalEmitters = new ConcurrentHashMap<>();
+
+    private static void removeHospitalEmitter(int hospitalId, SseEmitter emitter) {
+        List<SseEmitter> list = hospitalEmitters.get(hospitalId);
+        if (list != null) {
+            list.remove(emitter);
+            if (list.isEmpty()) hospitalEmitters.remove(hospitalId);
+        }
+    }
+
+    public static void broadcastHospitalEvent(int hospitalId, String eventName, Object data) {
+        List<SseEmitter> list = hospitalEmitters.get(hospitalId);
+        if (list == null || list.isEmpty()) return;
+        List<SseEmitter> dead = new ArrayList<>();
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.send(SseEmitter.event().name(eventName).data(data));
+            } catch (Exception e) {
+                dead.add(emitter);
+            }
+        }
+        list.removeAll(dead);
+    }
 
     private final HospitalDao hospitalDao = new HospitalDao();
     private final DonorDao donorDao = new DonorDao();
@@ -54,6 +86,7 @@ public class HospitalController {
     private final com.red404.dao.BloodGroupAuditDao bloodGroupAuditDao = new com.red404.dao.BloodGroupAuditDao();
     private final com.red404.dao.HealthCheckDao healthCheckDao = new com.red404.dao.HealthCheckDao();
     private final ConsentDao consentDao = new ConsentDao();
+    private final RateLimitService rateLimitService = new RateLimitService();
 
     private final com.red404.service.HospitalVerificationService hospitalVerificationService = new com.red404.service.HospitalVerificationService();
 
@@ -379,7 +412,7 @@ public class HospitalController {
         }
     }
 
-    @PostMapping("/notifications/subscribe")
+    @PostMapping({"/notifications/subscribe", "/push/subscribe"})
     public ResponseEntity<ApiResponse> subscribeNotifications(
             @RequestBody JsonNode body,
             HttpServletRequest request) {
@@ -411,6 +444,116 @@ public class HospitalController {
         } catch (Exception e) {
             return serverError(e);
         }
+    }
+
+    @GetMapping("/notifications")
+    public ResponseEntity<ApiResponse> getHospitalNotifications(HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
+
+            List<Map<String, Object>> notifs = new ArrayList<>();
+            int unread = 0;
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "SELECT id, title, message, type, read_status, created_at " +
+                         "FROM hospital_notifications WHERE hospital_id = ? ORDER BY id DESC LIMIT 50")) {
+                ps.setInt(1, hospitalId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> n = new LinkedHashMap<>();
+                        n.put("id", rs.getInt("id"));
+                        n.put("title", rs.getString("title"));
+                        n.put("message", rs.getString("message"));
+                        n.put("type", rs.getString("type"));
+                        boolean isRead = rs.getBoolean("read_status");
+                        n.put("readStatus", isRead);
+                        if (!isRead) unread++;
+                        Timestamp ts = rs.getTimestamp("created_at");
+                        n.put("createdAt", ts != null ? ts.toString() : null);
+                        notifs.add(n);
+                    }
+                }
+            }
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("unreadCount", unread);
+            data.put("notifications", notifs);
+            return ok("Hospital in-app notifications loaded", data);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/notifications/read", "/notifications/mark-read", "/notifications/{id}/read"})
+    public ResponseEntity<ApiResponse> markHospitalNotificationsRead(
+            @PathVariable(required = false) Integer id,
+            HttpServletRequest request) {
+        try {
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) return unauthorized();
+
+            try (Connection conn = DBConnection.getConnection()) {
+                if (id != null) {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE hospital_notifications SET read_status = true WHERE id = ? AND hospital_id = ?")) {
+                        ps.setInt(1, id);
+                        ps.setInt(2, hospitalId);
+                        ps.executeUpdate();
+                    }
+                } else {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE hospital_notifications SET read_status = true WHERE hospital_id = ?")) {
+                        ps.setInt(1, hospitalId);
+                        ps.executeUpdate();
+                    }
+                }
+            }
+            return ok("Notifications marked as read", Map.of("updated", true));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @GetMapping("/stream")
+    public SseEmitter streamHospitalEvents(HttpServletRequest request) {
+        Integer hospitalId = getHospitalId(request);
+        if (hospitalId == null) {
+            Map<String, Object> sessionHosp = requireHospital(request);
+            if (sessionHosp != null && sessionHosp.get("id") != null) {
+                hospitalId = ((Number) sessionHosp.get("id")).intValue();
+            }
+        }
+        if (hospitalId == null) {
+            SseEmitter dead = new SseEmitter(0L);
+            dead.complete();
+            return dead;
+        }
+
+        SseEmitter emitter = new SseEmitter(1800000L); // 30 mins
+        hospitalEmitters.computeIfAbsent(hospitalId, k -> new CopyOnWriteArrayList<>()).add(emitter);
+
+        final int hid = hospitalId;
+        emitter.onCompletion(() -> removeHospitalEmitter(hid, emitter));
+        emitter.onTimeout(() -> removeHospitalEmitter(hid, emitter));
+        emitter.onError((e) -> removeHospitalEmitter(hid, emitter));
+
+        try {
+            emitter.send(SseEmitter.event().name("connected").data(Map.of("hospitalId", hid, "status", "connected")));
+        } catch (Exception ignored) {}
+
+        return emitter;
+    }
+
+    @GetMapping("/push/vapid-public-key")
+    public ResponseEntity<ApiResponse> getVapidPublicKey() {
+        String key = EnvConfig.get("VAPID_PUBLIC_KEY", "BN_RED404_SECURE_PUBLIC_VAPID_2026_TEST");
+        return ResponseEntity.ok(new ApiResponse(true, "VAPID Public Key", Map.of("publicKey", key)));
     }
 
     private String maskEmail(String email) {
@@ -929,6 +1072,15 @@ public class HospitalController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
+            // Part 7: Rate limit - 10 registrations per hour per IP
+            String clientIp = GeoLocationUtil.getClientIp(request);
+            RateLimitService.RateLimitResult regCheck = rateLimitService.checkLimit("register_hosp_ip:" + clientIp, 10, 3600);
+            if (!regCheck.allowed) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .header("Retry-After", String.valueOf(regCheck.retryAfterSeconds))
+                        .body(new ApiResponse(false, "Too many registration attempts from this network. Please try again later."));
+            }
+
             String hospitalName = JsonUtil.text(body, "hospitalName").trim();
             String registrationNo = JsonUtil.text(body, "registrationNo").trim();
             String hospitalType = JsonUtil.text(body, "hospitalType").trim();
@@ -963,6 +1115,10 @@ public class HospitalController {
             if (email.isEmpty() || !email.contains("@")) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "A valid official hospital email address is required."));
+            }
+            if (!com.red404.util.SecurityValidationUtil.isValidEmail(email)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "A valid official hospital email address is required (disposable email domains are not accepted)."));
             }
 
             // Verify email token (Step 2)
@@ -1000,7 +1156,7 @@ public class HospitalController {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Password must be at least 10 characters for hospital institutional security."));
             }
-            if (PasswordUtil.isCommonPassword(password)) {
+            if (PasswordUtil.isCommonPassword(password) || com.red404.util.SecurityValidationUtil.isCommonPassword(password)) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Password is too common. Please set a secure password of at least 10 characters."));
             }
@@ -1120,8 +1276,23 @@ public class HospitalController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
-            Map<String, Object> hospital = hospitalDao.findByLogin(JsonUtil.text(body, "email"), JsonUtil.text(body, "password"));
+            String clientIp = GeoLocationUtil.getClientIp(request);
+            String email = JsonUtil.text(body, "email").trim().toLowerCase();
+
+            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and per IP
+            RateLimitService.RateLimitResult ipLock = rateLimitService.checkLimit("login_lock_ip:" + clientIp, 10, 900);
+            RateLimitService.RateLimitResult accLock = rateLimitService.checkLimit("login_lock_hosp:" + email, 10, 900);
+            if (!ipLock.allowed || !accLock.allowed) {
+                long retryAfter = Math.max(ipLock.retryAfterSeconds, accLock.retryAfterSeconds);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .header("Retry-After", String.valueOf(retryAfter))
+                        .body(new ApiResponse(false, "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
+            }
+
+            Map<String, Object> hospital = hospitalDao.findByLogin(email, JsonUtil.text(body, "password"));
             if (hospital == null) {
+                rateLimitService.checkLimit("login_fail_ip:" + clientIp, 10, 900);
+                rateLimitService.checkLimit("login_fail_hosp:" + email, 10, 900);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Invalid credentials for hospital account."));
             }
