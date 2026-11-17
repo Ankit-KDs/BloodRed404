@@ -226,25 +226,21 @@
         try {
           const headers = getSettingsHeaders();
           headers['X-Red404-Role'] = 'DONOR';
-          const res = await fetch('/api/auth/check-session', {
+          const res = await fetch('/api/auth/me', {
             method: 'GET',
             cache: 'no-store',
             credentials: 'include',
             headers: headers
           });
-          if (res.status === 401 || res.status === 403 || res.status === 404) {
-            purgeAllSessionAndRedirect('Session terminated or account deleted.');
+          if (res.status === 401) {
+            purgeAllSessionAndRedirect('Session terminated or account logged out.');
             return;
-          }
-          const json = await res.json().catch(() => null);
-          if (json && json.success === false) {
-            purgeAllSessionAndRedirect((json && json.message) || 'Session invalid.');
           }
         } catch (_) {}
       }
 
-      setTimeout(checkAuthHeartbeat, 600);
-      setInterval(checkAuthHeartbeat, 2500);
+      setTimeout(checkAuthHeartbeat, 1000);
+      setInterval(checkAuthHeartbeat, 5000);
     }
     startRealtimeSessionGuard();
 
@@ -264,7 +260,7 @@
       headers: getSettingsHeaders()
     })
       .then(res => {
-        if (res.status === 401 || res.status === 404) {
+        if (res.status === 401) {
           purgeAllSessionAndRedirect('Donor account was deleted or session expired.');
           return null;
         }

@@ -77,7 +77,7 @@
           <p>Sign in to your RED404 account</p>
         </div>
 
-        <form id="donorLoginForm" novalidate autocomplete="off">
+        <form id="donorLoginForm" method="post" action="/api/donors/login" novalidate autocomplete="off">
 
           <div class="form-group">
             <label for="loginEmail">Email or Phone <span class="req">*</span></label>
@@ -226,7 +226,7 @@
         <p class="stealth-desc">Enter the Secret Admin Authorization Code to unlock administrative clearance.</p>
       </div>
       
-      <form id="adminSecretForm" novalidate autocomplete="off" onsubmit="handleAdminSecretSubmit(event)">
+      <form id="adminSecretForm" method="post" action="/api/admin/login" novalidate autocomplete="off">
         <div class="form-group stealth-form-group">
           <label for="adminSecretCode" class="stealth-input-label">Secret Authorization Code <span class="req">*</span></label>
           <div class="stealth-input-wrap">
@@ -556,8 +556,15 @@
             if (data.data && data.data.token) {
               sessionStorage.setItem('red404_admin_token', data.data.token);
             }
+            try {
+              await fetch('/api/auth/me', {
+                credentials: 'include',
+                headers: { 'Accept': 'application/json', 'X-Red404-Role': 'ADMIN' }
+              });
+            } catch (_) {}
+
             if (typeof showToast === 'function') {
-              showToast('Clearance Verified. Entering Level-0 Admin Portal...', 'success', 1500);
+              showToast('Clearance Verified. Entering Level-0 Admin Portal...', 'success', 1000);
             }
             setTimeout(() => {
               window.location.href = data.data?.redirectUrl || 'admin-portal.html';
@@ -584,6 +591,11 @@
           if (btnLoader) btnLoader.style.display = 'none';
         }
       };
+
+      const adminForm = document.getElementById('adminSecretForm');
+      if (adminForm) {
+        adminForm.addEventListener('submit', window.handleAdminSecretSubmit);
+      }
     })();
   </script>
 </body>

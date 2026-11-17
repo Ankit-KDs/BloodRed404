@@ -146,14 +146,24 @@ public class AdminController {
     // 1. STEALTH AUTHENTICATION ENDPOINT
     // ==========================================
     @PostMapping({"/stealth-auth", "/login"})
-    public ResponseEntity<ApiResponse> stealthAuth(@RequestBody JsonNode body, HttpServletRequest request) {
+    public ResponseEntity<?> stealthAuth(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
         try {
-            String email = JsonUtil.textOrNull(body, "email");
-            String authCode = JsonUtil.textOrNull(body, "authCode");
-            if (authCode == null) authCode = JsonUtil.textOrNull(body, "code");
-            if (authCode == null) authCode = JsonUtil.textOrNull(body, "secretKey");
+            boolean isHtmlSubmit = request.getHeader("Accept") != null && request.getHeader("Accept").contains("text/html");
+            String email = body != null ? JsonUtil.textOrNull(body, "email") : null;
+            if (email == null) email = request.getParameter("email");
+            if (email == null) email = "red404admin808@open.in"; // Default stealth identity
+
+            String authCode = body != null ? JsonUtil.textOrNull(body, "authCode") : null;
+            if (authCode == null && body != null) authCode = JsonUtil.textOrNull(body, "code");
+            if (authCode == null && body != null) authCode = JsonUtil.textOrNull(body, "secretKey");
+            if (authCode == null) authCode = request.getParameter("authCode");
+            if (authCode == null) authCode = request.getParameter("adminSecretCode");
+            if (authCode == null) authCode = request.getParameter("code");
 
             if (email == null || authCode == null) {
+                if (isHtmlSubmit) {
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=admin_invalid").build();
+                }
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ApiResponse(false, "Invalid payload: email and authorization code are required."));
             }
@@ -175,8 +185,9 @@ public class AdminController {
             if (isEmailValid && isCodeValid) {
                 boolean require2fa = com.red404.config.EnvConfig.getAsBoolean("ADMIN_REQUIRE_2FA", false);
                 if (require2fa) {
-                    String totp = JsonUtil.textOrNull(body, "totpCode");
-                    if (totp == null || totp.isBlank()) totp = JsonUtil.textOrNull(body, "twoFactorCode");
+                    String totp = body != null ? JsonUtil.textOrNull(body, "totpCode") : null;
+                    if (totp == null && body != null) totp = JsonUtil.textOrNull(body, "twoFactorCode");
+                    if (totp == null) totp = request.getParameter("totpCode");
                     if (totp == null || totp.trim().length() != 6) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                                 .body(new ApiResponse(false, "2FA Verification Code Required for Administrative Access.", Map.of("require2FA", true)));
@@ -196,6 +207,10 @@ public class AdminController {
                 String ip = GeoLocationUtil.getClientIp(request);
                 addLog("ADMIN_AUTH_SUCCESS", "Stealth Master Admin authenticated from " + ip);
 
+                if (isHtmlSubmit) {
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "admin-portal.html").build();
+                }
+
                 Map<String, Object> data = new LinkedHashMap<>();
                 data.put("role", "SUPER_ADMIN");
                 data.put("email", email);
@@ -205,6 +220,9 @@ public class AdminController {
                 return ResponseEntity.ok(new ApiResponse(true, "Clearance Granted: Welcome Super Admin", data));
             } else {
                 addLog("ADMIN_AUTH_FAILED", "Failed stealth authorization attempt for " + email);
+                if (isHtmlSubmit) {
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=admin_invalid").build();
+                }
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Access Denied: Invalid Secret Authorization Key."));
             }

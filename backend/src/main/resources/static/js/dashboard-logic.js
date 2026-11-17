@@ -214,10 +214,11 @@
     if (donorData.email) {
       fetch(`/api/donor/profile?email=${encodeURIComponent(donorData.email)}`, {
         cache: 'no-store',
-        credentials: 'include'
+        credentials: 'include',
+        headers: { 'Accept': 'application/json', 'X-Red404-Role': 'DONOR' }
       })
         .then(r => {
-          if (r.status === 401 || r.status === 404) {
+          if (r.status === 401) {
             try {
               if (window.Red404Security) window.Red404Security.clearRoleStorage('DONOR');
               else {

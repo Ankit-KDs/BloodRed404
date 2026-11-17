@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1295,38 +1296,71 @@ public class HospitalController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody JsonNode body, HttpServletRequest request) {
+    public ResponseEntity<?> login(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
         try {
+            boolean isHtmlSubmit = request.getHeader("Accept") != null && request.getHeader("Accept").contains("text/html");
             String clientIp = GeoLocationUtil.getClientIp(request);
-            String email = JsonUtil.text(body, "email").trim().toLowerCase();
+            String email = body != null ? JsonUtil.text(body, "email").trim().toLowerCase() : "";
+            if (email.isEmpty() && request.getParameter("email") != null) {
+                email = request.getParameter("email").trim().toLowerCase();
+            }
+            if (email.isEmpty() && request.getParameter("hospLoginEmail") != null) {
+                email = request.getParameter("hospLoginEmail").trim().toLowerCase();
+            }
 
             // Part 7: Check lockout - 10 failures per 15 min (900s) per account and per IP
             RateLimitService.RateLimitResult ipLock = rateLimitService.checkLimit("login_lock_ip:" + clientIp, 10, 900);
             RateLimitService.RateLimitResult accLock = rateLimitService.checkLimit("login_lock_hosp:" + email, 10, 900);
             if (!ipLock.allowed || !accLock.allowed) {
                 long retryAfter = Math.max(ipLock.retryAfterSeconds, accLock.retryAfterSeconds);
+                if (isHtmlSubmit) {
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "hospital-login.html?error=locked").build();
+                }
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                         .header("Retry-After", String.valueOf(retryAfter))
                         .body(new ApiResponse(false, "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
             }
 
-            Map<String, Object> hospital = hospitalDao.findByLogin(email, JsonUtil.text(body, "password"));
+            String password = body != null ? JsonUtil.text(body, "password") : "";
+            if (password.isEmpty() && request.getParameter("password") != null) {
+                password = request.getParameter("password");
+            }
+            if (password.isEmpty() && request.getParameter("hospLoginPassword") != null) {
+                password = request.getParameter("hospLoginPassword");
+            }
+
+            Map<String, Object> hospital = hospitalDao.findByLogin(email, password);
             if (hospital == null) {
                 rateLimitService.checkLimit("login_fail_ip:" + clientIp, 10, 900);
                 rateLimitService.checkLimit("login_fail_hosp:" + email, 10, 900);
+                if (isHtmlSubmit) {
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "hospital-login.html?error=invalid").build();
+                }
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Invalid credentials for hospital account."));
             }
             HttpSession session = request.getSession(true);
             session.setAttribute("hospitalUser", hospital);
             session.setAttribute("role", "HOSPITAL");
+            String status = com.red404.service.HospitalVerificationService.normalizeStatus((String) hospital.get("verificationStatus"));
+            String defaultRedirect = "verified".equals(status) ? "hospital-dashboard.html" : "hospital-status.html";
+
+            if (isHtmlSubmit) {
+                String next = request.getParameter("next");
+                String target = defaultRedirect;
+                if (next != null && !next.isBlank() && !next.contains("://") && !next.startsWith("//") && !next.toLowerCase().startsWith("javascript:")) {
+                    Set<String> allowed = Set.of("hospital-dashboard.html", "/hospital-dashboard.html", "hospital-status.html", "/hospital-status.html", "hospital-profile.html", "/hospital-profile.html");
+                    if (allowed.contains(next.trim())) target = next.trim();
+                }
+                return ResponseEntity.status(HttpStatus.FOUND).header("Location", target).build();
+            }
+
             Map<String, Object> wrapper = new HashMap<>();
             wrapper.put("hospital", hospital);
             wrapper.put("token", "SESSION-HOSPITAL-" + hospital.get("id"));
-            String status = com.red404.service.HospitalVerificationService.normalizeStatus((String) hospital.get("verificationStatus"));
             wrapper.put("status", status);
             wrapper.put("isVerified", "verified".equals(status));
-            wrapper.put("redirectUrl", "verified".equals(status) ? "hospital-dashboard.html" : "hospital-status.html");
+            wrapper.put("redirectUrl", defaultRedirect);
             return ok("Login Successful", wrapper);
         } catch (Exception e) {
             return serverError(e);

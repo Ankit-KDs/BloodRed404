@@ -67,7 +67,7 @@
           <p>Sign in to your RED404 hospital account</p>
         </div>
 
-        <form id="hospitalLoginForm" novalidate autocomplete="off">
+        <form id="hospitalLoginForm" method="post" action="/api/hospitals/login" novalidate autocomplete="off">
 
           <div class="form-group">
             <label for="hospLoginEmail">Hospital Email <span class="req">*</span></label>

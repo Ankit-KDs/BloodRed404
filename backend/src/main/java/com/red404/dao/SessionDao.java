@@ -178,6 +178,23 @@ public class SessionDao {
                 }
             }
         } catch (Exception e) {
+            return true; // Keep active on transient DB hiccup
+        }
+        return true; // Fresh session not yet synced to DB remains active
+    }
+
+    public boolean isSessionRevoked(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) return false;
+        String sql = "SELECT is_active FROM user_sessions WHERE session_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, sessionId.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return !rs.getBoolean("is_active");
+                }
+            }
+        } catch (Exception e) {
             return false;
         }
         return false;

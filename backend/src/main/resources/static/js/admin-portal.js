@@ -29,9 +29,12 @@
   async function initAuthGuard() {
     if (window.Red404Security) window.Red404Security.init('ADMIN');
     try {
-      const res = await fetch('/api/admin/check-auth');
-      if (!res.ok) {
-        // Not authorized, return to login
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Accept': 'application/json', 'X-Red404-Role': 'ADMIN' },
+        credentials: 'include'
+      });
+      if (res.status === 401) {
+        // Explicitly unauthorized by server, return to login
         sessionStorage.removeItem('admin_session');
         sessionStorage.removeItem('red404_super_admin');
         sessionStorage.removeItem('red404_admin_token');
@@ -39,7 +42,7 @@
         window.location.replace('donor-login.html');
       }
     } catch (_) {
-      // Backend unreachable or offline
+      // Backend unreachable or offline - do not purge on network hiccup
     }
   }
 

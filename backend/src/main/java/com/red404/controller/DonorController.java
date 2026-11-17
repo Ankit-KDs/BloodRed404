@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -883,12 +884,22 @@ public class DonorController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody JsonNode body, HttpServletRequest request) {
+    public ResponseEntity<?> login(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
         try {
+            boolean isHtmlSubmit = request.getHeader("Accept") != null && request.getHeader("Accept").contains("text/html");
             String clientIp = GeoLocationUtil.getClientIp(request);
-            String identifier = JsonUtil.text(body, "identifier").trim();
-            if (identifier.isEmpty()) {
+            String identifier = body != null ? JsonUtil.text(body, "identifier").trim() : "";
+            if (identifier.isEmpty() && body != null) {
                 identifier = JsonUtil.text(body, "email").trim();
+            }
+            if (identifier.isEmpty() && request.getParameter("identifier") != null) {
+                identifier = request.getParameter("identifier").trim();
+            }
+            if (identifier.isEmpty() && request.getParameter("loginEmail") != null) {
+                identifier = request.getParameter("loginEmail").trim();
+            }
+            if (identifier.isEmpty() && request.getParameter("email") != null) {
+                identifier = request.getParameter("email").trim();
             }
             String cleanId = identifier.toLowerCase();
 
@@ -897,16 +908,29 @@ public class DonorController {
             RateLimitService.RateLimitResult accLock = rateLimitService.checkLimit("login_lock_donor:" + cleanId, 10, 900);
             if (!ipLock.allowed || !accLock.allowed) {
                 long retryAfter = Math.max(ipLock.retryAfterSeconds, accLock.retryAfterSeconds);
+                if (isHtmlSubmit) {
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=locked").build();
+                }
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                         .header("Retry-After", String.valueOf(retryAfter))
                         .body(new ApiResponse(false, "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
             }
 
-            String password = JsonUtil.text(body, "password").trim();
+            String password = body != null ? JsonUtil.text(body, "password").trim() : "";
+            if (password.isEmpty() && request.getParameter("password") != null) {
+                password = request.getParameter("password").trim();
+            }
+            if (password.isEmpty() && request.getParameter("loginPassword") != null) {
+                password = request.getParameter("loginPassword").trim();
+            }
+
             Map<String, Object> donor = donorDao.findByLogin(identifier, password);
             if (donor == null) {
                 rateLimitService.checkLimit("login_fail_ip:" + clientIp, 10, 900);
                 rateLimitService.checkLimit("login_fail_donor:" + cleanId, 10, 900);
+                if (isHtmlSubmit) {
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=invalid").build();
+                }
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Invalid credentials. Please try again."));
             }
@@ -936,6 +960,16 @@ public class DonorController {
                 }
                 sessionDao.recordSession(session.getId(), donorIdStr, "DONOR", ip, ua, device, browser, location);
             } catch (Exception ignored) {}
+
+            if (isHtmlSubmit) {
+                String next = request.getParameter("next");
+                String target = "dashboard.html";
+                if (next != null && !next.isBlank() && !next.contains("://") && !next.startsWith("//") && !next.toLowerCase().startsWith("javascript:")) {
+                    Set<String> allowed = Set.of("dashboard.html", "/dashboard.html", "donor-profile.html", "/donor-profile.html", "donor-alerts.html", "/donor-alerts.html", "my-donations.html", "/my-donations.html");
+                    if (allowed.contains(next.trim())) target = next.trim();
+                }
+                return ResponseEntity.status(HttpStatus.FOUND).header("Location", target).build();
+            }
 
             Map<String, Object> wrapper = new HashMap<>();
             wrapper.put("donor", donor);

@@ -3,6 +3,7 @@ package com.red404.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.red404.dao.SessionDao;
 import com.red404.model.ApiResponse;
+import com.red404.service.EmailVerificationService;
 import com.red404.util.DBConnection;
 import com.red404.util.GeoLocationUtil;
 import com.red404.util.JsonUtil;
@@ -27,7 +28,10 @@ public class AuthController {
 
     private final SessionDao sessionDao = new SessionDao();
 
-    @GetMapping("/check-session")
+    @Autowired
+    private EmailVerificationService emailVerificationService;
+
+    @GetMapping({"/check-session", "/me"})
     public ResponseEntity<ApiResponse> checkSession(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         String token = request.getHeader("X-Red404-Token");
@@ -49,13 +53,16 @@ public class AuthController {
         }
 
         HttpSession session = request.getSession(false);
-        if (tokenDonor == null && tokenHospital == null && session == null) {
+        Object adminRole = session != null ? session.getAttribute("adminRole") : null;
+        boolean isAdmin = "SUPER_ADMIN".equals(adminRole);
+
+        if (tokenDonor == null && tokenHospital == null && session == null && !isAdmin) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse(false, "No active session"));
         }
 
-        // Check if session was terminated from another device (only if session exists and no explicit token)
-        if (session != null && tokenDonor == null && tokenHospital == null && !sessionDao.isSessionActive(session.getId())) {
+        // Check if session was terminated from another device (only if session exists and is explicitly revoked)
+        if (session != null && tokenDonor == null && tokenHospital == null && !isAdmin && sessionDao.isSessionRevoked(session.getId())) {
             session.invalidate();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse(false, "Session was terminated from another device. Please log in again."));
@@ -63,10 +70,24 @@ public class AuthController {
 
         Object user = tokenDonor != null ? tokenDonor : (session != null ? session.getAttribute("user") : null);
         Object hospital = tokenHospital != null ? tokenHospital : (session != null ? session.getAttribute("hospitalUser") : null);
-        String resolvedRole = tokenDonor != null ? "DONOR" : (tokenHospital != null ? "HOSPITAL" : (session != null && session.getAttribute("role") != null ? session.getAttribute("role").toString() : null));
-        if (user == null && hospital == null) {
+        String resolvedRole = isAdmin ? "ADMIN" : (tokenDonor != null ? "DONOR" : (tokenHospital != null ? "HOSPITAL" : (session != null && session.getAttribute("role") != null ? session.getAttribute("role").toString() : null)));
+
+        if (user == null && hospital == null && !isAdmin) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse(false, "No active session"));
+        }
+
+        if (isAdmin) {
+            Map<String, Object> adminData = new HashMap<>();
+            adminData.put("authenticated", true);
+            adminData.put("role", "ADMIN");
+            adminData.put("email", session.getAttribute("adminEmail"));
+            Map<String, Object> data = new HashMap<>();
+            data.put("authenticated", true);
+            data.put("role", "ADMIN");
+            data.put("user", adminData);
+            data.put("admin", adminData);
+            return ResponseEntity.ok(new ApiResponse(true, "Admin session active", data));
         }
 
         // Authoritative verification against MySQL: Ensure user has not been deleted by Admin or Danger Zone
@@ -155,7 +176,9 @@ public class AuthController {
         } catch (Exception ignored) {}
 
         Map<String, Object> data = new HashMap<>();
+        data.put("authenticated", true);
         data.put("role", resolvedRole != null ? resolvedRole : (session != null ? session.getAttribute("role") : null));
+        data.put("user", user != null ? user : hospital);
         data.put("donor", user);
         data.put("hospital", hospital);
         if (user instanceof Map<?, ?> donor) {
@@ -193,9 +216,6 @@ public class AuthController {
         }
         return ResponseEntity.ok(new ApiResponse(true, "Logged out", null));
     }
-
-    @Autowired
-    private com.red404.service.EmailVerificationService emailVerificationService;
 
     @PostMapping({"/send-code", "/send-verification-code"} )
     public ResponseEntity<ApiResponse> sendVerificationCode(@RequestBody JsonNode body, HttpServletRequest request) {

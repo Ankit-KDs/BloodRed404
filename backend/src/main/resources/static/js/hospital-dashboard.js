@@ -227,9 +227,13 @@ async function initHospitalProfile() {
 
   try {
     const token = (typeof Store !== 'undefined' ? Store.get('hospitalToken') : null) || localStorage.getItem('red404_hospitalToken');
-    const headers = { 'Accept': 'application/json' };
+    const headers = { 'Accept': 'application/json', 'X-Red404-Role': 'HOSPITAL' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch('/api/hospital/profile', { headers, credentials: 'include' });
+    if (res.status === 401) {
+      window.location.replace('hospital-login.html');
+      return;
+    }
     if (res.status === 403) {
       const errJson = await res.json().catch(() => ({}));
       if (errJson.code === 'hospital_not_verified' || (errJson.data && errJson.data.code === 'hospital_not_verified')) {

@@ -230,15 +230,12 @@ window.Red404Security = {
   async verifySession(role) {
     try {
       const r = (role || this.currentRole || 'DONOR').toUpperCase();
-      let endpoint = '/api/donor/profile';
-      let headers = { 'Accept': 'application/json', 'X-Red404-Role': r };
-      if (r === 'HOSPITAL') endpoint = '/api/hospital/profile';
-      else if (r === 'ADMIN') endpoint = '/api/admin/check-auth';
-
+      const endpoint = '/api/auth/me';
+      const headers = { 'Accept': 'application/json', 'X-Red404-Role': r };
       const res = await fetch(endpoint, { credentials: 'include', headers });
-      return res.ok;
+      return res.status !== 401;
     } catch (_) {
-      return false;
+      return true; // Keep session on network offline/transient hiccup
     }
   },
 

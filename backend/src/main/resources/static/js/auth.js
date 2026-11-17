@@ -598,7 +598,15 @@ function initDonorLoginForm() {
         localStorage.setItem('red404_registered_donors', JSON.stringify(list));
       } catch (_) { }
 
-      showToast('Login successful! Redirecting...', 'success', 1500);
+      // Authoritative session verification via canonical /me before redirecting
+      try {
+        await fetch('/api/auth/me', {
+          credentials: 'include',
+          headers: { 'Accept': 'application/json', 'X-Red404-Role': 'DONOR' }
+        });
+      } catch (_) {}
+
+      showToast('Login successful! Redirecting...', 'success', 1000);
 
       // Check allowlisted 'next' query parameter (prevent open redirects)
       const params = new URLSearchParams(window.location.search);
@@ -627,10 +635,22 @@ function initDonorLoginForm() {
         }
       }
       const redirectTarget = safeNextTarget || 'dashboard.html';
-      setTimeout(() => { window.location.href = redirectTarget; }, 1500);
+      setTimeout(() => { window.location.href = redirectTarget; }, 800);
     } else {
-      showToast(result.error || 'Invalid credentials or account does not exist.', 'error');
-      shakeInput(document.getElementById('loginPassword'));
+      const errStr = (result.error || '').toLowerCase();
+      let userMsg = 'Email or password is incorrect.';
+      if (errStr.includes('too many') || errStr.includes('locked') || errStr.includes('429')) {
+        userMsg = 'Too many attempts. Try again in 15 minutes.';
+      } else if (errStr.includes('network') || errStr.includes('failed to fetch') || errStr.includes('reach') || errStr.includes('connection')) {
+        userMsg = 'Cannot reach the server. Check your connection.';
+      }
+      showFieldError('loginPasswordErr', userMsg);
+      showToast(userMsg, 'error');
+      const passEl = document.getElementById('loginPassword');
+      if (passEl) {
+        passEl.value = '';
+        shakeInput(passEl);
+      }
     }
   });
 }
@@ -801,11 +821,31 @@ function initHospitalLoginForm() {
         redirectTarget = result.data.redirectUrl || 'hospital-status.html';
       }
 
-      showToast('Login successful! Redirecting...', 'success', 1500);
-      setTimeout(() => { window.location.href = redirectTarget; }, 1500);
+      // Authoritative session verification via canonical /me before redirecting
+      try {
+        await fetch('/api/auth/me', {
+          credentials: 'include',
+          headers: { 'Accept': 'application/json', 'X-Red404-Role': 'HOSPITAL' }
+        });
+      } catch (_) {}
+
+      showToast('Login successful! Redirecting...', 'success', 1000);
+      setTimeout(() => { window.location.href = redirectTarget; }, 800);
     } else {
-      showToast(result.error || 'Invalid credentials. Please try again.', 'error');
-      shakeInput(document.getElementById('hospLoginPassword'));
+      const errStr = (result.error || '').toLowerCase();
+      let userMsg = 'Hospital email or password is incorrect.';
+      if (errStr.includes('too many') || errStr.includes('locked') || errStr.includes('429')) {
+        userMsg = 'Too many attempts. Try again in 15 minutes.';
+      } else if (errStr.includes('network') || errStr.includes('failed to fetch') || errStr.includes('reach') || errStr.includes('connection')) {
+        userMsg = 'Cannot reach the server. Check your connection.';
+      }
+      showFieldError('hospLoginPasswordErr', userMsg);
+      showToast(userMsg, 'error');
+      const passEl = document.getElementById('hospLoginPassword');
+      if (passEl) {
+        passEl.value = '';
+        shakeInput(passEl);
+      }
     }
   });
 }
