@@ -972,7 +972,10 @@ public class AdminController {
 
             String baseSql = "SELECT id, hospital_name, registration_no, city, state, address, hospital_type, blood_bank_license, " +
                     "hospital_email, hospital_phone, latitude, longitude, verification_status, application_ref, documents_json, " +
-                    "created_at, updated_at FROM hospitals" + where.toString();
+                    "created_at, updated_at, " +
+                    "(SELECT COALESCE(SUM(units), 0) FROM hospital_inventory WHERE hospital_id = hospitals.id) AS total_stock_units, " +
+                    "(SELECT MAX(updated_at) FROM hospital_inventory WHERE hospital_id = hospitals.id) AS last_stock_update " +
+                    "FROM hospitals" + where.toString();
 
             if ("pending_review".equals(filterNorm)) {
                 baseSql += " ORDER BY created_at ASC, id ASC LIMIT ? OFFSET ?";
@@ -1020,12 +1023,49 @@ public class AdminController {
                         item.put("phone", maskPhone(rs.getString("hospital_phone")));
                         item.put("emailVerified", true);
 
+                        // Document count from documents_json
+                        String docsJson = rs.getString("documents_json");
+                        int docCount = 0;
+                        if (docsJson != null && !docsJson.isBlank()) {
+                            try {
+                                JsonNode docNode = JsonUtil.mapper().readTree(docsJson);
+                                if (docNode.isArray()) {
+                                    docCount = docNode.size();
+                                } else if (docNode.isObject()) {
+                                    docCount = docNode.size();
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                        item.put("documentsCount", docCount);
+                        item.put("docCount", docCount);
+
+                        // Blood stock units summary
+                        int totalStockUnits = 0;
+                        try {
+                            totalStockUnits = rs.getInt("total_stock_units");
+                        } catch (Exception ignored) {}
+                        item.put("totalStockUnits", totalStockUnits);
+                        item.put("stockUnits", totalStockUnits);
+                        item.put("totalUnits", totalStockUnits);
+                        item.put("stockSummary", totalStockUnits + " Units");
+
                         String updatedAt = rs.getString("updated_at");
                         String createdAt = rs.getString("created_at");
-                        item.put("updatedAt", updatedAt != null ? updatedAt : createdAt);
+                        String lastStockUpdate = null;
+                        try {
+                            lastStockUpdate = rs.getString("last_stock_update");
+                        } catch (Exception ignored) {}
+
+                        String effectiveUpdated = updatedAt != null ? updatedAt : createdAt;
+                        if (lastStockUpdate != null && !lastStockUpdate.isBlank()) {
+                            if (effectiveUpdated == null || lastStockUpdate.compareTo(effectiveUpdated) > 0) {
+                                effectiveUpdated = lastStockUpdate;
+                            }
+                        }
+                        item.put("updatedAt", effectiveUpdated);
                         item.put("createdAt", createdAt);
                         item.put("submittedTime", createdAt);
-                        item.put("lastUpdated", updatedAt != null ? updatedAt : createdAt);
+                        item.put("lastUpdated", effectiveUpdated);
 
                         hospitals.add(item);
                     }
@@ -1126,6 +1166,10 @@ public class AdminController {
                     item.put("overview", overview);
 
                     // Include basic flat fallbacks for existing code
+                    item.put("adminName", rs.getString("admin_name"));
+                    item.put("type", rs.getString("hospital_type"));
+                    item.put("emergencyContact", rs.getString("emergency_contact"));
+                    item.put("operatingHours", rs.getString("operating_hours"));
                     item.put("registrationNo", rs.getString("registration_no"));
                     item.put("hospitalType", rs.getString("hospital_type"));
                     item.put("city", city);
@@ -1195,10 +1239,18 @@ public class AdminController {
                     fac.put("services", services);
 
                     // Contact Person (Masked by default)
-                    fac.put("contactPersonName", rs.getString("admin_name") != null ? rs.getString("admin_name") : "Hospital Administrator");
-                    fac.put("contactPersonDesignation", rs.getString("admin_designation") != null ? rs.getString("admin_designation") : "Administrator");
-                    fac.put("maskedPhone", maskPhone(rs.getString("admin_phone")));
-                    fac.put("maskedEmail", maskEmail(rs.getString("admin_email")));
+                    String admName = rs.getString("admin_name") != null ? rs.getString("admin_name") : "Hospital Administrator";
+                    String admDesig = rs.getString("admin_designation") != null ? rs.getString("admin_designation") : "Administrator";
+                    String mPhone = maskPhone(rs.getString("admin_phone"));
+                    String mEmail = maskEmail(rs.getString("admin_email"));
+                    fac.put("contactPersonName", admName);
+                    fac.put("contactPersonDesignation", admDesig);
+                    fac.put("maskedPhone", mPhone);
+                    fac.put("maskedEmail", mEmail);
+                    fac.put("adminName", admName);
+                    fac.put("adminDesignation", admDesig);
+                    fac.put("phoneMasked", mPhone);
+                    fac.put("emailMasked", mEmail);
                     fac.put("emergencyContact", rs.getString("emergency_contact") != null ? rs.getString("emergency_contact") : "24/7 Hotline Unlisted");
 
                     // Location block
@@ -1392,8 +1444,11 @@ public class AdminController {
 
                     Map<String, Object> data = new LinkedHashMap<>();
                     data.put("verified", true);
+                    data.put("isVerified", true);
                     data.put("groups", stockList);
+                    data.put("inventory", inventory != null ? inventory : Collections.emptyMap());
                     data.put("totalStockUnits", totalUnits);
+                    data.put("totalUnits", totalUnits);
                     data.put("lastSynced", hospStock.get("updatedAgo"));
 
                     return ResponseEntity.ok(new ApiResponse(true, "Stock loaded", data));

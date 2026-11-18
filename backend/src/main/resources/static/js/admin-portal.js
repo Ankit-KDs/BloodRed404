@@ -1094,6 +1094,10 @@
       const meta = getStatusMeta(h.verificationStatus || h.status);
       const isVerified = (h.verificationStatus || h.status || '').toLowerCase() === 'verified';
       const safeHospName = (h.name || h.hospitalName || 'Hospital').replace(/'/g, "\\'");
+      const docCount = (h.documentsCount != null ? h.documentsCount : (h.docCount != null ? h.docCount : 0));
+      const stockUnits = (h.totalStockUnits != null ? h.totalStockUnits : (h.stockUnits != null ? h.stockUnits : (h.totalUnits != null ? h.totalUnits : 0)));
+      const stockText = h.stockSummary || (stockUnits + ' Units');
+      const effUpdated = h.updatedAt || h.lastUpdated || h.createdAt;
 
       tr.innerHTML = `
         <td data-label="Hospital">
@@ -1122,31 +1126,50 @@
         <td data-label="Documents" style="font-size: 13px; color: #cbd5e1;">
           <span style="display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
             <i class="fas fa-file-lines" style="color: #94a3b8; font-size: 11px;"></i>
-            <span>${h.documentsCount != null ? h.documentsCount : 0} docs</span>
+            <span>${docCount} docs</span>
           </span>
         </td>
         <td data-label="Stock" style="font-size: 13px; color: #f8fafc; font-family: var(--admin-font-mono);">
-          ${isVerified ? escapeHtml(h.stockSummary || '0 Units') : '<span style="color: var(--admin-text-muted);">—</span>'}
+          ${isVerified ? escapeHtml(stockText) : '<span style="color: var(--admin-text-muted);">—</span>'}
         </td>
-        <td data-label="Updated" style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(h.updatedAt || h.createdAt || ''))}">
-          ${formatRelativeTime(h.updatedAt || h.createdAt)}
+        <td data-label="Updated" style="font-size: 12px; color: #94a3b8;" title="${escapeHtml(String(effUpdated || ''))}">
+          ${formatRelativeTime(effUpdated)}
         </td>
         <td data-label="Actions">
           <div style="display: inline-flex; align-items: center; gap: 8px;">
-            <button type="button" class="admin-action-btn" onclick="window.viewHospitalDetails(${h.id})" title="Review Hospital Application & Facility Dossier">
+            <button type="button" class="admin-action-btn btn-view-hosp-details" data-id="${h.id}" title="Review Hospital Application & Facility Dossier">
               <i class="fas fa-eye"></i> Details
             </button>
-            <button type="button" class="admin-action-btn btn-danger-action" onclick="window.openDeleteHospModal(${h.id}, '${safeHospName}')" title="Delete Hospital">
+            <button type="button" class="admin-action-btn btn-danger-action btn-delete-hosp" data-id="${h.id}" data-name="${safeHospName}" title="Delete Hospital">
               <i class="fas fa-trash-can"></i>
             </button>
           </div>
         </td>
       `;
 
-      // Tap card anywhere on mobile opens the details modal
+      // Explicit click event listeners (bypassing CSP inline restrictions)
+      const btnDetails = tr.querySelector('.btn-view-hosp-details');
+      if (btnDetails) {
+        btnDetails.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          window.openHospitalDrawer(h.id);
+        });
+      }
+
+      const btnDelete = tr.querySelector('.btn-delete-hosp');
+      if (btnDelete) {
+        btnDelete.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          window.openDeleteHospModal(h.id, safeHospName);
+        });
+      }
+
+      // Tap card anywhere on row opens the details modal
       tr.addEventListener('click', (e) => {
-        if (!e.target.closest('button') && !e.target.closest('a')) {
-          window.viewHospitalDetails(h.id);
+        if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('input')) {
+          window.openHospitalDrawer(h.id);
         }
       });
       tbody.appendChild(tr);
@@ -1160,9 +1183,10 @@
   let hospRevealTimers = {};
   let hospActivityPage = 1;
 
-  window.openHospitalDrawer = async function (hospId) {
+  window.openHospitalDrawer = async function (hospId, forceRefresh = false) {
     if (!hospId) return;
-    currentProfileHospitalId = hospId;
+    const numId = parseInt(hospId, 10) || hospId;
+    currentProfileHospitalId = numId;
     lastActiveElement = document.activeElement;
 
     const overlay = document.getElementById('hospitalDrawerOverlay');
@@ -1172,22 +1196,26 @@
     switchHospitalDrawerTab('overview');
 
     // 1. Instant Shell Populate (<10ms) from table row
-    const cachedRow = allHospitals.find(h => h.id === hospId);
+    const cachedRow = allHospitals.find(h => h.id == numId);
     if (cachedRow) {
       const hName = cachedRow.name || cachedRow.hospitalName || 'Hospital';
-      const ref = cachedRow.applicationRef || ('HSP-' + hospId);
+      const ref = cachedRow.applicationRef || ('HSP-' + numId);
       const st = cachedRow.verificationStatus || cachedRow.status || 'pending_review';
       const meta = getStatusMeta(st);
 
-      document.getElementById('hospitalDrawerTitle').textContent = hName;
-      document.getElementById('hospitalDrawerRef').textContent = ref;
+      const titleEl = document.getElementById('hospitalDrawerTitle');
+      if (titleEl) titleEl.textContent = hName;
+      const refEl = document.getElementById('hospitalDrawerRef');
+      if (refEl) refEl.textContent = ref;
       const statusEl = document.getElementById('hospitalDrawerStatus');
       if (statusEl) {
         statusEl.textContent = meta.label;
         statusEl.className = `status-chip hosp-status-${meta.cls}`;
       }
-      document.getElementById('hospitalDrawerSubmitted').textContent = 'Submitted ' + (cachedRow.createdAt ? new Date(cachedRow.createdAt).toLocaleDateString() : '-');
-      document.getElementById('hospitalDrawerLastUpdatedText').textContent = 'just now';
+      const subEl = document.getElementById('hospitalDrawerSubmitted');
+      if (subEl) subEl.textContent = 'Submitted ' + (cachedRow.createdAt ? new Date(cachedRow.createdAt).toLocaleDateString() : '-');
+      const updEl = document.getElementById('hospitalDrawerLastUpdatedText');
+      if (updEl) updEl.textContent = 'just now';
 
       // Instant Overview fields from row
       const setEl = (id, val) => {
@@ -1222,18 +1250,22 @@
     const closeBtn = overlay.querySelector('.drawer-close-btn');
     if (closeBtn) closeBtn.focus();
 
+    if (forceRefresh) {
+      delete hospitalCache[numId];
+    }
+
     // 2. Fetch fresh fast summary (<500ms) with 30s cache
-    const cacheEntry = hospitalCache[hospId];
+    const cacheEntry = hospitalCache[numId];
     const now = Date.now();
     if (!cacheEntry || (now - cacheEntry.timestamp > 30000)) {
       try {
         const headers = {};
         if (cacheEntry && cacheEntry.etag) headers['If-None-Match'] = cacheEntry.etag;
-        const res = await fetch(`/api/admin/hospitals/${hospId}`, { headers });
+        const res = await fetch(`/api/admin/hospitals/${numId}`, { headers });
         if (res.status === 200) {
           const json = await res.json();
           if (json.success && json.data) {
-            hospitalCache[hospId] = {
+            hospitalCache[numId] = {
               data: json.data,
               etag: res.headers.get('ETag'),
               timestamp: now
@@ -1249,7 +1281,7 @@
     }
 
     // Fetch latest activity preview for Overview tab
-    loadHospitalLatestActivityPreview(hospId);
+    loadHospitalLatestActivityPreview(numId);
   };
 
   window.viewHospitalDetails = window.openHospitalDrawer;
@@ -1294,11 +1326,12 @@
       const el = document.getElementById(id);
       if (el) el.textContent = val || '-';
     };
-    setEl('hosp-overview-type', hosp.type || hosp.hospitalType);
-    setEl('hosp-overview-cityState', (hosp.city || hosp.location || '-') + (hosp.state ? ', ' + hosp.state : ''));
-    setEl('hosp-overview-contactPerson', hosp.adminName || 'Not recorded');
-    setEl('hosp-overview-emergency', hosp.emergencyContact || hosp.hospitalPhone || '-');
-    setEl('hosp-overview-hours', hosp.operatingHours || '24x7 Emergency Services');
+    const ov = hosp.overview || hosp;
+    setEl('hosp-overview-type', ov.categoryType || hosp.type || hosp.hospitalType);
+    setEl('hosp-overview-cityState', ov.cityState || ((hosp.city || hosp.location || '-') + (hosp.state ? ', ' + hosp.state : '')));
+    setEl('hosp-overview-contactPerson', ov.contactPersonName || hosp.adminName || 'Not recorded');
+    setEl('hosp-overview-emergency', ov.emergencyHelpline || hosp.emergencyContact || hosp.hospitalPhone || '-');
+    setEl('hosp-overview-hours', ov.operatingHours || hosp.operatingHours || '24x7 Emergency Services');
 
     const st = hosp.verificationStatus || hosp.status || 'pending_review';
     updateHospitalFooterButtons(st);
@@ -1401,10 +1434,10 @@
       }
 
       // Contact Person (Masked by default)
-      setEl('hosp-fac-adminName', fac.adminName || 'Not recorded');
-      setEl('hosp-fac-adminDesignation', fac.adminDesignation || 'Hospital Administrator');
-      setEl('hosp-fac-phone', fac.phoneMasked || '••••••••••');
-      setEl('hosp-fac-email', fac.emailMasked || '••••••••••');
+      setEl('hosp-fac-adminName', fac.contactPersonName || fac.adminName || 'Not recorded');
+      setEl('hosp-fac-adminDesignation', fac.contactPersonDesignation || fac.adminDesignation || 'Hospital Administrator');
+      setEl('hosp-fac-phone', fac.maskedPhone || fac.phoneMasked || '••••••••••');
+      setEl('hosp-fac-email', fac.maskedEmail || fac.emailMasked || '••••••••••');
 
       // Location
       setEl('hosp-fac-address', fac.address || 'Address Not Recorded');
@@ -1537,32 +1570,42 @@
       const res = await fetch(`/api/admin/hospitals/${hospId}/documents`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
-      const docs = json.data || [];
+      const raw = json.data;
+      const docs = Array.isArray(raw) ? raw : (Array.isArray(raw?.documents) ? raw.documents : []);
 
       if (docs.length === 0) {
         container.innerHTML = `<div style="color:var(--admin-text-muted); font-size:13px; padding:12px 0;">No uploaded compliance documents on file for this facility.</div>`;
         return;
       }
 
-      container.innerHTML = docs.map(d => `
+      container.innerHTML = docs.map(d => {
+        const previewUrl = d.previewUrl || d.signedUrl || d.downloadUrl || '#';
+        const downloadUrl = d.downloadUrl || d.signedUrl || d.previewUrl || '#';
+        const docLabel = d.label || 'Compliance Document';
+        const fileType = (d.fileType || 'PDF').toUpperCase();
+        const sizeText = d.size || 'Verified Scan (PDF)';
+        const safeLabel = escapeHtml(docLabel).replace(/'/g, "\\'");
+
+        return `
         <div class="admin-doc-card">
           <div class="admin-doc-info">
             <i class="fas fa-file-pdf" style="color:#ef4444; font-size:20px;"></i>
             <div>
-              <div style="font-weight:600; color:#f8fafc; font-size:13px;">${escapeHtml(d.label || 'Compliance Document')}</div>
-              <div style="font-size:11px; color:#94a3b8; font-family:var(--admin-font-mono);">${escapeHtml(d.fileType || 'PDF')} • ${escapeHtml(d.fileSize || 'Standard Verified')}</div>
+              <div style="font-weight:600; color:#f8fafc; font-size:13px;">${escapeHtml(docLabel)}</div>
+              <div style="font-size:11px; color:#94a3b8; font-family:var(--admin-font-mono);">${escapeHtml(fileType)} • ${escapeHtml(sizeText)}</div>
             </div>
           </div>
           <div style="display:flex; gap:8px;">
-            <button type="button" class="btn-doc-action" onclick="openDocPreview('${escapeHtml(d.signedUrl || '#')}', '${escapeHtml(d.label || 'Document')}')" title="Preview document in viewer">
+            <button type="button" class="btn-doc-action" onclick="openDocPreview('${escapeHtml(previewUrl)}', '${safeLabel}')" title="Preview document in viewer">
               <i class="fas fa-eye"></i> <span>Preview</span>
             </button>
-            <a href="${escapeHtml(d.signedUrl || '#')}" class="btn-doc-action" download title="Download document directly">
+            <a href="${escapeHtml(downloadUrl)}" class="btn-doc-action" download title="Download document directly">
               <i class="fas fa-download"></i> <span>Download</span>
             </a>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     } catch (err) {
       container.innerHTML = `<div style="color:#f87171; font-size:13px;">Unable to load compliance documents.</div>`;
     }
@@ -1600,7 +1643,8 @@
       const json = await res.json();
       const stockData = json.data || {};
 
-      if (!stockData.isVerified) {
+      const isVerified = (stockData.isVerified === true || stockData.verified === true);
+      if (!isVerified) {
         content.innerHTML = `
           <div style="padding:14px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.15); border-radius:8px; color:#94a3b8; font-size:13px; text-align:center;">
             <i class="fas fa-lock" style="margin-right:6px; color:#fbbf24;"></i>
@@ -1611,8 +1655,13 @@
       }
 
       const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-      const inv = stockData.inventory || {};
-      const totalUnits = Number(stockData.totalUnits || 0);
+      const inv = stockData.inventory ? Object.assign({}, stockData.inventory) : {};
+      if (Array.isArray(stockData.groups)) {
+        stockData.groups.forEach(g => {
+          if (g.bloodGroup) inv[g.bloodGroup] = g.units;
+        });
+      }
+      const totalUnits = Number(stockData.totalUnits != null ? stockData.totalUnits : (stockData.totalStockUnits != null ? stockData.totalStockUnits : 0));
 
       if (timeEl) timeEl.textContent = `Live Reserve: ${totalUnits} Units`;
 
