@@ -89,7 +89,7 @@ public class HospitalDao {
                 "OR TRIM(admin_phone) = ? " +
                 "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(hospital_phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
                 "OR (LENGTH(?) >= 10 AND RIGHT(REPLACE(REPLACE(REPLACE(admin_phone, ' ', ''), '-', ''), '+91', ''), 10) = ?) " +
-                ")";
+                ") AND deleted_at IS NULL AND (verification_status IS NULL OR verification_status <> 'Deleted')";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, cleanEmail);
@@ -121,7 +121,7 @@ public class HospitalDao {
     }
 
     public Map<String, Object> findById(int id) throws SQLException {
-        String sql = "SELECT * FROM hospitals WHERE id = ?";
+        String sql = "SELECT * FROM hospitals WHERE id = ? AND deleted_at IS NULL";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -132,7 +132,7 @@ public class HospitalDao {
     }
 
     public Map<String, Object> findByEmail(String email) throws SQLException {
-        String sql = "SELECT * FROM hospitals WHERE LOWER(hospital_email) = LOWER(?) LIMIT 1";
+        String sql = "SELECT * FROM hospitals WHERE LOWER(hospital_email) = LOWER(?) AND deleted_at IS NULL LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
@@ -143,7 +143,7 @@ public class HospitalDao {
     }
 
     public List<Map<String, Object>> listAll() throws SQLException {
-        String sql = "SELECT * FROM hospitals ORDER BY hospital_name ASC";
+        String sql = "SELECT * FROM hospitals WHERE deleted_at IS NULL AND (verification_status IS NULL OR verification_status <> 'Deleted') ORDER BY hospital_name ASC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

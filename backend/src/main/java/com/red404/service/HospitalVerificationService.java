@@ -108,11 +108,14 @@ public class HospitalVerificationService {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                // 1. Update verification_status
-                String sql = "UPDATE hospitals SET verification_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                // 1. Update verification_status & synchronize deleted_at
+                String sql = "UPDATE hospitals SET verification_status = ?, " +
+                        "deleted_at = CASE WHEN LOWER(?) = 'deleted' THEN CURRENT_TIMESTAMP ELSE NULL END, " +
+                        "updated_at = CURRENT_TIMESTAMP WHERE id = ?";
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     ps.setString(1, to);
-                    ps.setInt(2, hospitalId);
+                    ps.setString(2, to);
+                    ps.setInt(3, hospitalId);
                     ps.executeUpdate();
                 }
 

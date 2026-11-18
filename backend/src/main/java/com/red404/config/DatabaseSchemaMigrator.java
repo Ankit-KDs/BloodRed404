@@ -558,12 +558,16 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         ensureColumns(conn, "hospitals", requiredColumns);
 
         try (Statement st = conn.createStatement()) {
-            // Part 3 Migration: Existing verified hospital accounts stay verified
+            // Reconcile deleted_at and verification_status consistency:
+            // Any hospital that has deleted_at populated is marked Deleted.
+            st.executeUpdate("UPDATE hospitals SET verification_status = 'Deleted' WHERE deleted_at IS NOT NULL AND (verification_status IS NULL OR verification_status <> 'Deleted')");
+
+            // Part 3 Migration: Existing active verified hospital accounts stay verified
             st.executeUpdate("UPDATE hospitals SET verification_status = 'verified' " +
-                    "WHERE LOWER(verification_status) IN ('verified', 'approved', 'active')");
+                    "WHERE LOWER(verification_status) IN ('verified', 'approved', 'active') AND deleted_at IS NULL");
             // Blank or legacy pending values normalize to 'pending_review'
             st.executeUpdate("UPDATE hospitals SET verification_status = 'pending_review' " +
-                    "WHERE verification_status IS NULL OR TRIM(verification_status) = '' OR LOWER(verification_status) IN ('pending', 'pending_review')");
+                    "WHERE (verification_status IS NULL OR TRIM(verification_status) = '' OR LOWER(verification_status) IN ('pending', 'pending_review')) AND deleted_at IS NULL");
 
             // Ensure hospital push subscriptions table exists
             st.executeUpdate("CREATE TABLE IF NOT EXISTS hospital_push_subscriptions (" +
@@ -882,16 +886,24 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
     private void ensureBhimtalHospital(Connection conn) {
         try (Statement st = conn.createStatement()) {
-            // First synchronize district for any existing Bhimtal hospitals
+            // First synchronize district for any existing Bhimtal hospitals that are active
             try {
                 st.executeUpdate("UPDATE hospitals SET district = 'Nainital' WHERE (district IS NULL OR district = '') " +
-                        "AND (LOWER(city) LIKE '%bhimtal%' OR LOWER(hospital_name) LIKE '%bhimtal%' OR LOWER(address) LIKE '%bhimtal%')");
+                        "AND (LOWER(city) LIKE '%bhimtal%' OR LOWER(hospital_name) LIKE '%bhimtal%' OR LOWER(address) LIKE '%bhimtal%') " +
+                        "AND deleted_at IS NULL AND (verification_status IS NULL OR verification_status <> 'Deleted')");
             } catch (Exception ignored) {}
 
             int hospId = 0;
-            try (ResultSet rs = st.executeQuery("SELECT id FROM hospitals WHERE LOWER(hospital_name) LIKE '%bhimtal%' LIMIT 1")) {
+            try (ResultSet rs = st.executeQuery("SELECT id, verification_status, deleted_at FROM hospitals WHERE LOWER(hospital_name) LIKE '%bhimtal%' LIMIT 1")) {
                 if (rs.next()) {
                     hospId = rs.getInt("id");
+                    String vStat = rs.getString("verification_status");
+                    Object delAt = rs.getObject("deleted_at");
+                    // If hospital was deleted or suspended by administrator, preserve that state! NEVER resurrect!
+                    if (delAt != null || "Deleted".equalsIgnoreCase(vStat)) {
+                        log.info("Bhimtal Hospital (id: {}) is soft-deleted; skipping re-verification on startup.", hospId);
+                        return;
+                    }
                 }
             }
 
@@ -919,7 +931,6 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             } else {
                 st.executeUpdate("UPDATE hospitals SET " +
                         "hospital_name = 'Bhimtal Hospital', " +
-                        "verification_status = 'Verified', " +
                         "district = 'Nainital', " +
                         "city = 'Bhimtal', " +
                         "state = 'Uttarakhand', " +
@@ -927,8 +938,8 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                         "latitude = CASE WHEN latitude IS NULL OR latitude = 0.0 THEN 29.3500 ELSE latitude END, " +
                         "longitude = CASE WHEN longitude IS NULL OR longitude = 0.0 THEN 79.5500 ELSE longitude END, " +
                         "hospital_phone = CASE WHEN hospital_phone IS NULL OR hospital_phone = '' THEN '+91 5942 247123' ELSE hospital_phone END " +
-                        "WHERE id = " + hospId);
-                log.info("Updated Bhimtal Hospital (id: {}) as Verified in Nainital, Uttarakhand", hospId);
+                        "WHERE id = " + hospId + " AND deleted_at IS NULL AND (verification_status IS NULL OR verification_status <> 'Deleted')");
+                log.info("Updated Bhimtal Hospital (id: {}) geo metadata in Nainital, Uttarakhand", hospId);
             }
 
             if (hospId > 0) {

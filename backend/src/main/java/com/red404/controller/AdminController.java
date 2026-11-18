@@ -691,9 +691,9 @@ public class AdminController {
 
             // Union queries from audit logs and donations
             String sql = "SELECT * FROM (" +
-                    "SELECT id, action, details, admin_user as actor, CAST(created_at AS VARCHAR) as ev_time FROM donor_audit_logs WHERE donor_id = ? " +
+                    "SELECT id, action, details, admin_user as actor, CAST(created_at AS CHAR(64)) as ev_time FROM donor_audit_logs WHERE donor_id = ? " +
                     "UNION ALL " +
-                    "SELECT id, 'DONATION_RECORDED' as action, CONCAT('Completed donation at ', COALESCE(hospital_name, 'Partner Blood Bank')) as details, 'Hospital Staff' as actor, CAST(donation_date AS VARCHAR) as ev_time " +
+                    "SELECT id, 'DONATION_RECORDED' as action, CONCAT('Completed donation at ', COALESCE(hospital_name, 'Partner Blood Bank')) as details, 'Hospital Staff' as actor, CAST(donation_date AS CHAR(64)) as ev_time " +
                     " FROM donations WHERE donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)" +
                     ") AS combined_events ORDER BY ev_time DESC LIMIT ? OFFSET ?";
 
@@ -930,7 +930,7 @@ public class AdminController {
 
         try (Connection conn = DBConnection.getConnection()) {
             // 1. Tally counts across statuses
-            try (PreparedStatement cst = conn.prepareStatement("SELECT COALESCE(verification_status, 'pending_review') as vstat, COUNT(*) FROM hospitals WHERE verification_status IS NULL OR verification_status <> 'Deleted' GROUP BY verification_status");
+            try (PreparedStatement cst = conn.prepareStatement("SELECT COALESCE(verification_status, 'pending_review') as vstat, COUNT(*) FROM hospitals WHERE (verification_status IS NULL OR verification_status <> 'Deleted') AND deleted_at IS NULL GROUP BY verification_status");
                  ResultSet crs = cst.executeQuery()) {
                 int totalAll = 0;
                 while (crs.next()) {
@@ -947,7 +947,7 @@ public class AdminController {
             String filterNorm = (status != null && !status.isBlank() && !"all".equalsIgnoreCase(status.trim()))
                     ? com.red404.service.HospitalVerificationService.normalizeStatus(status) : null;
 
-            StringBuilder where = new StringBuilder(" WHERE (verification_status IS NULL OR verification_status <> 'Deleted')");
+            StringBuilder where = new StringBuilder(" WHERE (verification_status IS NULL OR verification_status <> 'Deleted') AND deleted_at IS NULL");
             List<Object> params = new ArrayList<>();
 
             if (filterNorm != null) {
@@ -1065,7 +1065,7 @@ public class AdminController {
     public ResponseEntity<ApiResponse> getHospitalDetails(@PathVariable int id, HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
-        String sql = "SELECT * FROM hospitals WHERE id = ?";
+        String sql = "SELECT * FROM hospitals WHERE id = ? AND deleted_at IS NULL";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -1157,7 +1157,7 @@ public class AdminController {
 
         String sql = "SELECT hospital_name, registration_no, blood_bank_license, eraktkosh_id, beds, website, services, " +
                 "admin_name, admin_designation, admin_phone, admin_email, emergency_contact, " +
-                "address, landmark, city, state, pincode, latitude, longitude FROM hospitals WHERE id = ?";
+                "address, landmark, city, state, pincode, latitude, longitude FROM hospitals WHERE id = ? AND deleted_at IS NULL";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -1241,7 +1241,7 @@ public class AdminController {
         }
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT hospital_name, admin_phone, hospital_phone, admin_email, hospital_email FROM hospitals WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT hospital_name, admin_phone, hospital_phone, admin_email, hospital_email FROM hospitals WHERE id = ? AND deleted_at IS NULL")) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -1290,7 +1290,7 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT documents_json, created_at FROM hospitals WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT documents_json, created_at FROM hospitals WHERE id = ? AND deleted_at IS NULL")) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -1363,7 +1363,7 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT verification_status FROM hospitals WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT verification_status FROM hospitals WHERE id = ? AND deleted_at IS NULL")) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -1443,11 +1443,11 @@ public class AdminController {
             String sql = "SELECT * FROM (" +
                     "SELECT id, 'STATUS_CHANGE' as action, " +
                     "CONCAT(COALESCE(from_status, 'pending_review'), ' \u2192 ', to_status, CASE WHEN reason IS NOT NULL AND reason <> '' THEN CONCAT(' (', reason, ')') ELSE '' END) as details, " +
-                    "admin_user as actor, CAST(created_at AS VARCHAR) as ev_time FROM hospital_audit_logs WHERE hospital_id = ? " +
+                    "admin_user as actor, CAST(created_at AS CHAR(64)) as ev_time FROM hospital_audit_logs WHERE hospital_id = ? " +
                     "UNION ALL " +
                     "SELECT id, CONCAT('DELIVERY_', UPPER(channel)) as action, " +
                     "CONCAT('[', UPPER(channel), '] ', UPPER(status), ': ', details) as details, " +
-                    "'System Dispatcher' as actor, CAST(created_at AS VARCHAR) as ev_time FROM notification_delivery_logs WHERE target_type = 'hospital' AND target_id = ?" +
+                    "'System Dispatcher' as actor, CAST(created_at AS CHAR(64)) as ev_time FROM notification_delivery_logs WHERE target_type = 'hospital' AND target_id = ?" +
                     ") AS combined_events ORDER BY ev_time DESC LIMIT ? OFFSET ?";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
