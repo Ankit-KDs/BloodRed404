@@ -1247,6 +1247,7 @@
 
     // Show drawer overlay
     overlay.style.display = 'flex';
+    requestAnimationFrame(() => overlay.classList.add('open'));
     const closeBtn = overlay.querySelector('.drawer-close-btn');
     if (closeBtn) closeBtn.focus();
 
@@ -1288,7 +1289,10 @@
 
   window.closeHospitalDrawer = function () {
     const overlay = document.getElementById('hospitalDrawerOverlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) {
+      overlay.classList.remove('open');
+      setTimeout(() => { overlay.style.display = 'none'; }, 200);
+    }
     currentProfileHospitalId = null;
     // Clear reveal timers
     Object.values(hospRevealTimers).forEach(t => clearTimeout(t));
