@@ -25,9 +25,9 @@
     .about-main-container {
       flex: 1 0 auto;
       width: 100%;
-      max-width: 720px;
+      max-width: 880px;
       margin: 0 auto;
-      padding: 3.5rem 1.25rem 4.5rem;
+      padding: clamp(48px, 6vw, 96px) clamp(16px, 3vw, 48px);
       box-sizing: border-box;
       overflow-wrap: break-word;
       word-break: normal;
@@ -214,13 +214,14 @@
     </div>
   </nav>
 
-  <!-- ========== MAIN EDITORIAL CONTENT (Single Column, Max 720px) ========== -->
+  <!-- ========== MAIN EDITORIAL CONTENT ========== -->
   <main class="about-main-container">
-    <h1 data-i18n="about.h1">Helping hospitals find blood donors nearby</h1>
-    
-    <p class="about-intro-text" data-i18n="about.intro">
-      RED404 is a voluntary community project that connects registered blood donors with verified hospitals in the same area. When a hospital needs blood for a patient, it can reach eligible donors nearby in minutes instead of calling people one by one.
-    </p>
+    <header class="section-header section-header-left">
+      <h1 class="section-title" data-i18n="about.h1">Helping hospitals find blood donors nearby</h1>
+      <p class="section-subtitle about-intro-text" data-i18n="about.intro">
+        RED404 is a voluntary community project that connects registered blood donors with verified hospitals in the same area. When a hospital needs blood for a patient, it can reach eligible donors nearby in minutes instead of calling people one by one.
+      </p>
+    </header>
 
     <section class="about-text-block">
       <h2 data-i18n="about.whyTitle">Why we built it</h2>

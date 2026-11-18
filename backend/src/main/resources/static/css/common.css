@@ -817,13 +817,36 @@ body.nav-open .navbar.scrolled,
   box-sizing: border-box;
 }
 
+/* ============================================================
+   REUSABLE SECTION HEADER PATTERN (Round 11 - Part 1)
+   ============================================================ */
 .section-header {
-  text-align: center;
-  margin-bottom: 4rem;
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-bottom: 40px !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  box-sizing: border-box;
 }
 
-.section-tag {
-  display: inline-block;
+.section-header.section-header-left {
+  text-align: left !important;
+  align-items: flex-start !important;
+}
+
+.section-tag,
+.section-header .section-tag,
+.section-header .section-eyebrow,
+.section-header .eyebrow,
+.section-header .live-pulse-badge,
+.section-header .screening-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 0.35rem 1.2rem;
   background: var(--red-glow-soft);
   border: 1px solid var(--border-red-soft);
@@ -833,23 +856,62 @@ body.nav-open .navbar.scrolled,
   color: var(--red-light);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-bottom: 1rem;
+  margin-bottom: 12px;
 }
 
-.section-title {
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
-  line-height: 1.15;
+.section-title,
+.section-header .section-title,
+.section-header h2,
+.section-header h1.section-title,
+.section-header .stock-card-title,
+.section-header .screening-title,
+.section-header .search-hero-title,
+.section-header .directory-title {
+  font-size: clamp(36px, 3.5vw, 44px) !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
-.section-desc {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  max-width: 620px;
-  margin: 0 auto;
-  line-height: 1.8;
+.section-header.section-header-left .section-title,
+.section-header.section-header-left h2,
+.section-header.section-header-left h1 {
+  text-align: left !important;
+}
+
+.section-subtitle,
+.section-desc,
+.section-header .section-subtitle,
+.section-header .section-desc,
+.section-header .stock-card-subtitle,
+.section-header .screening-subtitle,
+.section-header .search-hero-subtitle,
+.section-header .directory-subtitle,
+.section-header p.subtitle {
+  font-size: clamp(15px, 1.2vw, 17px) !important;
+  color: var(--text-secondary) !important;
+  max-width: 640px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  line-height: 1.6 !important;
+  text-align: center !important;
+  box-sizing: border-box;
+}
+
+.section-header.section-header-left .section-subtitle,
+.section-header.section-header-left .section-desc,
+.section-header.section-header-left p.subtitle {
+  text-align: left !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
 }
 
 /* ==================== CARDS ==================== */
@@ -4140,11 +4202,10 @@ html, body {
 
 /* Body copy measure limit to prevent stretched lines on wide screens */
 .hero-subtitle,
-.section-subtitle,
 .about-lead,
 .wcd-sub,
 .article-text,
-p:not(.table-text):not(.card-meta-text):not(.unconstrained-text):not(.modal-sub) {
+p:not(.table-text):not(.card-meta-text):not(.unconstrained-text):not(.modal-sub):not(.faq-answer):not(.section-subtitle):not(.pane-text):not(.hws-desc) {
   max-width: 70ch;
 }
 

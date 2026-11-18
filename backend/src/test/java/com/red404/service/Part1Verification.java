@@ -1,8 +1,8 @@
 package com.red404.service;
 
-import com.red404.config.EnvConfig;
-
 import java.util.Map;
+
+import com.red404.config.EnvConfig;
 
 public class Part1Verification {
 

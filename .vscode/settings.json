@@ -3,6 +3,7 @@
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.import.maven.enabled": true,
     "java.compile.nullAnalysis.mode": "disabled",
+    "java.jdt.ls.java.home": "C:\\Users\\ak30k\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot",
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-17",
@@ -16,7 +17,10 @@
     ],
     "maven.pomPath": "pom.xml",
     "maven.projects": [
-        "pom.xml"
+        "pom.xml",
+        "backend/pom.xml"
     ],
-    "java.autobuild.enabled": true
+    "java.autobuild.enabled": true,
+    "jdk.jdkhome": "C:\\Users\\ak30k\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot",
+    "jdk.project.jdkhome": "C:\\Users\\ak30k\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.19.10-hotspot"
 }

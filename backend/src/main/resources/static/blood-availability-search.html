@@ -52,7 +52,7 @@
     .search-page-container {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 32px clamp(16px, 3vw, 48px) 60px;
+      padding: clamp(48px, 6vw, 96px) clamp(16px, 3vw, 48px);
       width: 100%;
       box-sizing: border-box;
       flex: 1;
@@ -523,11 +523,11 @@
   <!-- ========== MAIN CONTENT ========== -->
   <main class="search-page-container">
     <!-- Hero Section -->
-    <header class="search-hero">
-      <h1 class="search-hero-title" data-i18n="search.heroTitle">
+    <header class="search-hero section-header">
+      <h1 class="search-hero-title section-title" data-i18n="search.heroTitle">
         Find Voluntary Donors
       </h1>
-      <p class="search-hero-subtitle">
+      <p class="search-hero-subtitle section-subtitle">
         <span data-i18n="search.lookingForStock">Looking for hospital stock? See the</span>
         <a href="blood-banks.html" class="stock-dir-link" data-i18n="search.bloodBankDir">blood bank directory</a>.
       </p>

@@ -991,6 +991,19 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                     ")");
         } catch (Exception ignored) {}
         ensureIndex(conn, "hospital_audit_logs", "idx_hosp_audit_hosp_created", "hospital_id, created_at");
+
+        // 6. Donor Audit Logs table and index (Round 11)
+        try (Statement st = conn.createStatement()) {
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS donor_audit_logs (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "donor_id INT NOT NULL, " +
+                    "admin_user VARCHAR(150) NULL, " +
+                    "action VARCHAR(50) NOT NULL, " +
+                    "details TEXT NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")");
+        } catch (Exception ignored) {}
+        ensureIndex(conn, "donor_audit_logs", "idx_donor_audit_donor_created", "donor_id, created_at");
     }
 
     private void ensureIndex(Connection conn, String tableName, String indexName, String columns) {

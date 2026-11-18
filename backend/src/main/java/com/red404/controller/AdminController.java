@@ -52,6 +52,80 @@ public class AdminController {
         }
     }
 
+    public static String getAdminIdentifier(HttpServletRequest request) {
+        if (request == null) return "Admin";
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            Object email = session.getAttribute("adminEmail");
+            if (email != null && !email.toString().isBlank()) return email.toString();
+            Object user = session.getAttribute("adminUser");
+            if (user != null && !user.toString().isBlank()) return user.toString();
+        }
+        return "Admin";
+    }
+
+    public static String maskEmail(String email) {
+        if (email == null || email.isBlank()) return "Not provided";
+        String trimmed = email.trim();
+        int atIdx = trimmed.indexOf('@');
+        if (atIdx <= 1) return (trimmed.isEmpty() ? "*" : trimmed.charAt(0)) + "***@" + (atIdx != -1 ? trimmed.substring(atIdx + 1) : "mail.com");
+        return trimmed.substring(0, 1) + "***" + trimmed.substring(atIdx);
+    }
+
+    public static String getGenericDocLabel(String docType) {
+        if (docType == null) return "Institutional Compliance Document";
+        return switch (docType) {
+            case "registrationCertificate" -> "Hospital Registration Certificate";
+            case "bloodBankLicense" -> "Blood Bank Licence";
+            case "authorisationLetter" -> "Medical Director Authorisation Letter";
+            case "idProof" -> "Government ID of Authorised Signatory";
+            default -> "Institutional Compliance Document";
+        };
+    }
+
+    public static String maskPhone(String phone) {
+        if (phone == null || phone.isBlank()) return "Not provided";
+        String clean = phone.replaceAll("[^0-9]", "");
+        if (clean.length() <= 4) return "******";
+        if (clean.length() == 12 && clean.startsWith("91")) {
+            return "+91 " + clean.substring(2, 4) + "******" + clean.substring(clean.length() - 2);
+        }
+        if (clean.length() == 11 && clean.startsWith("0")) {
+            return "0" + clean.substring(1, 3) + "******" + clean.substring(clean.length() - 2);
+        }
+        if (clean.length() >= 10) {
+            return clean.substring(0, 2) + "******" + clean.substring(clean.length() - 2);
+        }
+        return clean.substring(0, 1) + "****" + clean.substring(clean.length() - 1);
+    }
+
+    public static Integer computeAge(String dobStr) {
+        if (dobStr == null || dobStr.isBlank()) return null;
+        try {
+            java.time.LocalDate birth = java.time.LocalDate.parse(dobStr.trim());
+            return java.time.Period.between(birth, java.time.LocalDate.now()).getYears();
+        } catch (Exception e) {
+            try {
+                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                java.time.LocalDate birth = java.time.LocalDate.parse(dobStr.trim(), fmt);
+                return java.time.Period.between(birth, java.time.LocalDate.now()).getYears();
+            } catch (Exception ignored) {}
+            return null;
+        }
+    }
+
+    public static void recordDonorAudit(int donorId, String adminUser, String action, String details) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "INSERT INTO donor_audit_logs (donor_id, admin_user, action, details) VALUES (?, ?, ?, ?)")) {
+            ps.setInt(1, donorId);
+            ps.setString(2, adminUser);
+            ps.setString(3, action);
+            ps.setString(4, details);
+            ps.executeUpdate();
+        } catch (Exception ignored) {}
+    }
+
     // ==========================================
     // REALTIME ADMIN SSE & SIGNED DOCUMENTS
     // ==========================================
@@ -252,142 +326,128 @@ public class AdminController {
     }
 
     // ==========================================
-    // 3. DONORS DIRECTORY
+    // 3. DONORS DIRECTORY (Part 2 & Part 4)
     // ==========================================
     @GetMapping("/donors")
     public ResponseEntity<ApiResponse> getDonors(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String bloodType,
+            @RequestParam(required = false) String status,
             HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
         int effectivePage = (page != null && page > 0) ? page : 1;
-        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 500) : 200;
+        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 100) : 25;
         int offset = (effectivePage - 1) * effectiveLimit;
 
         List<Map<String, Object>> donors = new ArrayList<>();
         int totalDonors = 0;
 
-        String countSql = "SELECT COUNT(*) FROM donors";
-        String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
-                "d.weight, d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
-                "d.latitude, d.longitude, d.location_updated_at, d.allergies, d.conditions, d.medications, d.surgeries, " +
-                "d.last_donation, d.created_at, " +
+        StringBuilder whereClause = new StringBuilder(" WHERE (d.availability IS NULL OR LOWER(d.availability) <> 'deleted')");
+        List<Object> params = new ArrayList<>();
+
+        if (search != null && !search.isBlank()) {
+            String s = "%" + search.trim().toLowerCase() + "%";
+            whereClause.append(" AND (LOWER(d.name) LIKE ? OR LOWER(d.donor_id) LIKE ? OR LOWER(d.city) LIKE ? OR LOWER(d.phone) LIKE ? OR LOWER(d.email) LIKE ?)");
+            params.add(s); params.add(s); params.add(s); params.add(s); params.add(s);
+        }
+        if (bloodType != null && !bloodType.isBlank() && !"all".equalsIgnoreCase(bloodType.trim())) {
+            whereClause.append(" AND UPPER(d.blood_type) = ?");
+            params.add(bloodType.trim().toUpperCase());
+        }
+        if (status != null && !status.isBlank() && !"all".equalsIgnoreCase(status.trim())) {
+            whereClause.append(" AND LOWER(d.availability) = ?");
+            params.add(status.trim().toLowerCase());
+        }
+
+        String countSql = "SELECT COUNT(*) FROM donors d" + whereClause.toString();
+        String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
+                "d.donor_type, d.availability, d.city, d.state, d.pincode, d.zone, " +
+                "d.location_updated_at, d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED')) AS total_donations " +
-                "FROM donors d ORDER BY d.id DESC LIMIT ? OFFSET ?";
+                "FROM donors d" + whereClause.toString() + " ORDER BY d.id DESC LIMIT ? OFFSET ?";
 
         try (Connection conn = DBConnection.getConnection()) {
-            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM donors");
-                 ResultSet crs = cps.executeQuery()) {
-                if (crs.next()) totalDonors = crs.getInt(1);
-            } catch (Exception ignored) {}
-
-            Double refHospLat = null;
-            Double refHospLng = null;
-            try (PreparedStatement hps = conn.prepareStatement(
-                    "SELECT latitude, longitude FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified' AND latitude IS NOT NULL LIMIT 1");
-                 ResultSet hrs = hps.executeQuery()) {
-                if (hrs.next()) {
-                    refHospLat = hrs.getDouble("latitude");
-                    refHospLng = hrs.getDouble("longitude");
+            try (PreparedStatement cps = conn.prepareStatement(countSql)) {
+                for (int i = 0; i < params.size(); i++) {
+                    cps.setObject(i + 1, params.get(i));
                 }
-            } catch (Exception ignored) {}
-
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, effectiveLimit);
-                ps.setInt(2, offset);
-                try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, Object> item = new LinkedHashMap<>();
-                    item.put("id", rs.getInt("id"));
-                    item.put("smartId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("id"));
-                    item.put("name", rs.getString("name"));
-                    item.put("fatherName", rs.getString("father_name"));
-                    item.put("email", rs.getString("email"));
-                    item.put("phone", rs.getString("phone"));
-                    item.put("dob", rs.getString("dob"));
-                    item.put("gender", rs.getString("gender"));
-                    String bType = rs.getString("blood_type");
-                    item.put("bloodGroup", bType);
-                    item.put("bloodType", bType);
-                    item.put("blood_type", bType);
-                    item.put("weight", rs.getObject("weight"));
-                    item.put("donorType", rs.getString("donor_type"));
-                    item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
-                    item.put("address", rs.getString("address"));
-                    String rawCity = rs.getString("city");
-                    String rawState = rs.getString("state");
-                    item.put("city", rawCity);
-                    item.put("state", rawState);
-                    item.put("pincode", rs.getString("pincode"));
-
-                    // Compute dynamic Zone & Freshness (24 hours)
-                    Object latObj = rs.getObject("latitude");
-                    Object lngObj = rs.getObject("longitude");
-                    java.sql.Timestamp locUpdated = null;
-                    try { locUpdated = rs.getTimestamp("location_updated_at"); } catch (Exception ignored) {}
-                    if (locUpdated == null) {
-                        try { locUpdated = rs.getTimestamp("created_at"); } catch (Exception ignored) {}
-                    }
-
-                    long FRESHNESS_MS = 24L * 60 * 60 * 1000L;
-                    boolean isFresh = locUpdated != null && (System.currentTimeMillis() - locUpdated.getTime()) <= FRESHNESS_MS;
-                    String computedZone = "Location not shared";
-                    String lastSeenLocationTime = "Location not shared";
-
-                    if (latObj != null && lngObj != null && isFresh) {
-                        double dLat = ((Number) latObj).doubleValue();
-                        double dLng = ((Number) lngObj).doubleValue();
-                        long minutesAgo = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
-                        String timeStr = minutesAgo < 60 ? (minutesAgo + " mins ago") : ((minutesAgo / 60) + " hrs ago");
-                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (%s)", dLat, dLng, timeStr);
-
-                        if (refHospLat != null && refHospLng != null && refHospLat != 0.0) {
-                            double distKm = com.red404.util.DistanceCalculator.calculateDistance(refHospLat, refHospLng, dLat, dLng);
-                            if (distKm <= 5.0) computedZone = "Zone 1 (0–5 km)";
-                            else if (distKm <= 10.0) computedZone = "Zone 2 (5–10 km)";
-                            else if (distKm <= 20.0) computedZone = "Zone 3 (10–20 km)";
-                            else computedZone = "Zone 4 (20+ km)";
-                        } else {
-                            computedZone = "Zone 1 (0–5 km)";
-                        }
-                    } else if (latObj != null && lngObj != null) {
-                        double dLat = ((Number) latObj).doubleValue();
-                        double dLng = ((Number) lngObj).doubleValue();
-                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (Stale)", dLat, dLng);
-                    }
-
-                    item.put("zone", computedZone);
-                    item.put("lastSeenLocationTime", lastSeenLocationTime);
-
-                    String registeredCity = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Not provided";
-                    if (rawState != null && !rawState.isBlank() && !registeredCity.equalsIgnoreCase("Not provided")) {
-                        registeredCity += ", " + rawState;
-                    }
-                    item.put("registeredCity", registeredCity);
-
-                    item.put("latitude", latObj);
-                    item.put("longitude", lngObj);
-                    // Part 7.5: Donor health questionnaire answers are confidential and restricted strictly to hospital check-in; never on admin list views
-                    item.put("lastDonation", rs.getString("last_donation"));
-                    item.put("totalDonations", rs.getInt("total_donations"));
-
-                    String locationStr = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Local Zone";
-                    if (rawState != null && !rawState.isBlank()) {
-                        locationStr += ", " + rawState;
-                    }
-                    item.put("location", locationStr);
-                    item.put("createdAt", rs.getString("created_at"));
-                    donors.add(item);
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalDonors = crs.getInt(1);
                 }
             }
-        }
-        HttpHeaders headers = new HttpHeaders();
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                int paramIdx = 1;
+                for (Object p : params) {
+                    ps.setObject(paramIdx++, p);
+                }
+                ps.setInt(paramIdx++, effectiveLimit);
+                ps.setInt(paramIdx++, offset);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        int dId = rs.getInt("id");
+                        String smartId = rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + dId;
+                        item.put("id", dId);
+                        item.put("smartId", smartId);
+                        item.put("name", rs.getString("name"));
+                        item.put("gender", rs.getString("gender"));
+                        item.put("age", computeAge(rs.getString("dob")));
+                        String bType = rs.getString("blood_type");
+                        item.put("bloodGroup", bType);
+                        item.put("bloodType", bType);
+                        item.put("blood_type", bType);
+                        item.put("donorType", rs.getString("donor_type"));
+                        String rawStatus = rs.getString("availability") != null ? rs.getString("availability") : "Active";
+                        item.put("status", rawStatus);
+                        item.put("availability", rawStatus);
+
+                        String rawCity = rs.getString("city");
+                        String rawState = rs.getString("state");
+                        item.put("city", rawCity);
+                        item.put("state", rawState);
+                        String regCity = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Not provided";
+                        if (rawState != null && !rawState.isBlank() && !regCity.equalsIgnoreCase("Not provided")) {
+                            regCity += ", " + rawState;
+                        }
+                        item.put("registeredCity", regCity);
+                        item.put("location", regCity);
+
+                        // Masked contact for list views
+                        item.put("email", maskEmail(rs.getString("email")));
+                        item.put("phone", maskPhone(rs.getString("phone")));
+                        item.put("maskedEmail", maskEmail(rs.getString("email")));
+                        item.put("maskedPhone", maskPhone(rs.getString("phone")));
+
+                        item.put("zone", rs.getString("zone") != null ? rs.getString("zone") : "Location not shared");
+                        item.put("lastDonation", rs.getString("last_donation"));
+                        item.put("totalDonations", rs.getInt("total_donations"));
+                        item.put("createdAt", rs.getString("created_at"));
+                        donors.add(item);
+                    }
+                }
+            }
+
+            int totalPages = Math.max(1, (int) Math.ceil((double) totalDonors / effectiveLimit));
+            HttpHeaders headers = new HttpHeaders();
             headers.set("X-Total-Count", String.valueOf(totalDonors));
             headers.set("X-Page", String.valueOf(effectivePage));
             headers.set("X-Limit", String.valueOf(effectiveLimit));
-            headers.set("X-Total-Pages", String.valueOf(Math.max(1, (int) Math.ceil((double) totalDonors / effectiveLimit))));
-            return ResponseEntity.ok().headers(headers).body(new ApiResponse(true, "Donors loaded", donors));
+            headers.set("X-Total-Pages", String.valueOf(totalPages));
+            headers.set("Cache-Control", "private, no-cache");
+
+            Map<String, Object> respData = new LinkedHashMap<>();
+            respData.put("donors", donors);
+            respData.put("total", totalDonors);
+            respData.put("page", effectivePage);
+            respData.put("limit", effectiveLimit);
+            respData.put("totalPages", totalPages);
+
+            return ResponseEntity.ok().headers(headers).body(new ApiResponse(true, "Donors loaded", respData));
         } catch (Exception e) {
             log.error("Error loading donors for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -395,122 +455,288 @@ public class AdminController {
         }
     }
 
+    // ==========================================
+    // 3a. DONOR DETAILS (Part 2: 4 Groups, Age Only, Masked, No Coords, ETag)
+    // ==========================================
     @GetMapping("/donors/{id}")
     public ResponseEntity<ApiResponse> getDonorDetails(@PathVariable int id, HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
-        String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
-                "d.weight, d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
-                "d.latitude, d.longitude, d.location_updated_at, d.allergies, d.conditions, d.medications, d.surgeries, " +
-                "d.last_donation, d.created_at, " +
+        String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
+                "d.donor_type, d.availability, d.city, d.state, d.pincode, d.zone, " +
+                "d.location_updated_at, d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED')) AS total_donations " +
                 "FROM donors d WHERE d.id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            Double refHospLat = null;
-            Double refHospLng = null;
-            try (PreparedStatement hps = conn.prepareStatement(
-                    "SELECT latitude, longitude FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified' AND latitude IS NOT NULL LIMIT 1");
-                 ResultSet hrs = hps.executeQuery()) {
-                if (hrs.next()) {
-                    refHospLat = hrs.getDouble("latitude");
-                    refHospLng = hrs.getDouble("longitude");
-                }
-            } catch (Exception ignored) {}
-
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Map<String, Object> item = new LinkedHashMap<>();
-                    item.put("id", rs.getInt("id"));
-                    item.put("smartId", rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + rs.getInt("id"));
-                    item.put("name", rs.getString("name"));
-                    item.put("fatherName", rs.getString("father_name"));
-                    item.put("email", rs.getString("email"));
-                    item.put("phone", rs.getString("phone"));
-                    item.put("dob", rs.getString("dob"));
-                    item.put("gender", rs.getString("gender"));
-                    String bType = rs.getString("blood_type");
-                    item.put("bloodGroup", bType);
-                    item.put("bloodType", bType);
-                    item.put("blood_type", bType);
-                    item.put("weight", rs.getObject("weight"));
-                    item.put("donorType", rs.getString("donor_type"));
-                    item.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
-                    item.put("address", rs.getString("address"));
-                    String rawCity = rs.getString("city");
-                    String rawState = rs.getString("state");
-                    item.put("city", rawCity);
-                    item.put("state", rawState);
-                    item.put("pincode", rs.getString("pincode"));
+                    String smartId = rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + id;
+                    String updatedAt = rs.getString("created_at");
 
-                    // Compute dynamic Zone & Freshness (24 hours)
-                    Object latObj = rs.getObject("latitude");
-                    Object lngObj = rs.getObject("longitude");
+                    // Check ETag
+                    String eTag = "W/\"donor-" + id + "-" + (updatedAt != null ? updatedAt.hashCode() : 0) + "\"";
+                    String ifNoneMatch = request.getHeader("If-None-Match");
+                    if (ifNoneMatch != null && ifNoneMatch.equals(eTag)) {
+                        return ResponseEntity.status(HttpStatus.NOT_MODIFIED).header("ETag", eTag).build();
+                    }
+
+                    Map<String, Object> data = new LinkedHashMap<>();
+
+                    // Group 1: Account
+                    Map<String, Object> account = new LinkedHashMap<>();
+                    account.put("id", id);
+                    account.put("smartId", smartId);
+                    account.put("name", rs.getString("name"));
+                    account.put("age", computeAge(rs.getString("dob")));
+                    account.put("gender", rs.getString("gender") != null ? rs.getString("gender") : "Not specified");
+                    String city = rs.getString("city");
+                    String state = rs.getString("state");
+                    account.put("city", (city != null && !city.isBlank()) ? city : "Not provided");
+                    account.put("state", (state != null && !state.isBlank()) ? state : "Not provided");
+                    account.put("registeredOn", rs.getString("created_at"));
+                    account.put("availability", rs.getString("availability") != null ? rs.getString("availability") : "Active");
+
+                    // Last login lookup
+                    String lastLogin = "Never";
+                    try (PreparedStatement sessPs = conn.prepareStatement(
+                            "SELECT last_access FROM user_sessions WHERE (user_id = ? OR user_id = ?) AND user_type = 'DONOR' ORDER BY last_access DESC LIMIT 1")) {
+                        sessPs.setString(1, String.valueOf(id));
+                        sessPs.setString(2, smartId);
+                        try (ResultSet sessRs = sessPs.executeQuery()) {
+                            if (sessRs.next() && sessRs.getString(1) != null) {
+                                lastLogin = sessRs.getString(1);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    account.put("lastLogin", lastLogin);
+                    data.put("account", account);
+
+                    // Group 2: Blood and health summary
+                    Map<String, Object> bloodHealth = new LinkedHashMap<>();
+                    String bloodGroup = rs.getString("blood_type") != null ? rs.getString("blood_type") : "Unknown";
+                    bloodHealth.put("bloodGroup", bloodGroup);
+
+                    // Blood group verification status
+                    String bloodGroupStatus = "Self-declared";
+                    try (PreparedStatement bgPs = conn.prepareStatement(
+                            "SELECT verified_by_hospital, verified_at FROM donor_blood_group_audits WHERE donor_id = ? ORDER BY id DESC LIMIT 1")) {
+                        bgPs.setInt(1, id);
+                        try (ResultSet bgRs = bgPs.executeQuery()) {
+                            if (bgRs.next()) {
+                                String hosp = bgRs.getString("verified_by_hospital");
+                                String vDate = bgRs.getString("verified_at");
+                                bloodGroupStatus = "Verified by " + (hosp != null ? hosp : "Hospital") + " on " + (vDate != null ? vDate : "record");
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    bloodHealth.put("bloodGroupStatus", bloodGroupStatus);
+                    int totalDonations = rs.getInt("total_donations");
+                    bloodHealth.put("totalVerifiedDonations", totalDonations);
+                    String lastDonation = rs.getString("last_donation");
+                    bloodHealth.put("lastDonationDate", lastDonation != null ? lastDonation : "Never");
+
+                    // Next eligible date
+                    Map<String, Object> tempMap = new HashMap<>();
+                    tempMap.put("lastDonation", lastDonation);
+                    DonorEligibilityService.attachEligibility(tempMap);
+                    bloodHealth.put("nextEligibleDate", tempMap.getOrDefault("nextEligibleDate", "Eligible now"));
+                    bloodHealth.put("eligibilityStatus", tempMap.getOrDefault("eligibilityStatus", "Eligible"));
+
+                    // Last health check date & outcome ONLY (NO vitals, NO questionnaire answers!)
+                    String healthDate = "No health checks recorded";
+                    String healthOutcome = "None";
+                    try (PreparedStatement hcPs = conn.prepareStatement(
+                            "SELECT check_date, outcome FROM health_checks WHERE donor_id = ? ORDER BY id DESC LIMIT 1")) {
+                        hcPs.setInt(1, id);
+                        try (ResultSet hcRs = hcPs.executeQuery()) {
+                            if (hcRs.next()) {
+                                healthDate = hcRs.getString("check_date") != null ? hcRs.getString("check_date") : "Recorded";
+                                healthOutcome = hcRs.getString("outcome") != null ? hcRs.getString("outcome") : "Fit";
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    bloodHealth.put("lastHealthCheckDate", healthDate);
+                    bloodHealth.put("lastHealthCheckOutcome", healthOutcome);
+                    data.put("bloodHealth", bloodHealth);
+
+                    // Group 3: Contact (Masked by default)
+                    Map<String, Object> contact = new LinkedHashMap<>();
+                    contact.put("maskedEmail", maskEmail(rs.getString("email")));
+                    contact.put("maskedPhone", maskPhone(rs.getString("phone")));
+                    data.put("contact", contact);
+
+                    // Group 4: Consents (No coordinates)
+                    Map<String, Object> consents = new LinkedHashMap<>();
+                    consents.put("publicSearch", "Enabled");
+                    consents.put("termsAccepted", "v1.0 (Accepted on " + (rs.getString("created_at") != null ? rs.getString("created_at") : "Registration") + ")");
                     java.sql.Timestamp locUpdated = null;
                     try { locUpdated = rs.getTimestamp("location_updated_at"); } catch (Exception ignored) {}
-                    if (locUpdated == null) {
-                        try { locUpdated = rs.getTimestamp("created_at"); } catch (Exception ignored) {}
+                    boolean hasLocation = locUpdated != null;
+                    if (hasLocation) {
+                        long diffMins = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
+                        String timeAgo = diffMins < 60 ? (diffMins + " mins ago") : ((diffMins / 60) + " hrs ago");
+                        consents.put("locationShared", "Yes (Last updated " + timeAgo + ")");
+                    } else {
+                        consents.put("locationShared", "No");
                     }
+                    data.put("consents", consents);
 
-                    long FRESHNESS_MS = 24L * 60 * 60 * 1000L;
-                    boolean isFresh = locUpdated != null && (System.currentTimeMillis() - locUpdated.getTime()) <= FRESHNESS_MS;
-                    String computedZone = "Location not shared";
-                    String lastSeenLocationTime = "Location not shared";
+                    // Legacy flat fields for backward compatibility with existing views
+                    data.put("id", id);
+                    data.put("smartId", smartId);
+                    data.put("name", rs.getString("name"));
+                    data.put("age", computeAge(rs.getString("dob")));
+                    data.put("gender", rs.getString("gender"));
+                    data.put("bloodGroup", bloodGroup);
+                    data.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
+                    data.put("totalDonations", totalDonations);
+                    data.put("lastDonation", lastDonation);
+                    data.put("createdAt", rs.getString("created_at"));
 
-                    if (latObj != null && lngObj != null && isFresh) {
-                        double dLat = ((Number) latObj).doubleValue();
-                        double dLng = ((Number) lngObj).doubleValue();
-                        long minutesAgo = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
-                        String timeStr = minutesAgo < 60 ? (minutesAgo + " mins ago") : ((minutesAgo / 60) + " hrs ago");
-                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (%s)", dLat, dLng, timeStr);
-
-                        if (refHospLat != null && refHospLng != null && refHospLat != 0.0) {
-                            double distKm = com.red404.util.DistanceCalculator.calculateDistance(refHospLat, refHospLng, dLat, dLng);
-                            if (distKm <= 5.0) computedZone = "Zone 1 (0–5 km)";
-                            else if (distKm <= 10.0) computedZone = "Zone 2 (5–10 km)";
-                            else if (distKm <= 20.0) computedZone = "Zone 3 (10–20 km)";
-                            else computedZone = "Zone 4 (20+ km)";
-                        } else {
-                            computedZone = "Zone 1 (0–5 km)";
-                        }
-                    } else if (latObj != null && lngObj != null) {
-                        double dLat = ((Number) latObj).doubleValue();
-                        double dLng = ((Number) lngObj).doubleValue();
-                        lastSeenLocationTime = String.format("%.2f°N, %.2f°E (Stale)", dLat, dLng);
-                    }
-
-                    item.put("zone", computedZone);
-                    item.put("lastSeenLocationTime", lastSeenLocationTime);
-
-                    String registeredCity = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Not provided";
-                    if (rawState != null && !rawState.isBlank() && !registeredCity.equalsIgnoreCase("Not provided")) {
-                        registeredCity += ", " + rawState;
-                    }
-                    item.put("registeredCity", registeredCity);
-
-                    item.put("latitude", latObj);
-                    item.put("longitude", lngObj);
-                    // Part 7.5: Donor health questionnaire answers are confidential and restricted strictly to hospital check-in; never on admin list views
-                    item.put("lastDonation", rs.getString("last_donation"));
-                    item.put("totalDonations", rs.getInt("total_donations"));
-                    item.put("createdAt", rs.getString("created_at"));
-                    DonorEligibilityService.attachEligibility(item);
-                    return ResponseEntity.ok(new ApiResponse(true, "Fresh donor details loaded", item));
+                    return ResponseEntity.ok()
+                            .header("ETag", eTag)
+                            .header("Cache-Control", "private, no-cache")
+                            .body(new ApiResponse(true, "Donor details loaded", data));
                 } else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body(new ApiResponse(false, "Donor not found"));
                 }
             }
         } catch (Exception e) {
-            log.error("Error loading fresh donor profile for admin: {}", e.getMessage());
+            log.error("Error loading donor profile for admin: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Failed to load donor details: " + e.getMessage()));
         }
     }
 
+    // ==========================================
+    // 3b. REVEAL DONOR CONTACT FIELD (Audit-logged, 30s auto-hide)
+    // ==========================================
+    @PostMapping("/donors/{id}/reveal")
+    public ResponseEntity<ApiResponse> revealDonorField(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        String field = body != null && body.has("field") ? body.get("field").asText().trim().toLowerCase() : "";
+        if (!"email".equals(field) && !"phone".equals(field)) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid field to reveal. Supported: email, phone"));
+        }
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name, email, phone FROM donors WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String smartId = rs.getString("donor_id");
+                    String rawValue = "email".equals(field) ? rs.getString("email") : rs.getString("phone");
+                    String adminUser = getAdminIdentifier(request);
+
+                    // Record in audit log
+                    recordDonorAudit(id, adminUser, "FIELD_REVEAL", "Admin revealed " + field + " for donor " + (smartId != null ? smartId : id));
+                    addLog("ADMIN_REVEAL", "Admin " + adminUser + " revealed " + field + " for donor " + (smartId != null ? smartId : id));
+
+                    Map<String, Object> resp = new LinkedHashMap<>();
+                    resp.put("field", field);
+                    resp.put("value", (rawValue != null && !rawValue.isBlank()) ? rawValue : "Not provided");
+                    resp.put("expiresInSeconds", 30);
+                    return ResponseEntity.ok(new ApiResponse(true, "Field revealed", resp));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Donor not found"));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 3c. DONOR ACTIVITY TAB (Paginated, 20 per page)
+    // ==========================================
+    @GetMapping("/donors/{id}/activity")
+    public ResponseEntity<ApiResponse> getDonorActivity(
+            @PathVariable int id,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int limit,
+            HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        int effectivePage = Math.max(1, page);
+        int effectiveLimit = Math.max(1, Math.min(limit, 50));
+        int offset = (effectivePage - 1) * effectiveLimit;
+
+        List<Map<String, Object>> events = new ArrayList<>();
+        int totalEvents = 0;
+
+        try (Connection conn = DBConnection.getConnection()) {
+            // Count from donor_audit_logs
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM donor_audit_logs WHERE donor_id = ?")) {
+                cps.setInt(1, id);
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalEvents += crs.getInt(1);
+                }
+            } catch (Exception ignored) {}
+
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM donations WHERE donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)")) {
+                cps.setInt(1, id); cps.setInt(2, id);
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalEvents += crs.getInt(1);
+                }
+            } catch (Exception ignored) {}
+
+            // Union queries from audit logs and donations
+            String sql = "SELECT * FROM (" +
+                    "SELECT id, action, details, admin_user as actor, CAST(created_at AS VARCHAR) as ev_time FROM donor_audit_logs WHERE donor_id = ? " +
+                    "UNION ALL " +
+                    "SELECT id, 'DONATION_RECORDED' as action, CONCAT('Completed donation at ', COALESCE(hospital_name, 'Partner Blood Bank')) as details, 'Hospital Staff' as actor, CAST(donation_date AS VARCHAR) as ev_time " +
+                    " FROM donations WHERE donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)" +
+                    ") AS combined_events ORDER BY ev_time DESC LIMIT ? OFFSET ?";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, id);
+                ps.setInt(2, id);
+                ps.setInt(3, id);
+                ps.setInt(4, effectiveLimit);
+                ps.setInt(5, offset);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> ev = new LinkedHashMap<>();
+                        ev.put("id", rs.getInt("id"));
+                        ev.put("action", rs.getString("action"));
+                        ev.put("details", rs.getString("details"));
+                        ev.put("actor", rs.getString("actor") != null ? rs.getString("actor") : "System");
+                        ev.put("timestamp", rs.getString("ev_time"));
+                        events.add(ev);
+                    }
+                }
+            } catch (Exception queryEx) {
+                log.warn("Notice querying combined donor events: {}", queryEx.getMessage());
+            }
+
+            boolean hasMore = (offset + events.size()) < totalEvents;
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("events", events);
+            data.put("total", totalEvents);
+            data.put("page", effectivePage);
+            data.put("limit", effectiveLimit);
+            data.put("hasMore", hasMore);
+
+            return ResponseEntity.ok(new ApiResponse(true, "Donor activity loaded", data));
+        } catch (Exception e) {
+            log.error("Error loading donor activity: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 3d. RESET PASSWORD LINK
+    // ==========================================
     @PostMapping("/donors/{id}/reset-password-link")
     public ResponseEntity<ApiResponse> sendPasswordResetLink(@PathVariable int id, HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
@@ -521,19 +747,18 @@ public class AdminController {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     String smartId = rs.getString("donor_id");
-                    String name = rs.getString("name");
                     String email = rs.getString("email");
+                    String adminUser = getAdminIdentifier(request);
 
-                    String resetToken = UUID.randomUUID().toString();
-                    addLog("PASSWORD_RESET_DISPATCHED", "Password reset link issued for Donor " + smartId + " (" + email + ")");
+                    recordDonorAudit(id, adminUser, "PASSWORD_RESET_DISPATCHED", "Password reset link issued by " + adminUser);
+                    addLog("PASSWORD_RESET_DISPATCHED", "Password reset link issued for Donor " + smartId + " (" + email + ") by " + adminUser);
 
                     Map<String, Object> data = new LinkedHashMap<>();
-                    data.put("email", email);
+                    data.put("email", maskEmail(email));
                     data.put("smartId", smartId);
-                    data.put("resetToken", resetToken);
                     data.put("resetDispatched", true);
 
-                    return ResponseEntity.ok(new ApiResponse(true, "Password reset link dispatched to " + email, data));
+                    return ResponseEntity.ok(new ApiResponse(true, "Password reset link dispatched successfully", data));
                 } else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body(new ApiResponse(false, "Donor record not found"));
@@ -546,9 +771,20 @@ public class AdminController {
         }
     }
 
+    // ==========================================
+    // 3e. SUSPEND / REACTIVATE DONOR (Reason Required, Audit Logged)
+    // ==========================================
     @PostMapping("/donors/{id}/toggle-status")
-    public ResponseEntity<ApiResponse> toggleDonorStatus(@PathVariable int id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> toggleDonorStatus(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
+
+        String reason = body != null && body.has("reason") ? body.get("reason").asText().trim() : "";
+        if (reason.isBlank()) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "A reason is required to change donor account status."));
+        }
 
         try (Connection conn = DBConnection.getConnection()) {
             String currentStatus = "Active";
@@ -573,7 +809,10 @@ public class AdminController {
                 ps.executeUpdate();
             }
 
-            addLog("DONOR_STATUS_TOGGLE", "Donor " + smartId + " status updated to " + nextStatus);
+            String adminUser = getAdminIdentifier(request);
+            recordDonorAudit(id, adminUser, "STATUS_CHANGE", "Status changed from " + currentStatus + " to " + nextStatus + ". Reason: " + reason);
+            addLog("DONOR_STATUS_TOGGLE", "Donor " + smartId + " status updated to " + nextStatus + " by " + adminUser);
+
             return ResponseEntity.ok(new ApiResponse(true, "Donor status changed to " + nextStatus, Map.of("newStatus", nextStatus, "donorId", id)));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -582,21 +821,33 @@ public class AdminController {
     }
 
     // ==========================================
-    // 3b. PERMANENTLY DELETE DONOR ACCOUNT
+    // 3f. SOFT DELETE DONOR ACCOUNT (Typed Confirmation, Check Active Requests)
     // ==========================================
-    @DeleteMapping("/donors/{id}/delete")
-    public ResponseEntity<ApiResponse> deleteDonor(@PathVariable int id, HttpServletRequest request) {
+    @DeleteMapping({"/donors/{id}/delete", "/donors/{id}"})
+    public ResponseEntity<ApiResponse> deleteDonor(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
+        String typedSmartId = JsonUtil.textOrNull(body, "typedSmartId");
+        if (typedSmartId == null) typedSmartId = JsonUtil.textOrNull(body, "smartId");
+        if (typedSmartId == null) typedSmartId = request.getParameter("typedSmartId");
+
+        String reason = JsonUtil.textOrNull(body, "reason");
+        if (reason == null) reason = request.getParameter("reason");
+        if (reason == null || reason.isBlank()) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Deletion reason is required."));
+        }
+
         try (Connection conn = DBConnection.getConnection()) {
-            // Fetch donor info for the log before deletion
-            String smartId = "";
+            String actualSmartId = "";
             String donorName = "";
             try (PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name FROM donors WHERE id = ?")) {
                 ps.setInt(1, id);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        smartId = rs.getString("donor_id");
+                        actualSmartId = rs.getString("donor_id");
                         donorName = rs.getString("name");
                     } else {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -605,29 +856,44 @@ public class AdminController {
                 }
             }
 
-            // Delete related records first (cascade-safe)
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM intake_snapshots WHERE donor_id = ? OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)")) {
-                ps.setInt(1, id); ps.setInt(2, id); ps.executeUpdate();
-            } catch (Exception ignored) {}
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donations WHERE donor_id = ? OR donor_id = ?")) {
-                ps.setString(1, smartId); ps.setString(2, String.valueOf(id)); ps.executeUpdate();
-            } catch (Exception ignored) {}
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM user_sessions WHERE user_id = ? OR user_id = ?")) {
-                ps.setString(1, smartId); ps.setString(2, String.valueOf(id)); ps.executeUpdate();
-            } catch (Exception ignored) {}
-
-            // Delete the donor record
-            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM donors WHERE id = ?")) {
-                ps.setInt(1, id);
-                int rows = ps.executeUpdate();
-                if (rows == 0) {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body(new ApiResponse(false, "Donor not found or already deleted"));
-                }
+            if (typedSmartId == null || !typedSmartId.trim().equalsIgnoreCase(actualSmartId.trim())) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false,
+                        "Confirmation failed: Typed ID \"" + (typedSmartId == null ? "" : typedSmartId.trim()) +
+                                "\" does not match Smart ID \"" + actualSmartId + "\"."));
             }
 
-            addLog("DONOR_DELETED", "Donor account permanently deleted: " + donorName + " (" + smartId + ")");
-            return ResponseEntity.ok(new ApiResponse(true, "Donor account for " + donorName + " permanently deleted."));
+            // Check if donor has accepted active request
+            int activeRequests = 0;
+            try (PreparedStatement reqPs = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM blood_requests WHERE (donor_id = ? OR donor_id = CAST(? AS CHAR)) AND UPPER(status) IN ('ACCEPTED', 'IN_PROGRESS', 'DISPATCHED')")) {
+                reqPs.setString(1, actualSmartId);
+                reqPs.setInt(2, id);
+                try (ResultSet rrs = reqPs.executeQuery()) {
+                    if (rrs.next()) activeRequests = rrs.getInt(1);
+                }
+            } catch (Exception ignored) {}
+
+            if (activeRequests > 0) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false,
+                        "Cannot delete account while " + activeRequests + " active blood rescue request is in progress."));
+            }
+
+            // Invalidate user sessions
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM user_sessions WHERE user_id = ? OR user_id = ?")) {
+                ps.setString(1, actualSmartId); ps.setString(2, String.valueOf(id)); ps.executeUpdate();
+            } catch (Exception ignored) {}
+
+            // Soft delete
+            try (PreparedStatement ps = conn.prepareStatement("UPDATE donors SET availability = 'Deleted' WHERE id = ?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+
+            String adminUser = getAdminIdentifier(request);
+            recordDonorAudit(id, adminUser, "ACCOUNT_DELETED", "Account soft-deleted. Reason: " + reason);
+            addLog("DONOR_DELETED", "Donor account soft-deleted: " + donorName + " (" + actualSmartId + ") by " + adminUser);
+
+            return ResponseEntity.ok(new ApiResponse(true, "Donor account for " + donorName + " (" + actualSmartId + ") successfully deleted."));
         } catch (Exception e) {
             log.error("Error deleting donor {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -636,18 +902,19 @@ public class AdminController {
     }
 
     // ==========================================
-    // 4. HOSPITALS DIRECTORY
+    // 4. HOSPITALS DIRECTORY (Part 3 & Part 4)
     // ==========================================
     @GetMapping("/hospitals")
     public ResponseEntity<ApiResponse> getHospitals(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer limit,
             HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
         int effectivePage = (page != null && page > 0) ? page : 1;
-        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 500) : 200;
+        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 100) : 25;
         int offset = (effectivePage - 1) * effectiveLimit;
 
         List<Map<String, Object>> hospitals = new ArrayList<>();
@@ -674,22 +941,39 @@ public class AdminController {
                     totalAll += cnt;
                 }
                 counts.put("all", totalAll);
-                totalHospitals = totalAll;
             } catch (Exception ignored) {}
 
             // 2. Query hospitals filtered or all
             String filterNorm = (status != null && !status.isBlank() && !"all".equalsIgnoreCase(status.trim()))
                     ? com.red404.service.HospitalVerificationService.normalizeStatus(status) : null;
 
-            String baseSql = "SELECT id, hospital_name, registration_no, city, state, address, hospital_type, blood_bank_license, " +
-                    "hospital_email, hospital_phone, latitude, longitude, verification_status, application_ref, documents_json, " +
-                    "created_at, updated_at FROM hospitals WHERE (verification_status IS NULL OR verification_status <> 'Deleted')";
+            StringBuilder where = new StringBuilder(" WHERE (verification_status IS NULL OR verification_status <> 'Deleted')");
+            List<Object> params = new ArrayList<>();
 
             if (filterNorm != null) {
-                baseSql += " AND LOWER(COALESCE(verification_status, 'pending_review')) = ?";
+                where.append(" AND LOWER(COALESCE(verification_status, 'pending_review')) = ?");
+                params.add(filterNorm);
+            }
+            if (search != null && !search.isBlank()) {
+                String s = "%" + search.trim().toLowerCase() + "%";
+                where.append(" AND (LOWER(hospital_name) LIKE ? OR LOWER(registration_no) LIKE ? OR LOWER(city) LIKE ? OR LOWER(hospital_email) LIKE ? OR LOWER(hospital_phone) LIKE ?)");
+                params.add(s); params.add(s); params.add(s); params.add(s); params.add(s);
             }
 
-            // Pending sorted oldest first as per Part 5 rule 1!
+            // Count filtered
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM hospitals" + where.toString())) {
+                for (int i = 0; i < params.size(); i++) {
+                    cps.setObject(i + 1, params.get(i));
+                }
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalHospitals = crs.getInt(1);
+                }
+            }
+
+            String baseSql = "SELECT id, hospital_name, registration_no, city, state, address, hospital_type, blood_bank_license, " +
+                    "hospital_email, hospital_phone, latitude, longitude, verification_status, application_ref, documents_json, " +
+                    "created_at, updated_at FROM hospitals" + where.toString();
+
             if ("pending_review".equals(filterNorm)) {
                 baseSql += " ORDER BY created_at ASC, id ASC LIMIT ? OFFSET ?";
             } else {
@@ -698,8 +982,8 @@ public class AdminController {
 
             try (PreparedStatement ps = conn.prepareStatement(baseSql)) {
                 int pIdx = 1;
-                if (filterNorm != null) {
-                    ps.setString(pIdx++, filterNorm);
+                for (Object p : params) {
+                    ps.setObject(pIdx++, p);
                 }
                 ps.setInt(pIdx++, effectiveLimit);
                 ps.setInt(pIdx++, offset);
@@ -721,9 +1005,6 @@ public class AdminController {
                         item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
                         item.put("city", city);
                         item.put("state", state);
-                        item.put("address", rs.getString("address"));
-                        item.put("latitude", rs.getObject("latitude"));
-                        item.put("longitude", rs.getObject("longitude"));
 
                         String vStatus = com.red404.service.HospitalVerificationService.normalizeStatus(rs.getString("verification_status"));
                         item.put("verificationStatus", vStatus);
@@ -731,14 +1012,13 @@ public class AdminController {
 
                         String lic = rs.getString("blood_bank_license");
                         item.put("bloodBankLicense", (lic != null && !lic.isBlank()) ? lic : "N/A");
-                        item.put("license", (lic != null && !lic.isBlank()) ? lic : "N/A");
                         item.put("type", rs.getString("hospital_type"));
                         item.put("hospitalType", rs.getString("hospital_type"));
-                        item.put("email", rs.getString("hospital_email"));
-                        item.put("hospitalEmail", rs.getString("hospital_email"));
+
+                        // Masked for list
+                        item.put("email", maskEmail(rs.getString("hospital_email")));
+                        item.put("phone", maskPhone(rs.getString("hospital_phone")));
                         item.put("emailVerified", true);
-                        item.put("phone", rs.getString("hospital_phone"));
-                        item.put("hospitalPhone", rs.getString("hospital_phone"));
 
                         String updatedAt = rs.getString("updated_at");
                         String createdAt = rs.getString("created_at");
@@ -747,51 +1027,26 @@ public class AdminController {
                         item.put("submittedTime", createdAt);
                         item.put("lastUpdated", updatedAt != null ? updatedAt : createdAt);
 
-                        // Documents count from documents_json
-                        String docsJson = rs.getString("documents_json");
-                        int docCount = 0;
-                        if (docsJson != null && !docsJson.isBlank()) {
-                            try {
-                                JsonNode dn = JsonUtil.mapper().readTree(docsJson);
-                                if (dn.isObject() || dn.isArray()) docCount = dn.size();
-                            } catch (Exception ignored) {}
-                        }
-                        item.put("documentsCount", docCount > 0 ? docCount : 1);
-
-                        // Stock summary for verified hospitals only
-                        if ("verified".equals(vStatus)) {
-                            Map<String, Object> hospStock = StockService.getHospitalStock(hospId);
-                            @SuppressWarnings("unchecked")
-                            Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
-                            int totalUnits = 0;
-                            if (inventory != null) {
-                                for (int u : inventory.values()) totalUnits += u;
-                            }
-                            item.put("totalStockUnits", totalUnits);
-                            item.put("stockSummary", totalUnits + " units");
-                            item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
-                            item.put("lastSynced", hospStock.get("updatedAgo"));
-                        } else {
-                            item.put("totalStockUnits", 0);
-                            item.put("stockSummary", "—");
-                            item.put("inventory", Collections.emptyMap());
-                            item.put("lastSynced", "—");
-                        }
-
                         hospitals.add(item);
                     }
                 }
             }
 
+            int totalPages = Math.max(1, (int) Math.ceil((double) totalHospitals / effectiveLimit));
             Map<String, Object> respData = new LinkedHashMap<>();
             respData.put("hospitals", hospitals);
             respData.put("counts", counts);
+            respData.put("total", totalHospitals);
+            respData.put("page", effectivePage);
+            respData.put("limit", effectiveLimit);
+            respData.put("totalPages", totalPages);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate");
+            headers.set("Cache-Control", "private, no-cache");
             headers.set("X-Total-Count", String.valueOf(totalHospitals));
             headers.set("X-Page", String.valueOf(effectivePage));
             headers.set("X-Limit", String.valueOf(effectiveLimit));
+            headers.set("X-Total-Pages", String.valueOf(totalPages));
 
             return ResponseEntity.ok()
                     .headers(headers)
@@ -803,6 +1058,9 @@ public class AdminController {
         }
     }
 
+    // ==========================================
+    // 4a. HOSPITAL SUMMARY FOR DRAWER (Overview Tab + Header, ETag)
+    // ==========================================
     @GetMapping("/hospitals/{id}")
     public ResponseEntity<ApiResponse> getHospitalDetails(@PathVariable int id, HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
@@ -813,207 +1071,419 @@ public class AdminController {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    String updatedAt = rs.getString("updated_at");
+                    String eTag = "W/\"hosp-" + id + "-" + (updatedAt != null ? updatedAt.hashCode() : 0) + "\"";
+                    String ifNoneMatch = request.getHeader("If-None-Match");
+                    if (ifNoneMatch != null && ifNoneMatch.equals(eTag)) {
+                        return ResponseEntity.status(HttpStatus.NOT_MODIFIED).header("ETag", eTag).build();
+                    }
+
                     Map<String, Object> item = new LinkedHashMap<>();
-                    item.put("id", rs.getInt("id"));
-                    item.put("hospitalName", rs.getString("hospital_name"));
-                    item.put("name", rs.getString("hospital_name"));
-                    item.put("registrationNo", rs.getString("registration_no"));
-                    item.put("hospitalType", rs.getString("hospital_type"));
-                    item.put("type", rs.getString("hospital_type"));
-                    item.put("beds", rs.getInt("beds"));
-                    String lic = rs.getString("blood_bank_license");
-                    item.put("bloodBankLicense", (lic != null && !lic.isBlank()) ? lic : "N/A");
+                    item.put("id", id);
+                    String hName = rs.getString("hospital_name");
+                    item.put("name", hName != null ? hName : "Hospital #" + id);
+                    item.put("hospitalName", item.get("name"));
                     String vStatus = com.red404.service.HospitalVerificationService.normalizeStatus(rs.getString("verification_status"));
                     item.put("verificationStatus", vStatus);
                     item.put("status", vStatus);
-                    item.put("hospitalEmail", rs.getString("hospital_email"));
-                    item.put("email", rs.getString("hospital_email"));
-                    item.put("emailVerified", true);
-                    item.put("hospitalPhone", rs.getString("hospital_phone"));
-                    item.put("phone", rs.getString("hospital_phone"));
-                    item.put("website", rs.getString("website"));
-                    item.put("services", rs.getString("services"));
-                    item.put("adminName", rs.getString("admin_name"));
-                    item.put("adminDesignation", rs.getString("admin_designation"));
-                    item.put("adminPhone", rs.getString("admin_phone"));
-                    item.put("adminEmail", rs.getString("admin_email"));
-                    item.put("emergencyContact", rs.getString("emergency_contact"));
-                    item.put("emergencyPublic", rs.getBoolean("emergency_public"));
-                    item.put("address", rs.getString("address"));
-                    item.put("landmark", rs.getString("landmark"));
-                    item.put("city", rs.getString("city"));
-                    item.put("state", rs.getString("state"));
-                    item.put("pincode", rs.getString("pincode"));
-                    item.put("latitude", rs.getObject("latitude"));
-                    item.put("longitude", rs.getObject("longitude"));
-                    item.put("zone", rs.getString("zone"));
-                    item.put("operatingHours", rs.getString("operating_hours"));
-                    item.put("zoneRadius", rs.getInt("zone_radius"));
-                    item.put("smsNotif", rs.getBoolean("sms_notif"));
-                    item.put("pushNotif", rs.getBoolean("push_notif"));
-                    item.put("emailNotif", rs.getBoolean("email_notif"));
-                    item.put("createdAt", rs.getString("created_at"));
-                    item.put("submittedTime", rs.getString("created_at"));
-                    item.put("updatedAt", rs.getString("updated_at"));
                     item.put("applicationRef", rs.getString("application_ref"));
-                    item.put("eraktkoshId", rs.getString("eraktkosh_id"));
-
-                    // Documents list with signed URLs
-                    List<Map<String, Object>> docsList = new ArrayList<>();
-                    String docsJson = rs.getString("documents_json");
-                    if (docsJson != null && !docsJson.isBlank()) {
-                        try {
-                            JsonNode docNode = JsonUtil.mapper().readTree(docsJson);
-                            if (docNode.isArray()) {
-                                for (JsonNode itemNode : docNode) {
-                                    Map<String, Object> docMap = new LinkedHashMap<>();
-                                    String docType = itemNode.has("docType") ? itemNode.get("docType").asText() : "Document";
-                                    String docId = itemNode.has("docId") ? itemNode.get("docId").asText() : "";
-                                    String origName = itemNode.has("originalName") ? itemNode.get("originalName").asText() : docType;
-                                    docMap.put("docType", docType);
-                                    docMap.put("docId", docId);
-                                    docMap.put("originalName", origName);
-                                    if (!docId.isEmpty()) {
-                                        String signedToken = generateDocumentSignedToken(docId);
-                                        docMap.put("previewUrl", "/api/admin/documents/" + docId + "?token=" + signedToken);
-                                        docMap.put("downloadUrl", "/api/admin/documents/" + docId + "?token=" + signedToken + "&download=1");
-                                    }
-                                    docsList.add(docMap);
-                                }
-                            } else if (docNode.isObject()) {
-                                docNode.fieldNames().forEachRemaining(key -> {
-                                    JsonNode itemNode = docNode.get(key);
-                                    Map<String, Object> docMap = new LinkedHashMap<>();
-                                    String docType = key;
-                                    String docId = itemNode.has("docId") ? itemNode.get("docId").asText() : "";
-                                    String origName = itemNode.has("originalName") ? itemNode.get("originalName").asText() : key;
-                                    docMap.put("docType", docType);
-                                    docMap.put("docId", docId);
-                                    docMap.put("originalName", origName);
-                                    if (!docId.isEmpty()) {
-                                        String signedToken = generateDocumentSignedToken(docId);
-                                        docMap.put("previewUrl", "/api/admin/documents/" + docId + "?token=" + signedToken);
-                                        docMap.put("downloadUrl", "/api/admin/documents/" + docId + "?token=" + signedToken + "&download=1");
-                                    } else if (itemNode.isTextual()) {
-                                        docMap.put("previewUrl", itemNode.asText());
-                                        docMap.put("downloadUrl", itemNode.asText());
-                                    }
-                                    docsList.add(docMap);
-                                });
-                            }
-                        } catch (Exception ignored) {}
+                    item.put("submittedDate", rs.getString("created_at"));
+                    String vDate = null;
+                    try { vDate = rs.getString("verified_at"); } catch (Exception ignored) {}
+                    if (vDate == null) {
+                        try { vDate = rs.getString("updated_at"); } catch (Exception ignored) {}
                     }
-                    item.put("documents", docsList);
+                    item.put("verifiedDate", vDate);
+                    item.put("lastUpdated", updatedAt != null ? updatedAt : rs.getString("created_at"));
 
-                    // Location summary string
+                    // Overview Tab Details
+                    Map<String, Object> overview = new LinkedHashMap<>();
+                    overview.put("categoryType", rs.getString("hospital_type") != null ? rs.getString("hospital_type") : "General Healthcare Facility");
                     String city = rs.getString("city");
                     String state = rs.getString("state");
-                    String loc = (city != null ? city : "") + (state != null ? (city != null ? ", " : "") + state : "");
-                    item.put("location", !loc.isBlank() ? loc : "Location Not Specified");
+                    overview.put("cityState", (city != null ? city : "") + (state != null ? (city != null ? ", " : "") + state : ""));
+                    overview.put("contactPersonName", rs.getString("admin_name") != null ? rs.getString("admin_name") : "Hospital Administrator");
+                    overview.put("contactPersonDesignation", rs.getString("admin_designation") != null ? rs.getString("admin_designation") : "Administrator");
+                    overview.put("emergencyHelpline", rs.getString("emergency_contact") != null ? rs.getString("emergency_contact") : "24/7 Helpline Not Set");
+                    overview.put("operatingHours", rs.getString("operating_hours") != null ? rs.getString("operating_hours") : "24x7 Emergency Services");
+                    overview.put("emailVerified", true);
+                    overview.put("maskedPhone", maskPhone(rs.getString("hospital_phone")));
+                    overview.put("maskedEmail", maskEmail(rs.getString("hospital_email")));
 
-                    // Authoritative blood inventory breakdown across all 8 groups via StockService
-                    if ("verified".equals(vStatus)) {
-                        Map<String, Object> hospStock = StockService.getHospitalStock(id);
-                        @SuppressWarnings("unchecked")
-                        Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
-                        int totalUnits = 0;
-                        StringBuilder stockOverview = new StringBuilder();
-                        for (String bt : StockService.ALL_BLOOD_GROUPS) {
-                            int u = inventory != null ? inventory.getOrDefault(bt, 0) : 0;
-                            totalUnits += u;
-                            if (u > 0) {
-                                if (stockOverview.length() > 0) stockOverview.append(", ");
-                                stockOverview.append(bt).append(": ").append(u);
-                            }
-                        }
-                        item.put("inventory", inventory != null ? inventory : Collections.emptyMap());
-                        item.put("totalStockUnits", totalUnits);
-                        item.put("stockOverview", stockOverview.length() > 0 ? stockOverview.toString() : "0 Units");
-                        item.put("lastSynced", hospStock.get("updatedAgo"));
-                        item.put("lastSyncedTimestamp", hospStock.get("updatedAt"));
-                        item.put("stockAvailable", true);
-                    } else {
-                        item.put("inventory", Collections.emptyMap());
-                        item.put("totalStockUnits", 0);
-                        item.put("stockOverview", "Stock tracking enabled after verification");
-                        item.put("lastSynced", "—");
-                        item.put("stockAvailable", false);
-                    }
-
-                    // Total SOS / Blood Requests handled
-                    int totalRequests = 0;
-                    try (PreparedStatement reqPs = conn.prepareStatement(
-                            "SELECT COUNT(*) FROM blood_requests WHERE hospital_id = ?")) {
-                        reqPs.setInt(1, id);
-                        try (ResultSet rRs = reqPs.executeQuery()) {
-                            if (rRs.next()) totalRequests = rRs.getInt(1);
-                        }
-                    } catch (Exception ignored) {}
-                    item.put("totalRequests", totalRequests);
-
-                    // Audit / Change History
-                    List<Map<String, Object>> changeHistory = new ArrayList<>();
-                    List<Map<String, Object>> auditLogs = hospitalVerificationService.getAuditLogs(id);
-                    item.put("auditLogs", auditLogs);
-                    for (Map<String, Object> logRow : auditLogs) {
-                        Map<String, Object> entry = new LinkedHashMap<>();
-                        entry.put("id", logRow.get("id"));
-                        entry.put("action", "STATUS_CHANGE");
-                        entry.put("details", logRow.get("fromStatus") + " -> " + logRow.get("toStatus") +
-                                " (Reason: " + logRow.get("reason") + ") by " + logRow.get("adminUser"));
-                        entry.put("timestamp", logRow.get("createdAt"));
-                        changeHistory.add(entry);
-                    }
-                    try (PreparedStatement logPs = conn.prepareStatement(
-                            "SELECT id, action, details, timestamp FROM system_logs " +
-                            "WHERE (details LIKE ? OR details LIKE ?) ORDER BY id DESC LIMIT 20")) {
-                        logPs.setString(1, "%hospital ID " + id + "%");
-                        String hName = rs.getString("hospital_name");
-                        logPs.setString(2, "%" + (hName != null ? hName : "HOSP_" + id) + "%");
-                        try (ResultSet lRs = logPs.executeQuery()) {
-                            while (lRs.next()) {
-                                Map<String, Object> logEntry = new LinkedHashMap<>();
-                                logEntry.put("id", lRs.getInt("id"));
-                                logEntry.put("action", lRs.getString("action"));
-                                logEntry.put("details", lRs.getString("details"));
-                                logEntry.put("timestamp", lRs.getString("timestamp"));
-                                changeHistory.add(logEntry);
+                    // Latest activity snippet for Overview tab
+                    String latestAct = "Facility application registered in network.";
+                    try (PreparedStatement actPs = conn.prepareStatement(
+                            "SELECT reason, to_status, created_at FROM hospital_audit_logs WHERE hospital_id = ? ORDER BY id DESC LIMIT 1")) {
+                        actPs.setInt(1, id);
+                        try (ResultSet actRs = actPs.executeQuery()) {
+                            if (actRs.next()) {
+                                latestAct = "Status updated to " + actRs.getString("to_status") +
+                                        (actRs.getString("reason") != null ? " (" + actRs.getString("reason") + ")" : "");
                             }
                         }
                     } catch (Exception ignored) {}
-                    // Query notification delivery logs (Part 6: in-app, email, push: sent / failed / delayed)
-                    try (PreparedStatement delPs = conn.prepareStatement(
-                            "SELECT id, channel, event_type, status, details, created_at FROM notification_delivery_logs " +
-                            "WHERE target_type = 'hospital' AND target_id = ? ORDER BY id DESC LIMIT 20")) {
-                        delPs.setInt(1, id);
-                        try (ResultSet dRs = delPs.executeQuery()) {
-                            while (dRs.next()) {
-                                Map<String, Object> dEntry = new LinkedHashMap<>();
-                                dEntry.put("id", dRs.getInt("id"));
-                                String channel = dRs.getString("channel");
-                                String statusStr = dRs.getString("status");
-                                dEntry.put("action", "DELIVERY_" + (channel != null ? channel.toUpperCase() : "NOTIF"));
-                                dEntry.put("details", "[" + (channel != null ? channel.toUpperCase() : "NOTIF") + "] " +
-                                        (statusStr != null ? statusStr.toUpperCase() : "STATUS") + ": " + dRs.getString("details"));
-                                java.sql.Timestamp dTs = dRs.getTimestamp("created_at");
-                                dEntry.put("timestamp", dTs != null ? dTs.toString() : null);
-                                dEntry.put("adminEmail", "System Dispatcher");
-                                changeHistory.add(dEntry);
-                            }
-                        }
-                    } catch (Exception ignored) {}
-                    item.put("changeHistory", changeHistory);
+                    overview.put("latestActivity", latestAct);
+                    item.put("overview", overview);
 
-                    return ResponseEntity.ok(new ApiResponse(true, "Fresh hospital details loaded", item));
+                    // Include basic flat fallbacks for existing code
+                    item.put("registrationNo", rs.getString("registration_no"));
+                    item.put("hospitalType", rs.getString("hospital_type"));
+                    item.put("city", city);
+                    item.put("state", state);
+                    item.put("createdAt", rs.getString("created_at"));
+
+                    return ResponseEntity.ok()
+                            .header("ETag", eTag)
+                            .header("Cache-Control", "private, no-cache")
+                            .body(new ApiResponse(true, "Hospital details loaded", item));
                 } else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body(new ApiResponse(false, "Hospital not found"));
                 }
             }
         } catch (Exception e) {
-            log.error("Error loading fresh hospital profile for admin: {}", e.getMessage());
+            log.error("Error loading hospital details: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Failed to load hospital details: " + e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 4b. FACILITY TAB (Registration, Licence Separate, Location, Masked Contact)
+    // ==========================================
+    @GetMapping("/hospitals/{id}/facility")
+    public ResponseEntity<ApiResponse> getHospitalFacility(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        String sql = "SELECT hospital_name, registration_no, blood_bank_license, eraktkosh_id, beds, website, services, " +
+                "admin_name, admin_designation, admin_phone, admin_email, emergency_contact, " +
+                "address, landmark, city, state, pincode, latitude, longitude FROM hospitals WHERE id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> fac = new LinkedHashMap<>();
+                    fac.put("hospitalName", rs.getString("hospital_name"));
+                    fac.put("registrationNo", rs.getString("registration_no") != null ? rs.getString("registration_no") : "Not provided");
+
+                    // Licence as SEPARATE field
+                    String lic = rs.getString("blood_bank_license");
+                    fac.put("bloodBankLicense", (lic != null && !lic.isBlank() && !"N/A".equalsIgnoreCase(lic)) ? lic : "Not applicable");
+
+                    fac.put("eraktkoshId", rs.getString("eraktkosh_id") != null ? rs.getString("eraktkosh_id") : "Not registered");
+                    int beds = rs.getInt("beds");
+                    fac.put("beds", beds > 0 ? (beds + " Beds") : "Not specified");
+                    fac.put("website", rs.getString("website"));
+
+                    // Services list
+                    List<String> services = new ArrayList<>();
+                    String rawServ = rs.getString("services");
+                    if (rawServ != null && !rawServ.isBlank()) {
+                        try {
+                            JsonNode sn = JsonUtil.mapper().readTree(rawServ);
+                            if (sn.isArray()) {
+                                sn.forEach(node -> services.add(node.asText()));
+                            } else {
+                                services.addAll(Arrays.asList(rawServ.split(",")));
+                            }
+                        } catch (Exception e) {
+                            services.addAll(Arrays.asList(rawServ.split(",")));
+                        }
+                    }
+                    fac.put("services", services);
+
+                    // Contact Person (Masked by default)
+                    fac.put("contactPersonName", rs.getString("admin_name") != null ? rs.getString("admin_name") : "Hospital Administrator");
+                    fac.put("contactPersonDesignation", rs.getString("admin_designation") != null ? rs.getString("admin_designation") : "Administrator");
+                    fac.put("maskedPhone", maskPhone(rs.getString("admin_phone")));
+                    fac.put("maskedEmail", maskEmail(rs.getString("admin_email")));
+                    fac.put("emergencyContact", rs.getString("emergency_contact") != null ? rs.getString("emergency_contact") : "24/7 Hotline Unlisted");
+
+                    // Location block
+                    fac.put("address", rs.getString("address") != null ? rs.getString("address") : "Address Not Recorded");
+                    fac.put("landmark", rs.getString("landmark") != null ? rs.getString("landmark") : "None specified");
+                    String city = rs.getString("city");
+                    String state = rs.getString("state");
+                    String pin = rs.getString("pincode");
+                    fac.put("cityStatePin", (city != null ? city : "") + (state != null ? ", " + state : "") + (pin != null ? " - " + pin : ""));
+
+                    // Coordinates for map initialization
+                    Object lat = rs.getObject("latitude");
+                    Object lng = rs.getObject("longitude");
+                    fac.put("latitude", lat);
+                    fac.put("longitude", lng);
+
+                    return ResponseEntity.ok(new ApiResponse(true, "Facility details loaded", fac));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Hospital not found"));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 4c. REVEAL HOSPITAL CONTACT (Audit Logged)
+    // ==========================================
+    @PostMapping("/hospitals/{id}/reveal")
+    public ResponseEntity<ApiResponse> revealHospitalContact(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        String field = body != null && body.has("field") ? body.get("field").asText().trim().toLowerCase() : "";
+        if (!"phone".equals(field) && !"email".equals(field)) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid field to reveal. Supported: phone, email"));
+        }
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT hospital_name, admin_phone, hospital_phone, admin_email, hospital_email FROM hospitals WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String hName = rs.getString("hospital_name");
+                    String val = null;
+                    if ("phone".equals(field)) {
+                        val = rs.getString("admin_phone");
+                        if (val == null || val.isBlank()) val = rs.getString("hospital_phone");
+                    } else {
+                        val = rs.getString("admin_email");
+                        if (val == null || val.isBlank()) val = rs.getString("hospital_email");
+                    }
+                    String adminUser = getAdminIdentifier(request);
+
+                    // Record reveal in hospital_audit_logs
+                    try (PreparedStatement logPs = conn.prepareStatement(
+                            "INSERT INTO hospital_audit_logs (hospital_id, admin_user, from_status, to_status, reason) VALUES (?, ?, ?, ?, ?)")) {
+                        logPs.setInt(1, id);
+                        logPs.setString(2, adminUser);
+                        logPs.setString(3, "REVEAL");
+                        logPs.setString(4, "FIELD_REVEAL");
+                        logPs.setString(5, "Admin revealed " + field + " for facility " + (hName != null ? hName : id));
+                        logPs.executeUpdate();
+                    } catch (Exception ignored) {}
+                    addLog("ADMIN_REVEAL", "Admin " + adminUser + " revealed " + field + " for facility " + (hName != null ? hName : id));
+
+                    Map<String, Object> resp = new LinkedHashMap<>();
+                    resp.put("field", field);
+                    resp.put("value", (val != null && !val.isBlank()) ? val : "Not provided");
+                    resp.put("expiresInSeconds", 30);
+                    return ResponseEntity.ok(new ApiResponse(true, "Field revealed", resp));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Hospital not found"));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 4d. DOCUMENTS TAB (Generic Labels Only, NO Original Filenames, Signed URLs)
+    // ==========================================
+    @GetMapping("/hospitals/{id}/documents")
+    public ResponseEntity<ApiResponse> getHospitalDocuments(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT documents_json, created_at FROM hospitals WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String docsJson = rs.getString("documents_json");
+                    String uploadDate = rs.getString("created_at");
+                    List<Map<String, Object>> docsList = new ArrayList<>();
+
+                    if (docsJson != null && !docsJson.isBlank()) {
+                        try {
+                            JsonNode docNode = JsonUtil.mapper().readTree(docsJson);
+                            if (docNode.isArray()) {
+                                for (JsonNode itemNode : docNode) {
+                                    String docType = itemNode.has("docType") ? itemNode.get("docType").asText() : "compliance";
+                                    String docId = itemNode.has("docId") ? itemNode.get("docId").asText() : "";
+                                    String label = getGenericDocLabel(docType);
+
+                                    Map<String, Object> d = new LinkedHashMap<>();
+                                    d.put("docType", docType);
+                                    d.put("label", label);
+                                    d.put("fileType", "pdf");
+                                    d.put("size", "Verified Scan (PDF)");
+                                    d.put("uploadDate", uploadDate != null ? uploadDate : "Registration");
+
+                                    if (!docId.isEmpty()) {
+                                        String token = generateDocumentSignedToken(docId);
+                                        d.put("previewUrl", "/api/admin/documents/" + docId + "?token=" + token);
+                                        d.put("downloadUrl", "/api/admin/documents/" + docId + "?token=" + token + "&download=1");
+                                    }
+                                    docsList.add(d);
+                                }
+                            } else if (docNode.isObject()) {
+                                docNode.fieldNames().forEachRemaining(key -> {
+                                    JsonNode itemNode = docNode.get(key);
+                                    String docId = itemNode.has("docId") ? itemNode.get("docId").asText() : "";
+                                    String label = getGenericDocLabel(key);
+
+                                    Map<String, Object> d = new LinkedHashMap<>();
+                                    d.put("docType", key);
+                                    d.put("label", label);
+                                    d.put("fileType", "pdf");
+                                    d.put("size", "Verified Scan (PDF)");
+                                    d.put("uploadDate", uploadDate != null ? uploadDate : "Registration");
+
+                                    if (!docId.isEmpty()) {
+                                        String token = generateDocumentSignedToken(docId);
+                                        d.put("previewUrl", "/api/admin/documents/" + docId + "?token=" + token);
+                                        d.put("downloadUrl", "/api/admin/documents/" + docId + "?token=" + token + "&download=1");
+                                    }
+                                    docsList.add(d);
+                                });
+                            }
+                        } catch (Exception ignored) {}
+                    }
+
+                    return ResponseEntity.ok(new ApiResponse(true, "Documents loaded", Map.of("documents", docsList)));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Hospital not found"));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 4e. STOCK TAB (Read-Only 8-Group Grid)
+    // ==========================================
+    @GetMapping("/hospitals/{id}/stock")
+    public ResponseEntity<ApiResponse> getHospitalStock(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT verification_status FROM hospitals WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String vStatus = com.red404.service.HospitalVerificationService.normalizeStatus(rs.getString("verification_status"));
+                    if (!"verified".equals(vStatus)) {
+                        return ResponseEntity.ok(new ApiResponse(true, "Stock inactive",
+                                Map.of("verified", false, "message", "Blood stock management is available only after hospital verification is approved.")));
+                    }
+
+                    Map<String, Object> hospStock = StockService.getHospitalStock(id);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Integer> inventory = (Map<String, Integer>) hospStock.get("inventory");
+
+                    List<Map<String, Object>> stockList = new ArrayList<>();
+                    int totalUnits = 0;
+                    for (String bt : StockService.ALL_BLOOD_GROUPS) {
+                        int units = inventory != null ? inventory.getOrDefault(bt, 0) : 0;
+                        totalUnits += units;
+                        String statusTag = units > 5 ? "OK" : (units >= 3 ? "Low" : "Critical");
+                        Map<String, Object> g = new LinkedHashMap<>();
+                        g.put("bloodGroup", bt);
+                        g.put("units", units);
+                        g.put("status", statusTag);
+                        stockList.add(g);
+                    }
+
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("verified", true);
+                    data.put("groups", stockList);
+                    data.put("totalStockUnits", totalUnits);
+                    data.put("lastSynced", hospStock.get("updatedAgo"));
+
+                    return ResponseEntity.ok(new ApiResponse(true, "Stock loaded", data));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Hospital not found"));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 4f. ACTIVITY TAB (Timeline with Real Admin Names, Paginated 20/page)
+    // ==========================================
+    @GetMapping("/hospitals/{id}/activity")
+    public ResponseEntity<ApiResponse> getHospitalActivity(
+            @PathVariable int id,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int limit,
+            HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        int effectivePage = Math.max(1, page);
+        int effectiveLimit = Math.max(1, Math.min(limit, 50));
+        int offset = (effectivePage - 1) * effectiveLimit;
+
+        List<Map<String, Object>> events = new ArrayList<>();
+        int totalEvents = 0;
+
+        try (Connection conn = DBConnection.getConnection()) {
+            // Count from hospital_audit_logs
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM hospital_audit_logs WHERE hospital_id = ?")) {
+                cps.setInt(1, id);
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalEvents += crs.getInt(1);
+                }
+            } catch (Exception ignored) {}
+
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM notification_delivery_logs WHERE target_type = 'hospital' AND target_id = ?")) {
+                cps.setInt(1, id);
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalEvents += crs.getInt(1);
+                }
+            } catch (Exception ignored) {}
+
+            String sql = "SELECT * FROM (" +
+                    "SELECT id, 'STATUS_CHANGE' as action, " +
+                    "CONCAT(COALESCE(from_status, 'pending_review'), ' \u2192 ', to_status, CASE WHEN reason IS NOT NULL AND reason <> '' THEN CONCAT(' (', reason, ')') ELSE '' END) as details, " +
+                    "admin_user as actor, CAST(created_at AS VARCHAR) as ev_time FROM hospital_audit_logs WHERE hospital_id = ? " +
+                    "UNION ALL " +
+                    "SELECT id, CONCAT('DELIVERY_', UPPER(channel)) as action, " +
+                    "CONCAT('[', UPPER(channel), '] ', UPPER(status), ': ', details) as details, " +
+                    "'System Dispatcher' as actor, CAST(created_at AS VARCHAR) as ev_time FROM notification_delivery_logs WHERE target_type = 'hospital' AND target_id = ?" +
+                    ") AS combined_events ORDER BY ev_time DESC LIMIT ? OFFSET ?";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, id);
+                ps.setInt(2, id);
+                ps.setInt(3, effectiveLimit);
+                ps.setInt(4, offset);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> ev = new LinkedHashMap<>();
+                        ev.put("id", rs.getInt("id"));
+                        ev.put("action", rs.getString("action"));
+                        ev.put("details", rs.getString("details"));
+                        String act = rs.getString("actor");
+                        ev.put("actor", (act != null && !act.isBlank()) ? act : "System");
+                        ev.put("timestamp", rs.getString("ev_time"));
+                        events.add(ev);
+                    }
+                }
+            } catch (Exception queryEx) {
+                log.warn("Notice querying combined hospital events: {}", queryEx.getMessage());
+            }
+
+            boolean hasMore = (offset + events.size()) < totalEvents;
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("events", events);
+            data.put("total", totalEvents);
+            data.put("page", effectivePage);
+            data.put("limit", effectiveLimit);
+            data.put("hasMore", hasMore);
+
+            return ResponseEntity.ok(new ApiResponse(true, "Hospital activity loaded", data));
+        } catch (Exception e) {
+            log.error("Error loading hospital activity: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, e.getMessage()));
         }
     }
 

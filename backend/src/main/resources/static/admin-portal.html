@@ -98,6 +98,18 @@
           <!-- Completely empty tbody for real-time Java/MySQL injection -->
           <tbody id="donor-table-body"></tbody>
         </table>
+        <div class="admin-pagination-bar" id="donorPaginationBar">
+          <span style="font-size:13px; color:#94a3b8;" id="donorPaginationInfo">Showing 0-0 of 0 donors</span>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-page-nav" id="btnDonorPrevPage" onclick="changeDonorPage(-1)" disabled>
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span id="donorCurrentPageNum" style="display:inline-flex; align-items:center; padding:0 8px; font-size:13px; font-weight:600; color:#f8fafc;">1</span>
+            <button type="button" class="btn-page-nav" id="btnDonorNextPage" onclick="changeDonorPage(1)" disabled>
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -159,6 +171,18 @@
           <!-- Completely empty tbody for real-time Java/MySQL injection -->
           <tbody id="hospital-table-body"></tbody>
         </table>
+        <div class="admin-pagination-bar" id="hospPaginationBar">
+          <span style="font-size:13px; color:#94a3b8;" id="hospPaginationInfo">Showing 0-0 of 0 hospitals</span>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-page-nav" id="btnHospPrevPage" onclick="changeHospPage(-1)" disabled>
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span id="hospCurrentPageNum" style="display:inline-flex; align-items:center; padding:0 8px; font-size:13px; font-weight:600; color:#f8fafc;">1</span>
+            <button type="button" class="btn-page-nav" id="btnHospNextPage" onclick="changeHospPage(1)" disabled>
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -301,387 +325,456 @@
 
   </main>
 
-  <!-- ==================== VIEW DONOR PROFILE MODAL ==================== -->
-  <div class="modal-overlay" id="donorProfileModal" style="display:none;" onclick="if(event.target===this) closeDonorProfileModal()">
-    <div class="modal-box admin-profile-modal-box">
-      <button type="button" class="modal-close" onclick="closeDonorProfileModal()" title="Close Profile">
-        <i class="fas fa-times"></i>
-      </button>
-
-      <div class="profile-modal-header">
-        <div class="profile-modal-badge">
-          <span class="profile-pulse-dot"></span>
-          <span>Donor Profile</span>
+  <!-- ==================== ADMIN DONOR DRAWER (Part 2 & Part 4) ==================== -->
+  <div class="drawer-overlay" id="donorDrawerOverlay" style="display:none;" onclick="if(event.target===this) closeDonorDrawer()">
+    <div class="admin-drawer" id="donorDrawer" role="dialog" aria-modal="true" aria-labelledby="donorDrawerTitle">
+      <!-- Sticky Header -->
+      <div class="drawer-header">
+        <div class="drawer-header-info">
+          <h3 class="drawer-title" id="donorDrawerTitle">Donor Profile</h3>
+          <div class="drawer-meta-row">
+            <span class="smart-id-mono" id="donorDrawerSmartId">-</span>
+            <span class="status-chip chip-active" id="donorDrawerStatus">Active</span>
+            <span class="drawer-date-text" id="donorDrawerRegistered">Registered -</span>
+          </div>
         </div>
-        <div class="profile-modal-title-row">
-          <h3 class="profile-modal-title">
-            <i class="fas fa-id-card-clip"></i>
-            <span>Donor Comprehensive Dossier</span>
-          </h3>
-          <button type="button" class="btn-refresh-profile" id="btnRefreshDonorProfile" onclick="refreshCurrentDonorProfile()" title="Fetch latest live data from database">
-            <i class="fas fa-rotate"></i> <span>Sync Live</span>
-          </button>
-        </div>
-        <p class="profile-modal-subtitle">Real-time cryptographic identity, spatial dispatch coordinates &amp; clinical screening profile.</p>
+        <button type="button" class="drawer-close-btn" onclick="closeDonorDrawer()" aria-label="Close drawer" title="Close (Esc)">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
 
-      <!-- Scrollable Container for All Form Details -->
-      <div class="profile-scroll-body">
-        
-        <!-- SECTION 1: IDENTITY & DEMOGRAPHICS -->
-        <div class="profile-section-title"><i class="fas fa-user-shield"></i> Identity &amp; Demographics</div>
-        <div class="profile-grid">
-          <!-- Smart ID -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-fingerprint"></i> Smart ID</span>
-            <span class="profile-val smart-id-val" id="modal-donor-smart-id">-</span>
-          </div>
-
-          <!-- Real Name -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-user"></i> Full Real Name</span>
-            <span class="profile-val" id="modal-donor-name">-</span>
-          </div>
-
-          <!-- Father / Guardian -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-user-group"></i> Father / Guardian</span>
-            <span class="profile-val" id="modal-donor-father-name">-</span>
-          </div>
-
-          <!-- Gender & DOB / Age -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-venus-mars"></i> Gender &amp; DOB / Age</span>
-            <span class="profile-val" id="modal-donor-dob-age">-</span>
-          </div>
-
-          <!-- Blood Group -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-droplet"></i> Blood Group</span>
-            <span class="profile-val blood-group-val" id="modal-donor-blood-group">-</span>
-          </div>
-
-          <!-- Donor Classification -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-shield"></i> Donor Category</span>
-            <span class="profile-val" id="modal-donor-type">-</span>
-          </div>
-        </div>
-
-        <!-- SECTION 2: CONTACT & DISPATCH TELEMETRY -->
-        <div class="profile-section-title"><i class="fas fa-address-book"></i> Communication &amp; Contact</div>
-        <div class="profile-grid">
-          <!-- Email Address -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-envelope"></i> Email Address</span>
-            <span class="profile-val" id="modal-donor-email">-</span>
-          </div>
-
-          <!-- Phone Number -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-phone"></i> Contact Phone</span>
-            <span class="profile-val" id="modal-donor-phone">-</span>
-          </div>
-
-          <!-- Availability Status -->
-          <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-toggle-on"></i> Availability Status</span>
-            <span class="profile-val" id="modal-donor-status">-</span>
-          </div>
-        </div>
-
-        <!-- SECTION 3: SPATIAL ROUTING & LOCATION -->
-        <div class="profile-section-title"><i class="fas fa-map-location-dot"></i> Spatial Geocoding &amp; Routing</div>
-        <div class="profile-grid">
-          <!-- Street Address -->
-          <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-house"></i> Residential / Street Address</span>
-            <span class="profile-val" id="modal-donor-address">-</span>
-          </div>
-
-          <!-- City, State & PIN -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-city"></i> City, State &amp; PIN</span>
-            <span class="profile-val" id="modal-donor-city-state-pin">-</span>
-          </div>
-
-          <!-- Routing Zone & GPS Coordinates -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-crosshairs"></i> Zone &amp; GPS Coordinates</span>
-            <span class="profile-val" id="modal-donor-zone-coords">-</span>
-          </div>
-        </div>
-
-        <!-- SECTION 4: CLINICAL & HEALTH SCREENING PROFILE -->
-        <div class="profile-section-title"><i class="fas fa-heart-pulse"></i> Clinical Health Screening</div>
-        <div class="profile-grid">
-          <!-- Body Weight -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-weight-scale"></i> Body Weight</span>
-            <span class="profile-val" id="modal-donor-weight">-</span>
-          </div>
-
-          <!-- Known Allergies -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-hand-dots"></i> Known Allergies</span>
-            <span class="profile-val" id="modal-donor-allergies">-</span>
-          </div>
-
-          <!-- Chronic Medical Conditions -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-notes-medical"></i> Medical Conditions</span>
-            <span class="profile-val" id="modal-donor-conditions">-</span>
-          </div>
-
-          <!-- Current Medications -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-pills"></i> Current Medications</span>
-            <span class="profile-val" id="modal-donor-medications">-</span>
-          </div>
-
-          <!-- Recent Surgeries -->
-          <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-hospital-user"></i> Past Surgeries</span>
-            <span class="profile-val" id="modal-donor-surgeries">-</span>
-          </div>
-        </div>
-
-        <!-- SECTION 5: RESCUE HISTORY & MILESTONES -->
-        <div class="profile-section-title"><i class="fas fa-clock-rotate-left"></i> Lifesaving Impact &amp; History</div>
-        <div class="profile-grid">
-          <!-- Total Donations -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-award"></i> Total Completed Donations</span>
-            <span class="profile-val" id="modal-donor-total-donations">-</span>
-          </div>
-
-          <!-- Last Donation Date -->
-          <div class="profile-item">
-            <span class="profile-label"><i class="fas fa-calendar-check"></i> Last Donation Date</span>
-            <span class="profile-val" id="modal-donor-last-donation">-</span>
-          </div>
-
-          <!-- Registration Date -->
-          <div class="profile-item full-width-item">
-            <span class="profile-label"><i class="fas fa-calendar-days"></i> Enrolled in Network Since</span>
-            <span class="profile-val" id="modal-donor-created-at">-</span>
-          </div>
-        </div>
-
+      <!-- Drawer Tabs: Profile / Activity -->
+      <div class="drawer-tab-bar" role="tablist">
+        <button type="button" class="drawer-tab-btn active" id="tabBtnDonorProfile" onclick="switchDonorDrawerTab('profile')">Profile</button>
+        <button type="button" class="drawer-tab-btn" id="tabBtnDonorActivity" onclick="switchDonorDrawerTab('activity')">Activity</button>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="profile-modal-actions">
-        <button type="button" class="btn-send-reset" id="btnSendPasswordReset" onclick="handleSendPasswordReset()">
-          <span class="btn-reset-text"><i class="fas fa-paper-plane"></i> Send Password Reset Link</span>
-          <span class="btn-reset-loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Dispatching...</span>
+      <!-- Scrollable Body -->
+      <div class="drawer-scroll-body">
+        <!-- Tab 1: Profile -->
+        <div class="drawer-tab-pane active" id="donorPaneProfile">
+          <!-- 1. Account -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Account</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Smart ID</dt>
+              <dd class="drawer-dd smart-id-mono" id="donor-val-smartId">-</dd>
+              <dt class="drawer-dt">Name</dt>
+              <dd class="drawer-dd" id="donor-val-name">-</dd>
+              <dt class="drawer-dt">Age and gender</dt>
+              <dd class="drawer-dd" id="donor-val-ageGender">-</dd>
+              <dt class="drawer-dt">City and state</dt>
+              <dd class="drawer-dd" id="donor-val-cityState">-</dd>
+              <dt class="drawer-dt">Registered on</dt>
+              <dd class="drawer-dd" id="donor-val-registeredOn">-</dd>
+              <dt class="drawer-dt">Last login</dt>
+              <dd class="drawer-dd" id="donor-val-lastLogin">-</dd>
+              <dt class="drawer-dt">Availability</dt>
+              <dd class="drawer-dd" id="donor-val-availability">-</dd>
+            </dl>
+          </div>
+
+          <!-- 2. Blood and health summary -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Blood and health summary</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Blood group</dt>
+              <dd class="drawer-dd" id="donor-val-bloodGroup">-</dd>
+              <dt class="drawer-dt">Total verified donations</dt>
+              <dd class="drawer-dd" id="donor-val-totalDonations">-</dd>
+              <dt class="drawer-dt">Last donation date</dt>
+              <dd class="drawer-dd" id="donor-val-lastDonation">-</dd>
+              <dt class="drawer-dt">Next eligible date</dt>
+              <dd class="drawer-dd" id="donor-val-nextEligible">-</dd>
+              <dt class="drawer-dt">Last health check</dt>
+              <dd class="drawer-dd" id="donor-val-healthCheck">-</dd>
+            </dl>
+          </div>
+
+          <!-- 3. Contact -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Contact</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Email address</dt>
+              <dd class="drawer-dd">
+                <span id="donor-val-email" class="masked-field">-</span>
+                <button type="button" class="btn-reveal" id="btnRevealDonorEmail" onclick="revealDonorContact('email')">
+                  <i class="fas fa-eye"></i> <span>Reveal</span>
+                </button>
+              </dd>
+              <dt class="drawer-dt">Phone number</dt>
+              <dd class="drawer-dd">
+                <span id="donor-val-phone" class="masked-field">-</span>
+                <button type="button" class="btn-reveal" id="btnRevealDonorPhone" onclick="revealDonorContact('phone')">
+                  <i class="fas fa-eye"></i> <span>Reveal</span>
+                </button>
+              </dd>
+            </dl>
+          </div>
+
+          <!-- 4. Consents -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Consents</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Public search listing</dt>
+              <dd class="drawer-dd" id="donor-val-publicSearch">-</dd>
+              <dt class="drawer-dt">Terms accepted</dt>
+              <dd class="drawer-dd" id="donor-val-termsAccepted">-</dd>
+              <dt class="drawer-dt">Location shared</dt>
+              <dd class="drawer-dd" id="donor-val-locationShared">-</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Tab 2: Activity -->
+        <div class="drawer-tab-pane" id="donorPaneActivity" style="display:none;">
+          <div class="drawer-group" style="padding-bottom: 0;">
+            <div id="donorActivityTimeline" class="drawer-timeline">
+              <div style="color: #94a3b8; font-size: 13px;">Loading donor activity...</div>
+            </div>
+            <div id="donorActivityLoadMoreContainer" style="text-align: center; margin: 16px 0;">
+              <button type="button" class="btn-load-more" id="btnLoadMoreDonorActivity" onclick="loadMoreDonorActivity()" style="display: none;">
+                Load older events
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky Footer Actions -->
+      <div class="drawer-footer">
+        <button type="button" class="btn-drawer-action" id="btnSendDonorReset" onclick="handleSendPasswordReset()">
+          <i class="fas fa-key"></i> <span>Send password reset email</span>
         </button>
-        <button type="button" class="btn-delete-from-modal" id="btnDeleteFromProfileModal" onclick="handleDeleteFromModal()" title="Permanently Delete Donor Account">
-          <i class="fas fa-trash-can"></i> <span>Delete Account</span>
+        <button type="button" class="btn-drawer-action" id="btnToggleDonorStatus" onclick="openDonorStatusModal()">
+          <i class="fas fa-pause"></i> <span id="donorStatusToggleLabel">Suspend / Reactivate</span>
         </button>
-        <button type="button" class="btn-close-secondary" onclick="closeDonorProfileModal()">
+        <button type="button" class="btn-drawer-action btn-danger-action" onclick="openDonorDeleteModal()">
+          <i class="fas fa-trash-can"></i> <span>Delete account</span>
+        </button>
+        <button type="button" class="btn-drawer-close" onclick="closeDonorDrawer()">
           Close
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== VIEW HOSPITAL PROFILE MODAL ==================== -->
-  <div class="modal-overlay" id="hospitalProfileModal" style="display:none;" onclick="if(event.target===this) closeHospitalProfileModal()">
-    <div class="modal-box admin-profile-modal-box">
-      <button type="button" class="modal-close" onclick="closeHospitalProfileModal()" title="Close Profile">
-        <i class="fas fa-times"></i>
-      </button>
-
-      <div class="profile-modal-header">
-        <div class="profile-modal-badge hospital-badge">
-          <span class="profile-pulse-dot hospital-pulse"></span>
-          <span id="modal-hosp-badge-status">Healthcare Facility Application</span>
+  <!-- ==================== ADMIN HOSPITAL DRAWER (Part 3 & Part 4) ==================== -->
+  <div class="drawer-overlay" id="hospitalDrawerOverlay" style="display:none;" onclick="if(event.target===this) closeHospitalDrawer()">
+    <div class="admin-drawer" id="hospitalDrawer" role="dialog" aria-modal="true" aria-labelledby="hospitalDrawerTitle">
+      <!-- Sticky Header -->
+      <div class="drawer-header">
+        <div class="drawer-header-info">
+          <h3 class="drawer-title" id="hospitalDrawerTitle">Hospital Profile</h3>
+          <div class="drawer-meta-row">
+            <span class="smart-id-mono" id="hospitalDrawerRef">-</span>
+            <span class="status-chip chip-pending" id="hospitalDrawerStatus">Pending Review</span>
+            <span class="drawer-date-text" id="hospitalDrawerSubmitted">Submitted -</span>
+            <span class="drawer-last-updated">
+              Last updated <span id="hospitalDrawerLastUpdatedText">just now</span>
+              <button type="button" class="btn-drawer-icon" onclick="refreshCurrentHospitalDrawer()" title="Refresh">
+                <i class="fas fa-rotate"></i>
+              </button>
+            </span>
+          </div>
         </div>
-        <div class="profile-modal-title-row">
-          <h3 class="profile-modal-title">
-            <i class="fas fa-hospital" style="color: #38bdf8;"></i>
-            <span id="modal-hosp-header-title">Hospital Review Dossier</span>
-          </h3>
-          <button type="button" class="btn-refresh-profile" id="btnRefreshHospitalProfile" onclick="refreshCurrentHospitalProfile()" title="Fetch latest live data from database">
-            <i class="fas fa-rotate"></i> <span>Sync Live</span>
-          </button>
-        </div>
+        <button type="button" class="drawer-close-btn" onclick="closeHospitalDrawer()" aria-label="Close drawer" title="Close (Esc)">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
 
-      <!-- Scrollable Container for All Hospital Registration Details -->
-      <div class="profile-scroll-body">
-        
-        <!-- SECTION 1: APPLICATION -->
-        <div class="profile-section-title"><i class="fas fa-file-signature"></i> Application</div>
-        <div class="profile-grid">
-          <div class="profile-item">
-            <span class="profile-label">Current Status</span>
-            <div id="modal-hosp-status-container" style="margin-top: 4px;">
-              <span class="hosp-status-pill hosp-status-pending" id="modal-hosp-status">Pending Review</span>
+      <!-- Sticky Tab Bar: Overview, Facility, Documents, Stock, Activity -->
+      <div class="drawer-tab-bar" role="tablist">
+        <button type="button" class="drawer-tab-btn active" id="tabBtnHospOverview" onclick="switchHospitalDrawerTab('overview')">Overview</button>
+        <button type="button" class="drawer-tab-btn" id="tabBtnHospFacility" onclick="switchHospitalDrawerTab('facility')">Facility</button>
+        <button type="button" class="drawer-tab-btn" id="tabBtnHospDocuments" onclick="switchHospitalDrawerTab('documents')">Documents</button>
+        <button type="button" class="drawer-tab-btn" id="tabBtnHospStock" onclick="switchHospitalDrawerTab('stock')">Stock</button>
+        <button type="button" class="drawer-tab-btn" id="tabBtnHospActivity" onclick="switchHospitalDrawerTab('activity')">Activity</button>
+      </div>
+
+      <!-- Scrollable Body with 5 Tab Panels -->
+      <div class="drawer-scroll-body">
+        <!-- 1. Overview Tab -->
+        <div class="drawer-tab-pane active" id="hospPaneOverview">
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Status summary</h4>
+            <div id="hospOverviewStatusBox" class="drawer-status-summary-box">
+              <span class="status-chip chip-pending" id="hospOverviewStatusChip">Pending Review</span>
+              <div id="hospOverviewStatusDesc" style="color: #cbd5e1; font-size: 13px; margin-top: 6px;">Application awaiting institutional review.</div>
             </div>
           </div>
-          <div class="profile-item">
-            <span class="profile-label">Submitted Timestamp</span>
-            <span class="profile-val" id="modal-hosp-submitted-at">-</span>
-          </div>
-          <div class="profile-item full-width-item">
-            <span class="profile-label">Application Reference Number</span>
-            <span class="profile-val" id="modal-hosp-app-ref" style="font-weight: 600; color: #f8fafc;">-</span>
-          </div>
-        </div>
 
-        <!-- SECTION 2: FACILITY -->
-        <div class="profile-section-title"><i class="fas fa-building-circle-check"></i> Facility</div>
-        <div class="profile-grid">
-          <div class="profile-item full-width-item">
-            <span class="profile-label">Hospital / Facility Name</span>
-            <span class="profile-val" id="modal-hosp-name" style="font-size: 16px; font-weight: 600; color: #f8fafc;">-</span>
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Key facts</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Category / Type</dt>
+              <dd class="drawer-dd" id="hosp-overview-type">-</dd>
+              <dt class="drawer-dt">City / State</dt>
+              <dd class="drawer-dd" id="hosp-overview-cityState">-</dd>
+              <dt class="drawer-dt">Contact person</dt>
+              <dd class="drawer-dd" id="hosp-overview-contactPerson">-</dd>
+              <dt class="drawer-dt">24/7 Helpline</dt>
+              <dd class="drawer-dd" id="hosp-overview-emergency">-</dd>
+              <dt class="drawer-dt">Operating hours</dt>
+              <dd class="drawer-dd" id="hosp-overview-hours">-</dd>
+              <dt class="drawer-dt">Email status</dt>
+              <dd class="drawer-dd">
+                <span class="email-verified-badge"><i class="fas fa-circle-check"></i> Email verified</span>
+              </dd>
+            </dl>
           </div>
-          <div class="profile-item">
-            <span class="profile-label">Facility Category / Type</span>
-            <span class="profile-val" id="modal-hosp-type">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Registration Number</span>
-            <span class="profile-val" id="modal-hosp-reg-no" style="font-weight: 600; color: #f8fafc;">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Blood Bank Licence No.</span>
-            <span class="profile-val" id="modal-hosp-license">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">e-RaktKosh Blood Centre ID</span>
-            <span class="profile-val" id="modal-hosp-eraktkosh">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Total Inpatient Beds</span>
-            <span class="profile-val" id="modal-hosp-beds">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Official Website</span>
-            <span class="profile-val" id="modal-hosp-website">-</span>
-          </div>
-          <div class="profile-item full-width-item">
-            <span class="profile-label">Clinical Services Offered</span>
-            <div class="hosp-services-tags" id="modal-hosp-services">
-              <!-- Dynamically populated chips -->
+
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Latest activity</h4>
+            <div id="hosp-overview-latestActivity" style="color: #cbd5e1; font-size: 13px; background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              Loading latest activity...
             </div>
           </div>
-        </div>
 
-        <!-- SECTION 3: CONTACT PERSON -->
-        <div class="profile-section-title"><i class="fas fa-user-tie"></i> Contact Person</div>
-        <div class="profile-grid">
-          <div class="profile-item">
-            <span class="profile-label">Authorised Person Name</span>
-            <span class="profile-val" id="modal-hosp-admin-name">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Designation</span>
-            <span class="profile-val" id="modal-hosp-admin-designation">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Direct Phone</span>
-            <span class="profile-val" id="modal-hosp-admin-phone">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Official Email</span>
-            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-              <span class="profile-val" id="modal-hosp-admin-email" style="margin-top: 0;">-</span>
-              <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; background: rgba(34,197,94,0.15); color: #4ade80; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(34,197,94,0.3);">
-                <i class="fas fa-circle-check"></i> Verified
-              </span>
-            </div>
-          </div>
-          <div class="profile-item full-width-item">
-            <span class="profile-label">24/7 Critical Emergency Helpline</span>
-            <span class="profile-val hotline-highlight" id="modal-hosp-emergency">-</span>
-          </div>
-        </div>
-
-        <!-- SECTION 4: LOCATION -->
-        <div class="profile-section-title"><i class="fas fa-map-location-dot"></i> Location</div>
-        <div class="profile-grid">
-          <div class="profile-item full-width-item">
-            <span class="profile-label">Campus / Street Address</span>
-            <span class="profile-val" id="modal-hosp-address">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Landmark</span>
-            <span class="profile-val" id="modal-hosp-landmark">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">City, State &amp; PIN</span>
-            <span class="profile-val" id="modal-hosp-city-state-pin">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Operating Hours</span>
-            <span class="profile-val" id="modal-hosp-hours">-</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">GPS Coordinates</span>
-            <span class="profile-val" id="modal-hosp-coords">-</span>
-          </div>
-          <div class="profile-item full-width-item">
-            <span class="profile-label">Pinned Location Map</span>
-            <div id="modal-hosp-map" style="height: 190px; width: 100%; border-radius: 8px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.1); background: #1e293b;"></div>
-          </div>
-        </div>
-
-        <!-- SECTION 5: DOCUMENTS -->
-        <div class="profile-section-title"><i class="fas fa-file-pdf"></i> Documents</div>
-        <div id="modal-hosp-docs-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;">
-          <div style="color: var(--admin-text-muted); font-size: 13px;">Loading submitted documents...</div>
-        </div>
-
-        <!-- SECTION 6: BLOOD STOCK -->
-        <div class="profile-section-title"><i class="fas fa-cubes-stacked"></i> Blood Stock</div>
-        <div id="modal-hosp-stock-section" style="margin-bottom: 18px;">
-          <!-- Dynamically populated read-only stock table when verified or notice when unverified -->
-        </div>
-
-        <!-- SECTION 7: ACTIVITY TIMELINE -->
-        <div class="profile-section-title"><i class="fas fa-clock-rotate-left"></i> Activity Timeline</div>
-        <div id="modal-hosp-change-history" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--admin-border); border-radius: 8px; padding: 12px; font-size: 13px; color: #cbd5e1; margin-bottom: 18px;">
-          <div style="color: var(--admin-text-muted);">Loading audit history...</div>
-        </div>
-
-        <!-- DANGER ZONE: SOFT DELETE -->
-        <div style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); border-radius: 8px; padding: 14px; margin-top: 10px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
+          <!-- Danger Section: Delete Hospital -->
+          <div class="drawer-danger-box">
+            <div style="flex: 1;">
               <strong style="color: #f87171; font-size: 13px;"><i class="fas fa-triangle-exclamation"></i> Danger Zone</strong>
-              <div style="color: #94a3b8; font-size: 12px; margin-top: 2px;">Permanently deactivate this hospital account and revoke credentials.</div>
+              <div style="color: #94a3b8; font-size: 12px; margin-top: 2px;">Permanently soft-delete this hospital record from network operations.</div>
             </div>
-            <button type="button" class="btn-delete-from-modal" id="btnDeleteHospitalFromModal" onclick="openDeleteHospModal()" style="margin: 0;">
-              <i class="fas fa-trash-can"></i> <span>Delete Hospital</span>
+            <button type="button" class="btn-drawer-action btn-danger-action" onclick="openHospitalDeleteModal()">
+              <i class="fas fa-trash-can"></i> <span>Delete hospital</span>
             </button>
           </div>
         </div>
 
+        <!-- 2. Facility Tab (Lazy Loaded) -->
+        <div class="drawer-tab-pane" id="hospPaneFacility" style="display:none;">
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Facility registration &amp; setup</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Registration number</dt>
+              <dd class="drawer-dd" id="hosp-fac-regNo">-</dd>
+              <dt class="drawer-dt">Blood bank licence</dt>
+              <dd class="drawer-dd" id="hosp-fac-licence">-</dd>
+              <dt class="drawer-dt">e-RaktKosh ID</dt>
+              <dd class="drawer-dd" id="hosp-fac-eraktkosh">-</dd>
+              <dt class="drawer-dt">Inpatient beds</dt>
+              <dd class="drawer-dd" id="hosp-fac-beds">-</dd>
+              <dt class="drawer-dt">Official website</dt>
+              <dd class="drawer-dd" id="hosp-fac-website">-</dd>
+              <dt class="drawer-dt">Clinical services</dt>
+              <dd class="drawer-dd" id="hosp-fac-services">-</dd>
+            </dl>
+          </div>
+
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Contact person</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Authorised person</dt>
+              <dd class="drawer-dd" id="hosp-fac-adminName">-</dd>
+              <dt class="drawer-dt">Designation</dt>
+              <dd class="drawer-dd" id="hosp-fac-adminDesignation">-</dd>
+              <dt class="drawer-dt">Direct phone</dt>
+              <dd class="drawer-dd">
+                <span id="hosp-fac-phone" class="masked-field">-</span>
+                <button type="button" class="btn-reveal" id="btnRevealHospPhone" onclick="revealHospitalContact('phone')">
+                  <i class="fas fa-eye"></i> <span>Reveal</span>
+                </button>
+              </dd>
+              <dt class="drawer-dt">Official email</dt>
+              <dd class="drawer-dd">
+                <span id="hosp-fac-email" class="masked-field">-</span>
+                <button type="button" class="btn-reveal" id="btnRevealHospEmail" onclick="revealHospitalContact('email')">
+                  <i class="fas fa-eye"></i> <span>Reveal</span>
+                </button>
+              </dd>
+            </dl>
+          </div>
+
+          <div class="drawer-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <h4 class="drawer-group-title" style="margin-bottom: 0;">Location</h4>
+              <button type="button" class="btn-toggle-coords" id="btnToggleCoords" onclick="toggleCoordinatesDisplay()">Show coordinates</button>
+            </div>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Address</dt>
+              <dd class="drawer-dd" id="hosp-fac-address">-</dd>
+              <dt class="drawer-dt">Landmark</dt>
+              <dd class="drawer-dd" id="hosp-fac-landmark">-</dd>
+              <dt class="drawer-dt">City, State &amp; PIN</dt>
+              <dd class="drawer-dd" id="hosp-fac-cityStatePin">-</dd>
+              <dt class="drawer-dt" id="hosp-fac-coords-dt" style="display:none;">Coordinates</dt>
+              <dd class="drawer-dd" id="hosp-fac-coords-dd" style="display:none;">-</dd>
+            </dl>
+            <!-- Fixed Height 240px Map (Lazy Loaded) -->
+            <div id="hospFacilityMap" style="height: 240px; width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #1e293b; margin-top: 10px;"></div>
+            <div style="margin-top: 8px; text-align: right;">
+              <a href="#" id="hospFacilityMapsLink" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #38bdf8; text-decoration: none;">
+                <i class="fas fa-arrow-up-right-from-square"></i> Open in Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Documents Tab (Lazy Loaded, Generic Labels, Signed URLs) -->
+        <div class="drawer-tab-pane" id="hospPaneDocuments" style="display:none;">
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Verified compliance documents</h4>
+            <div id="hospDocumentsContainer" style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="color: #94a3b8; font-size: 13px;">Loading documents...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Stock Tab (Lazy Loaded, Read-Only 8 Groups) -->
+        <div class="drawer-tab-pane" id="hospPaneStock" style="display:none;">
+          <div class="drawer-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 class="drawer-group-title" style="margin-bottom: 0;">Blood stock reserve</h4>
+              <span id="hospStockSyncedTime" style="font-size: 12px; color: #94a3b8;">Updated -</span>
+            </div>
+            <div id="hospStockContent">
+              <div style="color: #94a3b8; font-size: 13px;">Loading stock...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Activity Tab (Lazy Loaded, 20 per page, Real Admin Names) -->
+        <div class="drawer-tab-pane" id="hospPaneActivity" style="display:none;">
+          <div class="drawer-group" style="padding-bottom: 0;">
+            <h4 class="drawer-group-title">Activity timeline</h4>
+            <div id="hospActivityTimeline" class="drawer-timeline">
+              <div style="color: #94a3b8; font-size: 13px;">Loading activity history...</div>
+            </div>
+            <div id="hospActivityLoadMoreContainer" style="text-align: center; margin: 16px 0;">
+              <button type="button" class="btn-load-more" id="btnLoadMoreHospActivity" onclick="loadMoreHospActivity()" style="display: none;">
+                Load older events
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Sticky Action Bar (Part 5) -->
-      <div class="profile-modal-actions" id="hospActionButtonsBar">
-        <button type="button" class="admin-action-btn" id="btnApproveHosp" onclick="openApproveModal()" style="background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.5); color: #4ade80;">
+      <!-- Sticky Footer Actions by Status -->
+      <div class="drawer-footer" id="hospitalDrawerFooter">
+        <button type="button" class="btn-drawer-action btn-success-action" id="btnApproveHosp" onclick="openApproveModal()">
           <i class="fas fa-check-circle"></i> <span>Approve</span>
         </button>
-        <button type="button" class="admin-action-btn" id="btnRequestInfoHosp" onclick="openReasonModal('needs_info')" style="background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.5); color: #60a5fa;">
-          <i class="fas fa-circle-question"></i> <span>Request More Info</span>
+        <button type="button" class="btn-drawer-action" id="btnRequestInfoHosp" onclick="openReasonModal('needs_info')">
+          <i class="fas fa-circle-question"></i> <span>Request more info</span>
         </button>
-        <button type="button" class="admin-action-btn" id="btnRejectHosp" onclick="openReasonModal('rejected')" style="background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.5); color: #f87171;">
+        <button type="button" class="btn-drawer-action btn-danger-action" id="btnRejectHosp" onclick="openReasonModal('rejected')">
           <i class="fas fa-ban"></i> <span>Reject</span>
         </button>
-        <button type="button" class="admin-action-btn" id="btnSuspendHosp" onclick="openReasonModal('suspended')" style="background: rgba(249,115,22,0.18); border-color: rgba(249,115,22,0.5); color: #fb923c; display: none;">
+        <button type="button" class="btn-drawer-action" id="btnReverifyHosp" onclick="openReasonModal('needs_info')" style="display: none;">
+          <i class="fas fa-rotate"></i> <span>Request re-verification</span>
+        </button>
+        <button type="button" class="btn-drawer-action" id="btnSuspendHosp" onclick="openReasonModal('suspended')" style="display: none;">
           <i class="fas fa-pause"></i> <span>Suspend</span>
         </button>
-        <button type="button" class="admin-action-btn" id="btnReactivateHosp" onclick="openReasonModal('verified')" style="background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.5); color: #4ade80; display: none;">
+        <button type="button" class="btn-drawer-action btn-success-action" id="btnReactivateHosp" onclick="openReasonModal('verified')" style="display: none;">
           <i class="fas fa-play"></i> <span>Reactivate</span>
         </button>
-        <button type="button" class="btn-close-secondary" onclick="closeHospitalProfileModal()" style="margin-left: auto;">
+        <button type="button" class="btn-drawer-close" onclick="closeHospitalDrawer()" style="margin-left: auto;">
           Close
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CONFIRMATION MODALS (DELETE & STATUS) ==================== -->
+  <!-- 1. Delete Donor Modal -->
+  <div class="modal-overlay" id="donorDeleteModal" style="display:none;" onclick="if(event.target===this) closeDonorDeleteModal()">
+    <div class="modal-box" style="max-width: 480px; text-align: left; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+      <h3 style="margin-top:0; color:#f87171; font-size:18px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-triangle-exclamation"></i> Delete Donor Account
+      </h3>
+      <p style="color:#cbd5e1; font-size:14px; margin-bottom:12px;">
+        This will soft-delete donor <strong id="deleteDonorModalName" style="color:#f8fafc;">-</strong> and terminate all active sessions.
+      </p>
+      <div style="margin-bottom: 14px;">
+        <label style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">
+          Type exact Smart ID <code id="deleteDonorModalExpectedId" style="color:#38bdf8; font-weight:700;">-</code> to confirm:
+        </label>
+        <input type="text" id="deleteDonorInputId" class="modal-input" placeholder="e.g. DNR-74920" style="width:100%; padding:10px 12px; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; font-family:var(--admin-font-mono);">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">Reason for deletion (mandatory):</label>
+        <textarea id="deleteDonorInputReason" class="modal-input" rows="2" placeholder="State operational or user-requested rationale..." style="width:100%; padding:10px 12px; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; font-size:13px;"></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn-drawer-close" onclick="closeDonorDeleteModal()">Cancel</button>
+        <button type="button" class="btn-drawer-action btn-danger-action" id="btnConfirmDeleteDonor" onclick="confirmDeleteDonor()">
+          <i class="fas fa-trash-can"></i> <span>Permanently Deactivate</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Delete Hospital Modal -->
+  <div class="modal-overlay" id="hospitalDeleteModal" style="display:none;" onclick="if(event.target===this) closeHospitalDeleteModal()">
+    <div class="modal-box" style="max-width: 480px; text-align: left; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+      <h3 style="margin-top:0; color:#f87171; font-size:18px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-triangle-exclamation"></i> Delete Hospital Record
+      </h3>
+      <p style="color:#cbd5e1; font-size:14px; margin-bottom:12px;">
+        This will soft-delete hospital <strong id="deleteHospitalModalName" style="color:#f8fafc;">-</strong>. Active requests must be resolved first.
+      </p>
+      <div style="margin-bottom: 14px;">
+        <label style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">
+          Type exact hospital name <code id="deleteHospitalModalExpectedName" style="color:#38bdf8; font-weight:700;">-</code> to confirm:
+        </label>
+        <input type="text" id="deleteHospitalInputName" class="modal-input" placeholder="Type exact facility name" style="width:100%; padding:10px 12px; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc;">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">Reason for deletion (mandatory):</label>
+        <textarea id="deleteHospitalInputReason" class="modal-input" rows="2" placeholder="State administrative or audit rationale..." style="width:100%; padding:10px 12px; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; font-size:13px;"></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn-drawer-close" onclick="closeHospitalDeleteModal()">Cancel</button>
+        <button type="button" class="btn-drawer-action btn-danger-action" id="btnConfirmDeleteHospital" onclick="confirmDeleteHospital()">
+          <i class="fas fa-trash-can"></i> <span>Confirm Deletion</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Donor Status Toggle Modal (Reason Required) -->
+  <div class="modal-overlay" id="donorStatusModal" style="display:none;" onclick="if(event.target===this) closeDonorStatusModal()">
+    <div class="modal-box" style="max-width: 460px; text-align: left; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+      <h3 style="margin-top:0; color:#f8fafc; font-size:17px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-shield"></i> <span id="donorStatusModalTitle">Update Donor Account Status</span>
+      </h3>
+      <p style="color:#94a3b8; font-size:13px; margin-bottom:14px;" id="donorStatusModalDesc">
+        Provide a documented reason for this account status change.
+      </p>
+      <div style="margin-bottom: 16px;">
+        <label style="display:block; font-size:13px; color:#cbd5e1; margin-bottom:6px;">Reason (mandatory):</label>
+        <textarea id="donorStatusInputReason" class="modal-input" rows="3" placeholder="Enter reason for audit trail..." style="width:100%; padding:10px 12px; background:#1e293b; border:1px solid #475569; border-radius:6px; color:#f8fafc; font-size:13px;"></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn-drawer-close" onclick="closeDonorStatusModal()">Cancel</button>
+        <button type="button" class="btn-drawer-action" id="btnConfirmDonorStatus" onclick="confirmToggleDonorStatus()">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Document Viewer Modal (In-App Preview) -->
+  <div class="modal-overlay" id="docViewerModal" style="display:none;" onclick="if(event.target===this) closeDocViewerModal()">
+    <div class="modal-box" style="max-width: 900px; width: 92vw; height: 85vh; text-align: left; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 70px rgba(0,0,0,0.9);">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid #334155; background: #1e293b;">
+        <h4 id="docViewerTitle" style="margin: 0; color: #f8fafc; font-size: 15px;">Compliance Document Preview</h4>
+        <button type="button" onclick="closeDocViewerModal()" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div style="flex: 1; background: #0b0f19; display: flex; align-items: center; justify-content: center; overflow: hidden;" id="docViewerContainer">
+        <iframe id="docViewerIframe" src="about:blank" style="width: 100%; height: 100%; border: none; display: none;"></iframe>
+        <img id="docViewerImg" src="" alt="Document Preview" style="max-width: 100%; max-height: 100%; object-fit: contain; display: none;">
+      </div>
+      <div style="padding: 12px 20px; border-top: 1px solid #334155; background: #1e293b; display: flex; justify-content: flex-end; gap: 10px;">
+        <a id="docViewerDownloadBtn" href="#" class="btn-drawer-action" download style="text-decoration: none;">
+          <i class="fas fa-download"></i> <span>Download</span>
+        </a>
+        <button type="button" class="btn-drawer-close" onclick="closeDocViewerModal()">Close</button>
       </div>
     </div>
   </div>

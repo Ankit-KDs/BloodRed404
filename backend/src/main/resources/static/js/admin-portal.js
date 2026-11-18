@@ -98,19 +98,40 @@
 
   /* ==================== 3. TAB 1: DONORS ==================== */
   let currentProfileDonorId = null;
+  let donorCurrentPage = 1;
+  let donorTotalPages = 1;
+  let donorTotalCount = 0;
+  let donorPageSize = 25;
 
-  async function loadDonors() {
+  async function loadDonors(page = 1) {
+    donorCurrentPage = page;
     const tbody = document.getElementById('donor-table-body');
     const badge = document.getElementById('donor-count-badge');
+    const searchInput = document.getElementById('donorSearchInput');
+    const q = (searchInput?.value || '').trim();
     if (!tbody) return;
 
     try {
-      const res = await fetch('/api/admin/donors');
+      let url = `/api/admin/donors?page=${page}&size=${donorPageSize}`;
+      if (q) url += `&query=${encodeURIComponent(q)}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
-      allDonors = Array.isArray(json.data) ? json.data : [];
 
-      if (badge) badge.textContent = allDonors.length;
+      let donors = [];
+      if (json.data && Array.isArray(json.data.donors)) {
+        donors = json.data.donors;
+        donorTotalCount = json.data.total != null ? json.data.total : donors.length;
+        donorTotalPages = Math.max(1, Math.ceil(donorTotalCount / donorPageSize));
+      } else if (Array.isArray(json.data)) {
+        donors = json.data;
+        donorTotalCount = donors.length;
+        donorTotalPages = 1;
+      }
+      allDonors = donors;
+
+      if (badge) badge.textContent = donorTotalCount;
+      updateDonorPaginationControls();
       renderDonorsTable(allDonors);
     } catch (err) {
       console.warn('Notice loading donors:', err);
@@ -118,6 +139,28 @@
       if (badge) badge.textContent = '0';
     }
   }
+
+  function updateDonorPaginationControls() {
+    const info = document.getElementById('donorPaginationInfo');
+    const currentNum = document.getElementById('donorCurrentPageNum');
+    const prevBtn = document.getElementById('btnDonorPrevPage');
+    const nextBtn = document.getElementById('btnDonorNextPage');
+
+    const start = donorTotalCount === 0 ? 0 : (donorCurrentPage - 1) * donorPageSize + 1;
+    const end = Math.min(donorCurrentPage * donorPageSize, donorTotalCount);
+
+    if (info) info.textContent = `Showing ${start}-${end} of ${donorTotalCount} donors`;
+    if (currentNum) currentNum.textContent = String(donorCurrentPage);
+    if (prevBtn) prevBtn.disabled = donorCurrentPage <= 1;
+    if (nextBtn) nextBtn.disabled = donorCurrentPage >= donorTotalPages;
+  }
+
+  window.changeDonorPage = function (delta) {
+    const target = donorCurrentPage + delta;
+    if (target >= 1 && target <= donorTotalPages) {
+      loadDonors(target);
+    }
+  };
 
   function renderDonorsTable(donors) {
     const tbody = document.getElementById('donor-table-body');
@@ -314,125 +357,413 @@
     return age > 0 ? age : null;
   }
 
-  /* Populate all fields in the comprehensive donor profile modal */
-  function populateDonorProfileModal(donor) {
-    if (!donor) return;
-    const setSpan = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = (val && String(val).trim()) ? val : '-';
-    };
+  /* ============================================================
+     ADMIN DONOR DRAWER (Part 2 & Part 4)
+  ============================================================ */
+  let currentDonorId = null;
+  let currentDonorSmartId = null;
+  let currentDonorName = null;
+  let lastActiveElement = null;
+  let donorActivityPage = 1;
+  const donorCache = {};
 
-    // 1. Identity & Demographics
-    setSpan('modal-donor-smart-id', donor.smartId);
-    setSpan('modal-donor-name', donor.name);
-    setSpan('modal-donor-father-name', donor.fatherName || 'Not recorded');
-
-    let genderDobAge = (donor.gender || '-');
-    if (donor.dob) {
-      const age = calcAge(donor.dob);
-      genderDobAge += (age ? ` • ${age} yrs` : '') + ` (${donor.dob})`;
-    }
-    setSpan('modal-donor-dob-age', genderDobAge);
-    setSpan('modal-donor-blood-group', donor.bloodGroup);
-    setSpan('modal-donor-type', donor.donorType || 'Regular LifeSaver');
-
-    // 2. Communication & Contact
-    setSpan('modal-donor-email', donor.email);
-    setSpan('modal-donor-phone', donor.phone);
-    setSpan('modal-donor-status', donor.status || 'Active');
-
-    // 3. Spatial Routing & Location
-    setSpan('modal-donor-address', donor.address || 'Address Not Recorded');
-    const registeredCity = donor.registeredCity || (donor.city ? `${donor.city}${donor.state ? ', ' + donor.state : ''}${donor.pincode ? ' - ' + donor.pincode : ''}` : 'Not provided');
-    setSpan('modal-donor-city-state-pin', registeredCity);
-
-    let zoneDisplay = donor.zone || 'Location not shared';
-    if (zoneDisplay && !zoneDisplay.startsWith('Zone') && zoneDisplay !== 'Location not shared') {
-      zoneDisplay = 'Zone ' + zoneDisplay;
-    }
-    const lastSeen = donor.lastSeenLocationTime || (donor.latitude && donor.longitude ? `${donor.latitude}, ${donor.longitude}` : 'Location not shared');
-    setSpan('modal-donor-zone-coords', `${zoneDisplay} • Last seen: ${lastSeen}`);
-
-    // 4. Clinical Health Screening
-    setSpan('modal-donor-weight', donor.weight ? donor.weight + ' kg' : 'Not recorded');
-    setSpan('modal-donor-allergies', donor.allergies || 'None declared');
-    setSpan('modal-donor-conditions', donor.conditions || 'None declared');
-    setSpan('modal-donor-medications', donor.medications || 'None declared');
-    setSpan('modal-donor-surgeries', donor.surgeries || 'None declared');
-
-    // 5. Lifesaving Impact & History
-    setSpan('modal-donor-total-donations', `${Number(donor.totalDonations || 0)} Successful Rescues`);
-    setSpan('modal-donor-last-donation', donor.lastDonation || 'No donation recorded yet');
-    setSpan('modal-donor-created-at', formatTimestamp(donor.createdAt));
-  }
-
-  /* View Donor Profile Modal - Immediately fetches 100% fresh live DB data */
-  window.viewDonorProfile = async function (donorId) {
-    document.querySelectorAll('.kebab-dropdown.show').forEach(menu => menu.classList.remove('show'));
-
+  window.openDonorDrawer = async function (donorId) {
+    if (!donorId) return;
+    document.querySelectorAll('.kebab-dropdown.show').forEach(m => m.classList.remove('show'));
+    currentDonorId = donorId;
     currentProfileDonorId = donorId;
+    lastActiveElement = document.activeElement;
 
-    // First populate from cache for instant display
-    const cached = allDonors.find(d => d.id === donorId);
-    if (cached) {
-      populateDonorProfileModal(cached);
+    const overlay = document.getElementById('donorDrawerOverlay');
+    if (!overlay) return;
+
+    // 1. Instant Shell Populate (<10ms) from table cache
+    const cachedRow = allDonors.find(d => d.id === donorId);
+    if (cachedRow) {
+      currentDonorSmartId = cachedRow.smartId || ('DNR-' + donorId);
+      currentDonorName = cachedRow.name || 'Donor Profile';
+      document.getElementById('donorDrawerTitle').textContent = currentDonorName;
+      document.getElementById('donorDrawerSmartId').textContent = currentDonorSmartId;
+      const statusEl = document.getElementById('donorDrawerStatus');
+      if (statusEl) {
+        const st = cachedRow.status || 'Active';
+        statusEl.textContent = st;
+        statusEl.className = 'status-chip ' + (st.toLowerCase() === 'suspended' ? 'chip-suspended' : 'chip-active');
+      }
+      document.getElementById('donorDrawerRegistered').textContent = 'Registered ' + (cachedRow.createdAt ? new Date(cachedRow.createdAt).toLocaleDateString() : '-');
+      document.getElementById('donor-val-smartId').textContent = currentDonorSmartId;
+      document.getElementById('donor-val-name').textContent = currentDonorName;
+      document.getElementById('donor-val-availability').textContent = cachedRow.status || 'Active';
+      document.getElementById('donor-val-bloodGroup').textContent = cachedRow.bloodGroup || '-';
     }
 
-    const modal = document.getElementById('donorProfileModal');
-    if (modal) {
-      modal.style.display = 'flex';
+    // Reset to Profile tab
+    switchDonorDrawerTab('profile');
+
+    // Show drawer instantly
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => overlay.classList.add('open'));
+
+    // Check 30s Client Cache
+    const now = Date.now();
+    if (donorCache[donorId] && (now - donorCache[donorId].timestamp) < 30000) {
+      populateDonorDrawerDetails(donorCache[donorId].data);
+      return;
     }
 
-    // Immediately fetch 100% fresh, real-time data from database
+    // Set skeleton indicators for detail fields
+    setDonorDrawerSkeletons();
+
     try {
-      const res = await fetch(`/api/admin/donors/${donorId}`);
+      const res = await fetch(`/api/admin/donors/${donorId}`, { cache: 'no-cache' });
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          populateDonorProfileModal(json.data);
-          // Sync cache
-          const idx = allDonors.findIndex(item => item.id === donorId);
-          if (idx !== -1) allDonors[idx] = Object.assign(allDonors[idx], json.data);
+          donorCache[donorId] = { timestamp: now, data: json.data };
+          populateDonorDrawerDetails(json.data);
         }
       }
     } catch (err) {
-      console.warn('Notice fetching fresh donor profile:', err);
+      console.warn('Error fetching donor details:', err);
     }
   };
 
-  /* Sync Live Button inside Profile Modal */
-  window.refreshCurrentDonorProfile = async function () {
-    if (!currentProfileDonorId) return;
+  // Backward compatibility alias
+  window.viewDonorProfile = window.openDonorDrawer;
 
-    const btn = document.getElementById('btnRefreshDonorProfile');
-    const icon = btn?.querySelector('i');
-    if (icon) icon.classList.add('fa-spin');
+  function setDonorDrawerSkeletons() {
+    ['donor-val-ageGender', 'donor-val-cityState', 'donor-val-registeredOn', 'donor-val-lastLogin',
+     'donor-val-totalDonations', 'donor-val-lastDonation', 'donor-val-nextEligible', 'donor-val-healthCheck',
+     'donor-val-email', 'donor-val-phone', 'donor-val-publicSearch', 'donor-val-termsAccepted', 'donor-val-locationShared'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<span class="drawer-skeleton"></span>';
+    });
+  }
+
+  function populateDonorDrawerDetails(data) {
+    if (!data) return;
+    const acc = data.account || {};
+    const bh = data.bloodHealth || {};
+    const con = data.contact || {};
+    const cns = data.consents || {};
+
+    currentDonorSmartId = acc.smartId || ('DNR-' + currentDonorId);
+    currentDonorName = acc.name || 'Donor Profile';
+
+    // Header
+    const titleEl = document.getElementById('donorDrawerTitle');
+    if (titleEl) titleEl.textContent = currentDonorName;
+    const sIdEl = document.getElementById('donorDrawerSmartId');
+    if (sIdEl) sIdEl.textContent = currentDonorSmartId;
+    const statusEl = document.getElementById('donorDrawerStatus');
+    if (statusEl) {
+      const st = acc.availability || data.status || 'Active';
+      statusEl.textContent = st;
+      statusEl.className = 'status-chip ' + (st.toLowerCase() === 'suspended' ? 'chip-suspended' : 'chip-active');
+    }
+    const regEl = document.getElementById('donorDrawerRegistered');
+    if (regEl) regEl.textContent = 'Registered ' + (acc.registeredOn ? new Date(acc.registeredOn).toLocaleDateString() : '-');
+
+    // Group 1: Account
+    setElemText('donor-val-smartId', currentDonorSmartId);
+    setElemText('donor-val-name', currentDonorName);
+    const ageGender = (acc.age ? (acc.age + ' yrs') : 'Age not provided') + (acc.gender ? (', ' + acc.gender) : '');
+    setElemText('donor-val-ageGender', ageGender);
+    setElemText('donor-val-cityState', (acc.city && acc.city !== 'Not provided') ? `${acc.city}${acc.state ? ', ' + acc.state : ''}` : 'Not provided');
+    setElemText('donor-val-registeredOn', acc.registeredOn ? formatTimestamp(acc.registeredOn) : 'Not provided');
+    setElemText('donor-val-lastLogin', acc.lastLogin ? formatTimestamp(acc.lastLogin) : 'Never');
+    setElemText('donor-val-availability', acc.availability || 'Active');
+
+    // Group 2: Blood and health summary
+    const bgStatusStr = (bh.bloodGroup || data.bloodGroup || 'Unknown') + ' (' + (bh.bloodGroupStatus || 'Self-declared') + ')';
+    setElemText('donor-val-bloodGroup', bgStatusStr);
+    setElemText('donor-val-totalDonations', (bh.totalVerifiedDonations !== undefined ? bh.totalVerifiedDonations : data.totalDonations || 0) + ' verified donations');
+    setElemText('donor-val-lastDonation', bh.lastDonationDate || data.lastDonation || 'Never');
+    setElemText('donor-val-nextEligible', bh.nextEligibleDate || 'Eligible now');
+    const hcStr = (bh.lastHealthCheckDate && bh.lastHealthCheckDate !== 'No health checks recorded')
+      ? `${bh.lastHealthCheckDate} — ${bh.lastHealthCheckOutcome || 'Fit'}`
+      : 'No health checks recorded';
+    setElemText('donor-val-healthCheck', hcStr);
+
+    // Group 3: Contact (Masked by default)
+    setElemText('donor-val-email', con.maskedEmail || maskClientEmail(data.email));
+    setElemText('donor-val-phone', con.maskedPhone || maskClientPhone(data.phone));
+
+    // Reset reveal buttons
+    resetRevealButton('btnRevealDonorEmail');
+    resetRevealButton('btnRevealDonorPhone');
+
+    // Group 4: Consents
+    setElemText('donor-val-publicSearch', cns.publicSearch || 'Enabled');
+    setElemText('donor-val-termsAccepted', cns.termsAccepted || 'v1.0 (Accepted on Registration)');
+    setElemText('donor-val-locationShared', cns.locationShared || 'No');
+
+    // Footer Toggle Status Label
+    const toggleLabel = document.getElementById('donorStatusToggleLabel');
+    if (toggleLabel) {
+      toggleLabel.textContent = (acc.availability === 'Suspended') ? 'Reactivate' : 'Suspend';
+    }
+  }
+
+  function setElemText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = (text !== null && text !== undefined && String(text).trim()) ? String(text).trim() : 'Not provided';
+  }
+
+  function maskClientEmail(e) {
+    if (!e || !e.includes('@')) return 'Not provided';
+    const at = e.indexOf('@');
+    return e.charAt(0) + '***@' + e.substring(at + 1);
+  }
+
+  function maskClientPhone(p) {
+    if (!p || p.length < 5) return 'Not provided';
+    const c = p.replace(/\D/g, '');
+    return c.substring(0, 2) + '******' + c.substring(c.length - 2);
+  }
+
+  function resetRevealButton(btnId) {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.style.display = 'inline-flex';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-eye"></i> <span>Reveal</span>';
+    }
+  }
+
+  window.closeDonorDrawer = function () {
+    const overlay = document.getElementById('donorDrawerOverlay');
+    if (overlay) {
+      overlay.classList.remove('open');
+      setTimeout(() => overlay.style.display = 'none', 200);
+    }
+    currentDonorId = null;
+    currentProfileDonorId = null;
+    if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+      lastActiveElement.focus();
+    }
+  };
+
+  window.closeDonorProfileModal = window.closeDonorDrawer;
+
+  window.switchDonorDrawerTab = function (tabName) {
+    const btnProf = document.getElementById('tabBtnDonorProfile');
+    const btnAct = document.getElementById('tabBtnDonorActivity');
+    const paneProf = document.getElementById('donorPaneProfile');
+    const paneAct = document.getElementById('donorPaneActivity');
+
+    if (tabName === 'activity') {
+      btnProf?.classList.remove('active');
+      btnAct?.classList.add('active');
+      if (paneProf) paneProf.style.display = 'none';
+      if (paneAct) paneAct.style.display = 'flex';
+      donorActivityPage = 1;
+      fetchDonorActivity(currentDonorId, 1);
+    } else {
+      btnAct?.classList.remove('active');
+      btnProf?.classList.add('active');
+      if (paneAct) paneAct.style.display = 'none';
+      if (paneProf) paneProf.style.display = 'flex';
+    }
+  };
+
+  async function fetchDonorActivity(donorId, page = 1) {
+    const container = document.getElementById('donorActivityTimeline');
+    const loadMoreBtn = document.getElementById('btnLoadMoreDonorActivity');
+    if (!container || !donorId) return;
+
+    if (page === 1) {
+      container.innerHTML = '<div style="color: #94a3b8; font-size: 13px;">Loading donor activity...</div>';
+    }
 
     try {
-      const res = await fetch(`/api/admin/donors/${currentProfileDonorId}`);
+      const res = await fetch(`/api/admin/donors/${donorId}/activity?page=${page}&limit=20`);
+      if (res.ok) {
+        const json = await res.json();
+        const events = json.data?.events || [];
+        if (page === 1) container.innerHTML = '';
+
+        if (events.length === 0 && page === 1) {
+          container.innerHTML = '<div style="color: #94a3b8; font-size: 13px;">No recorded events on file.</div>';
+          if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+          return;
+        }
+
+        events.forEach(ev => {
+          const item = document.createElement('div');
+          item.className = 'drawer-timeline-item';
+          item.innerHTML = `
+            <div class="drawer-timeline-top">
+              <span class="drawer-timeline-action">[${escapeHtml(ev.action || 'EVENT')}]</span>
+              <span class="drawer-timeline-time">${formatTimestamp(ev.timestamp)}</span>
+            </div>
+            <div class="drawer-timeline-details">${escapeHtml(ev.details || '-')}</div>
+            <div class="drawer-timeline-actor">Actor: ${escapeHtml(ev.actor || 'System')}</div>
+          `;
+          container.appendChild(item);
+        });
+
+        if (loadMoreBtn) {
+          loadMoreBtn.style.display = json.data?.hasMore ? 'inline-block' : 'none';
+        }
+      }
+    } catch (err) {
+      if (page === 1) container.innerHTML = '<div style="color: #f87171; font-size: 13px;">Error loading activity events.</div>';
+    }
+  }
+
+  window.loadMoreDonorActivity = function () {
+    if (!currentDonorId) return;
+    donorActivityPage++;
+    fetchDonorActivity(currentDonorId, donorActivityPage);
+  };
+
+  window.revealDonorContact = async function (field) {
+    if (!currentDonorId) return;
+    const btn = document.getElementById(field === 'email' ? 'btnRevealDonorEmail' : 'btnRevealDonorPhone');
+    const valEl = document.getElementById(field === 'email' ? 'donor-val-email' : 'donor-val-phone');
+    if (!btn || !valEl) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+      const res = await fetch(`/api/admin/donors/${currentDonorId}/reveal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: field })
+      });
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          populateDonorProfileModal(json.data);
-          // Sync cache
-          const idx = allDonors.findIndex(item => item.id === currentProfileDonorId);
-          if (idx !== -1) allDonors[idx] = Object.assign(allDonors[idx], json.data);
-          showToast('Donor profile synced live with database', 'info', 1500);
+          const rawVal = json.data.value;
+          valEl.textContent = rawVal;
+          let remaining = 30;
+          btn.innerHTML = `<span class="reveal-timer-pill">Auto-hiding in ${remaining}s</span>`;
+          const timer = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+              clearInterval(timer);
+              valEl.textContent = field === 'email' ? maskClientEmail(rawVal) : maskClientPhone(rawVal);
+              resetRevealButton(field === 'email' ? 'btnRevealDonorEmail' : 'btnRevealDonorPhone');
+            } else {
+              const pill = btn.querySelector('.reveal-timer-pill');
+              if (pill) pill.textContent = `Auto-hiding in ${remaining}s`;
+            }
+          }, 1000);
+          showToast(`Donor ${field} revealed and logged to audit trail.`, 'info', 2000);
         }
       }
-    } catch (_) {
-      showToast('Connection error syncing profile', 'error');
-    } finally {
-      if (icon) icon.classList.remove('fa-spin');
+    } catch (err) {
+      showToast('Error revealing contact info', 'error');
+      resetRevealButton(field === 'email' ? 'btnRevealDonorEmail' : 'btnRevealDonorPhone');
     }
   };
 
-  window.closeDonorProfileModal = function () {
-    const modal = document.getElementById('donorProfileModal');
-    if (modal) {
-      modal.style.display = 'none';
+  /* Donor Status Toggle Modal */
+  window.openDonorStatusModal = function () {
+    if (!currentDonorId) return;
+    const modal = document.getElementById('donorStatusModal');
+    const reasonInput = document.getElementById('donorStatusInputReason');
+    if (reasonInput) reasonInput.value = '';
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeDonorStatusModal = function () {
+    const modal = document.getElementById('donorStatusModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.confirmToggleDonorStatus = async function () {
+    if (!currentDonorId) return;
+    const reason = document.getElementById('donorStatusInputReason')?.value.trim();
+    if (!reason) {
+      showToast('Please provide a mandatory reason for changing account status.', 'error');
+      return;
     }
-    currentProfileDonorId = null;
+    const btn = document.getElementById('btnConfirmDonorStatus');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    try {
+      const res = await fetch(`/api/admin/donors/${currentDonorId}/toggle-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        showToast(json.message || 'Status updated', 'success');
+        closeDonorStatusModal();
+        delete donorCache[currentDonorId];
+        openDonorDrawer(currentDonorId);
+        loadDonors();
+      } else {
+        const json = await res.json();
+        showToast(json.message || 'Failed to update status', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error updating status', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
+    }
+  };
+
+  /* Donor Delete Modal */
+  window.openDonorDeleteModal = function () {
+    if (!currentDonorId) return;
+    const modal = document.getElementById('donorDeleteModal');
+    document.getElementById('deleteDonorModalName').textContent = currentDonorName || 'Donor';
+    document.getElementById('deleteDonorModalExpectedId').textContent = currentDonorSmartId || '';
+    const inputId = document.getElementById('deleteDonorInputId');
+    const inputReason = document.getElementById('deleteDonorInputReason');
+    if (inputId) inputId.value = '';
+    if (inputReason) inputReason.value = '';
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeDonorDeleteModal = function () {
+    const modal = document.getElementById('donorDeleteModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.confirmDeleteDonor = async function () {
+    if (!currentDonorId) return;
+    const typedId = document.getElementById('deleteDonorInputId')?.value.trim();
+    const reason = document.getElementById('deleteDonorInputReason')?.value.trim();
+
+    if (!typedId || typedId.toLowerCase() !== (currentDonorSmartId || '').toLowerCase()) {
+      showToast(`Please type the exact Smart ID "${currentDonorSmartId}" to confirm.`, 'error');
+      return;
+    }
+    if (!reason) {
+      showToast('A reason for deletion is mandatory.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnConfirmDeleteDonor');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...'; }
+
+    try {
+      const res = await fetch(`/api/admin/donors/${currentDonorId}/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typedSmartId: typedId, reason: reason })
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        showToast(json.message || 'Donor account deactivated', 'success');
+        closeDonorDeleteModal();
+        closeDonorDrawer();
+        delete donorCache[currentDonorId];
+        loadDonors();
+      } else {
+        showToast(json.message || 'Deletion failed', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error during deletion', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-can"></i> Permanently Deactivate'; }
+    }
   };
 
   /* Send Password Reset Link */
@@ -603,16 +934,30 @@
     }
   }
 
-  async function loadHospitals(isManual = false) {
+  let hospCurrentPage = 1;
+  let hospTotalPages = 1;
+  let hospTotalCount = 0;
+  let hospPageSize = 25;
+
+  async function loadHospitals(page = 1, isManual = false) {
+    if (typeof page === 'boolean') {
+      isManual = page;
+      page = hospCurrentPage;
+    }
+    hospCurrentPage = page;
     const tbody = document.getElementById('hospital-table-body');
     const syncBtn = document.getElementById('btnSyncHospitals');
+    const searchInput = document.getElementById('hospitalSearchInput');
+    const q = (searchInput?.value || '').trim();
+
     if (isManual && syncBtn) {
       syncBtn.disabled = true;
       syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
     }
 
     try {
-      const url = `/api/admin/hospitals?status=${encodeURIComponent(hospActiveStatusTab)}`;
+      let url = `/api/admin/hospitals?status=${encodeURIComponent(hospActiveStatusTab)}&page=${page}&size=${hospPageSize}`;
+      if (q) url += `&query=${encodeURIComponent(q)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
@@ -623,13 +968,24 @@
         updateSubtabBadges(hospCounts);
       }
 
-      allHospitals = Array.isArray(data.hospitals) ? data.hospitals : (Array.isArray(data) ? data : []);
+      let hospitals = [];
+      if (Array.isArray(data.hospitals)) {
+        hospitals = data.hospitals;
+        hospTotalCount = data.total != null ? data.total : hospitals.length;
+        hospTotalPages = Math.max(1, Math.ceil(hospTotalCount / hospPageSize));
+      } else if (Array.isArray(data)) {
+        hospitals = data;
+        hospTotalCount = hospitals.length;
+        hospTotalPages = 1;
+      }
+      allHospitals = hospitals;
 
       const lastUpdatedEl = document.getElementById('hosp-last-updated');
       if (lastUpdatedEl) {
         lastUpdatedEl.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
       }
 
+      updateHospPaginationControls();
       filterAndRenderHospitals();
       if (isManual) {
         showToast('Hospital records synced live from database.', 'success');
@@ -647,6 +1003,28 @@
       }
     }
   }
+
+  function updateHospPaginationControls() {
+    const info = document.getElementById('hospPaginationInfo');
+    const currentNum = document.getElementById('hospCurrentPageNum');
+    const prevBtn = document.getElementById('btnHospPrevPage');
+    const nextBtn = document.getElementById('btnHospNextPage');
+
+    const start = hospTotalCount === 0 ? 0 : (hospCurrentPage - 1) * hospPageSize + 1;
+    const end = Math.min(hospCurrentPage * hospPageSize, hospTotalCount);
+
+    if (info) info.textContent = `Showing ${start}-${end} of ${hospTotalCount} facilities`;
+    if (currentNum) currentNum.textContent = String(hospCurrentPage);
+    if (prevBtn) prevBtn.disabled = hospCurrentPage <= 1;
+    if (nextBtn) nextBtn.disabled = hospCurrentPage >= hospTotalPages;
+  }
+
+  window.changeHospPage = function (delta) {
+    const target = hospCurrentPage + delta;
+    if (target >= 1 && target <= hospTotalPages) {
+      loadHospitals(target);
+    }
+  };
 
   function filterAndRenderHospitals() {
     const searchInput = document.getElementById('hospitalSearchInput');
@@ -775,336 +1153,610 @@
     });
   }
 
-  /* Populate all fields in the 7 plain sections of the comprehensive dossier */
-  function populateHospitalProfileModal(hosp) {
-    if (!hosp) return;
-    const setSpan = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = (val !== null && val !== undefined && String(val).trim()) ? String(val).trim() : '-';
-    };
+  /* ============================================================
+     ADMIN HOSPITAL DRAWER (Part 3 & Part 4)
+  ============================================================ */
+  const hospitalCache = {};
+  let hospRevealTimers = {};
+  let hospActivityPage = 1;
 
-    // Header Title & Badge
-    const headerTitle = document.getElementById('modal-hosp-header-title');
-    if (headerTitle) {
-      headerTitle.textContent = hosp.name || hosp.hospitalName || 'Hospital Comprehensive Dossier';
-    }
+  window.openHospitalDrawer = async function (hospId) {
+    if (!hospId) return;
+    currentProfileHospitalId = hospId;
+    lastActiveElement = document.activeElement;
 
-    // SECTION 1: APPLICATION
-    const meta = getStatusMeta(hosp.verificationStatus || hosp.status);
-    const statusContainer = document.getElementById('modal-hosp-status-container');
-    if (statusContainer) {
-      statusContainer.innerHTML = `<span class="hosp-status-pill hosp-status-${meta.cls}" id="modal-hosp-status"><i class="fas fa-${meta.icon}"></i> ${escapeHtml(meta.label)}</span>`;
-    }
-    setSpan('modal-hosp-submitted-at', formatTimestamp(hosp.createdAt || hosp.submittedTime));
-    setSpan('modal-hosp-app-ref', hosp.applicationRef || 'N/A');
+    const overlay = document.getElementById('hospitalDrawerOverlay');
+    if (!overlay) return;
 
-    // SECTION 2: FACILITY
-    setSpan('modal-hosp-name', hosp.name || hosp.hospitalName);
-    setSpan('modal-hosp-type', hosp.hospitalType || hosp.type || 'General Healthcare Facility');
-    setSpan('modal-hosp-reg-no', hosp.registrationNo);
-    setSpan('modal-hosp-license', (hosp.bloodBankLicense && hosp.bloodBankLicense !== 'N/A') ? hosp.bloodBankLicense : 'No Dedicated License Recorded');
-    setSpan('modal-hosp-eraktkosh', hosp.eraktkoshId || '-');
-    setSpan('modal-hosp-beds', hosp.beds ? `${hosp.beds} Beds` : 'Not Specified');
+    // Default to Overview tab
+    switchHospitalDrawerTab('overview');
 
-    const websiteEl = document.getElementById('modal-hosp-website');
-    if (websiteEl) {
-      const web = hosp.website;
-      if (web && web.trim()) {
-        const fullUrl = web.startsWith('http') ? web : 'https://' + web;
-        websiteEl.innerHTML = `<a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;"><i class="fas fa-arrow-up-right-from-square"></i> ${escapeHtml(web)}</a>`;
-      } else {
-        websiteEl.textContent = 'None Provided';
+    // 1. Instant Shell Populate (<10ms) from table row
+    const cachedRow = allHospitals.find(h => h.id === hospId);
+    if (cachedRow) {
+      const hName = cachedRow.name || cachedRow.hospitalName || 'Hospital';
+      const ref = cachedRow.applicationRef || ('HSP-' + hospId);
+      const st = cachedRow.verificationStatus || cachedRow.status || 'pending_review';
+      const meta = getStatusMeta(st);
+
+      document.getElementById('hospitalDrawerTitle').textContent = hName;
+      document.getElementById('hospitalDrawerRef').textContent = ref;
+      const statusEl = document.getElementById('hospitalDrawerStatus');
+      if (statusEl) {
+        statusEl.textContent = meta.label;
+        statusEl.className = `status-chip hosp-status-${meta.cls}`;
       }
-    }
+      document.getElementById('hospitalDrawerSubmitted').textContent = 'Submitted ' + (cachedRow.createdAt ? new Date(cachedRow.createdAt).toLocaleDateString() : '-');
+      document.getElementById('hospitalDrawerLastUpdatedText').textContent = 'just now';
 
-    // Clinical Services Tags
-    const servicesEl = document.getElementById('modal-hosp-services');
-    if (servicesEl) {
-      servicesEl.innerHTML = '';
-      const rawServices = hosp.services || '';
-      let serviceList = [];
-      if (Array.isArray(rawServices)) {
-        serviceList = rawServices;
-      } else if (typeof rawServices === 'string') {
-        try {
-          const parsed = JSON.parse(rawServices);
-          if (Array.isArray(parsed)) serviceList = parsed;
-          else serviceList = rawServices.split(',').map(s => s.trim());
-        } catch (_) {
-          serviceList = rawServices.split(',').map(s => s.trim());
-        }
-      }
-      serviceList = serviceList.filter(Boolean);
-
-      const serviceMeta = {
-        emergency: { label: '24/7 Emergency & Trauma', icon: 'truck-medical' },
-        bloodbank: { label: 'Dedicated Blood Bank', icon: 'droplet' },
-        icu: { label: 'Intensive Care Unit (ICU)', icon: 'heart-pulse' },
-        surgery: { label: 'Trauma & Operation Theaters', icon: 'bed-pulse' },
-        maternity: { label: 'Maternity & Neonatal Care', icon: 'person-breastfeeding' },
-        dialysis: { label: 'Dialysis Center', icon: 'flask-round-pulse' }
+      // Instant Overview fields from row
+      const setEl = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val || '-';
       };
+      setEl('hosp-overview-type', cachedRow.type || cachedRow.hospitalType || 'Facility');
+      setEl('hosp-overview-cityState', (cachedRow.city || cachedRow.location || '-') + (cachedRow.state ? ', ' + cachedRow.state : ''));
+      setEl('hosp-overview-contactPerson', cachedRow.adminName || 'Not recorded');
+      setEl('hosp-overview-emergency', cachedRow.emergencyContact || cachedRow.hospitalPhone || '-');
+      setEl('hosp-overview-hours', cachedRow.operatingHours || '24x7 Emergency Services');
 
-      if (serviceList.length === 0) {
-        servicesEl.innerHTML = `<span style="font-size: 12px; color: var(--admin-text-muted);">Standard Clinical & Emergency Services</span>`;
-      } else {
-        serviceList.forEach(s => {
-          const key = s.toLowerCase().trim();
-          const sm = serviceMeta[key] || { label: s.charAt(0).toUpperCase() + s.slice(1), icon: 'circle-check' };
-          const chip = document.createElement('span');
-          chip.className = 'hosp-service-chip';
-          chip.innerHTML = `<i class="fas fa-${sm.icon}"></i> ${escapeHtml(sm.label)}`;
-          servicesEl.appendChild(chip);
-        });
+      const chipEl = document.getElementById('hospOverviewStatusChip');
+      const descEl = document.getElementById('hospOverviewStatusDesc');
+      if (chipEl) {
+        chipEl.textContent = meta.label;
+        chipEl.className = `status-chip hosp-status-${meta.cls}`;
       }
+      if (descEl) {
+        descEl.textContent = st === 'verified' ? 'Verified clinical facility with active network dispatch rights.' :
+          (st === 'needs_info' ? 'Additional compliance documents requested from hospital administration.' :
+          (st === 'rejected' ? 'Application rejected due to compliance non-conformance.' :
+          (st === 'suspended' ? 'Facility dispatch temporarily suspended.' : 'Application awaiting institutional review.')));
+      }
+
+      // Configure footer buttons by status
+      updateHospitalFooterButtons(st);
     }
 
-    // SECTION 3: CONTACT PERSON
-    setSpan('modal-hosp-admin-name', hosp.adminName || 'Not recorded');
-    setSpan('modal-hosp-admin-designation', hosp.adminDesignation || 'Hospital Administrator');
-    setSpan('modal-hosp-admin-phone', hosp.adminPhone || hosp.phone);
-    setSpan('modal-hosp-admin-email', hosp.adminEmail || hosp.email);
-    setSpan('modal-hosp-emergency', hosp.emergencyContact || hosp.hospitalPhone || '24/7 Emergency Hotline Unlisted');
+    // Show drawer overlay
+    overlay.style.display = 'flex';
+    const closeBtn = overlay.querySelector('.drawer-close-btn');
+    if (closeBtn) closeBtn.focus();
 
-    // SECTION 4: LOCATION
-    setSpan('modal-hosp-address', hosp.address || 'Address Not Recorded');
-    setSpan('modal-hosp-landmark', hosp.landmark || 'None Specified');
-    const cityStatePin = `${hosp.city || '-'}${hosp.state ? ', ' + hosp.state : ''}${hosp.pincode ? ' - ' + hosp.pincode : ''}`;
-    setSpan('modal-hosp-city-state-pin', cityStatePin);
-    setSpan('modal-hosp-hours', hosp.operatingHours || '24x7 Emergency Services');
-
-    const coordsEl = document.getElementById('modal-hosp-coords');
-    const lat = hosp.latitude != null ? parseFloat(hosp.latitude) : NaN;
-    const lng = hosp.longitude != null ? parseFloat(hosp.longitude) : NaN;
-    const hasValidCoords = !isNaN(lat) && !isNaN(lng);
-
-    if (coordsEl) {
-      if (hasValidCoords) {
-        coordsEl.innerHTML = `<i class="fas fa-map-pin" style="color: #38bdf8;"></i> ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      } else {
-        coordsEl.innerHTML = `<span style="color: var(--admin-text-muted);">Location coordinates not set</span>`;
-      }
-    }
-
-    // Leaflet map setup
-    const mapContainer = document.getElementById('modal-hosp-map');
-    if (mapContainer && typeof L !== 'undefined') {
+    // 2. Fetch fresh fast summary (<500ms) with 30s cache
+    const cacheEntry = hospitalCache[hospId];
+    const now = Date.now();
+    if (!cacheEntry || (now - cacheEntry.timestamp > 30000)) {
       try {
-        if (hasValidCoords) {
-          if (!modalHospMap) {
-            modalHospMap = L.map('modal-hosp-map', { zoomControl: true }).setView([lat, lng], 14);
-            if (window.Red404Map) {
-              const res = window.Red404Map.createTileLayer('dark', null, mapContainer);
-              if (res && res.layer) res.layer.addTo(modalHospMap);
-              if (res && res.isDark) mapContainer.classList.add('dark-map');
-            } else {
-              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
-                maxZoom: 19
-              }).addTo(modalHospMap);
-            }
-            modalHospMarker = L.marker([lat, lng]).addTo(modalHospMap);
-          } else {
-            modalHospMap.setView([lat, lng], 14);
-            if (modalHospMarker) {
-              modalHospMarker.setLatLng([lat, lng]);
-            } else {
-              modalHospMarker = L.marker([lat, lng]).addTo(modalHospMap);
-            }
+        const headers = {};
+        if (cacheEntry && cacheEntry.etag) headers['If-None-Match'] = cacheEntry.etag;
+        const res = await fetch(`/api/admin/hospitals/${hospId}`, { headers });
+        if (res.status === 200) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            hospitalCache[hospId] = {
+              data: json.data,
+              etag: res.headers.get('ETag'),
+              timestamp: now
+            };
+            populateHospitalOverview(json.data);
           }
-          modalHospMarker.bindPopup(`<b>${escapeHtml(hosp.name || hosp.hospitalName || 'Hospital Entrance')}</b><br>${escapeHtml(hosp.address || '')}`).openPopup();
-          setTimeout(() => {
-            if (modalHospMap) modalHospMap.invalidateSize();
-          }, 250);
-        } else if (modalHospMap) {
-          modalHospMap.setView([20.5937, 78.9629], 5);
         }
-      } catch (mapErr) {
-        console.warn('Notice initializing map:', mapErr);
+      } catch (err) {
+        console.warn('Notice fetching hospital summary:', err);
       }
+    } else {
+      populateHospitalOverview(cacheEntry.data);
     }
 
-    // SECTION 5: DOCUMENTS
-    const docsContainer = document.getElementById('modal-hosp-docs-container');
-    if (docsContainer) {
-      docsContainer.innerHTML = '';
-      const docs = hosp.documents || [];
-      if (!Array.isArray(docs) || docs.length === 0) {
-        docsContainer.innerHTML = `<div style="color: var(--admin-text-muted); font-size: 13px; padding: 8px 0;">No uploaded compliance documents on file for this facility.</div>`;
-      } else {
-        const docTypeTitles = {
-          registrationCertificate: 'Hospital Registration Certificate',
-          bloodBankLicense: 'Blood Bank License',
-          authorisationLetter: 'Authorisation Letter / ID',
-          idProof: 'Government ID of Authorised Signatory'
-        };
+    // Fetch latest activity preview for Overview tab
+    loadHospitalLatestActivityPreview(hospId);
+  };
 
-        docs.forEach(d => {
-          const title = docTypeTitles[d.docType] || d.docType || 'Compliance Document';
-          const fileName = d.originalName || d.docId || 'document.pdf';
-          const card = document.createElement('div');
-          card.className = 'admin-doc-card';
-          card.innerHTML = `
-            <div class="admin-doc-info">
-              <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 20px;"></i>
-              <div>
-                <div style="font-weight: 600; color: #f8fafc; font-size: 13px;">${escapeHtml(title)}</div>
-                <div style="font-size: 11px; color: #94a3b8; font-family: var(--admin-font-mono);">${escapeHtml(fileName)}</div>
-              </div>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <a href="${escapeHtml(d.previewUrl || '#')}" target="_blank" rel="noopener noreferrer" class="btn-doc-action" title="Preview document in new tab">
-                <i class="fas fa-eye"></i> <span>Preview</span>
-              </a>
-              <a href="${escapeHtml(d.downloadUrl || '#')}" class="btn-doc-action" download title="Download document directly">
-                <i class="fas fa-download"></i> <span>Download</span>
-              </a>
-            </div>
-          `;
-          docsContainer.appendChild(card);
-        });
-      }
+  window.viewHospitalDetails = window.openHospitalDrawer;
+
+  window.closeHospitalDrawer = function () {
+    const overlay = document.getElementById('hospitalDrawerOverlay');
+    if (overlay) overlay.style.display = 'none';
+    currentProfileHospitalId = null;
+    // Clear reveal timers
+    Object.values(hospRevealTimers).forEach(t => clearTimeout(t));
+    hospRevealTimers = {};
+    if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+      lastActiveElement.focus();
     }
+  };
 
-    // SECTION 6: BLOOD STOCK
-    const isVerified = (hosp.verificationStatus || hosp.status || '').toLowerCase() === 'verified';
-    const stockSection = document.getElementById('modal-hosp-stock-section');
-    if (stockSection) {
-      if (!isVerified) {
-        stockSection.innerHTML = `
-          <div style="padding: 14px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; color: #94a3b8; font-size: 13px; text-align: center;">
-            <i class="fas fa-lock" style="margin-right: 6px; color: #fbbf24;"></i>
-            Blood stock management is available only after hospital verification is approved.
-          </div>
-        `;
-      } else {
-        const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-        const inv = hosp.inventory || {};
-        const totalUnits = Number(hosp.totalStockUnits || 0);
+  window.refreshCurrentHospitalDrawer = function () {
+    if (!currentProfileHospitalId) return;
+    delete hospitalCache[currentProfileHospitalId];
+    openHospitalDrawer(currentProfileHospitalId);
+    showToast('Hospital profile refreshed.', 'info', 1500);
+  };
 
-        let gridHtml = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <span style="font-size: 13px; color: #cbd5e1;">Live Reserve: <strong style="color: #f8fafc;">${totalUnits} Units</strong></span>
-            <span style="font-size: 11px; color: var(--admin-text-muted);">Verified Read-Only View</span>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); gap: 8px;">
-        `;
-
-        bloodTypes.forEach(bt => {
-          const units = Number(inv[bt] || 0);
-          let state = 'ok';
-          let stateColor = '#4ade80';
-          if (units <= 2) {
-            state = 'critical';
-            stateColor = '#f87171';
-          } else if (units <= 5) {
-            state = 'low';
-            stateColor = '#fbbf24';
-          }
-
-          gridHtml += `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);">
-              <span style="font-weight: 700; font-size: 13px; color: ${stateColor};">${bt}</span>
-              <div style="font-weight: 700; font-size: 15px; color: #f8fafc;">${units}</div>
-              <span style="font-size: 10px; color: var(--admin-text-muted);">Units</span>
-            </div>
-          `;
-        });
-        gridHtml += `</div>`;
-        stockSection.innerHTML = gridHtml;
-      }
-    }
-
-    // SECTION 7: ACTIVITY TIMELINE
-    const timelineEl = document.getElementById('modal-hosp-change-history');
-    if (timelineEl) {
-      const logs = hosp.auditLogs || hosp.changeHistory || [];
-      if (!Array.isArray(logs) || logs.length === 0) {
-        timelineEl.innerHTML = `<div style="color: var(--admin-text-muted); font-size: 13px;">No audit change logs recorded for this facility yet.</div>`;
-      } else {
-        timelineEl.innerHTML = logs.map(l => `
-          <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 3px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-              <strong style="color: #38bdf8; font-size: 12px;">[${escapeHtml(l.action || l.toStatus || 'AUDIT')}]</strong>
-              <span style="color: var(--admin-text-muted); font-size: 11px;">${formatTimestamp(l.timestamp || l.createdAt)}</span>
-            </div>
-            <div style="color: #cbd5e1; font-size: 12px;">${escapeHtml(l.details || l.reason || 'Status updated')}</div>
-            <div style="color: #64748b; font-size: 11px;">Admin: ${escapeHtml(l.adminEmail || l.admin || 'System')}</div>
-          </div>
-        `).join('');
-      }
-    }
-
-    // STICKY ACTION BAR BUTTON VISIBILITY
-    const normStatus = (hosp.verificationStatus || hosp.status || 'pending_review').toLowerCase().trim();
+  function updateHospitalFooterButtons(statusRaw) {
+    const norm = (statusRaw || 'pending_review').toLowerCase().trim();
     const btnApprove = document.getElementById('btnApproveHosp');
     const btnRequestInfo = document.getElementById('btnRequestInfoHosp');
     const btnReject = document.getElementById('btnRejectHosp');
     const btnSuspend = document.getElementById('btnSuspendHosp');
     const btnReactivate = document.getElementById('btnReactivateHosp');
 
-    if (btnApprove) btnApprove.style.display = (normStatus === 'pending_review' || normStatus === 'needs_info' || normStatus === 'rejected') ? 'inline-flex' : 'none';
-    if (btnRequestInfo) btnRequestInfo.style.display = (normStatus !== 'suspended') ? 'inline-flex' : 'none';
-    if (btnReject) btnReject.style.display = (normStatus === 'pending_review' || normStatus === 'needs_info' || normStatus === 'suspended') ? 'inline-flex' : 'none';
-    if (btnSuspend) btnSuspend.style.display = (normStatus === 'verified') ? 'inline-flex' : 'none';
-    if (btnReactivate) btnReactivate.style.display = (normStatus === 'suspended') ? 'inline-flex' : 'none';
+    if (btnApprove) btnApprove.style.display = (norm === 'pending_review' || norm === 'needs_info' || norm === 'rejected') ? 'inline-flex' : 'none';
+    if (btnRequestInfo) btnRequestInfo.style.display = (norm !== 'suspended') ? 'inline-flex' : 'none';
+    if (btnReject) btnReject.style.display = (norm === 'pending_review' || norm === 'needs_info' || norm === 'suspended') ? 'inline-flex' : 'none';
+    if (btnSuspend) btnSuspend.style.display = (norm === 'verified') ? 'inline-flex' : 'none';
+    if (btnReactivate) btnReactivate.style.display = (norm === 'suspended') ? 'inline-flex' : 'none';
   }
 
-  /* View Hospital Details Modal - Immediately fetches live DB data */
-  window.viewHospitalDetails = async function (hospId, isBackgroundRefresh = false) {
-    if (!hospId) return;
-    currentProfileHospitalId = hospId;
+  function populateHospitalOverview(hosp) {
+    if (!hosp) return;
+    const setEl = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val || '-';
+    };
+    setEl('hosp-overview-type', hosp.type || hosp.hospitalType);
+    setEl('hosp-overview-cityState', (hosp.city || hosp.location || '-') + (hosp.state ? ', ' + hosp.state : ''));
+    setEl('hosp-overview-contactPerson', hosp.adminName || 'Not recorded');
+    setEl('hosp-overview-emergency', hosp.emergencyContact || hosp.hospitalPhone || '-');
+    setEl('hosp-overview-hours', hosp.operatingHours || '24x7 Emergency Services');
 
-    const cached = allHospitals.find(item => item.id === hospId);
-    if (cached) {
-      populateHospitalProfileModal(cached);
-    }
+    const st = hosp.verificationStatus || hosp.status || 'pending_review';
+    updateHospitalFooterButtons(st);
+  }
 
-    const modal = document.getElementById('hospitalProfileModal');
-    if (modal && !isBackgroundRefresh) {
-      modal.style.display = 'flex';
-      setTimeout(() => {
-        if (modalHospMap) modalHospMap.invalidateSize();
-      }, 250);
-    }
-
+  async function loadHospitalLatestActivityPreview(hospId) {
+    const previewEl = document.getElementById('hosp-overview-latestActivity');
+    if (!previewEl) return;
     try {
-      const res = await fetch(`/api/admin/hospitals/${hospId}`);
+      const res = await fetch(`/api/admin/hospitals/${hospId}/activity?page=1&size=1`);
       if (res.ok) {
         const json = await res.json();
-        if (json.success && json.data) {
-          populateHospitalProfileModal(json.data);
-          const idx = allHospitals.findIndex(item => item.id === hospId);
-          if (idx !== -1) allHospitals[idx] = Object.assign(allHospitals[idx], json.data);
+        const events = json.data?.events || [];
+        if (events.length > 0) {
+          const ev = events[0];
+          previewEl.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-weight:600; color:#38bdf8; font-size:12px;">${escapeHtml(ev.action || 'Activity')}</span>
+              <span style="color:#94a3b8; font-size:11px;">${formatRelativeTime(ev.timestamp)}</span>
+            </div>
+            <div style="color:#cbd5e1; font-size:12px;">${escapeHtml(ev.details || '-')}</div>
+            <div style="color:#64748b; font-size:11px; margin-top:2px;">By ${escapeHtml(ev.admin || 'System')}</div>
+          `;
+        } else {
+          previewEl.innerHTML = `<span style="color:#94a3b8; font-size:12px;">No activity logged yet.</span>`;
+        }
+      }
+    } catch (_) {
+      previewEl.innerHTML = `<span style="color:#94a3b8; font-size:12px;">Activity status ready.</span>`;
+    }
+  }
+
+  /* Switch Tab in Hospital Drawer */
+  window.switchHospitalDrawerTab = function (tabName) {
+    const tabs = ['overview', 'facility', 'documents', 'stock', 'activity'];
+    tabs.forEach(t => {
+      const cap = t.charAt(0).toUpperCase() + t.slice(1);
+      const btn = document.getElementById(`tabBtnHosp${cap}`);
+      const pane = document.getElementById(`hospPane${cap}`);
+      if (btn) btn.classList.toggle('active', t === tabName);
+      if (pane) {
+        pane.classList.toggle('active', t === tabName);
+        pane.style.display = (t === tabName) ? 'block' : 'none';
+      }
+    });
+
+    if (!currentProfileHospitalId) return;
+
+    if (tabName === 'facility') {
+      loadHospitalFacilityTab(currentProfileHospitalId);
+    } else if (tabName === 'documents') {
+      loadHospitalDocumentsTab(currentProfileHospitalId);
+    } else if (tabName === 'stock') {
+      loadHospitalStockTab(currentProfileHospitalId);
+    } else if (tabName === 'activity') {
+      hospActivityPage = 1;
+      loadHospitalActivityTab(currentProfileHospitalId, 1);
+    }
+  };
+
+  /* Lazy Load Facility Tab */
+  async function loadHospitalFacilityTab(hospId) {
+    const setEl = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val || '-';
+    };
+
+    try {
+      const res = await fetch(`/api/admin/hospitals/${hospId}/facility`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      const fac = json.data || {};
+
+      // 1. Separate Registration Number and Blood Bank Licence!
+      setEl('hosp-fac-regNo', fac.registrationNo || 'REG-PENDING');
+      setEl('hosp-fac-licence', fac.bloodBankLicense || 'LIC-NOT-APPLICABLE');
+      setEl('hosp-fac-eraktkosh', fac.eraktkoshId || '-');
+      setEl('hosp-fac-beds', fac.beds ? `${fac.beds} Beds` : 'Not Specified');
+
+      // Website
+      const webEl = document.getElementById('hosp-fac-website');
+      if (webEl) {
+        if (fac.website && fac.website.trim()) {
+          const url = fac.website.startsWith('http') ? fac.website : 'https://' + fac.website;
+          webEl.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:underline;"><i class="fas fa-arrow-up-right-from-square"></i> ${escapeHtml(fac.website)}</a>`;
+        } else {
+          webEl.textContent = 'None Provided';
+        }
+      }
+
+      // Services
+      const srvEl = document.getElementById('hosp-fac-services');
+      if (srvEl) {
+        const sList = Array.isArray(fac.services) ? fac.services : (fac.services ? String(fac.services).split(',') : []);
+        if (sList.length === 0) {
+          srvEl.textContent = 'Standard Clinical Services';
+        } else {
+          srvEl.innerHTML = sList.map(s => `<span class="hosp-service-chip" style="margin:2px 4px 2px 0;"><i class="fas fa-circle-check"></i> ${escapeHtml(s.trim())}</span>`).join('');
+        }
+      }
+
+      // Contact Person (Masked by default)
+      setEl('hosp-fac-adminName', fac.adminName || 'Not recorded');
+      setEl('hosp-fac-adminDesignation', fac.adminDesignation || 'Hospital Administrator');
+      setEl('hosp-fac-phone', fac.phoneMasked || '••••••••••');
+      setEl('hosp-fac-email', fac.emailMasked || '••••••••••');
+
+      // Location
+      setEl('hosp-fac-address', fac.address || 'Address Not Recorded');
+      setEl('hosp-fac-landmark', fac.landmark || 'None Specified');
+      const cityStatePin = `${fac.city || '-'}${fac.state ? ', ' + fac.state : ''}${fac.pincode ? ' - ' + fac.pincode : ''}`;
+      setEl('hosp-fac-cityStatePin', cityStatePin);
+
+      // Coordinates
+      const lat = fac.latitude != null ? parseFloat(fac.latitude) : NaN;
+      const lng = fac.longitude != null ? parseFloat(fac.longitude) : NaN;
+      const hasCoords = !isNaN(lat) && !isNaN(lng);
+
+      const coordsDd = document.getElementById('hosp-fac-coords-dd');
+      if (coordsDd) {
+        coordsDd.textContent = hasCoords ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : 'Coordinates not set';
+      }
+
+      // External Maps Link
+      const mapsLink = document.getElementById('hospFacilityMapsLink');
+      if (mapsLink) {
+        if (hasCoords) {
+          mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+          mapsLink.style.display = 'inline-flex';
+        } else {
+          mapsLink.style.display = 'none';
+        }
+      }
+
+      // Lazy 240px Leaflet Map on facility tab only
+      const mapContainer = document.getElementById('hospFacilityMap');
+      if (mapContainer && typeof L !== 'undefined') {
+        if (hasCoords) {
+          if (!modalHospMap) {
+            modalHospMap = L.map('hospFacilityMap', { zoomControl: true }).setView([lat, lng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors',
+              maxZoom: 19
+            }).addTo(modalHospMap);
+            modalHospMarker = L.marker([lat, lng]).addTo(modalHospMap);
+          } else {
+            modalHospMap.setView([lat, lng], 14);
+            if (modalHospMarker) modalHospMarker.setLatLng([lat, lng]);
+            else modalHospMarker = L.marker([lat, lng]).addTo(modalHospMap);
+          }
+          modalHospMarker.bindPopup(`<b>${escapeHtml(fac.name || 'Hospital')}</b><br>${escapeHtml(fac.address || '')}`);
+          setTimeout(() => { if (modalHospMap) modalHospMap.invalidateSize(); }, 150);
+        } else if (modalHospMap) {
+          modalHospMap.setView([20.5937, 78.9629], 5);
         }
       }
     } catch (err) {
-      console.warn('Notice fetching fresh hospital profile:', err);
+      console.warn('Notice loading hospital facility:', err);
     }
+  }
+
+  /* Toggle Coordinates Display */
+  window.toggleCoordinatesDisplay = function () {
+    const dt = document.getElementById('hosp-fac-coords-dt');
+    const dd = document.getElementById('hosp-fac-coords-dd');
+    const btn = document.getElementById('btnToggleCoords');
+    if (!dt || !dd || !btn) return;
+
+    const isHidden = dt.style.display === 'none';
+    dt.style.display = isHidden ? 'block' : 'none';
+    dd.style.display = isHidden ? 'block' : 'none';
+    btn.textContent = isHidden ? 'Hide coordinates' : 'Show coordinates';
   };
 
-  /* Sync Live Button inside Hospital Profile Modal */
-  window.refreshCurrentHospitalProfile = async function () {
+  /* Reveal Hospital Contact with 30s auto-hide and audit log */
+  window.revealHospitalContact = async function (field) {
     if (!currentProfileHospitalId) return;
-    const btn = document.getElementById('btnRefreshHospitalProfile');
-    const icon = btn?.querySelector('i');
-    if (icon) icon.classList.add('fa-spin');
+    const btn = document.getElementById(field === 'phone' ? 'btnRevealHospPhone' : 'btnRevealHospEmail');
+    const span = document.getElementById(field === 'phone' ? 'hosp-fac-phone' : 'hosp-fac-email');
+    if (!btn || !span) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     try {
-      await window.viewHospitalDetails(currentProfileHospitalId, true);
-      showToast('Hospital dossier synced live with database.', 'info', 1500);
-    } catch (_) {
-      showToast('Connection error syncing hospital profile.', 'error');
-    } finally {
-      if (icon) icon.classList.remove('fa-spin');
+      const res = await fetch(`/api/admin/hospitals/${currentProfileHospitalId}/reveal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: field })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        const val = data.data.value;
+        const originalMasked = span.textContent;
+        span.textContent = val;
+        span.classList.add('revealed-field');
+
+        let secondsLeft = 30;
+        btn.innerHTML = `<i class="fas fa-clock"></i> <span>${secondsLeft}s</span>`;
+
+        if (hospRevealTimers[field]) clearInterval(hospRevealTimers[field]);
+        hospRevealTimers[field] = setInterval(() => {
+          secondsLeft--;
+          if (secondsLeft > 0) {
+            btn.innerHTML = `<i class="fas fa-clock"></i> <span>${secondsLeft}s</span>`;
+          } else {
+            clearInterval(hospRevealTimers[field]);
+            delete hospRevealTimers[field];
+            span.textContent = originalMasked;
+            span.classList.remove('revealed-field');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-eye"></i> <span>Reveal</span>';
+          }
+        }, 1000);
+
+        showToast(`${field === 'phone' ? 'Phone' : 'Email'} revealed. Auto-hiding in 30 seconds.`, 'info', 2500);
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-eye"></i> <span>Reveal</span>';
+        showToast(data.message || 'Failed to reveal contact', 'error');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-eye"></i> <span>Reveal</span>';
+      showToast('Network error revealing contact', 'error');
     }
   };
 
-  /* Close Hospital Profile Modal */
-  window.closeHospitalProfileModal = function () {
-    const modal = document.getElementById('hospitalProfileModal');
+  /* Lazy Load Documents Tab (Generic Labels, Signed URLs, Zero original filenames) */
+  async function loadHospitalDocumentsTab(hospId) {
+    const container = document.getElementById('hospDocumentsContainer');
+    if (!container) return;
+    container.innerHTML = `<div style="color:#94a3b8; font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Loading documents...</div>`;
+
+    try {
+      const res = await fetch(`/api/admin/hospitals/${hospId}/documents`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      const docs = json.data || [];
+
+      if (docs.length === 0) {
+        container.innerHTML = `<div style="color:var(--admin-text-muted); font-size:13px; padding:12px 0;">No uploaded compliance documents on file for this facility.</div>`;
+        return;
+      }
+
+      container.innerHTML = docs.map(d => `
+        <div class="admin-doc-card">
+          <div class="admin-doc-info">
+            <i class="fas fa-file-pdf" style="color:#ef4444; font-size:20px;"></i>
+            <div>
+              <div style="font-weight:600; color:#f8fafc; font-size:13px;">${escapeHtml(d.label || 'Compliance Document')}</div>
+              <div style="font-size:11px; color:#94a3b8; font-family:var(--admin-font-mono);">${escapeHtml(d.fileType || 'PDF')} • ${escapeHtml(d.fileSize || 'Standard Verified')}</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-doc-action" onclick="openDocPreview('${escapeHtml(d.signedUrl || '#')}', '${escapeHtml(d.label || 'Document')}')" title="Preview document in viewer">
+              <i class="fas fa-eye"></i> <span>Preview</span>
+            </button>
+            <a href="${escapeHtml(d.signedUrl || '#')}" class="btn-doc-action" download title="Download document directly">
+              <i class="fas fa-download"></i> <span>Download</span>
+            </a>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      container.innerHTML = `<div style="color:#f87171; font-size:13px;">Unable to load compliance documents.</div>`;
+    }
+  }
+
+  /* In-app Document Viewer Modal */
+  window.openDocPreview = function (url, label) {
+    const modal = document.getElementById('docViewerModal');
+    const titleEl = document.getElementById('docViewerTitle');
+    const frame = document.getElementById('docViewerFrame');
+    if (!modal || !frame) return;
+
+    if (titleEl) titleEl.textContent = label || 'Document Preview';
+    frame.src = url;
+    modal.style.display = 'flex';
+  };
+
+  window.closeDocViewerModal = function () {
+    const modal = document.getElementById('docViewerModal');
+    const frame = document.getElementById('docViewerFrame');
     if (modal) modal.style.display = 'none';
-    currentProfileHospitalId = null;
+    if (frame) frame.src = 'about:blank';
+  };
+
+  /* Lazy Load Stock Tab */
+  async function loadHospitalStockTab(hospId) {
+    const content = document.getElementById('hospStockContent');
+    const timeEl = document.getElementById('hospStockSyncedTime');
+    if (!content) return;
+    content.innerHTML = `<div style="color:#94a3b8; font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Loading stock reserves...</div>`;
+
+    try {
+      const res = await fetch(`/api/admin/hospitals/${hospId}/stock`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      const stockData = json.data || {};
+
+      if (!stockData.isVerified) {
+        content.innerHTML = `
+          <div style="padding:14px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.15); border-radius:8px; color:#94a3b8; font-size:13px; text-align:center;">
+            <i class="fas fa-lock" style="margin-right:6px; color:#fbbf24;"></i>
+            Blood stock reserve management is available only after hospital credentials are fully approved.
+          </div>
+        `;
+        return;
+      }
+
+      const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+      const inv = stockData.inventory || {};
+      const totalUnits = Number(stockData.totalUnits || 0);
+
+      if (timeEl) timeEl.textContent = `Live Reserve: ${totalUnits} Units`;
+
+      let gridHtml = `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(75px, 1fr)); gap:8px;">`;
+      bloodTypes.forEach(bt => {
+        const units = Number(inv[bt] || 0);
+        let stateColor = '#4ade80';
+        let stateLabel = 'OK';
+        if (units <= 2) {
+          stateColor = '#f87171';
+          stateLabel = 'Critical';
+        } else if (units <= 5) {
+          stateColor = '#fbbf24';
+          stateLabel = 'Low';
+        }
+
+        gridHtml += `
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+            <span style="font-weight:700; font-size:14px; color:${stateColor};">${bt}</span>
+            <div style="font-weight:700; font-size:16px; color:#f8fafc;">${units}</div>
+            <span style="font-size:10px; color:${stateColor}; text-transform:uppercase; font-weight:600;">${stateLabel}</span>
+          </div>
+        `;
+      });
+      gridHtml += `</div>`;
+      content.innerHTML = gridHtml;
+    } catch (err) {
+      content.innerHTML = `<div style="color:#f87171; font-size:13px;">Unable to load blood stock reserves.</div>`;
+    }
+  }
+
+  /* Lazy Load Activity Tab (20 per page, Real Admin Names, Human labels) */
+  async function loadHospitalActivityTab(hospId, page = 1) {
+    const timelineEl = document.getElementById('hospActivityTimeline');
+    const loadMoreBtn = document.getElementById('btnLoadMoreHospActivity');
+    if (!timelineEl) return;
+
+    if (page === 1) {
+      timelineEl.innerHTML = `<div style="color:#94a3b8; font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Loading activity...</div>`;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/hospitals/${hospId}/activity?page=${page}&size=20`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      const events = json.data?.events || [];
+      const totalPages = json.data?.totalPages || 1;
+
+      if (page === 1 && events.length === 0) {
+        timelineEl.innerHTML = `<div style="color:var(--admin-text-muted); font-size:13px; padding:12px 0;">No activity events recorded for this facility yet.</div>`;
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+        return;
+      }
+
+      const rowsHtml = events.map(ev => `
+        <div class="timeline-event-item" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#38bdf8; font-size:12px;">${escapeHtml(ev.action || 'ACTIVITY')}</strong>
+            <span style="color:#94a3b8; font-size:11px;">${formatTimestamp(ev.timestamp)}</span>
+          </div>
+          <div style="color:#cbd5e1; font-size:13px;">${escapeHtml(ev.details || '-')}</div>
+          <div style="color:#64748b; font-size:11px;">Admin: <span style="color:#94a3b8;">${escapeHtml(ev.admin || 'System')}</span></div>
+        </div>
+      `).join('');
+
+      if (page === 1) timelineEl.innerHTML = rowsHtml;
+      else timelineEl.insertAdjacentHTML('beforeend', rowsHtml);
+
+      if (loadMoreBtn) {
+        loadMoreBtn.style.display = (page < totalPages) ? 'inline-block' : 'none';
+      }
+    } catch (err) {
+      if (page === 1) timelineEl.innerHTML = `<div style="color:#f87171; font-size:13px;">Unable to load activity timeline.</div>`;
+    }
+  }
+
+  window.loadMoreHospActivity = function () {
+    if (!currentProfileHospitalId) return;
+    hospActivityPage++;
+    loadHospitalActivityTab(currentProfileHospitalId, hospActivityPage);
+  };
+
+  /* Hospital Delete Modal (Typed exact hospital name) */
+  window.openHospitalDeleteModal = function () {
+    if (!currentProfileHospitalId) return;
+    const hosp = allHospitals.find(h => h.id === currentProfileHospitalId);
+    deleteTargetHospId = currentProfileHospitalId;
+    deleteTargetHospName = hosp ? (hosp.name || hosp.hospitalName) : (document.getElementById('hospitalDrawerTitle')?.textContent || 'Hospital');
+
+    const expectedEl = document.getElementById('deleteExpectedHospName');
+    if (expectedEl) expectedEl.textContent = deleteTargetHospName;
+
+    const inputEl = document.getElementById('txtDeleteConfirmHospName');
+    if (inputEl) inputEl.value = '';
+
+    window.checkHospDeleteMatch();
+
+    const modal = document.getElementById('hospitalDeleteModal');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeHospitalDeleteModal = function () {
+    const modal = document.getElementById('hospitalDeleteModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.checkHospDeleteMatch = function () {
+    const inputEl = document.getElementById('txtDeleteConfirmHospName');
+    const btn = document.getElementById('btnConfirmDeleteHosp');
+    if (!inputEl || !btn) return;
+
+    const typed = inputEl.value.trim().toLowerCase();
+    const expected = deleteTargetHospName.trim().toLowerCase();
+    const isMatch = (typed === expected && expected.length > 0);
+
+    btn.disabled = !isMatch;
+    btn.style.cursor = isMatch ? 'pointer' : 'not-allowed';
+    btn.style.opacity = isMatch ? '1' : '0.5';
+  };
+
+  window.confirmDeleteHospital = async function () {
+    if (!deleteTargetHospId) return;
+    const inputEl = document.getElementById('txtDeleteConfirmHospName');
+    const confirmName = inputEl?.value?.trim() || '';
+
+    try {
+      showToast('Deleting hospital and terminating active sessions...', 'info', 2000);
+      const res = await fetch(`/api/admin/hospitals/${deleteTargetHospId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmName: confirmName })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(`Hospital "${deleteTargetHospName}" has been soft-deleted.`, 'success', 3500);
+        window.closeHospitalDeleteModal();
+        window.closeHospitalDrawer();
+        await loadHospitals();
+      } else {
+        showToast(data.message || 'Failed to delete hospital account.', 'error', 4500);
+      }
+    } catch (err) {
+      showToast('Connection error while deleting hospital account.', 'error');
+    }
   };
 
   /* ==================== APPROVAL COMPLIANCE CHECKLIST MODAL ==================== */
@@ -1871,6 +2523,52 @@
       setTimeout(() => toast.remove(), 300);
     }, duration);
   }
+
+  // Global Escape key handler for keyboard accessibility (Part 2 & Part 3)
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      const docModal = document.getElementById('docViewerModal');
+      if (docModal && docModal.style.display !== 'none' && docModal.style.display !== '') {
+        closeDocViewerModal();
+        return;
+      }
+      const hospDelModal = document.getElementById('hospitalDeleteModal');
+      if (hospDelModal && hospDelModal.style.display !== 'none' && hospDelModal.style.display !== '') {
+        closeHospitalDeleteModal();
+        return;
+      }
+      const donorDelModal = document.getElementById('donorDeleteModal');
+      if (donorDelModal && donorDelModal.style.display !== 'none' && donorDelModal.style.display !== '') {
+        closeDonorDeleteModal();
+        return;
+      }
+      const donorStModal = document.getElementById('donorStatusModal');
+      if (donorStModal && donorStModal.style.display !== 'none' && donorStModal.style.display !== '') {
+        closeDonorStatusModal();
+        return;
+      }
+      const approveModal = document.getElementById('approveHospModal');
+      if (approveModal && approveModal.style.display !== 'none' && approveModal.style.display !== '') {
+        closeApproveModal();
+        return;
+      }
+      const reasonModal = document.getElementById('reasonActionModal');
+      if (reasonModal && reasonModal.style.display !== 'none' && reasonModal.style.display !== '') {
+        closeReasonModal();
+        return;
+      }
+      const hospDrawer = document.getElementById('hospitalDrawerOverlay');
+      if (hospDrawer && hospDrawer.style.display !== 'none' && hospDrawer.style.display !== '') {
+        closeHospitalDrawer();
+        return;
+      }
+      const donorDrawer = document.getElementById('donorDrawerOverlay');
+      if (donorDrawer && donorDrawer.style.display !== 'none' && donorDrawer.style.display !== '') {
+        closeDonorDrawer();
+        return;
+      }
+    }
+  });
 
 })();
 
