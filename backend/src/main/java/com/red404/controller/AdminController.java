@@ -808,6 +808,7 @@ public class AdminController {
                 ps.setInt(2, id);
                 ps.executeUpdate();
             }
+            com.red404.service.PlatformMetricsService.getInstance().invalidateCache();
 
             String adminUser = getAdminIdentifier(request);
             recordDonorAudit(id, adminUser, "STATUS_CHANGE", "Status changed from " + currentStatus + " to " + nextStatus + ". Reason: " + reason);
@@ -888,6 +889,7 @@ public class AdminController {
                 ps.setInt(1, id);
                 ps.executeUpdate();
             }
+            com.red404.service.PlatformMetricsService.getInstance().invalidateCache();
 
             String adminUser = getAdminIdentifier(request);
             recordDonorAudit(id, adminUser, "ACCOUNT_DELETED", "Account soft-deleted. Reason: " + reason);
@@ -1665,6 +1667,7 @@ public class AdminController {
             if (docsJson != null && !docsJson.isBlank()) {
                 documentStorageService.deleteHospitalDocuments(docsJson);
             }
+            com.red404.service.PlatformMetricsService.getInstance().invalidateCache();
 
             addLog("HOSPITAL_DELETED", "Hospital account soft-deleted: " + hospitalName + " (ID: " + id + ")");
             try {

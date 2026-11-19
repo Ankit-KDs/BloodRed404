@@ -119,13 +119,15 @@ public class DonorEligibilityService {
         String gender = str(donor.get("gender"));
         int cooldown = getCooldownDays(gender);
 
-        // 1. Check active account (status != INACTIVE, BANNED, SUSPENDED, DELETED, deleted_at is null)
+        // 1. Check active account (status != INACTIVE, BANNED, SUSPENDED, DELETED, deleted_at is null, availability != Deleted)
         String status = str(donor.get("status"));
         Object deletedAt = donor.get("deleted_at");
         Object isActiveObj = donor.get("is_active");
         boolean isActiveFalse = (isActiveObj instanceof Boolean b && !b);
+        String availCheck = str(donor.get("availability"));
+        boolean isDeleted = (availCheck != null && availCheck.equalsIgnoreCase("Deleted"));
 
-        if (deletedAt != null || isActiveFalse || (status != null && (
+        if (deletedAt != null || isActiveFalse || isDeleted || (status != null && (
                 status.equalsIgnoreCase("INACTIVE") ||
                 status.equalsIgnoreCase("BANNED") ||
                 status.equalsIgnoreCase("SUSPENDED") ||

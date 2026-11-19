@@ -1041,7 +1041,7 @@ public class DonorDao {
     }
 
     public List<Map<String, Object>> findNearby(Double lat, Double lng, double radiusKm, String bloodType) throws SQLException {
-        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR (LOWER(availability) NOT IN ('unavailable', 'busy', 'paused') AND (paused_until IS NULL OR paused_until <= CURRENT_DATE)))";
+        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR (LOWER(availability) NOT IN ('unavailable', 'busy', 'paused', 'deleted') AND (paused_until IS NULL OR paused_until <= CURRENT_DATE)))";
         List<Map<String, Object>> results = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -1112,7 +1112,7 @@ public class DonorDao {
 
         Map<Integer, String> notificationStatuses = new com.red404.dao.BloodRequestNotificationDao().getDonorStatusesForHospital(hospitalId);
 
-        String sql = "SELECT * FROM donors";
+        String sql = "SELECT * FROM donors WHERE (availability IS NULL OR LOWER(availability) <> 'deleted')";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -1270,7 +1270,7 @@ public class DonorDao {
             return results;
         }
 
-        String sql = "SELECT donor_id, name, blood_type, latitude, longitude, pincode, city, state, zone, availability, created_at, last_donation FROM donors WHERE (availability IS NULL OR LOWER(availability) <> 'unavailable')";
+        String sql = "SELECT donor_id, name, blood_type, latitude, longitude, pincode, city, state, zone, availability, created_at, last_donation FROM donors WHERE (availability IS NULL OR (LOWER(availability) <> 'unavailable' AND LOWER(availability) <> 'deleted'))";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

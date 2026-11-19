@@ -126,7 +126,7 @@ public class PlatformMetricsService {
             // 1. Registered Donors & Active Eligible Donors (Step 1 requirement 2:
             // Authoritative DonorEligibilityService.isEligible)
             try (Statement st = conn.createStatement();
-                    ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
+                    ResultSet rs = st.executeQuery("SELECT * FROM donors WHERE (availability IS NULL OR LOWER(availability) <> 'deleted')")) {
                 while (rs.next()) {
                     totalDonors++;
                     Map<String, Object> d = mapDonorRow(rs);
@@ -213,7 +213,7 @@ public class PlatformMetricsService {
             try (Statement st = conn.createStatement();
                     ResultSet rs = st.executeQuery(
                             "SELECT COUNT(DISTINCT zone) FROM (" +
-                                    "SELECT zone FROM donors WHERE zone IS NOT NULL AND zone <> '' " +
+                                    "SELECT zone FROM donors WHERE zone IS NOT NULL AND zone <> '' AND (availability IS NULL OR LOWER(availability) <> 'deleted') " +
                                     "UNION " +
                                     "SELECT district FROM hospitals WHERE LOWER(COALESCE(verification_status, '')) = 'verified' "
                                     +
@@ -353,7 +353,7 @@ public class PlatformMetricsService {
             // 2. Real Active Eligible Donors by blood group (Authoritative
             // DonorEligibilityService.isEligible)
             try (Statement st = conn.createStatement();
-                    ResultSet rs = st.executeQuery("SELECT * FROM donors")) {
+                    ResultSet rs = st.executeQuery("SELECT * FROM donors WHERE (availability IS NULL OR LOWER(availability) <> 'deleted')")) {
                 while (rs.next()) {
                     Map<String, Object> d = mapDonorRow(rs);
                     if (DonorEligibilityService.isEligible(d)) {
