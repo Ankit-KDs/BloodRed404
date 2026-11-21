@@ -892,7 +892,23 @@
     if (bgPill) bgPill.textContent = bg;
 
     if (container) {
-      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}" alt="Verification QR Code" style="width:180px;height:180px;border-radius:6px;display:block;" />`;
+      container.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        try {
+          new QRCode(container, {
+            text: qrPayload,
+            width: 180,
+            height: 180,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (_) {
+          container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}" alt="Verification QR Code" style="width:180px;height:180px;border-radius:6px;display:block;" />`;
+        }
+      } else {
+        container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}" alt="Verification QR Code" style="width:180px;height:180px;border-radius:6px;display:block;" />`;
+      }
     }
 
     modal.style.display = 'flex';
