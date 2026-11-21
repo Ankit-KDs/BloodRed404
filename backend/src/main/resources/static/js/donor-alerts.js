@@ -1,41 +1,39 @@
 /* ============================================================
-   RED404 — DONOR ALERTS & RADAR SCRIPT
-   Purely Dynamic Emergency Matching & Haversine Dispatch Engine
+   RED404 — DONOR EMERGENCIES & DISPATCH RADAR
+   Part 2 & Part 7: Professional Redesign Script
+   Single Source of Truth Lifecycle • No Demo Data
 ============================================================ */
 
 (function () {
   'use strict';
 
-  // Dynamic State Management (Zero hardcoded records)
+  // Dynamic State Management
   let currentDonor = {
+    id: null,
     name: 'Donor',
     bloodType: 'O-',
     latitude: 28.3486,
     longitude: 79.5619,
     availability: 'Available',
-    medicalStatus: 'Fit to Donate'
+    hasLocation: false,
+    accuracy: null,
+    qrToken: null
   };
 
+  let allAlerts = [];
   let activeRequests = [];
+  let pastRequests = [];
+
   let leafletMap = null;
   let currentTileLayer = null;
   let donorMarker = null;
   let hospitalMarker = null;
   let routePolyline = null;
+  let distanceCircles = [];
+
   let activeLayerKey = localStorage.getItem('red404_map_layer') || 'dark';
   if (activeLayerKey === 'google-dark') activeLayerKey = 'dark';
   if (activeLayerKey === 'google-roads' || activeLayerKey === 'osm') activeLayerKey = 'map';
-
-  // DOM Elements
-  const donorGreetingName = document.getElementById('donorGreetingName');
-  const gpsCoordsText = document.getElementById('gpsCoordsText');
-  const gpsSyncBtn = document.getElementById('gpsSyncBtn');
-  const donorStatusToggle = document.getElementById('donorStatusToggle');
-  const donorStatusText = document.getElementById('donorStatusText');
-  const sidebarDonorStatus = document.getElementById('sidebarDonorStatus');
-  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-  const hubSidebar = document.getElementById('hubSidebar');
-  const sidebarOverlay = document.getElementById('sidebarOverlay');
 
   function getFeedContainer() {
     return document.getElementById('alertsFeedContainer') || document.getElementById('emergencyFeedContainer');
@@ -44,9 +42,7 @@
   // ======================== INITIALIZATION ========================
   document.addEventListener('DOMContentLoaded', async () => {
     await initDonorProfile();
-    initMobileNav();
-    initStatusToggle();
-    initGPSListener();
+    initMobileMapToggle();
     initRadarMap();
 
     const btnEnableLoc = document.getElementById('btnEnableDonorLocation');
@@ -60,29 +56,61 @@
     requestLiveGeolocation();
     initDonorAlertsRealtime();
 
-    // 2. Set up 10-second interval polling for real-time hospital broadcasts
+    // 2. Set up 10-second interval polling fallback for real-time hospital broadcasts
     setInterval(() => {
       fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
     }, 10000);
+
+    // 3. Countdown timer tick every 30 seconds
+    setInterval(() => {
+      updateCountdowns();
+    }, 30000);
   });
 
+  // ======================== REALTIME SSE LISTENER ========================
   function initDonorAlertsRealtime() {
     if (window._donorAlertsEventSource) return;
     try {
       const es = new EventSource('/api/donor/events');
       window._donorAlertsEventSource = es;
-      const handleEvt = () => {
+
+      const refresh = () => {
         fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
       };
-      es.addEventListener('request-updated', handleEvt);
-      es.addEventListener('donor-accepted', handleEvt);
-      es.addEventListener('donor-declined', handleEvt);
-      es.addEventListener('donor-withdrew', handleEvt);
-      es.addEventListener('donor-released', handleEvt);
-      es.addEventListener('request-closed', handleEvt);
-      es.addEventListener('request-cancelled', handleEvt);
-      es.addEventListener('request-expired', handleEvt);
-      es.addEventListener('request-fulfilled', handleEvt);
+
+      es.addEventListener('request-updated', refresh);
+      es.addEventListener('donor-accepted', refresh);
+      es.addEventListener('donor-declined', refresh);
+      es.addEventListener('donor-withdrew', refresh);
+
+      es.addEventListener('donor-released', (e) => {
+        showToast('The hospital no longer needs you for this request', 'info');
+        refresh();
+      });
+
+      es.addEventListener('request-closed', (e) => {
+        showToast('This request was closed by the hospital', 'info');
+        refresh();
+      });
+
+      es.addEventListener('request-cancelled', (e) => {
+        showToast('The hospital cancelled this request', 'info');
+        refresh();
+      });
+
+      es.addEventListener('request-expired', (e) => {
+        showToast('Your request has expired', 'info');
+        refresh();
+      });
+
+      es.addEventListener('request-fulfilled', (e) => {
+        showToast('Request fulfilled', 'success');
+        refresh();
+      });
+
+      es.onerror = () => {
+        // Fallback polling handles reconnection seamlessly
+      };
     } catch (e) {
       console.debug('Donor alerts SSE notice:', e);
     }
@@ -91,14 +119,15 @@
   // ======================== 1. PROFILE & SESSION ========================
   async function initDonorProfile() {
     try {
-      // Try reading authenticated session
       const session = typeof Auth !== 'undefined' ? Auth.getSession() : null;
       if (session && session.user) {
+        currentDonor.id = session.user.id || session.user.donorId;
         currentDonor.name = session.user.name || session.user.fullName || currentDonor.name;
-        currentDonor.bloodType = session.user.bloodType || currentDonor.bloodType;
+        currentDonor.bloodType = session.user.bloodType || session.user.bloodGroup || currentDonor.bloodType;
         if (session.user.latitude && session.user.longitude) {
           currentDonor.latitude = parseFloat(session.user.latitude);
           currentDonor.longitude = parseFloat(session.user.longitude);
+          currentDonor.hasLocation = true;
         }
         if (session.user.availability) {
           currentDonor.availability = session.user.availability;
@@ -111,8 +140,10 @@
         const json = await res.json();
         if (json.success && json.data) {
           const d = json.data;
+          currentDonor.id = d.id || d.donorId || currentDonor.id;
           currentDonor.name = d.name || currentDonor.name;
-          currentDonor.bloodType = d.bloodType || currentDonor.bloodType;
+          currentDonor.bloodType = d.bloodType || d.bloodGroup || currentDonor.bloodType;
+          if (d.qrToken || d.qr_token) currentDonor.qrToken = d.qrToken || d.qr_token;
           if (d.latitude && d.longitude) {
             currentDonor.latitude = parseFloat(d.latitude);
             currentDonor.longitude = parseFloat(d.longitude);
@@ -124,7 +155,7 @@
         }
       }
 
-      // Fetch authoritative medical eligibility
+      // Authoritative medical eligibility
       try {
         const elRes = await fetch('/api/donor/eligibility');
         if (elRes.ok) {
@@ -138,45 +169,36 @@
       console.warn('Profile sync notice:', err);
     }
 
-    if (donorGreetingName) donorGreetingName.textContent = currentDonor.name;
-    updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
-    renderDonorStatus();
+    updateHeaderStatusLine();
   }
 
-  // ======================== 2. REAL GEOLOCATION API ========================
+  // ======================== 2. GEOLOCATION API ========================
   function requestLiveGeolocation() {
     if (!navigator.geolocation) {
-      console.warn('Geolocation is not supported by this browser.');
+      currentDonor.hasLocation = false;
+      updateHeaderStatusLine();
       fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
       return;
     }
 
-    const icon = gpsSyncBtn ? gpsSyncBtn.querySelector('.gps-icon-spin') : null;
-    if (icon) icon.classList.add('fa-spin');
-
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        if (icon) icon.classList.remove('fa-spin');
         currentDonor.latitude = pos.coords.latitude;
         currentDonor.longitude = pos.coords.longitude;
         currentDonor.hasLocation = true;
         currentDonor.accuracy = pos.coords.accuracy ? Math.round(pos.coords.accuracy) : null;
-        const accuracy = currentDonor.accuracy || 8;
 
         const banner = document.getElementById('donorLocationPrompt');
         if (banner) banner.style.display = 'none';
 
-        updateGPSDisplay(currentDonor.latitude, currentDonor.longitude, accuracy);
+        updateHeaderStatusLine();
 
-        // Pan map to real position
         if (leafletMap) {
           leafletMap.setView([currentDonor.latitude, currentDonor.longitude], 13);
         }
 
-        // Fetch alerts for real location
         fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
 
-        // Update backend donor location
         fetch('/api/donors/location', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -187,103 +209,40 @@
         }).catch(() => { });
       },
       (err) => {
-        if (icon) icon.classList.remove('fa-spin');
-        console.warn('Geolocation notice / permission denied:', err.message);
         currentDonor.hasLocation = false;
         currentDonor.accuracy = null;
-        if (err.code === 1) {
-          const banner = document.getElementById('donorLocationPrompt');
-          if (banner) banner.style.display = 'flex';
+        const banner = document.getElementById('donorLocationPrompt');
+        if (banner && err.code === 1) {
+          banner.style.display = 'flex';
         }
-        updateGPSDisplay(currentDonor.latitude, currentDonor.longitude, null);
+        updateHeaderStatusLine();
         fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
   }
 
-  function initGPSListener() {
-    if (!gpsSyncBtn) return;
-    gpsSyncBtn.addEventListener('click', () => {
-      showToast('Refreshing live GPS coordinates via Geolocation API...', 'info');
-      requestLiveGeolocation();
-    });
-  }
-
-  function updateGPSDisplay(lat, lng, accuracy) {
-    if (gpsCoordsText) {
-      if (accuracy) {
-        const latStr = Math.abs(lat).toFixed(4) + (lat >= 0 ? '° N' : '° S');
-        const lngStr = Math.abs(lng).toFixed(4) + (lng >= 0 ? '° E' : '° W');
-        gpsCoordsText.textContent = `CONNECTED (${latStr}, ${lngStr} ±${accuracy}m)`;
-      } else {
-        gpsCoordsText.textContent = `LOCATION OFF`;
-      }
-    }
-
-    const navGps = document.getElementById('navGpsIndicator');
-    if (navGps) {
-      if (accuracy) {
-        navGps.innerHTML = `<span class="gps-dot-pulse"></span><span>Live GPS: Connected (±${accuracy}m)</span>`;
-      } else {
-        navGps.innerHTML = `<span class="gps-dot-pulse" style="background:#f59e0b;"></span><span>Live GPS: Location off</span> <button type="button" onclick="window.requestLiveGeolocation && window.requestLiveGeolocation()" style="margin-left:4px;padding:1px 6px;font-size:10px;background:#ef4444;color:#fff;border:none;border-radius:3px;cursor:pointer;">Enable</button>`;
-      }
-    }
-
-    const chipGps = document.getElementById('standbyGpsChip');
-    if (chipGps) {
-      if (accuracy) {
-        chipGps.innerHTML = `<i class="fas fa-crosshairs" style="color:#00e676"></i> <span>Live GPS: <b>Connected (±${accuracy}m)</b></span>`;
-      } else {
-        chipGps.innerHTML = `<i class="fas fa-crosshairs" style="color:#f59e0b"></i> <span>Live GPS: <b>Location off</b> <button type="button" onclick="window.requestLiveGeolocation && window.requestLiveGeolocation()" style="margin-left:6px;padding:2px 8px;font-size:11px;background:#ef4444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Enable</button></span>`;
-      }
-    }
-  }
-
   window.requestLiveGeolocation = requestLiveGeolocation;
 
-  // ======================== 3. STATUS TOGGLE ========================
-  function initStatusToggle() {
-    if (!donorStatusToggle) return;
-    donorStatusToggle.addEventListener('click', async () => {
-      const isCurrentlyAvailable = currentDonor.availability === 'Available';
-      const newStatus = isCurrentlyAvailable ? 'Busy' : 'Available';
-      currentDonor.availability = newStatus;
-      renderDonorStatus();
+  function updateHeaderStatusLine() {
+    const statusLine = document.getElementById('feedHeaderStatusLine');
+    if (!statusLine) return;
 
-      try {
-        await fetch('/api/donors/availability', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ available: newStatus === 'Available' })
-        });
-        showToast(`Donor status updated to: ${newStatus}`, 'success');
-      } catch (e) {
-        console.warn('Status sync notice:', e);
-      }
-    });
+    const activeCountText = `${activeRequests.length} active`;
+    const locText = currentDonor.hasLocation
+      ? 'Location on'
+      : '<a href="javascript:void(0)" onclick="window.requestLiveGeolocation()">Turn on location</a>';
+    const notifsText = (typeof Notification !== 'undefined' && Notification.permission === 'denied')
+      ? 'Notifications off'
+      : 'Notifications on';
+
+    statusLine.innerHTML = `<span>${activeCountText}</span> &bull; <span>${locText}</span> &bull; <span>${notifsText}</span>`;
   }
 
-  function renderDonorStatus() {
-    const isAvail = currentDonor.availability === 'Available';
-    if (donorStatusToggle) {
-      donorStatusToggle.className = `hub-status-toggle ${isAvail ? '' : 'busy'}`;
-      if (donorStatusText) {
-        donorStatusText.textContent = isAvail ? 'Available to Donate' : 'Busy';
-      }
-    }
-    if (sidebarDonorStatus) {
-      sidebarDonorStatus.innerHTML = `
-        <span class="hes-dot" style="background:${isAvail ? 'var(--green-neon)' : 'var(--yellow-neon)'}; box-shadow:0 0 10px ${isAvail ? 'var(--green-neon)' : 'var(--yellow-neon)'}"></span>
-        <span>Donor Status: <b>${isAvail ? 'ACTIVE' : 'BUSY'}</b></span>
-      `;
-    }
-  }
-
-  // ======================== 4. HAVERSINE DISTANCE ENGINE ========================
+  // ======================== 3. HAVERSINE DISTANCE ENGINE ========================
   function calculateHaversineKm(lat1, lon1, lat2, lon2) {
     if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-    const R = 6371; // Earth radius in km
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
@@ -294,17 +253,7 @@
     return parseFloat((R * c).toFixed(1));
   }
 
-  function getZone(distanceKm) {
-    if (distanceKm <= 5.0) {
-      return { tag: 'Zone 1', range: '0–5km', label: 'Within Immediate Coverage' };
-    } else if (distanceKm <= 10.0) {
-      return { tag: 'Zone 2', range: '5–10km', label: 'Extended Rapid Response' };
-    } else {
-      return { tag: 'Zone 3', range: '10–20km', label: 'Regional Trauma Backup' };
-    }
-  }
-
-  // ======================== 5. REST API: GET ACTIVE ALERTS ========================
+  // ======================== 4. REST API: FETCH ALERTS ========================
   async function fetchActiveAlerts(lat, lng) {
     try {
       const donorBloodGroup = currentDonor.bloodType || 'O-';
@@ -320,8 +269,7 @@
           data = json;
         }
       } else {
-        // Fallback to /api/requests
-        const fallbackRes = await fetch('/api/requests', { credentials: 'include' });
+        const fallbackRes = await fetch('/api/donor/blood-requests', { credentials: 'include' });
         if (fallbackRes.ok) {
           const fbJson = await fallbackRes.json();
           if (fbJson.success && Array.isArray(fbJson.data)) {
@@ -330,47 +278,56 @@
         }
       }
 
-      // Map and calculate real database fields
-      activeRequests = data.map(req => {
+      // Map raw items
+      allAlerts = data.map(req => {
         const reqLat = parseFloat(req.latitude || req.reqLat || (lat + 0.024));
         const reqLng = parseFloat(req.longitude || req.reqLng || (lng + 0.018));
         const distanceKm = req.distanceKm != null ? parseFloat(req.distanceKm) : calculateHaversineKm(lat, lng, reqLat, reqLng);
-        const zone = getZone(distanceKm);
+
+        // Normalize status
+        const rawStatus = (req.status || req.notifStatus || 'New').toString().toUpperCase();
+        const reqStatus = (req.reqStatus || '').toString().toUpperCase();
+
+        let isActive = req.isActive;
+        if (isActive === undefined) {
+          const isTerminated = ['FULFILLED', 'CLOSED', 'CANCELLED', 'EXPIRED'].includes(reqStatus);
+          isActive = !isTerminated && ['NEW', 'ACCEPTED', 'ARRIVED', 'NOTIFIED'].includes(rawStatus);
+        }
 
         return {
           id: req.id || req.requestId,
           hospitalId: req.hospitalId || req.hospital_id,
-          hospitalName: req.hospitalName || req.hospital_name || 'Emergency Medical Center',
+          hospitalName: req.hospitalName || req.hospital_name || 'Hospital',
           bloodType: req.bloodType || req.blood_type || donorBloodGroup,
-          urgencyLevel: req.urgencyLevel || req.urgency_level || req.urgency || null,
-          neededWithinMinutes: req.neededWithinMinutes != null ? req.neededWithinMinutes : (req.neededWithinMins != null ? req.neededWithinMins : null),
+          urgencyLevel: req.urgencyLevel || req.urgency_level || req.urgency || 'Urgent',
+          neededWithinMinutes: req.neededWithinMinutes != null ? req.neededWithinMinutes : (req.neededWithinMins != null ? req.neededWithinMins : 60),
           distanceKm: distanceKm.toFixed(1),
           etaMinutes: req.etaMinutes || Math.max(Math.round(distanceKm * 2.5), 6),
-          zoneTag: zone.tag,
-          zoneRange: zone.range,
-          address: req.hospitalAddress || req.address || req.city || 'Emergency Trauma Bay',
+          address: req.hospitalAddress || req.address || req.city || 'Emergency Trauma Center',
           phone: req.phone || req.hospitalPhone || req.hospital_phone || '+91 108',
           units: req.unitsRequested || req.units || 1,
-          patientName: req.patientName || 'Emergency Patient',
           notes: req.notes || req.hosp_notes || '',
-          status: req.status || 'New',
+          status: rawStatus,
+          displayStatus: req.displayStatus || (rawStatus === 'ACCEPTED' ? 'Accepted' : 'New'),
+          isActive: Boolean(isActive),
+          isTargeted: Boolean(req.targeted || req.isTargeted || req.notificationCount === 1),
+          finalReason: req.finalReason || req.closeReason || '',
+          createdAt: req.createdAt || req.created_at || new Date().toISOString(),
+          acceptedAt: req.acceptedAt || req.accepted_at || null,
+          expiresAt: req.expiresAt || req.expires_at || null,
+          arrivalDeadline: req.arrivalDeadline || req.arrival_deadline || null,
           reqLat,
           reqLng
         };
       });
 
-      // All requests returned by /api/donor/alerts are already validated and filtered for this donor by the backend
+      // Split into active and past
+      activeRequests = allAlerts.filter(r => r.isActive);
+      pastRequests = allAlerts.filter(r => !r.isActive);
 
-      // Update global emergency radar dot indicator
-      try {
-        sessionStorage.setItem('red404_active_emergencies_count', String(activeRequests.length));
-        if (typeof window.updateEmergencyIndicator === 'function') {
-          window.updateEmergencyIndicator(activeRequests.length);
-        }
-      } catch (_) { }
-
-      // Render dynamically into feed container and update map
+      updateHeaderStatusLine();
       renderEmergencyFeed();
+      renderPastRequests();
       updateRadarVisualization();
 
     } catch (e) {
@@ -381,250 +338,296 @@
     }
   }
 
-  // ======================== 6. DYNAMIC UI RENDERING ========================
+  // ======================== 5. ACTIVE CARDS RENDERING ========================
   function renderEmergencyFeed() {
     const feedContainer = getFeedContainer();
-    const liveBadge = document.getElementById('feedLiveSosBadge');
     if (!feedContainer) return;
 
-    // State 1: If response is empty, dynamically inject Standby UI
     if (activeRequests.length === 0) {
-      if (liveBadge) liveBadge.style.display = 'none';
       renderStandbyState();
       return;
     }
 
-    // Only show LIVE SOS BROADCAST badge if there is at least one active (New or Accepted) request
-    const hasLiveSos = activeRequests.some(r => {
-      const s = (r.status || 'New').toUpperCase();
-      return s === 'NEW' || s === 'ACCEPTED' || s === 'NOTIFIED';
-    });
-    if (liveBadge) {
-      liveBadge.style.display = hasLiveSos ? 'inline-flex' : 'none';
-    }
-
-    // State 2: Requests exist — loop through records and render cards
     const urlParams = new URLSearchParams(window.location.search);
     const highlightId = urlParams.get('highlight');
 
     let html = '';
-    activeRequests.forEach((req, idx) => {
-      const hospitalName = req.hospitalName || 'Hospital';
-      const distance = req.distanceKm != null ? req.distanceKm : '0';
-      const rawStatus = (req.status || 'New').toUpperCase();
+    activeRequests.forEach(req => {
+      const isAccepted = req.status === 'ACCEPTED' || req.displayStatus === 'Accepted';
 
-      const isHighlighted = Boolean(highlightId && (String(req.id) === String(highlightId) || String(req.requestId) === String(highlightId)));
-      const highlightStyles = isHighlighted
-        ? 'border: 2px solid #ef4444 !important; box-shadow: 0 0 25px rgba(239, 68, 68, 0.65) !important; background: linear-gradient(135deg, rgba(35, 12, 18, 0.95) 0%, rgba(20, 10, 15, 0.98) 100%) !important;'
-        : '';
-      const targetedBadge = isHighlighted
-        ? '<span class="target-highlight-tag" style="background:#dc2626; color:#ffffff; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(220,38,38,0.5);"><i class="fa-solid fa-bullseye"></i> TARGETED FOR YOU</span>'
-        : '';
-
-      // Normalize status to one of: New, Accepted, Declined, Withdrawn, Expired, Fulfilled
-      let displayStatus = 'New';
-      let statusBadgeStyle = 'background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);';
-
-      if (rawStatus === 'ACCEPTED') {
-        displayStatus = 'Accepted';
-        statusBadgeStyle = 'background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);';
-      } else if (rawStatus === 'DECLINED') {
-        displayStatus = 'Declined';
-        statusBadgeStyle = 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);';
-      } else if (rawStatus === 'WITHDRAWN') {
-        displayStatus = 'Withdrawn';
-        statusBadgeStyle = 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);';
-      } else if (rawStatus === 'EXPIRED') {
-        displayStatus = 'Expired';
-        statusBadgeStyle = 'background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);';
-      } else if (rawStatus === 'FULFILLED') {
-        displayStatus = 'Fulfilled';
-        statusBadgeStyle = 'background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.3);';
+      // Urgency normalized: normal, urgent, critical
+      const rawU = (req.urgencyLevel || 'Urgent').toString().toLowerCase().trim();
+      let urgencyKey = 'urgent';
+      let urgencyLabel = 'Urgent';
+      if (rawU === 'critical') {
+        urgencyKey = 'critical';
+        urgencyLabel = 'Critical';
+      } else if (rawU === 'normal') {
+        urgencyKey = 'normal';
+        urgencyLabel = 'Normal';
       }
 
-      let actionsHtml = '';
-      if (displayStatus === 'Accepted') {
-        actionsHtml = `
-          <div class="sos-actions-row" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-            <button type="button" class="btn-sos-directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})" style="display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;">
-              <i class="fas fa-location-arrow"></i>
-              <span>Directions</span>
-            </button>
-            <a href="tel:${escapeHtml(req.phone || '+91 108')}" class="btn-sos-call" style="background:#059669; color:#fff; text-decoration:none; padding:9px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:13px;">
-              <i class="fas fa-phone"></i>
-              <span>Call hospital (${escapeHtml(req.phone || '+91 108')})</span>
-            </a>
+      // Received time ago
+      const receivedAgoStr = getTimeAgo(req.createdAt);
+
+      // Targeted plain text (no red glow)
+      const targetedSpan = req.isTargeted
+        ? `<span class="card-targeted-text">&bull; Sent directly to you</span>`
+        : '';
+
+      // Status chip
+      const statusChipHtml = isAccepted
+        ? `<span class="card-status-chip status-accepted"><i class="fa-solid fa-check"></i> Accepted</span>`
+        : `<span class="card-status-chip status-new">New</span>`;
+
+      // Single distance line
+      const etaStr = req.etaMinutes ? ` &bull; about ${req.etaMinutes} min by road` : '';
+      const distanceLine = `${req.distanceKm} km away${etaStr}`;
+
+      // Info Block Right Cell
+      let rightCellHtml = '';
+      if (!isAccepted) {
+        const minsLeft = computeMinutesLeft(req.createdAt, req.neededWithinMinutes, req.expiresAt);
+        const totalMins = req.neededWithinMinutes || 60;
+        const pct = Math.max(0, Math.min(100, Math.round((minsLeft / totalMins) * 100)));
+        rightCellHtml = `
+          <div class="cig-cell">
+            <span class="cig-label">Respond within</span>
+            <span class="cig-value">${minsLeft} min</span>
+            <div class="card-countdown-track">
+              <div class="card-countdown-bar" style="width: ${pct}%;"></div>
+            </div>
           </div>
         `;
-      } else if (displayStatus === 'Declined') {
-        actionsHtml = `<div style="font-size:13px; color:#94a3b8; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px; margin-top:12px;"><i class="fas fa-times-circle" style="margin-right:6px;"></i> You declined this request.</div>`;
-      } else if (displayStatus === 'Withdrawn') {
-        actionsHtml = `<div style="font-size:13px; color:#94a3b8; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px; margin-top:12px;"><i class="fas fa-undo" style="margin-right:6px;"></i> You withdrew from this request. The hospital has been notified.</div>`;
-      } else if (displayStatus === 'Expired') {
-        actionsHtml = `<div style="font-size:13px; color:#f59e0b; padding:10px; background:rgba(245,158,11,0.08); border-radius:8px; margin-top:12px;"><i class="fas fa-clock" style="margin-right:6px;"></i> This emergency request has expired.</div>`;
-      } else if (displayStatus === 'Fulfilled') {
-        actionsHtml = `<div style="font-size:13px; color:#3b82f6; padding:10px; background:rgba(59,130,246,0.08); border-radius:8px; margin-top:12px;"><i class="fas fa-check-circle" style="margin-right:6px;"></i> This request has been fulfilled. Thank you!</div>`;
       } else {
-        // New
-        actionsHtml = `
-          <div class="sos-actions-row" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-            <button class="btn-sos-accept" onclick="window.acceptAndNavigate(${req.id})">
-              <span>Accept Alert & Navigate</span>
-              <i class="fas fa-arrow-right"></i>
-            </button>
-            <button type="button" class="btn-sos-directions" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
-              <i class="fas fa-location-arrow"></i>
-              <span>Directions</span>
-            </button>
-            <button class="btn-sos-decline" onclick="window.declineAlert(${req.id})">
-              Decline
-            </button>
+        const reachTimeStr = formatArrivalDeadline(req.arrivalDeadline, req.acceptedAt);
+        rightCellHtml = `
+          <div class="cig-cell">
+            <span class="cig-label">Reach the hospital by</span>
+            <span class="cig-value">${reachTimeStr}</span>
           </div>
         `;
       }
 
-      const bloodLabel = (req.bloodType || '').includes('-') ? 'NEGATIVE NEEDED' : 'POSITIVE NEEDED';
+      // Notes quote if present
+      const notesHtml = req.notes
+        ? `<div class="card-notes-quote">&ldquo;${escapeHtml(req.notes)}&rdquo;</div>`
+        : '';
 
-      const metaParts = [];
-      if (req.urgencyLevel) {
-        const rawU = (req.urgencyLevel || '').toString().toLowerCase().trim();
-        const formattedU = rawU === 'critical' ? 'Critical' : (rawU === 'urgent' ? 'Urgent' : 'Normal');
-        metaParts.push(`<b>Urgency: ${formattedU}</b>`);
+      // Actions row (44px height)
+      let actionsHtml = '';
+      if (!isAccepted) {
+        actionsHtml = `
+          <div class="card-actions-row">
+            <button type="button" class="btn-card-accept" onclick="window.acceptAndNavigate(${req.id})">
+              <span>Accept</span>
+            </button>
+            <button type="button" class="btn-card-decline" onclick="window.declineAlert(${req.id})">
+              <span>Decline</span>
+            </button>
+            <button type="button" class="btn-card-directions-link" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
+              <i class="fa-solid fa-diamond-turn-right"></i> <span>Directions</span>
+            </button>
+          </div>
+          <div class="card-action-helper-text">
+            Accepting shares your phone number with this hospital. Please decline if you are unwell or not eligible.
+          </div>
+        `;
+      } else {
+        actionsHtml = `
+          <div class="card-actions-row">
+            <button type="button" class="btn-card-directions-primary" onclick="window.openDirectionsToHospital(${req.reqLat}, ${req.reqLng})">
+              <i class="fa-solid fa-diamond-turn-right"></i> <span>Directions</span>
+            </button>
+            <a href="tel:${escapeHtml(req.phone || '+91 108')}" class="btn-card-call">
+              <i class="fa-solid fa-phone"></i> <span>Call hospital (${escapeHtml(req.phone || '+91 108')})</span>
+            </a>
+            <button type="button" class="btn-card-qr" onclick="window.showDonorQrModal()">
+              <i class="fa-solid fa-qrcode"></i> <span>Show my QR</span>
+            </button>
+          </div>
+          <div class="card-step-guide">
+            <span>1. Go to hospital</span> &bull; <span>2. Show QR at desk</span> &bull; <span>3. Health check &amp; donation</span>
+          </div>
+          <div class="card-action-helper-text">
+            Can't make it? Please call the hospital so they can plan.
+          </div>
+        `;
       }
-      metaParts.push(`Units: ${req.units || 1}`);
-      if (req.neededWithinMinutes) {
-        metaParts.push(`Needed within ${req.neededWithinMinutes} mins`);
-      }
-      metaParts.push(`Status: <span style="font-weight:700; color:#fff;">${displayStatus}</span>`);
 
       html += `
-        <div class="emergency-sos-card" id="req-card-${req.id}" style="margin-bottom:16px; ${highlightStyles}">
-          <div class="sos-card-top">
-            <div class="sos-hosp-info">
-              <div class="sos-hosp-title-row" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <i class="fas fa-hospital-alt sos-hosp-icon"></i>
-                <h3 class="sos-hosp-name" style="margin:0;">${escapeHtml(hospitalName.toUpperCase())}</h3>
-                ${targetedBadge}
-                <span class="sos-distance-pill">${distance}km</span>
-                <span style="${statusBadgeStyle} padding:2px 10px; border-radius:6px; font-size:12px; font-weight:700;">${displayStatus}</span>
-              </div>
-              <div class="sos-hosp-address" style="font-size:0.82rem; color:#cbd5e1; margin:6px 0 3px 0;">
-                <i class="fa-solid fa-location-dot" style="color:#ef4444; margin-right:4px;"></i> ${escapeHtml(req.address || 'Hospital Location')}
-              </div>
-              <span class="sos-zone-tag">${distance} km away • ${req.zoneTag || 'Zone 1'}</span>
+        <article class="emergency-sos-card card-urgency-${urgencyKey}" id="req-card-${req.id}">
+          <!-- Row 1: Urgency + Received + Status -->
+          <div class="card-row-top">
+            <div class="card-top-left">
+              <span class="card-urgency-label urgency-${urgencyKey}">
+                <i class="fa-solid fa-triangle-exclamation"></i> ${urgencyLabel}
+              </span>
+              <span class="card-received-time">Received ${receivedAgoStr}</span>
+              ${targetedSpan}
             </div>
-            <div class="sos-blood-badge">
-              <div class="sbb-type">${escapeHtml(req.bloodType)}</div>
-              <div class="sbb-label">${bloodLabel}</div>
+            <div class="card-top-right">
+              ${statusChipHtml}
             </div>
           </div>
 
-          <!-- Mini route map preview -->
-          <div class="sos-route-preview">
-            <div class="srp-track">
-              <div class="srp-node-donor" title="Your GPS Location"></div>
-              <div class="srp-dashed-line"></div>
-              <div class="srp-node-hosp" title="Hospital Location">
-                <i class="fas fa-hospital"></i>
+          <!-- Row 2: Hospital Name + Address + Distance -->
+          <h2 class="card-hosp-name">${escapeHtml(req.hospitalName)}</h2>
+          <div class="card-hosp-address">
+            <i class="fa-solid fa-location-dot" style="margin-right: 4px; font-size: 13px;"></i>${escapeHtml(req.address)}
+          </div>
+          <div class="card-distance-line">
+            <span>${distanceLine}</span>
+          </div>
+
+          <!-- Row 3: Two-cell info block -->
+          <div class="card-info-grid">
+            <div class="cig-cell">
+              <span class="cig-label">Blood needed</span>
+              <div class="cig-value">
+                <span class="cig-blood-tag">${escapeHtml(req.bloodType)}</span>
+                <span>&bull; ${req.units} ${req.units === 1 ? 'unit' : 'units'}</span>
               </div>
             </div>
+            ${rightCellHtml}
           </div>
+          ${notesHtml}
 
-          <div class="sos-urgency-meta" style="margin-top:10px; font-size:0.84rem; color:#94a3b8;">
-            ${metaParts.join(' • ')}
-            ${req.notes ? `<div style="font-size:0.78rem; color:#cbd5e1; margin-top:4px;">Note: ${escapeHtml(req.notes)}</div>` : ''}
-          </div>
-
+          <!-- Row 4: Actions (44px) -->
           ${actionsHtml}
-        </div>
+        </article>
       `;
     });
 
     feedContainer.innerHTML = html;
 
-    // Scroll to and highlight card if specified in query string
-    try {
-      if (highlightId) {
-        setTimeout(() => {
-          const targetCard = document.getElementById(`req-card-${highlightId}`);
-          if (targetCard) {
-            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 120);
-      }
-    } catch (_) { }
+    if (highlightId) {
+      setTimeout(() => {
+        const el = document.getElementById(`req-card-${highlightId}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
   }
 
-  // ======================== 7. DYNAMIC STANDBY UI ========================
+  // ======================== 6. PAST REQUESTS (LAST 7 DAYS) ========================
+  function renderPastRequests() {
+    const detailsEl = document.getElementById('pastAlertsSection');
+    const container = document.getElementById('pastAlertsContainer');
+    const countEl = document.getElementById('pastAlertsCount');
+    if (!detailsEl || !container) return;
+
+    if (pastRequests.length === 0) {
+      detailsEl.style.display = 'none';
+      return;
+    }
+
+    detailsEl.style.display = 'block';
+    if (countEl) countEl.textContent = pastRequests.length;
+
+    let html = '';
+    pastRequests.forEach(req => {
+      // Determine final plain result text
+      let resultText = 'Completed';
+      const s = (req.status || '').toUpperCase();
+      if (s === 'WITHDRAWN') {
+        resultText = 'Withdrawn by you';
+      } else if (s === 'DECLINED') {
+        resultText = 'Declined';
+      } else if (s === 'FULFILLED') {
+        resultText = 'Fulfilled: Verified donation completed';
+      } else if (s === 'CLOSED') {
+        resultText = req.finalReason ? `Closed by hospital (${escapeHtml(req.finalReason)})` : 'Closed by hospital';
+      } else if (s === 'CANCELLED') {
+        resultText = req.finalReason ? `Cancelled (${escapeHtml(req.finalReason)})` : 'Cancelled';
+      } else if (s === 'EXPIRED') {
+        resultText = 'Expired';
+      } else if (s === 'RELEASED') {
+        resultText = 'Released';
+      }
+
+      const dateStr = formatDateShort(req.createdAt);
+
+      html += `
+        <div class="past-request-row">
+          <div class="prr-left">
+            <span class="prr-hosp">${escapeHtml(req.hospitalName)}</span>
+            <span class="prr-bg">${escapeHtml(req.bloodType)}</span>
+            <span class="prr-time">&bull; ${dateStr}</span>
+          </div>
+          <div class="prr-result">${resultText}</div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  // ======================== 7. EMPTY STATE ========================
   function renderStandbyState() {
     const feedContainer = getFeedContainer();
-    const liveBadge = document.getElementById('feedLiveSosBadge');
-    if (liveBadge) liveBadge.style.display = 'none';
     if (!feedContainer) return;
 
-    let gpsHtml = `Live GPS: <b>Location off</b> <button type="button" onclick="window.requestLiveGeolocation && window.requestLiveGeolocation()" style="margin-left:6px;padding:2px 8px;font-size:11px;background:#ef4444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Enable</button>`;
-    if (currentDonor.hasLocation && currentDonor.accuracy) {
-      gpsHtml = `Live GPS: <b>Connected (±${currentDonor.accuracy}m)</b>`;
-    } else if (currentDonor.hasLocation) {
-      gpsHtml = `Live GPS: <b>Connected</b>`;
-    }
-
-    let eligText = 'Waiting for hospital check';
-    if (currentDonor.eligibility) {
-      const e = currentDonor.eligibility;
-      if (e.has_donated === false || e.total_donations === 0 || e.totalDonations === 0) {
-        eligText = "No donation yet. You're ready.";
-      } else if (e.eligible) {
-        eligText = "You can donate. The hospital does a final check before donating.";
-      } else {
-        const nextDate = e.next_eligible_date || e.nextEligibleDate || '';
-        const daysLeft = e.days_until_eligible || e.daysUntilEligible || 0;
-        let formattedNext = nextDate;
-        try {
-          const nd = new Date(nextDate);
-          if (!isNaN(nd.getTime())) {
-            formattedNext = nd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-          }
-        } catch (_) {}
-        eligText = `Next eligible on ${formattedNext} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'})`;
-      }
-    }
+    const locOk = currentDonor.hasLocation;
+    const isAvail = currentDonor.availability === 'Available';
 
     feedContainer.innerHTML = `
-      <div class="standby-state-container" style="animation:fadeIn 0.3s ease;">
-        <div class="standby-radar-disc">
-          <div class="standby-shield-icon">
-            <i class="fas fa-shield-alt"></i>
-          </div>
-        </div>
-        <h2 class="standby-title">No active requests</h2>
-        <p class="standby-desc">
-          You'll be notified here when a hospital near you needs your blood group.
+      <div class="empty-requests-state">
+        <h2 class="empty-state-title">No active requests near you</h2>
+        <p class="empty-state-desc">
+          You will be notified here, in your notifications and by browser alert when a verified hospital needs your blood group.
         </p>
-        <div class="standby-status-pill">
-          <span class="ssp-dot"></span>
-          <span>🟢 Standby: Monitoring</span>
-        </div>
-
-        <div class="standby-chips-row">
-          <div class="standby-chip">
-            <i class="fas fa-tint" style="color:var(--red-neon)"></i>
-            <span>Blood Group: <b>${escapeHtml(currentDonor.bloodType)}</b></span>
+        <div class="empty-state-status-list">
+          <div class="status-list-row">
+            <span class="slr-left">
+              <i class="fa-solid fa-location-dot"></i>
+              <span>Location: <strong>${locOk ? 'On' : 'Off'}</strong></span>
+            </span>
+            ${!locOk
+              ? '<button type="button" class="btn-slr-fix" onclick="window.requestLiveGeolocation()">Turn on</button>'
+              : '<span class="slr-ok"><i class="fa-solid fa-check"></i></span>'}
           </div>
-          <div class="standby-chip">
-            <i class="fas fa-heartbeat" style="color:var(--green-neon)"></i>
-            <span>Medical Eligibility: <b>${escapeHtml(eligText)}</b></span>
+          <div class="status-list-row">
+            <span class="slr-left">
+              <i class="fa-solid fa-bell"></i>
+              <span>Notifications: <strong>Active</strong></span>
+            </span>
+            <span class="slr-ok"><i class="fa-solid fa-check"></i></span>
           </div>
-          <div class="standby-chip" id="standbyGpsChip">
-            <i class="fas fa-crosshairs" style="color:#00e676"></i>
-            <span>${gpsHtml}</span>
+          <div class="status-list-row">
+            <span class="slr-left">
+              <i class="fa-solid fa-user-check"></i>
+              <span>Availability: <strong>${escapeHtml(currentDonor.availability)}</strong></span>
+            </span>
+            ${!isAvail
+              ? '<button type="button" class="btn-slr-fix" onclick="window.toggleAvailabilityFromEmpty()">Set Available</button>'
+              : '<span class="slr-ok"><i class="fa-solid fa-check"></i></span>'}
+          </div>
+          <div class="status-list-row">
+            <span class="slr-left">
+              <i class="fa-solid fa-droplet"></i>
+              <span>Blood group: <strong>${escapeHtml(currentDonor.bloodType)}</strong></span>
+            </span>
+            <span class="slr-ok"><i class="fa-solid fa-check"></i></span>
           </div>
         </div>
       </div>
     `;
   }
 
-  // ======================== 8. UNIFIED MAP ENGINE ========================
+  window.toggleAvailabilityFromEmpty = async function () {
+    currentDonor.availability = 'Available';
+    try {
+      await fetch('/api/donors/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ available: true })
+      });
+      showToast('Availability updated to Available', 'success');
+      renderEmergencyFeed();
+    } catch (_) { }
+  };
+
+  // ======================== 8. PROXIMITY MAP (GRAYSCALE) ========================
   function setRadarMapLayer(layerKey) {
     if (!leafletMap) return;
     if (layerKey === 'google-dark') layerKey = 'dark';
@@ -642,20 +645,12 @@
 
     if (result && result.layer) {
       if (currentTileLayer) {
-        try { leafletMap.removeLayer(currentTileLayer); } catch (_) {}
+        try { leafletMap.removeLayer(currentTileLayer); } catch (_) { }
       }
       currentTileLayer = result.layer;
       currentTileLayer.addTo(leafletMap);
-      if (mapContainer) {
-        if (result.isDark) {
-          mapContainer.classList.add('dark-map');
-        } else {
-          mapContainer.classList.remove('dark-map');
-        }
-      }
     }
 
-    // Update layer button active state
     document.querySelectorAll('.rlb-btn').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-layer') === layerKey);
     });
@@ -673,10 +668,8 @@
         attributionControl: false
       });
 
-      // Apply initial layer
       setRadarMapLayer(activeLayerKey);
 
-      // Setup layer switch buttons with Red404Map
       const layerBar = document.querySelector('.radar-layer-bar');
       if (layerBar && window.Red404Map) {
         window.Red404Map.setupLayerBar(layerBar, leafletMap, (k) => setRadarMapLayer(k));
@@ -684,8 +677,7 @@
         document.querySelectorAll('.rlb-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const layerKey = btn.getAttribute('data-layer');
-            setRadarMapLayer(layerKey);
+            setRadarMapLayer(btn.getAttribute('data-layer'));
           });
         });
       }
@@ -694,7 +686,6 @@
         if (leafletMap) leafletMap.invalidateSize();
       });
 
-      // Setup zoom & recenter controls
       const zoomInBtn = document.getElementById('radarZoomInBtn');
       if (zoomInBtn) {
         zoomInBtn.addEventListener('click', (e) => {
@@ -730,121 +721,106 @@
 
     const donorLatLng = [currentDonor.latitude, currentDonor.longitude];
     const radarBadge = document.getElementById('radarActiveBadge');
-    const scanner = document.getElementById('radarScannerSweep');
 
-    // Only active (New or Accepted) requests should activate the scanner and show on map
-    const activeAlerts = activeRequests.filter(r => {
-      const s = (r.status || 'New').toUpperCase();
-      return s === 'NEW' || s === 'ACCEPTED' || s === 'NOTIFIED';
-    });
-
-    if (scanner) {
-      scanner.style.display = activeAlerts.length > 0 ? 'block' : 'none';
-    }
-
-    // Remove existing markers if any
+    // Remove existing markers & routes
     if (donorMarker) leafletMap.removeLayer(donorMarker);
     if (hospitalMarker) leafletMap.removeLayer(hospitalMarker);
     if (routePolyline) leafletMap.removeLayer(routePolyline);
+    distanceCircles.forEach(c => leafletMap.removeLayer(c));
+    distanceCircles = [];
 
-    // Create glowing Donor Node marker
+    // Draw clean 1px distance rings at 5, 10, 20 km (20% opacity)
+    const ringRadii = [5000, 10000, 20000];
+    ringRadii.forEach(radius => {
+      const circle = L.circle(donorLatLng, {
+        radius: radius,
+        color: '#ffffff',
+        weight: 1,
+        opacity: 0.2,
+        fill: false,
+        interactive: false
+      }).addTo(leafletMap);
+      distanceCircles.push(circle);
+    });
+
+    // Create clean Blue Dot labelled "You" (no glow)
     const donorIcon = L.divIcon({
-      className: 'custom-donor-icon',
+      className: 'custom-donor-clean-marker',
       html: `
-        <div class="radar-center-donor">
-          <div class="rcd-dot"></div>
-          <div class="rcd-label">DONOR NODE</div>
-        </div>
+        <div class="cdcm-dot"></div>
+        <span class="cdcm-label">You</span>
       `,
-      iconSize: [80, 40],
-      iconAnchor: [40, 10]
+      iconSize: [40, 30],
+      iconAnchor: [20, 5]
     });
 
     donorMarker = L.marker(donorLatLng, { icon: donorIcon }).addTo(leafletMap);
 
-    // Check if there is an active matching request
-    if (activeAlerts.length > 0) {
-      const topReq = activeAlerts[0];
+    // Active requests check
+    if (activeRequests.length > 0) {
+      const topReq = activeRequests[0];
       const hospLatLng = [topReq.reqLat, topReq.reqLng];
 
       if (radarBadge) {
-        radarBadge.textContent = `${activeAlerts.length} active ${activeAlerts.length === 1 ? 'request' : 'requests'}`;
-        radarBadge.style.color = 'var(--red-neon)';
-        radarBadge.style.borderColor = 'var(--red-border)';
-        radarBadge.style.background = 'var(--red-glow-soft)';
+        radarBadge.textContent = `${activeRequests.length} active ${activeRequests.length === 1 ? 'request' : 'requests'}`;
       }
 
-      // Create glowing Hospital Marker
+      // Red pin with hospital name label
       const hospIcon = L.divIcon({
-        className: 'custom-hosp-icon',
+        className: 'custom-hosp-clean-marker',
         html: `
-          <div class="radar-hosp-node">
-            <div class="rhn-icon-box"><i class="fas fa-hospital"></i></div>
-            <div class="rhn-label">${escapeHtml(topReq.hospitalName || 'Hospital')} (${topReq.distanceKm}km)</div>
-          </div>
+          <div class="chcm-pin"><i class="fa-solid fa-hospital"></i></div>
+          <span class="chcm-label">${escapeHtml(topReq.hospitalName)}</span>
         `,
-        iconSize: [120, 50],
-        iconAnchor: [60, 20]
+        iconSize: [120, 40],
+        iconAnchor: [60, 12]
       });
 
       hospitalMarker = L.marker(hospLatLng, { icon: hospIcon }).addTo(leafletMap);
 
-      // Connecting straight-line polyline
+      // Solid 3px blue route line (#3b82f6)
       routePolyline = L.polyline([donorLatLng, hospLatLng], {
-        color: '#ff2a44',
+        color: '#3b82f6',
         weight: 3,
-        opacity: 0.85,
-        dashArray: '6, 8'
+        opacity: 0.9
       }).addTo(leafletMap);
 
-      // Fit bounds to show both donor and hospital
       const bounds = L.latLngBounds([donorLatLng, hospLatLng]);
-      leafletMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+      leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
 
     } else {
       if (radarBadge) {
-        radarBadge.textContent = 'No active requests';
-        radarBadge.style.color = 'var(--green-neon)';
-        radarBadge.style.borderColor = 'var(--green-border)';
-        radarBadge.style.background = 'var(--green-soft)';
+        radarBadge.textContent = '0 active requests';
       }
-
       const currentZoom = leafletMap.getZoom() || 13;
       leafletMap.setView(donorLatLng, Math.max(currentZoom, 13));
     }
+  }
+
+  function initMobileMapToggle() {
+    const btn = document.getElementById('btnToggleMobileMap');
+    const panel = document.getElementById('hubMapAsidePanel');
+    if (!btn || !panel) return;
+
+    btn.addEventListener('click', () => {
+      const isVisible = panel.classList.toggle('mobile-visible');
+      btn.querySelector('span').textContent = isVisible ? 'Hide map' : 'Show on map';
+      if (isVisible && leafletMap) {
+        setTimeout(() => leafletMap.invalidateSize(), 200);
+      }
+    });
   }
 
   // ======================== 9. GLOBAL ACTIONS ========================
   window.acceptAndNavigate = async function (requestId) {
     const selected = activeRequests.find(r => String(r.id) === String(requestId));
     if (selected) {
-      const missionPayload = {
-        hospitalId: selected.hospitalId || selected.id,
-        hospitalName: selected.hospitalName || 'Emergency Medical Center',
-        hospitalLat: selected.reqLat,
-        hospitalLng: selected.reqLng,
-        donorLat: currentDonor.latitude,
-        donorLng: currentDonor.longitude,
-        bloodGroup: selected.bloodType || currentDonor.bloodType,
-        distanceKm: selected.distanceKm,
-        etaMinutes: selected.etaMinutes || 12,
-        urgencyLevel: selected.urgencyLevel || 'CRITICAL',
-        neededWithinMinutes: selected.neededWithinMinutes || 20,
-        address: selected.address || 'Emergency Trauma Center',
-        phone: selected.phone || '+91 108',
-        units: selected.units || 1,
-        patientName: selected.patientName || 'Emergency Patient',
-        requestId: selected.id,
-        acceptedAt: new Date().toISOString()
-      };
-
-      // Store in sessionStorage and localStorage as explicitly required
-      sessionStorage.setItem('activeMission', JSON.stringify(missionPayload));
-      localStorage.setItem('activeEmergencyRoute', JSON.stringify(missionPayload));
-      selected.status = 'Accepted';
+      selected.status = 'ACCEPTED';
+      selected.displayStatus = 'Accepted';
+      selected.acceptedAt = new Date().toISOString();
     }
 
-    const donorId = currentDonor ? (currentDonor.id || currentDonor.donorId) : null;
+    const donorId = currentDonor ? currentDonor.id : null;
     const payload = JSON.stringify({ donorId: donorId });
     const postHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
 
@@ -855,32 +831,7 @@
       await fetch(`/api/requests/${requestId}/accept`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
 
-    showToast('Alert accepted! Hospital dispatch and rescue team notified.', 'success');
-    renderEmergencyFeed();
-    updateRadarVisualization();
-  };
-
-  window.withdrawAlert = async function (requestId) {
-    const selected = activeRequests.find(r => String(r.id) === String(requestId) || String(r.requestId) === String(requestId));
-    if (selected && String(selected.status).toUpperCase() === 'ACCEPTED') {
-      alert('Withdraw is not permitted after accepting. Please call the hospital directly if you cannot arrive.');
-      return;
-    }
-    if (selected) {
-      selected.status = 'Withdrawn';
-    }
-    const donorId = currentDonor ? (currentDonor.id || currentDonor.donorId) : null;
-    const payload = JSON.stringify({ donorId: donorId });
-    const postHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-
-    try {
-      await fetch(`/api/donor/blood-requests/${requestId}/withdraw`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
-    } catch (_) { }
-    try {
-      await fetch(`/api/requests/${requestId}/withdraw`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
-    } catch (_) { }
-
-    showToast('You withdrew from this request. The hospital has been notified.', 'info');
+    showToast('Alert accepted! Hospital dispatch notified.', 'success');
     renderEmergencyFeed();
     updateRadarVisualization();
   };
@@ -888,9 +839,12 @@
   window.declineAlert = async function (requestId) {
     const selected = activeRequests.find(r => String(r.id) === String(requestId));
     if (selected) {
-      selected.status = 'Declined';
+      selected.isActive = false;
+      selected.status = 'DECLINED';
+      selected.displayStatus = 'Declined';
     }
-    const donorId = currentDonor ? (currentDonor.id || currentDonor.donorId) : null;
+
+    const donorId = currentDonor ? currentDonor.id : null;
     const payload = JSON.stringify({ donorId: donorId });
     const postHeaders = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
 
@@ -901,8 +855,12 @@
       await fetch(`/api/requests/${requestId}/decline`, { method: 'POST', headers: postHeaders, body: payload, credentials: 'include' });
     } catch (_) { }
 
-    showToast('Alert dismissed.', 'info');
+    showToast('Request declined.', 'info');
+    activeRequests = allAlerts.filter(r => r.isActive);
+    pastRequests = allAlerts.filter(r => !r.isActive);
+    updateHeaderStatusLine();
     renderEmergencyFeed();
+    renderPastRequests();
     updateRadarVisualization();
   };
 
@@ -911,62 +869,94 @@
       showToast("Hospital coordinates are not available for driving directions.", "error");
       return;
     }
-    if (!navigator.geolocation) {
-      if (currentDonor.latitude && currentDonor.longitude) {
-        const url = `https://www.google.com/maps/dir/?api=1&origin=${currentDonor.latitude},${currentDonor.longitude}&destination=${hospLat},${hospLng}&travelmode=driving`;
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        showToast("Turn on location permissions in your browser to get driving directions to the hospital.", "error");
-      }
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      function (pos) {
-        if (!pos || !pos.coords) {
-          if (currentDonor.latitude && currentDonor.longitude) {
-            const url = `https://www.google.com/maps/dir/?api=1&origin=${currentDonor.latitude},${currentDonor.longitude}&destination=${hospLat},${hospLng}&travelmode=driving`;
-            window.open(url, '_blank', 'noopener,noreferrer');
-          } else {
-            showToast("Turn on location permissions in your browser to get driving directions to the hospital.", "error");
-          }
-          return;
-        }
-        const donorLat = pos.coords.latitude;
-        const donorLng = pos.coords.longitude;
-        const url = `https://www.google.com/maps/dir/?api=1&origin=${donorLat},${donorLng}&destination=${hospLat},${hospLng}&travelmode=driving`;
-        window.open(url, '_blank', 'noopener,noreferrer');
-      },
-      function (err) {
-        if (currentDonor.latitude && currentDonor.longitude) {
-          const url = `https://www.google.com/maps/dir/?api=1&origin=${currentDonor.latitude},${currentDonor.longitude}&destination=${hospLat},${hospLng}&travelmode=driving`;
-          window.open(url, '_blank', 'noopener,noreferrer');
-        } else {
-          showToast("Turn on location permissions in your browser to get driving directions to the hospital.", "error");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+    const donorLat = currentDonor.latitude;
+    const donorLng = currentDonor.longitude;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${donorLat},${donorLng}&destination=${hospLat},${hospLng}&travelmode=driving`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  // ======================== 10. UTILS & HELPERS ========================
-  function initMobileNav() {
-    if (!mobileMenuBtn || !hubSidebar || !sidebarOverlay) return;
+  // QR Modal
+  window.showDonorQrModal = function () {
+    const modal = document.getElementById('donorQrModal');
+    const container = document.getElementById('donorQrCodeContainer');
+    const idPill = document.getElementById('donorQrIdPill');
+    const bgPill = document.getElementById('donorQrBgPill');
+    if (!modal) return;
 
-    mobileMenuBtn.addEventListener('click', () => {
-      const isOpen = hubSidebar.classList.contains('mobile-open');
-      if (isOpen) {
-        hubSidebar.classList.remove('mobile-open');
-        sidebarOverlay.style.display = 'none';
-      } else {
-        hubSidebar.classList.add('mobile-open');
-        sidebarOverlay.style.display = 'block';
-      }
-    });
+    const donorId = currentDonor.id || 'DNR-0811-A404';
+    const bg = currentDonor.bloodType || 'O-';
+    const token = currentDonor.qrToken || donorId;
+    const qrPayload = `RED404:${token}`;
 
-    sidebarOverlay.addEventListener('click', () => {
-      hubSidebar.classList.remove('mobile-open');
-      sidebarOverlay.style.display = 'none';
-    });
+    if (idPill) idPill.textContent = donorId;
+    if (bgPill) bgPill.textContent = bg;
+
+    if (container) {
+      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}" alt="Verification QR Code" style="width:180px;height:180px;border-radius:6px;display:block;" />`;
+    }
+
+    modal.style.display = 'flex';
+  };
+
+  window.closeDonorQrModal = function () {
+    const modal = document.getElementById('donorQrModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  // ======================== 10. TIMERS & FORMATTING ========================
+  function updateCountdowns() {
+    renderEmergencyFeed();
+  }
+
+  function computeMinutesLeft(createdAtStr, neededWithinMins, expiresAtStr) {
+    const defMins = neededWithinMins || 60;
+    let targetMs;
+    if (expiresAtStr) {
+      targetMs = new Date(expiresAtStr).getTime();
+    } else {
+      const createdMs = createdAtStr ? new Date(createdAtStr).getTime() : Date.now();
+      targetMs = createdMs + defMins * 60 * 1000;
+    }
+    const diffMs = targetMs - Date.now();
+    return Math.max(0, Math.round(diffMs / 60000));
+  }
+
+  function formatArrivalDeadline(deadlineStr, acceptedAtStr) {
+    let targetDate;
+    if (deadlineStr) {
+      targetDate = new Date(deadlineStr);
+    } else if (acceptedAtStr) {
+      targetDate = new Date(new Date(acceptedAtStr).getTime() + 120 * 60 * 1000);
+    } else {
+      targetDate = new Date(Date.now() + 120 * 60 * 1000);
+    }
+    if (isNaN(targetDate.getTime())) return 'within 2 hours';
+    return targetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function getTimeAgo(dateStr) {
+    if (!dateStr) return 'just now';
+    const ms = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.max(0, Math.floor(ms / 60000));
+    if (mins < 1) return 'just now';
+    if (mins === 1) return '1 min ago';
+    if (mins < 60) return `${mins} min ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours === 1) return '1 hr ago';
+    if (hours < 24) return `${hours} hrs ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+  }
+
+  function formatDateShort(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    } catch (_) {
+      return '';
+    }
   }
 
   function escapeHtml(str) {
@@ -980,25 +970,17 @@
   }
 
   function showToast(msg, type = 'info') {
-    if (typeof showAppAlert === 'function') {
-      showAppAlert({
-        title: type === 'success' ? 'Radar Update' : 'Notice',
-        message: msg,
-        type: type
-      });
-      return;
-    }
     const toast = document.createElement('div');
     toast.className = `donor-hub-toast toast-${type}`;
-    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> <span>${escapeHtml(msg)}</span>`;
+    toast.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> <span>${escapeHtml(msg)}</span>`;
     document.body.appendChild(toast);
     setTimeout(() => {
       toast.classList.add('show');
       setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => toast.remove(), 200);
       }, 3500);
-    }, 50);
+    }, 20);
   }
 
 })();

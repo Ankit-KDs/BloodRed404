@@ -1148,23 +1148,15 @@
         }
       });
     }
-    // 7. Conditional Emergency Radar Blinking Dot
-    updateEmergencyIndicator();
-    // Async check from backend if not already determined in storage
-    if (checkActiveEmergenciesCount() === 0) {
-      fetch('/api/requests').then(res => res.ok ? res.json() : null).then(json => {
-        if (json && json.success && Array.isArray(json.data)) {
-          const active = json.data.filter(r => (r.status || 'Active').toLowerCase() === 'active');
-          sessionStorage.setItem('red404_active_emergencies_count', String(active.length));
-          updateEmergencyIndicator(active.length);
-        }
-      }).catch(() => { });
-    }
+    // 7. Global Emergency Awareness & Radar Indicator
+    syncDonorActiveEmergencies();
+    setInterval(syncDonorActiveEmergencies, 10000);
   }
 
   function updateEmergencyIndicator(count) {
     const pulseDots = document.querySelectorAll('.tab-radar-pulse');
     const alertTabs = document.querySelectorAll('.alert-radar-tab');
+    const bellDots = document.querySelectorAll('.nav-badge-dot');
     let hasAlerts = false;
 
     if (typeof count === 'number') {
@@ -1190,6 +1182,151 @@
         tab.classList.remove('has-emergencies');
       }
     });
+
+    bellDots.forEach(dot => {
+      dot.style.display = hasAlerts ? 'inline-block' : 'none';
+    });
+  }
+
+  function escapeHtmlCommand(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function updateGlobalEmergencyAwareness(activeRequests) {
+    if (!Array.isArray(activeRequests)) {
+      activeRequests = [];
+    }
+
+    const count = activeRequests.length;
+    sessionStorage.setItem('red404_active_emergencies_count', String(count));
+    updateEmergencyIndicator(count);
+
+    // 1. Tab title update
+    if (!window._red404BaseDocTitle) {
+      window._red404BaseDocTitle = document.title.replace(/^\(\d+\)\s*/, '');
+    }
+    if (count > 0) {
+      document.title = `(${count}) RED404: Emergency request`;
+    } else {
+      document.title = window._red404BaseDocTitle;
+    }
+
+    // 2. Global Awareness Banner under top bar on all donor pages
+    let banner = document.getElementById('globalEmergencyBanner');
+    if (count > 0) {
+      const topReq = activeRequests[0];
+      const targetId = topReq.id || topReq.requestId || '';
+      const dismissedId = sessionStorage.getItem('red404_dismissed_emergency_banner_id');
+      const isDismissed = dismissedId && String(dismissedId) === String(targetId);
+
+      if (!isDismissed) {
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'globalEmergencyBanner';
+          banner.setAttribute('role', 'alert');
+          banner.style.cssText = 'position: sticky; top: 0; z-index: 999; background: #e5383b; color: #ffffff; padding: 10px 24px; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);';
+          const navWrapper = document.querySelector('.command-nav-wrapper') || document.querySelector('.hub-header');
+          if (navWrapper && navWrapper.parentNode) {
+            navWrapper.parentNode.insertBefore(banner, navWrapper.nextSibling);
+          } else {
+            document.body.insertBefore(banner, document.body.firstChild);
+          }
+        }
+
+        const hospName = topReq.hospitalName || topReq.hospital_name || 'Hospital';
+        const bg = topReq.bloodType || topReq.blood_type || 'Blood';
+
+        banner.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px;"></i>
+            <span><strong>Emergency request:</strong> ${escapeHtmlCommand(hospName)} needs ${escapeHtmlCommand(bg)} blood.</span>
+            <a href="donor-alerts.html?highlight=${encodeURIComponent(targetId)}" style="color: #ffffff; text-decoration: underline; font-weight: 700; margin-left: 6px;">View Emergency (${count}) &rarr;</a>
+          </div>
+          <button type="button" onclick="window.dismissGlobalEmergencyBanner('${escapeHtmlCommand(targetId)}')" style="background: none; border: none; color: #ffffff; font-size: 20px; cursor: pointer; line-height: 1; padding: 0 4px;" aria-label="Dismiss">&times;</button>
+        `;
+        banner.style.display = 'flex';
+      } else if (banner) {
+        banner.style.display = 'none';
+      }
+
+      // 3. Aria-live announcement
+      let ariaLiveEl = document.getElementById('emergencyAriaLive');
+      if (!ariaLiveEl) {
+        ariaLiveEl = document.createElement('div');
+        ariaLiveEl.id = 'emergencyAriaLive';
+        ariaLiveEl.setAttribute('role', 'status');
+        ariaLiveEl.setAttribute('aria-live', 'polite');
+        ariaLiveEl.className = 'sr-only';
+        ariaLiveEl.style.cssText = 'position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;';
+        document.body.appendChild(ariaLiveEl);
+      }
+      const hospName = topReq.hospitalName || topReq.hospital_name || 'Hospital';
+      ariaLiveEl.textContent = `New emergency request from ${hospName}`;
+
+    } else {
+      if (banner) banner.remove();
+      const ariaLiveEl = document.getElementById('emergencyAriaLive');
+      if (ariaLiveEl) ariaLiveEl.textContent = '';
+    }
+  }
+
+  window.dismissGlobalEmergencyBanner = function (reqId) {
+    if (reqId) {
+      sessionStorage.setItem('red404_dismissed_emergency_banner_id', String(reqId));
+    }
+    const banner = document.getElementById('globalEmergencyBanner');
+    if (banner) banner.remove();
+  };
+
+  window.updateGlobalEmergencyAwareness = updateGlobalEmergencyAwareness;
+
+  function syncDonorActiveEmergencies() {
+    const isDonorPage = document.querySelector('.command-nav-pill') || document.querySelector('.donor-hub-body');
+    if (!isDonorPage) return;
+
+    fetch('/api/donor/alerts', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json && Array.isArray(json.data)) {
+          const active = json.data.filter(r => {
+            if (r.isActive !== undefined) return Boolean(r.isActive);
+            const s = (r.status || r.notifStatus || 'New').toUpperCase();
+            const reqS = (r.reqStatus || '').toUpperCase();
+            if (['FULFILLED', 'CLOSED', 'CANCELLED', 'EXPIRED'].includes(reqS)) return false;
+            return ['NEW', 'ACCEPTED', 'ARRIVED', 'NOTIFIED'].includes(s);
+          });
+          updateGlobalEmergencyAwareness(active);
+        } else {
+          updateGlobalEmergencyAwareness([]);
+        }
+      })
+      .catch(() => {
+        updateGlobalEmergencyAwareness([]);
+      });
+  }
+
+  // Realtime SSE listener for global emergency banner and indicator
+  if (!window._globalDonorAwarenessSSE) {
+    try {
+      const es = new EventSource('/api/donor/events');
+      window._globalDonorAwarenessSSE = es;
+      const onEvt = () => syncDonorActiveEmergencies();
+      es.addEventListener('request-updated', onEvt);
+      es.addEventListener('donor-accepted', onEvt);
+      es.addEventListener('donor-declined', onEvt);
+      es.addEventListener('donor-withdrew', onEvt);
+      es.addEventListener('donor-released', onEvt);
+      es.addEventListener('request-closed', onEvt);
+      es.addEventListener('request-cancelled', onEvt);
+      es.addEventListener('request-expired', onEvt);
+      es.addEventListener('request-fulfilled', onEvt);
+    } catch (_) { }
   }
 
   function checkActiveEmergenciesCount() {

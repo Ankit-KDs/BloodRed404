@@ -345,16 +345,32 @@
       window._donorEventSource = es;
       const handleEvt = () => {
         fetchDonorAlerts();
+        renderSystemLogs();
       };
       es.addEventListener('request-updated', handleEvt);
       es.addEventListener('donor-accepted', handleEvt);
       es.addEventListener('donor-declined', handleEvt);
       es.addEventListener('donor-withdrew', handleEvt);
-      es.addEventListener('donor-released', handleEvt);
-      es.addEventListener('request-closed', handleEvt);
-      es.addEventListener('request-cancelled', handleEvt);
-      es.addEventListener('request-expired', handleEvt);
-      es.addEventListener('request-fulfilled', handleEvt);
+      es.addEventListener('donor-released', () => {
+        if (typeof showToast === 'function') showToast('The hospital no longer needs you for this request', 'info');
+        handleEvt();
+      });
+      es.addEventListener('request-closed', () => {
+        if (typeof showToast === 'function') showToast('This request was closed by the hospital', 'info');
+        handleEvt();
+      });
+      es.addEventListener('request-cancelled', () => {
+        if (typeof showToast === 'function') showToast('The hospital cancelled this request', 'info');
+        handleEvt();
+      });
+      es.addEventListener('request-expired', () => {
+        if (typeof showToast === 'function') showToast('Your request has expired', 'info');
+        handleEvt();
+      });
+      es.addEventListener('request-fulfilled', () => {
+        if (typeof showToast === 'function') showToast('Request fulfilled', 'success');
+        handleEvt();
+      });
       es.onerror = () => {
         // Fallback polling every 10s handles it seamlessly
       };
@@ -378,6 +394,9 @@
             if (['FULFILLED', 'CLOSED', 'CANCELLED', 'EXPIRED'].includes(reqS)) return false;
             return ['NEW', 'ACCEPTED', 'ARRIVED', 'NOTIFIED'].includes(s);
           });
+          if (window.updateGlobalEmergencyAwareness) {
+            window.updateGlobalEmergencyAwareness(donorData.activeAlerts);
+          }
           renderAlerts();
         } else {
           // Fallback to /api/donor/blood-requests
@@ -392,6 +411,9 @@
                   if (['FULFILLED', 'CLOSED', 'CANCELLED', 'EXPIRED'].includes(reqS)) return false;
                   return ['NEW', 'ACCEPTED', 'ARRIVED', 'NOTIFIED'].includes(s);
                 });
+                if (window.updateGlobalEmergencyAwareness) {
+                  window.updateGlobalEmergencyAwareness(donorData.activeAlerts);
+                }
                 renderAlerts();
               }
             })
