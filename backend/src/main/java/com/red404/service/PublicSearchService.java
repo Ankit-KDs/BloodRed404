@@ -330,8 +330,7 @@ public class PublicSearchService {
 
         String donorSql = "SELECT d.*, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'VERIFIED', 'APPROVED', 'VERIFIED_INTAKE')) AS total_donations " +
-                "FROM donors d WHERE (d.status IS NULL OR LOWER(d.status) NOT IN ('inactive', 'suspended', 'deleted')) " +
-                "AND (d.availability IS NULL OR (LOWER(d.availability) NOT IN ('unavailable', 'busy', 'paused') AND (d.paused_until IS NULL OR d.paused_until <= CURRENT_DATE)))";
+                "FROM donors d WHERE (d.availability IS NULL OR (LOWER(d.availability) NOT IN ('unavailable', 'busy', 'paused', 'inactive', 'suspended', 'deleted') AND (d.paused_until IS NULL OR d.paused_until <= CURRENT_DATE)))";
 
         try (Connection conn = DBConnection.getConnection();
                 Statement st = conn.createStatement();
@@ -345,15 +344,9 @@ public class PublicSearchService {
                     continue;
                 }
 
-                // Active check (double check)
-                String status = (String) getVal(donorMap, "status", "STATUS");
-                if (status != null && (status.equalsIgnoreCase("inactive") || status.equalsIgnoreCase("suspended") || status.equalsIgnoreCase("deleted"))) {
-                    continue;
-                }
-
-                // Availability & Paused check
+                // Availability & Paused check (active check)
                 String avail = (String) getVal(donorMap, "availability", "AVAILABILITY");
-                if (avail != null && (avail.equalsIgnoreCase("unavailable") || avail.equalsIgnoreCase("busy") || avail.equalsIgnoreCase("paused"))) {
+                if (avail != null && (avail.equalsIgnoreCase("unavailable") || avail.equalsIgnoreCase("busy") || avail.equalsIgnoreCase("paused") || avail.equalsIgnoreCase("inactive") || avail.equalsIgnoreCase("suspended") || avail.equalsIgnoreCase("deleted"))) {
                     Object pausedUntilObj = getVal(donorMap, "paused_until", "PAUSED_UNTIL");
                     if (pausedUntilObj instanceof java.sql.Date) {
                         java.sql.Date pDate = (java.sql.Date) pausedUntilObj;
