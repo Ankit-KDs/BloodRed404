@@ -69,6 +69,34 @@ public class RequestLifecycleService {
         }
     }
 
+    public List<Map<String, Object>> getAuditsForRequest(int requestId) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT id, request_id, actor, from_status, to_status, reason, created_at " +
+                     "FROM blood_request_audits WHERE request_id = ? ORDER BY created_at ASC, id ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("id", rs.getInt("id"));
+                    map.put("requestId", rs.getInt("request_id"));
+                    map.put("actor", rs.getString("actor"));
+                    map.put("fromStatus", rs.getString("from_status"));
+                    map.put("toStatus", rs.getString("to_status"));
+                    map.put("reason", rs.getString("reason"));
+                    Timestamp ts = rs.getTimestamp("created_at");
+                    map.put("time", ts != null ? ts.toString() : null);
+                    map.put("createdAt", ts != null ? ts.toString() : null);
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error getting audits for request {}: {}", requestId, e.getMessage());
+        }
+        return list;
+    }
+
     // ==========================================
     // REALTIME EVENT BROADCAST TO HOSPITAL & DONORS
     // ==========================================

@@ -35,15 +35,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initHospitalRealtimeEvents() {
+  if (!window._recordsPollInterval) {
+    window._recordsPollInterval = setInterval(() => {
+      loadDashboardData();
+      if (typeof loadRecordsTable === 'function') loadRecordsTable(true);
+    }, 10000);
+  }
   if (window._hospitalEventSource) return;
   try {
     const es = new EventSource('/api/hospital/stream-events');
     window._hospitalEventSource = es;
     const handleEvt = () => {
       loadDashboardData();
-      if (typeof loadRecordsTable === 'function') loadRecordsTable();
-      if (typeof selectedRequest !== 'undefined' && selectedRequest && typeof loadRequestDonorsList === 'function') {
-        loadRequestDonorsList(selectedRequest.id);
+      if (typeof loadRecordsTable === 'function') loadRecordsTable(true);
+      if (typeof selectedRequest !== 'undefined' && selectedRequest && typeof openRequestDrawer === 'function') {
+        openRequestDrawer(selectedRequest, true);
       }
     };
     es.addEventListener('request-updated', handleEvt);
@@ -895,7 +901,7 @@ async function loadDashboardData(isSilent = false) {
       const rawList = Array.isArray(json.data) ? json.data : [];
       activeRequests = rawList.filter(r => {
         const s = (r.status || '').toUpperCase();
-        return s !== 'CANCELLED' && s !== 'FULFILLED' && s !== 'COMPLETED';
+        return ['OPEN', 'ACTIVE', 'ACCEPTED', 'ARRIVED'].includes(s);
       });
     } else {
       throw new Error('Requests fetch failed');
@@ -1362,10 +1368,16 @@ function renderActiveRequests(requests) {
 
         ${donorDetailsHtml}
 
-        <div class="req-item-actions">
+        <div class="req-item-actions" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
           ${isArrived ? `<button type="button" class="btn-action-checkin" onclick="switchTab('tab-checkin')">Start check-in</button>` : ''}
-          <button type="button" class="btn-action-cancel" data-id="${r.id}">Cancel request</button>
-          <button type="button" class="btn-action-close-request" data-id="${r.id}" ${canClose ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;" title="Requires an accepted or arrived donor"'}><i class="fa-solid fa-lock" style="font-size:11px; margin-right:4px;"></i>Close request</button>
+          ${(!isAccepted && !isArrived) ? `
+            <button type="button" class="btn-action-cancel" data-id="${r.id}">Cancel request</button>
+            <button type="button" class="btn-action-extend-radius" data-id="${r.id}" style="background: rgba(56,189,248,0.1); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Extend radius</button>
+            <button type="button" class="btn-action-send-more" data-id="${r.id}" style="background: rgba(56,189,248,0.1); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Send to more donors</button>
+          ` : `
+            <button type="button" class="btn-action-close-request" data-id="${r.id}"><i class="fa-solid fa-lock" style="font-size:11px; margin-right:4px;"></i>Close request</button>
+          `}
+          <button type="button" class="btn-action-view-details" data-id="${r.id}" style="background: transparent; color: #94a3b8; border: 1px solid var(--hosp-border); padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">View details</button>
         </div>
       </div>
     `;
@@ -1393,6 +1405,7 @@ function renderActiveRequests(requests) {
         const res = await resp.json();
         if (res && res.success) {
           loadDashboardData();
+          if (typeof loadRecordsTable === 'function') loadRecordsTable(true);
         } else {
           alert((res && res.message) || 'Failed to cancel request.');
         }
@@ -1412,6 +1425,59 @@ function renderActiveRequests(requests) {
       const inputNote = document.getElementById('fulfillNoteInput');
       if (inputNote) inputNote.value = '';
       if (modal) modal.style.display = 'flex';
+    });
+  });
+
+  container.querySelectorAll('.btn-action-extend-radius').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      selectedRequest = activeRequests.find(req => String(req.id) === String(id));
+      const modalExtend = document.getElementById('modalExtendRadius');
+      const selRadius = document.getElementById('selExtendRadius');
+      if (modalExtend) {
+        if (selRadius && selectedRequest) {
+          const curRad = selectedRequest.radiusKm || 10;
+          if (curRad >= 20) selRadius.value = '25';
+          else if (curRad >= 15) selRadius.value = '20';
+          else selRadius.value = '15';
+        }
+        modalExtend.style.display = 'flex';
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-action-send-more').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dispatching...';
+      try {
+        const res = await fetch(`/api/hospital/requests/${id}/send-more`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message || 'Dispatched to matching donors', json.data && json.data.dispatched ? 'success' : 'info');
+          loadDashboardData();
+          if (typeof loadRecordsTable === 'function') loadRecordsTable(true);
+        } else {
+          alert(json.message || 'Failed to dispatch to additional donors');
+        }
+      } catch (e) {
+        alert('Network error dispatching to additional donors');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send to more donors';
+      }
+    });
+  });
+
+  container.querySelectorAll('.btn-action-view-details').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const req = activeRequests.find(r => String(r.id) === String(id));
+      if (req) openRequestDrawer(req);
     });
   });
 }
@@ -2526,7 +2592,9 @@ function renderRecordsSummaryCards() {
 
   let activeCount = recordsSummary.activeNow;
   let fulfilledCount = recordsSummary.fulfilledThisMonth;
-  let cancelledCount = recordsSummary.cancelledThisMonth;
+  let cancelledCount = recordsSummary.closedOrCancelledThisMonth !== undefined 
+                       ? recordsSummary.closedOrCancelledThisMonth 
+                       : recordsSummary.cancelledThisMonth;
   let avgText = recordsSummary.avgFirstResponseText;
 
   // Fallback calculation if backend didn't supply summary object
@@ -2537,13 +2605,21 @@ function renderRecordsSummaryCards() {
     }).length;
   }
   if (fulfilledCount === undefined) {
-    fulfilledCount = recordsAll.filter(r => (r.status || '').toLowerCase() === 'fulfilled').length;
+    fulfilledCount = recordsAll.filter(r => {
+      const s = (r.status || '').toLowerCase();
+      const uFul = Number(r.unitsFulfilled || r.units_fulfilled) || 0;
+      const hasDon = (Array.isArray(r.linkedDonations) && r.linkedDonations.length > 0) || r.donationRef || r.donationId;
+      return s === 'fulfilled' && (uFul > 0 || hasDon);
+    }).length;
   }
   if (cancelledCount === undefined) {
-    cancelledCount = recordsAll.filter(r => (r.status || '').toLowerCase() === 'cancelled').length;
+    cancelledCount = recordsAll.filter(r => {
+      const s = (r.status || '').toLowerCase();
+      return s === 'cancelled' || s === 'closed';
+    }).length;
   }
   if (!avgText) {
-    avgText = 'No data yet';
+    avgText = 'No data until 5 requests';
   }
 
   if (elActive) elActive.textContent = activeCount;
@@ -2669,13 +2745,27 @@ function renderRecordsPage() {
     if (urgRaw.includes('CRIT')) { urgClass = 'critical'; urgLabel = 'Critical'; }
     else if (urgRaw.includes('URG')) { urgClass = 'urgent'; urgLabel = 'Urgent'; }
 
-    // Status
+    // Status (Open, Accepted, Arrived, Fulfilled, Closed, Cancelled, Expired)
     const status = r.status || 'Active';
+    const sLower = status.toLowerCase();
     let statusClass = 'active';
-    if (status === 'Fulfilled') statusClass = 'available';
-    else if (status === 'Cancelled') statusClass = 'low';
-    else if (status === 'Expired') statusClass = 'expired';
-    else if (status === 'Accepted' || status === 'Arrived') statusClass = 'accepted';
+    if (sLower === 'fulfilled') statusClass = 'available';
+    else if (sLower === 'cancelled') statusClass = 'cancelled';
+    else if (sLower === 'expired') statusClass = 'expired';
+    else if (sLower === 'closed') statusClass = 'closed';
+    else if (sLower === 'accepted') statusClass = 'accepted';
+    else if (sLower === 'arrived') statusClass = 'arrived';
+
+    let reasonSubHtml = '';
+    const reasonText = (r.cancelled_reason || r.cancelledReason || r.close_reason || r.closeReason || r.fulfillment_note || r.fulfillmentNote || '').trim();
+    if ((sLower === 'cancelled' || sLower === 'closed') && reasonText) {
+      reasonSubHtml = `<div style="font-size: 11px; color: #94a3b8; margin-top: 3px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(reasonText)}">${escapeHtml(reasonText)}</div>`;
+    } else if (sLower === 'fulfilled') {
+      const donId = r.donationRef || (Array.isArray(r.linkedDonations) && r.linkedDonations[0] && r.linkedDonations[0].refCode) || (r.donationId ? '#DON-' + r.donationId : '');
+      if (donId) {
+        reasonSubHtml = `<div style="font-size: 10.5px; color: #86efac; margin-top: 2px; font-family: 'JetBrains Mono', monospace;" title="Linked verified donation">${escapeHtml(donId)}</div>`;
+      }
+    }
 
     // Radius (Group 4.3: Real radius, NOT "Normal")
     const radiusVal = (r.radiusKm !== null && r.radiusKm !== undefined) ? r.radiusKm : 10;
@@ -2711,7 +2801,10 @@ function renderRecordsPage() {
         <td data-label="Blood Group">${getDropBadgeSvg(blood, '')}</td>
         <td data-label="Units"><span class="mono-data">${units}</span></td>
         <td data-label="Urgency"><span class="chip-status ${urgClass}">${urgLabel}</span></td>
-        <td data-label="Status"><span class="chip-status ${statusClass}">${status}</span></td>
+        <td data-label="Status">
+          <span class="chip-status ${statusClass}">${status}</span>
+          ${reasonSubHtml}
+        </td>
         <td data-label="Donors Notified">
           <strong style="color: ${accepted > 0 ? '#22c55e' : '#cbd5e1'}; font-family: 'JetBrains Mono', monospace;">${accepted}</strong>
           <span style="color: var(--hosp-text-muted);">/</span>
@@ -2736,7 +2829,7 @@ window.handleRequestRowClick = function(reqId) {
 };
 
 /* ============================================================
-   DETAIL DRAWER ENGINE (Group 4.4 & 4.5)
+   DETAIL DRAWER ENGINE (Group 4.4, 4.5 & Round 12 Part 3)
    ============================================================ */
 async function openRequestDrawer(r) {
   selectedRequest = r;
@@ -2747,17 +2840,43 @@ async function openRequestDrawer(r) {
   const idFormatted = `#REQ-${String(r.id).padStart(3, '0')}`;
   document.getElementById('drawerReqId').textContent = idFormatted;
 
+  let audits = [];
+  let donors = [];
+  let linkedDonations = [];
+
+  // Fetch complete details from backend (Round 12 Part 3)
+  try {
+    const dRes = await fetch(`/api/hospital/requests/${r.id}/details`, { credentials: 'include' });
+    if (dRes.ok) {
+      const dJson = await dRes.json();
+      if (dJson && dJson.data) {
+        if (dJson.data.request) {
+          r = dJson.data.request;
+          selectedRequest = r;
+        }
+        audits = dJson.data.timeline || [];
+        donors = dJson.data.donors || [];
+        linkedDonations = dJson.data.linkedDonations || [];
+      }
+    }
+  } catch (err) {
+    console.debug('Details fetch notice:', err);
+  }
+
   const blood = r.blood_type || r.bloodType || '-';
   const bloodBadge = document.getElementById('drawerBloodBadge');
   if (bloodBadge) bloodBadge.innerHTML = getDropBadgeSvg(blood, '');
 
   const statusBadge = document.getElementById('drawerStatusBadge');
   const status = r.status || 'Active';
+  const sLower = status.toLowerCase();
   let statusClass = 'active';
-  if (status === 'Fulfilled') statusClass = 'available';
-  else if (status === 'Cancelled') statusClass = 'low';
-  else if (status === 'Expired') statusClass = 'expired';
-  else if (status === 'Accepted' || status === 'Arrived') statusClass = 'accepted';
+  if (sLower === 'fulfilled') statusClass = 'available';
+  else if (sLower === 'cancelled') statusClass = 'cancelled';
+  else if (sLower === 'expired') statusClass = 'expired';
+  else if (sLower === 'closed') statusClass = 'closed';
+  else if (sLower === 'accepted') statusClass = 'accepted';
+  else if (sLower === 'arrived') statusClass = 'arrived';
   if (statusBadge) {
     statusBadge.className = `chip-status ${statusClass}`;
     statusBadge.textContent = status;
@@ -2767,61 +2886,104 @@ async function openRequestDrawer(r) {
   const pName = escapeHtml(r.patient_name || r.patientName || 'Emergency Patient');
   const wInfo = r.wardInfo ? ` (${escapeHtml(r.wardInfo)})` : '';
   document.getElementById('drawerPatient').innerHTML = `${pName}${wInfo}`;
-  document.getElementById('drawerUnits').textContent = `${r.units_requested || 1} units`;
-  document.getElementById('drawerUrgency').textContent = r.urgency_level || r.urgency || 'Normal';
+  document.getElementById('drawerUnits').textContent = `${r.units_requested || r.unitsRequested || 1} units`;
+  document.getElementById('drawerUrgency').textContent = r.urgency_level || r.urgencyLevel || r.urgency || 'Normal';
   document.getElementById('drawerRadius').textContent = `${(r.radiusKm !== null && r.radiusKm !== undefined) ? r.radiusKm : 10} km`;
   const drawerFirstResp = document.getElementById('drawerFirstResponse');
-  if (drawerFirstResp) drawerFirstResp.innerHTML = r.firstResponseTime || ((status === 'Open' || status === 'Active') ? '<span style="color:#f59e0b;">Pending</span>' : '-');
+  if (drawerFirstResp) drawerFirstResp.innerHTML = r.firstResponseTime || ((sLower === 'open' || sLower === 'active') ? '<span style="color:#f59e0b;">Pending</span>' : '-');
   const drawerArr = document.getElementById('drawerArrived');
   if (drawerArr) drawerArr.textContent = String(r.donorsArrived ?? 0);
   document.getElementById('drawerStaff').textContent = r.staffUser || 'Hospital Staff';
 
-  const dateObj = r.created_at ? new Date(r.created_at) : null;
+  const dateObj = r.created_at ? new Date(r.created_at) : (r.createdAt ? new Date(r.createdAt) : null);
   const timeFormatted = dateObj ? `${dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '-';
   document.getElementById('drawerSentTime').textContent = timeFormatted;
 
-  const noteText = r.fulfillment_note || r.notes || '';
+  const noteText = r.fulfillment_note || r.fulfillmentNote || r.notes || '';
   const noteSpan = document.getElementById('drawerNoteText');
   if (noteSpan) noteSpan.textContent = noteText || 'None recorded';
 
   // Cancelled reason box
   const cancelBox = document.getElementById('drawerCancelReasonBox');
   const cancelSpan = document.getElementById('drawerCancelReasonText');
-  if (r.cancelled_reason && status === 'Cancelled') {
-    cancelSpan.textContent = r.cancelled_reason;
+  const cancelReason = r.cancelled_reason || r.cancelledReason;
+  if (cancelReason && sLower === 'cancelled') {
+    cancelSpan.textContent = cancelReason;
     cancelBox.style.display = 'block';
   } else {
     cancelBox.style.display = 'none';
   }
 
-  // Linked donations box
+  // Close reason box
+  const closeBox = document.getElementById('drawerCloseReasonBox');
+  const closeSpan = document.getElementById('drawerCloseReasonText');
+  const closeReason = r.close_reason || r.closeReason || r.fulfillment_note || r.fulfillmentNote;
+  if (closeBox && closeSpan) {
+    if (closeReason && sLower === 'closed') {
+      closeSpan.textContent = closeReason;
+      closeBox.style.display = 'block';
+    } else {
+      closeBox.style.display = 'none';
+    }
+  }
+
+  // Expired reason box
+  const expBox = document.getElementById('drawerExpiredReasonBox');
+  if (expBox) {
+    expBox.style.display = sLower === 'expired' ? 'block' : 'none';
+  }
+
+  // Linked donations box (Round 12 Part 3 requirement 2)
   const donBox = document.getElementById('drawerLinkedDonationsBox');
   const donSpan = document.getElementById('drawerLinkedDonationText');
-  if (r.donationRef || (r.linkedDonations && r.linkedDonations.length > 0)) {
-    const ref = r.donationRef || r.linkedDonations[0].refCode || `RED-${String(r.linkedDonations[0].donationId).padStart(5, '0')}`;
+  if (linkedDonations && linkedDonations.length > 0) {
+    const donRows = linkedDonations.map(ld => {
+      const ref = ld.refCode || `DON-${new Date().getFullYear()}-${String(ld.donationId || ld.id).padStart(4, '0')}`;
+      const units = ld.unitsDonated || ld.units || 1;
+      const vTime = ld.verifiedAt ? new Date(ld.verifiedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Verified';
+      return `<strong>${escapeHtml(ref)}</strong> (${units} unit, ${vTime})`;
+    }).join(', ');
+    donSpan.innerHTML = donRows;
+    donBox.style.display = 'block';
+  } else if (r.donationRef || (Array.isArray(r.linkedDonations) && r.linkedDonations.length > 0) || r.donationId) {
+    const ref = r.donationRef || (r.linkedDonations && r.linkedDonations[0] && r.linkedDonations[0].refCode) || `#DON-${String(r.donationId).padStart(4, '0')}`;
     donSpan.textContent = `${ref} (Verified intake donation recorded)`;
     donBox.style.display = 'block';
   } else {
     donBox.style.display = 'none';
   }
 
-  // Actions visibility based on lifecycle state (Group 4.5)
-  const isClosed = status === 'Fulfilled' || status === 'Cancelled' || status === 'Expired';
+  // Actions visibility based on lifecycle state (Round 12 Part 3 requirement 3)
+  // open -> Cancel, Extend radius, Send to more donors; accepted/arrived -> Close request, Release donor; otherwise none
+  const isOpenState = sLower === 'open' || sLower === 'active';
+  const isAcceptedState = sLower === 'accepted' || sLower === 'arrived';
+  const isTerminalState = sLower === 'fulfilled' || sLower === 'closed' || sLower === 'cancelled' || sLower === 'expired';
+
+  const actionsBar = document.getElementById('drawerActionsBar');
   const btnCancel = document.getElementById('btnDrawerCancel');
   const btnExtend = document.getElementById('btnDrawerExtend');
-  const btnFulfill = document.getElementById('btnDrawerFulfill');
-  const btnDuplicate = document.getElementById('btnDrawerDuplicate');
+  const btnSendMore = document.getElementById('btnDrawerSendMore');
+  const btnCloseReq = document.getElementById('btnDrawerFulfill');
+  const btnReleaseTop = document.getElementById('btnDrawerReleaseTop');
 
-  if (btnCancel) btnCancel.style.display = !isClosed ? 'inline-block' : 'none';
-  if (btnExtend) btnExtend.style.display = !isClosed ? 'inline-block' : 'none';
-  if (btnFulfill) btnFulfill.style.display = !isClosed ? 'inline-block' : 'none';
-  if (btnDuplicate) btnDuplicate.style.display = 'inline-block';
+  if (actionsBar) {
+    if (isTerminalState) {
+      actionsBar.style.display = 'none';
+    } else {
+      actionsBar.style.display = 'flex';
+      if (btnCancel) btnCancel.style.display = isOpenState ? 'inline-block' : 'none';
+      if (btnExtend) btnExtend.style.display = isOpenState ? 'inline-block' : 'none';
+      if (btnSendMore) btnSendMore.style.display = isOpenState ? 'inline-block' : 'none';
+      if (btnCloseReq) btnCloseReq.style.display = isAcceptedState ? 'inline-block' : 'none';
+      if (btnReleaseTop) btnReleaseTop.style.display = isAcceptedState ? 'inline-block' : 'none';
+    }
+  }
 
-  // Render Status Timeline (Group 4.4)
-  renderRequestTimeline(r);
+  // Render Status Timeline (Group 4.4 & Round 12 Part 3)
+  renderRequestTimeline(r, audits);
 
   // Load Contacted Donors List
-  loadRequestDonorsList(r.id);
+  loadRequestDonorsList(r.id, donors);
 
   // Show drawer
   drawer.style.display = 'block';
@@ -2837,14 +2999,51 @@ function closeRequestDrawer() {
   window.selectedRequest = null;
 }
 
-function renderRequestTimeline(r) {
+function renderRequestTimeline(r, audits) {
   const timelineEl = document.getElementById('drawerTimeline');
   if (!timelineEl) return;
 
+  if (Array.isArray(audits) && audits.length > 0) {
+    timelineEl.innerHTML = audits.map((a, idx) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (a.time || '');
+      const toSt = (a.toStatus || a.to_status || '').toLowerCase();
+      let dotColor = '#38bdf8';
+      if (toSt === 'accepted' || toSt === 'fulfilled') dotColor = '#22c55e';
+      else if (toSt === 'cancelled') dotColor = '#f87171';
+      else if (toSt === 'closed') dotColor = '#94a3b8';
+      else if (toSt === 'arrived') dotColor = '#a855f7';
+
+      let actorLabel = 'System';
+      const rawActor = a.actor || '';
+      if (rawActor.startsWith('hospital:')) actorLabel = 'Hospital Staff';
+      else if (rawActor.startsWith('donor:')) actorLabel = 'Donor';
+
+      return `
+        <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px;">
+          <div style="display: flex; flex-direction: column; align-items: center;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${dotColor}; margin-top: 4px;"></span>
+            ${idx < audits.length - 1 ? '<span style="display: inline-block; width: 2px; height: 22px; background: rgba(255,255,255,0.1); margin: 2px 0;"></span>' : ''}
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: #fff;">
+              ${escapeHtml(a.toStatus || a.to_status || a.fromStatus || 'Updated')} 
+              <span style="font-size: 11px; font-weight: 400; color: #94a3b8;">(${actorLabel})</span>
+            </div>
+            ${a.reason ? `<div style="font-size: 12px; color: #cbd5e1; margin-top: 2px;">${escapeHtml(a.reason)}</div>` : ''}
+            <div style="font-size: 11px; color: var(--hosp-text-muted); margin-top: 1px;">${aTime}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    return;
+  }
+
+  // Fallback synthesized steps if no audit rows exist
   const status = (r.status || 'Active').toLowerCase();
   const isFulfilled = status === 'fulfilled';
   const isCancelled = status === 'cancelled';
   const isExpired = status === 'expired';
+  const isClosed = status === 'closed';
   const isAccepted = status === 'accepted' || isFulfilled || status === 'arrived';
   const isArrived = status === 'arrived' || isFulfilled;
 
@@ -2861,15 +3060,17 @@ function renderRequestTimeline(r) {
   ];
 
   if (isCancelled) {
-    steps.push({ title: 'Request Cancelled', time: r.cancelled_reason || 'Cancelled by staff', done: true, color: '#f87171' });
+    steps.push({ title: 'Request Cancelled', time: r.cancelled_reason || r.cancelledReason || 'Cancelled by staff', done: true, color: '#f87171' });
+  } else if (isClosed) {
+    steps.push({ title: 'Request Closed', time: r.close_reason || r.closeReason || r.fulfillment_note || 'Closed without donation', done: true, color: '#94a3b8' });
   } else if (isExpired) {
-    steps.push({ title: 'Request Expired', time: '60 min window ended', done: true, color: '#94a3b8' });
+    steps.push({ title: 'Request Expired', time: 'Response window ended', done: true, color: '#64748b' });
   } else {
     steps.push({ title: isFulfilled ? 'Fulfilled (Intake Complete)' : 'Fulfillment', time: isFulfilled ? 'Donation approved' : 'Pending donation intake', done: isFulfilled, color: '#22c55e' });
   }
 
   timelineEl.innerHTML = steps.map((s, idx) => `
-    <div style="display: flex; gap: 12px; align-items: flex-start;">
+    <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px;">
       <div style="display: flex; flex-direction: column; align-items: center;">
         <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${s.done ? s.color : '#475569'}; margin-top: 4px;"></span>
         ${idx < steps.length - 1 ? '<span style="display: inline-block; width: 2px; height: 20px; background: rgba(255,255,255,0.1); margin: 2px 0;"></span>' : ''}
@@ -2882,109 +3083,127 @@ function renderRequestTimeline(r) {
   `).join('');
 }
 
-async function loadRequestDonorsList(reqId) {
+async function loadRequestDonorsList(reqId, preloadedDonors) {
   const container = document.getElementById('drawerDonorList');
   const countEl = document.getElementById('drawerDonorCount');
   if (!container) return;
 
-  container.innerHTML = '<div style="font-size: 12px; color: var(--hosp-text-muted);">Loading contacted donors...</div>';
+  let donors = Array.isArray(preloadedDonors) && preloadedDonors.length > 0 ? preloadedDonors : null;
 
-  try {
-    const res = await fetch(`/api/hospital/requests/${reqId}/donors`, { credentials: 'include' });
-    if (res.ok) {
-      const json = await res.json();
-      const donors = Array.isArray(json.data) ? json.data : [];
-      if (countEl) countEl.textContent = donors.length;
-
-      const hasAccepted = donors.some(d => ['ACCEPTED', 'ARRIVED'].includes((d.status || '').toUpperCase()));
-      const btnCloseReq = document.getElementById('btnDrawerFulfill');
-      if (btnCloseReq) {
-        if (!hasAccepted && selectedRequest && ['open', 'active'].includes((selectedRequest.status || '').toLowerCase())) {
-          btnCloseReq.disabled = true;
-          btnCloseReq.title = 'Requires at least one accepted or arrived donor to close. Use Cancel for unanswered requests.';
-          btnCloseReq.style.opacity = '0.5';
-          btnCloseReq.style.cursor = 'not-allowed';
-        } else {
-          btnCloseReq.disabled = false;
-          btnCloseReq.title = '';
-          btnCloseReq.style.opacity = '1';
-          btnCloseReq.style.cursor = 'pointer';
-        }
+  if (!donors) {
+    container.innerHTML = '<div style="font-size: 12px; color: var(--hosp-text-muted);">Loading contacted donors...</div>';
+    try {
+      const res = await fetch(`/api/hospital/requests/${reqId}/donors`, { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        donors = Array.isArray(json.data) ? json.data : [];
       }
-
-      if (donors.length === 0) {
-        container.innerHTML = '<div style="font-size: 12.5px; color: var(--hosp-text-muted); padding: 10px; background: rgba(255,255,255,0.02); border-radius: 6px;">No donors contacted yet.</div>';
-        return;
-      }
-
-      container.innerHTML = donors.map(d => {
-        const dStatus = (d.status || 'NOTIFIED').toUpperCase();
-        let statusBadgeClass = 'normal';
-        let statusLabel = 'Notified';
-        if (dStatus === 'ACCEPTED' || dStatus === 'DONATED') { statusBadgeClass = 'available'; statusLabel = 'Accepted'; }
-        else if (dStatus === 'ARRIVED') { statusBadgeClass = 'accepted'; statusLabel = 'Arrived'; }
-        else if (dStatus === 'DECLINED') { statusBadgeClass = 'low'; statusLabel = 'Declined'; }
-        else if (dStatus === 'EXPIRED') { statusBadgeClass = 'expired'; statusLabel = 'Expired'; }
-
-        const distStr = d.distanceKm !== null ? `${d.distanceKm} km away` : '';
-        const etaStr = d.etaMinutes !== null ? `(${d.etaMinutes} min)` : '';
-        const isAcceptedDonor = dStatus === 'ACCEPTED' || dStatus === 'ARRIVED' || dStatus === 'DONATED';
-
-        let contactSection = '';
-        if (isAcceptedDonor && (d.phone || d.email)) {
-          contactSection = `
-            <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
-              ${d.phone ? `
-                <a href="tel:${escapeHtml(d.phone)}" class="btn-call-donor" style="background: #059669; color: #fff; text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa-solid fa-phone"></i>
-                  <span>Call ${escapeHtml(d.phone)}</span>
-                </a>
-              ` : ''}
-              ${d.email ? `
-                <a href="mailto:${escapeHtml(d.email)}" style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa-solid fa-envelope"></i>
-                  <span>${escapeHtml(d.email)}</span>
-                </a>
-              ` : ''}
-              ${dStatus === 'ACCEPTED' ? `
-                <button type="button" class="btn-release-donor" onclick="window.openReleaseDonorModal(${reqId}, ${d.donor_pk || d.donorId || d.id})" style="background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa-solid fa-user-xmark"></i>
-                  <span>Release donor</span>
-                </button>
-              ` : ''}
-            </div>
-          `;
-        } else if (dStatus === 'DECLINED') {
-          contactSection = `<div style="font-size: 11px; color: #f87171; margin-top: 5px;"><i class="fa-solid fa-circle-xmark"></i> Donor declined this request.</div>`;
-        } else {
-          contactSection = `<div style="font-size: 11px; color: #94a3b8; margin-top: 5px;"><i class="fa-solid fa-shield-halved"></i> Contact details masked until donor accepts.</div>`;
-        }
-
-        return `
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--hosp-border); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); padding: 1px 6px; border-radius: 4px;">
-                  ${escapeHtml(d.donorId || 'DNR')}
-                </span>
-                <strong style="color: #fff; font-size: 13px;">${escapeHtml(d.donorName || 'Donor')}</strong>
-                <span style="background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
-                  ${escapeHtml(d.bloodType || '')}
-                </span>
-                ${distStr ? `<span style="font-size: 11.5px; color: var(--hosp-text-muted);">&bull; ${distStr} ${etaStr}</span>` : ''}
-              </div>
-              <span class="chip-status ${statusBadgeClass}" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">${statusLabel}</span>
-            </div>
-            ${contactSection}
-          </div>
-        `;
-      }).join('');
-    } else {
-      container.innerHTML = '<div style="font-size: 12px; color: #f87171;">Could not load donor responses.</div>';
-    }
-  } catch (_) {
-    container.innerHTML = '<div style="font-size: 12px; color: #f87171;">Network notice loading responses.</div>';
+    } catch (_) {}
   }
+
+  if (!donors) donors = [];
+  if (countEl) countEl.textContent = donors.length;
+
+  const hasAccepted = donors.some(d => ['ACCEPTED', 'ARRIVED'].includes((d.status || '').toUpperCase()));
+  const btnCloseReq = document.getElementById('btnDrawerFulfill');
+  if (btnCloseReq) {
+    if (!hasAccepted && selectedRequest && ['open', 'active'].includes((selectedRequest.status || '').toLowerCase())) {
+      btnCloseReq.disabled = true;
+      btnCloseReq.title = 'Requires at least one accepted or arrived donor to close. Use Cancel for unanswered requests.';
+      btnCloseReq.style.opacity = '0.5';
+      btnCloseReq.style.cursor = 'not-allowed';
+    } else {
+      btnCloseReq.disabled = false;
+      btnCloseReq.title = '';
+      btnCloseReq.style.opacity = '1';
+      btnCloseReq.style.cursor = 'pointer';
+    }
+  }
+
+  if (donors.length === 0) {
+    container.innerHTML = '<div style="font-size: 12.5px; color: var(--hosp-text-muted); padding: 10px; background: rgba(255,255,255,0.02); border-radius: 6px;">No donors contacted yet.</div>';
+    return;
+  }
+
+  container.innerHTML = donors.map(d => {
+    const dStatus = (d.status || 'NOTIFIED').toUpperCase();
+    let statusBadgeClass = 'normal';
+    let statusLabel = 'Notified';
+    if (dStatus === 'ACCEPTED' || dStatus === 'DONATED') { statusBadgeClass = 'available'; statusLabel = 'Accepted'; }
+    else if (dStatus === 'ARRIVED') { statusBadgeClass = 'accepted'; statusLabel = 'Arrived'; }
+    else if (dStatus === 'DECLINED') { statusBadgeClass = 'low'; statusLabel = 'Declined'; }
+    else if (dStatus === 'WITHDRAWN') { statusBadgeClass = 'cancelled'; statusLabel = 'Withdrawn'; }
+    else if (dStatus === 'RELEASED') { statusBadgeClass = 'closed'; statusLabel = 'Released'; }
+    else if (dStatus === 'EXPIRED') { statusBadgeClass = 'expired'; statusLabel = 'Expired'; }
+
+    const distStr = d.distanceKm !== null ? `${d.distanceKm} km away` : '';
+    const etaStr = d.etaMinutes !== null ? `(${d.etaMinutes} min)` : '';
+    const isAcceptedDonor = dStatus === 'ACCEPTED' || dStatus === 'ARRIVED' || dStatus === 'DONATED';
+
+    // Timestamp & reason formatting (Round 12 Part 3 requirement 2)
+    const respTime = d.respondedAt ? new Date(d.respondedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const notifTime = d.notifiedAt ? new Date(d.notifiedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    let statusEventText = '';
+    if (dStatus === 'WITHDRAWN') {
+      statusEventText = `<div style="font-size: 11.5px; color: #fca5a5; margin-top: 5px;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Donor withdrew${respTime ? ` at ${respTime}` : ''}</div>`;
+    } else if (dStatus === 'DECLINED') {
+      statusEventText = `<div style="font-size: 11.5px; color: #f87171; margin-top: 5px;"><i class="fa-solid fa-circle-xmark"></i> Donor declined${respTime ? ` at ${respTime}` : ''}</div>`;
+    } else if (dStatus === 'RELEASED') {
+      statusEventText = `<div style="font-size: 11.5px; color: #cbd5e1; margin-top: 5px;"><i class="fa-solid fa-user-xmark"></i> Donor released by hospital${respTime ? ` at ${respTime}` : ''}</div>`;
+    } else if (dStatus === 'ACCEPTED') {
+      statusEventText = `<div style="font-size: 11.5px; color: #86efac; margin-top: 5px;"><i class="fa-solid fa-circle-check"></i> Donor accepted${respTime ? ` at ${respTime}` : ''}</div>`;
+    } else if (dStatus === 'ARRIVED') {
+      statusEventText = `<div style="font-size: 11.5px; color: #38bdf8; margin-top: 5px;"><i class="fa-solid fa-hospital-user"></i> Donor arrived at desk${respTime ? ` at ${respTime}` : ''}</div>`;
+    } else {
+      statusEventText = `<div style="font-size: 11px; color: #94a3b8; margin-top: 5px;"><i class="fa-solid fa-paper-plane"></i> Notified${notifTime ? ` at ${notifTime}` : ''} &bull; Contact details masked until donor accepts</div>`;
+    }
+
+    let contactSection = '';
+    if (isAcceptedDonor && (d.phone || d.email)) {
+      contactSection = `
+        <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
+          ${d.phone ? `
+            <a href="tel:${escapeHtml(d.phone)}" class="btn-call-donor" style="background: #059669; color: #fff; text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-phone"></i>
+              <span>Call ${escapeHtml(d.phone)}</span>
+            </a>
+          ` : ''}
+          ${d.email ? `
+            <a href="mailto:${escapeHtml(d.email)}" style="background: rgba(56,189,248,0.12); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-envelope"></i>
+              <span>${escapeHtml(d.email)}</span>
+            </a>
+          ` : ''}
+          ${dStatus === 'ACCEPTED' ? `
+            <button type="button" class="btn-release-donor" onclick="window.openReleaseDonorModal(${reqId}, ${d.donor_pk || d.donorId || d.id})" style="background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-user-xmark"></i>
+              <span>Release donor</span>
+            </button>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    return `
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--hosp-border); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); padding: 1px 6px; border-radius: 4px;">
+              ${escapeHtml(d.donorId || 'DNR')}
+            </span>
+            <strong style="color: #fff; font-size: 13px;">${escapeHtml(d.donorName || 'Donor')}</strong>
+            <span style="background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
+              ${escapeHtml(d.bloodType || '')}
+            </span>
+            ${distStr ? `<span style="font-size: 11.5px; color: var(--hosp-text-muted);">&bull; ${distStr} ${etaStr}</span>` : ''}
+          </div>
+          <span class="chip-status ${statusBadgeClass}" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">${statusLabel}</span>
+        </div>
+        ${statusEventText}
+        ${contactSection}
+      </div>
+    `;
+  }).join('');
 }
 
 /* ============================================================
@@ -3042,6 +3261,53 @@ function setupDrawerActions() {
   const btnExtendClose = document.getElementById('btnExtendRadiusClose');
   const btnConfirmExtend = document.getElementById('btnConfirmExtendRadius');
   const selRadius = document.getElementById('selExtendRadius');
+
+  // Send More Donors Action (Round 12 Part 3 requirement 3)
+  const btnSendMore = document.getElementById('btnDrawerSendMore');
+  if (btnSendMore) {
+    btnSendMore.addEventListener('click', async () => {
+      if (!selectedRequest) return;
+      btnSendMore.disabled = true;
+      btnSendMore.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dispatching...';
+      try {
+        const res = await fetch(`/api/hospital/requests/${selectedRequest.id}/send-more`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message || 'Dispatched to matching donors', json.data && json.data.dispatched ? 'success' : 'info');
+          openRequestDrawer(selectedRequest, true);
+          loadRecordsTable(true);
+        } else {
+          alert(json.message || 'Failed to dispatch to additional donors');
+        }
+      } catch (e) {
+        alert('Network error dispatching to additional donors');
+      } finally {
+        btnSendMore.disabled = false;
+        btnSendMore.textContent = 'Send to more donors';
+      }
+    });
+  }
+
+  // Top-level Release Donor Button (Round 12 Part 3 requirement 3)
+  const btnReleaseTop = document.getElementById('btnDrawerReleaseTop');
+  if (btnReleaseTop) {
+    btnReleaseTop.addEventListener('click', () => {
+      if (!selectedRequest) return;
+      let dId = selectedRequest.donorId || selectedRequest.donor_pk;
+      if (Array.isArray(selectedRequest.donors)) {
+        const acc = selectedRequest.donors.find(d => ['ACCEPTED', 'ARRIVED'].includes((d.status || '').toUpperCase()));
+        if (acc) dId = acc.donor_pk || acc.donorId || acc.id;
+      }
+      if (dId) {
+        window.openReleaseDonorModal(selectedRequest.id, dId);
+      } else {
+        alert('No accepted donor found to release on this request.');
+      }
+    });
+  }
 
   if (btnExtend && modalExtend) {
     btnExtend.addEventListener('click', () => {

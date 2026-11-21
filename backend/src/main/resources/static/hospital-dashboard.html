@@ -662,16 +662,16 @@
         <div class="hosp-card" style="padding: 16px 18px;">
           <div style="font-size: 12px; color: var(--hosp-text-muted); font-weight: 500; margin-bottom: 4px;">Fulfilled this month</div>
           <div style="font-size: 26px; font-weight: 700; color: #22c55e;" id="summaryFulfilledThisMonth">0</div>
-          <div style="font-size: 11px; color: var(--hosp-text-muted); margin-top: 2px;">Verified donations completed</div>
+          <div style="font-size: 11px; color: var(--hosp-text-muted); margin-top: 2px;">Donations completed</div>
         </div>
         <div class="hosp-card" style="padding: 16px 18px;">
-          <div style="font-size: 12px; color: var(--hosp-text-muted); font-weight: 500; margin-bottom: 4px;">Cancelled this month</div>
+          <div style="font-size: 12px; color: var(--hosp-text-muted); font-weight: 500; margin-bottom: 4px;">Closed or cancelled this month</div>
           <div style="font-size: 26px; font-weight: 700; color: #f87171;" id="summaryCancelledThisMonth">0</div>
-          <div style="font-size: 11px; color: var(--hosp-text-muted); margin-top: 2px;">Documented cancellations</div>
+          <div style="font-size: 11px; color: var(--hosp-text-muted); margin-top: 2px;">Closed or cancelled</div>
         </div>
         <div class="hosp-card" style="padding: 16px 18px;">
           <div style="font-size: 12px; color: var(--hosp-text-muted); font-weight: 500; margin-bottom: 4px;">Avg First Response</div>
-          <div style="font-size: 20px; font-weight: 700; color: #fbbf24;" id="summaryAvgResponseTime">No data yet</div>
+          <div style="font-size: 18px; font-weight: 700; color: #fbbf24;" id="summaryAvgResponseTime">No data until 5 requests</div>
           <div style="font-size: 11px; color: var(--hosp-text-muted); margin-top: 2px;">Min 5 requests required</div>
         </div>
       </div>
@@ -708,6 +708,7 @@
               <option value="ACCEPTED">Accepted</option>
               <option value="ARRIVED">Arrived</option>
               <option value="FULFILLED">Fulfilled</option>
+              <option value="CLOSED">Closed</option>
               <option value="CANCELLED">Cancelled</option>
               <option value="EXPIRED">Expired</option>
             </select>
@@ -1262,12 +1263,13 @@
       <span id="drawerStatusBadge" class="chip-status">Active</span>
     </div>
 
-    <!-- Actions Row (Group 4.5) -->
+    <!-- Actions Row (Group 4.5 & Round 12 Part 3) -->
     <div id="drawerActionsBar" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--hosp-border);">
       <button type="button" id="btnDrawerCancel" class="btn-secondary" style="color: #f87171; border-color: rgba(248,113,113,0.3); font-size: 12px; padding: 5px 12px;">Cancel Request</button>
       <button type="button" id="btnDrawerExtend" class="btn-secondary" style="font-size: 12px; padding: 5px 12px;">Extend Radius</button>
+      <button type="button" id="btnDrawerSendMore" class="btn-secondary" style="color: #38bdf8; border-color: rgba(56,189,248,0.3); font-size: 12px; padding: 5px 12px;">Send to more donors</button>
       <button type="button" id="btnDrawerFulfill" class="btn-primary-action" style="font-size: 12px; padding: 5px 12px; height: 30px;">Close Request</button>
-      <button type="button" id="btnDrawerDuplicate" class="btn-secondary" style="font-size: 12px; padding: 5px 12px;">Duplicate</button>
+      <button type="button" id="btnDrawerReleaseTop" class="btn-secondary" style="color: #f87171; border-color: rgba(248,113,113,0.3); font-size: 12px; padding: 5px 12px; display: none;">Release Donor</button>
     </div>
 
     <!-- Patient & Clinical Details -->
@@ -1287,6 +1289,12 @@
       </div>
       <div id="drawerCancelReasonBox" style="display: none; margin-top: 10px; padding: 8px 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; font-size: 12.5px; color: #fca5a5;">
         <strong>Cancellation Reason:</strong> <span id="drawerCancelReasonText">-</span>
+      </div>
+      <div id="drawerCloseReasonBox" style="display: none; margin-top: 10px; padding: 8px 10px; background: rgba(148,163,184,0.1); border: 1px solid rgba(148,163,184,0.25); border-radius: 6px; font-size: 12.5px; color: #cbd5e1;">
+        <strong>Close Reason:</strong> <span id="drawerCloseReasonText">-</span>
+      </div>
+      <div id="drawerExpiredReasonBox" style="display: none; margin-top: 10px; padding: 8px 10px; background: rgba(100,116,139,0.1); border: 1px solid rgba(100,116,139,0.25); border-radius: 6px; font-size: 12.5px; color: #94a3b8;">
+        <strong>Expiry Notice:</strong> <span id="drawerExpiredReasonText">Response window elapsed without donor acceptance.</span>
       </div>
       <div id="drawerLinkedDonationsBox" style="display: none; margin-top: 10px; padding: 8px 10px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); border-radius: 6px; font-size: 12.5px; color: #86efac;">
         <strong>Linked Donation Record:</strong> <span id="drawerLinkedDonationText">-</span>

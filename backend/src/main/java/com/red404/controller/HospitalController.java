@@ -41,6 +41,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -521,7 +522,7 @@ public class HospitalController {
         }
     }
 
-    @GetMapping("/stream")
+    @GetMapping({"/stream", "/stream-events"})
     public SseEmitter streamHospitalEvents(HttpServletRequest request) {
         Integer hospitalId = getHospitalId(request);
         if (hospitalId == null) {
@@ -826,10 +827,12 @@ public class HospitalController {
                             if (st.equals("fulfilled")) {
                                 Object uFul = reqItem.get("unitsFulfilled");
                                 int uCount = uFul instanceof Number ? ((Number) uFul).intValue() : 0;
-                                if (uCount > 0) {
+                                Object lDon = reqItem.get("linkedDonations");
+                                boolean hasDon = (lDon instanceof List && !((List<?>) lDon).isEmpty()) || reqItem.get("donationRecord") != null;
+                                if (uCount > 0 || hasDon) {
                                     fulfilledThisMonth++;
                                 }
-                            } else if (st.equals("cancelled")) {
+                            } else if (st.equals("cancelled") || st.equals("closed")) {
                                 cancelledThisMonth++;
                             }
                         }
@@ -847,13 +850,14 @@ public class HospitalController {
             summary.put("activeNow", activeNow);
             summary.put("fulfilledThisMonth", fulfilledThisMonth);
             summary.put("cancelledThisMonth", cancelledThisMonth);
+            summary.put("closedOrCancelledThisMonth", cancelledThisMonth);
             if (respCount >= 5) {
                 long avg = Math.round(totalFirstRespMins / respCount);
                 summary.put("avgFirstResponseMin", avg);
                 summary.put("avgFirstResponseText", avg + " min");
             } else {
                 summary.put("avgFirstResponseMin", null);
-                summary.put("avgFirstResponseText", "No data yet");
+                summary.put("avgFirstResponseText", "No data until 5 requests");
             }
             summary.put("totalRequests", list.size());
 
@@ -1057,6 +1061,134 @@ public class HospitalController {
         }
     }
 
+    @GetMapping({"/requests/{id}/details", "/requests/{id}"})
+    public ResponseEntity<ApiResponse> getRequestDetails(@PathVariable int id, HttpServletRequest request) {
+        try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
+
+            Map<String, Object> req = requestDao.findById(id);
+            if (req == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Request not found"));
+            }
+            Object reqHospId = req.get("hospitalId") != null ? req.get("hospitalId") : req.get("hospital_id");
+            if (reqHospId != null && ((Number) reqHospId).intValue() != hospitalId) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, "Forbidden"));
+            }
+
+            List<Map<String, Object>> wrap = new ArrayList<>();
+            wrap.add(req);
+            enrichAndSanitizeRequests(wrap);
+
+            List<Map<String, Object>> audits = com.red404.service.RequestLifecycleService.getInstance().getAuditsForRequest(id);
+            List<Map<String, Object>> donors = notificationDao.getDonorsForRequest(id);
+            List<Map<String, Object>> linked = donorDao.findDonationsByRequestId(id);
+
+            Map<String, Object> out = new HashMap<>();
+            out.put("request", req);
+            out.put("timeline", audits != null ? audits : Collections.emptyList());
+            out.put("donors", donors != null ? donors : Collections.emptyList());
+            out.put("linkedDonations", linked != null ? linked : Collections.emptyList());
+
+            String status = (String) req.get("status");
+            String sNorm = status != null ? status.toLowerCase() : "";
+            List<String> allowedActions = new ArrayList<>();
+            if (sNorm.equals("open") || sNorm.equals("active")) {
+                allowedActions.add("cancel");
+                allowedActions.add("extend_radius");
+                allowedActions.add("send_more");
+            } else if (sNorm.equals("accepted") || sNorm.equals("arrived")) {
+                allowedActions.add("close");
+                allowedActions.add("release_donor");
+            }
+            out.put("allowedActions", allowedActions);
+
+            return ok("Request details loaded", out);
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/requests/{id}/send-more")
+    public ResponseEntity<ApiResponse> sendMoreDonors(@PathVariable int id, HttpServletRequest request) {
+        try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
+
+            Map<String, Object> req = requestDao.findById(id);
+            if (req == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Request not found"));
+            }
+            String status = (String) req.get("status");
+            if (status == null || (!status.equalsIgnoreCase("Open") && !status.equalsIgnoreCase("Active"))) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(false, "Only open emergency requests can be dispatched to additional donors."));
+            }
+
+            // Find all donors already contacted
+            List<Map<String, Object>> existingNotifs = notificationDao.getDonorsForRequest(id);
+            Set<Integer> alreadyContacted = new HashSet<>();
+            if (existingNotifs != null) {
+                for (Map<String, Object> n : existingNotifs) {
+                    Object dId = n.get("donor_pk");
+                    if (dId instanceof Number) alreadyContacted.add(((Number) dId).intValue());
+                }
+            }
+
+            String bloodType = (String) req.get("bloodType");
+            Double lat = asDouble(req.get("latitude"));
+            Double lng = asDouble(req.get("longitude"));
+            Object radObj = req.get("radiusKm");
+            double radius = radObj instanceof Number ? ((Number) radObj).doubleValue() : 10.0;
+
+            List<Map<String, Object>> candidates = donorDao.findNearby(lat, lng, radius, bloodType);
+            List<Integer> newDonorIds = new ArrayList<>();
+            if (candidates != null) {
+                for (Map<String, Object> c : candidates) {
+                    int dId = ((Number) c.get("id")).intValue();
+                    if (!alreadyContacted.contains(dId) && DonorEligibilityService.isEligible(c)) {
+                        newDonorIds.add(dId);
+                    }
+                }
+            }
+
+            if (newDonorIds.isEmpty()) {
+                return ok("No additional eligible donors found within " + (int) radius + " km. Try extending search radius.", Map.of("count", 0, "dispatched", false));
+            }
+
+            int units = req.get("unitsRequested") instanceof Number ? ((Number) req.get("unitsRequested")).intValue() : 1;
+            String patientName = (String) req.get("patientName");
+            String notes = (String) req.get("notes");
+            notificationDao.broadcastToDonors(id, newDonorIds, hospitalId, bloodType, units, patientName, notes);
+
+            try (Connection conn = DBConnection.getConnection()) {
+                com.red404.service.RequestLifecycleService.getInstance()
+                        .recordAudit(conn, id, "hospital:" + hospitalId, status, status, "Dispatched to " + newDonorIds.size() + " additional donors");
+            }
+            com.red404.service.RequestLifecycleService.getInstance()
+                    .broadcastLifecycleEvent(id, "request-updated", Map.of("additionalDonors", newDonorIds.size()));
+
+            return ok("Dispatched to " + newDonorIds.size() + " additional donors", Map.of("count", newDonorIds.size(), "dispatched", true));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
     @PostMapping("/requests/{id}/extend-radius")
     public ResponseEntity<ApiResponse> extendRadius(
             @PathVariable int id,
@@ -1065,6 +1197,15 @@ public class HospitalController {
         try {
             ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
             if (gate != null) return gate;
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
+
             double radius = 15.0;
             if (body != null && body.has("radius")) {
                 radius = body.get("radius").asDouble();
@@ -1075,6 +1216,16 @@ public class HospitalController {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Radius must be between 1 and 100 km."));
             }
             requestDao.updateRadius(id, radius);
+
+            Map<String, Object> req = requestDao.findById(id);
+            String curStatus = req != null ? (String) req.get("status") : "Open";
+            try (Connection conn = DBConnection.getConnection()) {
+                com.red404.service.RequestLifecycleService.getInstance()
+                        .recordAudit(conn, id, "hospital:" + hospitalId, curStatus, curStatus, "Perimeter extended to " + radius + " km");
+            }
+            com.red404.service.RequestLifecycleService.getInstance()
+                    .broadcastLifecycleEvent(id, "request-updated", Map.of("radiusKm", radius));
+
             return ok("Radius extended to " + radius + " km", Map.of("id", id, "radius", radius));
         } catch (Exception e) {
             return serverError(e);
