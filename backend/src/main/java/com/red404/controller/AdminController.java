@@ -366,7 +366,7 @@ public class AdminController {
         String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
                 "d.donor_type, d.availability, d.city, d.state, d.pincode, d.zone, " +
                 "d.location_updated_at, d.last_donation, d.created_at, " +
-                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED')) AS total_donations " +
+                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) AS total_donations " +
                 "FROM donors d" + whereClause.toString() + " ORDER BY d.id DESC LIMIT ? OFFSET ?";
 
         try (Connection conn = DBConnection.getConnection()) {
@@ -465,7 +465,7 @@ public class AdminController {
         String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
                 "d.donor_type, d.availability, d.city, d.state, d.pincode, d.zone, " +
                 "d.location_updated_at, d.last_donation, d.created_at, " +
-                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED')) AS total_donations " +
+                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) AS total_donations " +
                 "FROM donors d WHERE d.id = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -682,7 +682,7 @@ public class AdminController {
                 }
             } catch (Exception ignored) {}
 
-            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM donations WHERE donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)")) {
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM donations WHERE (donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')")) {
                 cps.setInt(1, id); cps.setInt(2, id);
                 try (ResultSet crs = cps.executeQuery()) {
                     if (crs.next()) totalEvents += crs.getInt(1);
@@ -694,7 +694,7 @@ public class AdminController {
                     "SELECT id, action, details, admin_user as actor, CAST(created_at AS CHAR(64)) as ev_time FROM donor_audit_logs WHERE donor_id = ? " +
                     "UNION ALL " +
                     "SELECT id, 'DONATION_RECORDED' as action, CONCAT('Completed donation at ', COALESCE(hospital_name, 'Partner Blood Bank')) as details, 'Hospital Staff' as actor, CAST(donation_date AS CHAR(64)) as ev_time " +
-                    " FROM donations WHERE donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)" +
+                    " FROM donations WHERE (donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')" +
                     ") AS combined_events ORDER BY ev_time DESC LIMIT ? OFFSET ?";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {

@@ -519,12 +519,25 @@ public class BloodRequestNotificationDao {
 
                     // 1. Terminal Request Statuses take absolute precedence
                     if (reqUpper.equals("FULFILLED")) {
-                        displayStatus = "Fulfilled";
-                        if (notifUpper.equals("DONATED")) {
-                            finalReason = "Verified donation completed";
+                        List<Map<String, Object>> linked = new DonorDao().findDonationsByRequestId(reqId);
+                        if (linked != null && !linked.isEmpty()) {
+                            displayStatus = "Fulfilled";
+                            map.put("linkedDonations", linked);
+                            map.put("donationId", linked.get(0).get("donationId"));
+                            map.put("donationRef", linked.get(0).get("refCode"));
+                            String donRef = (String) linked.get(0).get("refCode");
+                            if (notifUpper.equals("DONATED")) {
+                                finalReason = "Fulfilled: Donation #" + donRef;
+                            } else {
+                                finalReason = "Fulfilled: Donation #" + donRef;
+                                helperNote = "This request has been fulfilled. Thank you.";
+                            }
                         } else {
-                            finalReason = "Request fulfilled";
-                            helperNote = "This request has been fulfilled. Thank you.";
+                            // Part 4: A request without a donation is never labelled Fulfilled anywhere
+                            displayStatus = "Closed";
+                            finalReason = "Closed without a recorded donation";
+                            closeReason = "Closed without a recorded donation";
+                            map.put("closeReason", closeReason);
                         }
                     } else if (reqUpper.equals("CLOSED")) {
                         displayStatus = "Closed";

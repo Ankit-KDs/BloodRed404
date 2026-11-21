@@ -676,7 +676,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                 "    br.close_reason = 'Closed without a recorded donation', " +
                 "    br.fulfillment_note = 'Closed without a recorded donation' " +
                 "WHERE UPPER(br.status) = 'FULFILLED' " +
-                "AND NOT EXISTS (SELECT 1 FROM donations d WHERE d.request_id = br.id AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED'))"
+                "AND NOT EXISTS (SELECT 1 FROM donations d WHERE d.request_id = br.id AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE'))"
             );
 
             // 2. REQ-037 gets reason "Donor withdrew"

@@ -825,12 +825,12 @@ public class HospitalController {
                         int m = Integer.parseInt(parts[1]);
                         if (y == currentYear && m == currentMonth) {
                             if (st.equals("fulfilled")) {
-                                Object uFul = reqItem.get("unitsFulfilled");
-                                int uCount = uFul instanceof Number ? ((Number) uFul).intValue() : 0;
                                 Object lDon = reqItem.get("linkedDonations");
-                                boolean hasDon = (lDon instanceof List && !((List<?>) lDon).isEmpty()) || reqItem.get("donationRecord") != null;
-                                if (uCount > 0 || hasDon) {
+                                boolean hasDon = (lDon instanceof List && !((List<?>) lDon).isEmpty()) || reqItem.get("donationRecord") != null || reqItem.get("donationRef") != null;
+                                if (hasDon) {
                                     fulfilledThisMonth++;
+                                } else {
+                                    cancelledThisMonth++;
                                 }
                             } else if (st.equals("cancelled") || st.equals("closed")) {
                                 cancelledThisMonth++;
@@ -909,6 +909,23 @@ public class HospitalController {
                 List<Map<String, Object>> donors = notifDao.getDonorsForRequest(reqId);
                 reqItem.put("donors", donors);
                 reqItem.put("respondingDonors", donors);
+            }
+
+            if ("Fulfilled".equalsIgnoreCase(reqStatus)) {
+                List<Map<String, Object>> linked = (reqId > 0) ? donorDao.findDonationsByRequestId(reqId) : null;
+                if (linked != null && !linked.isEmpty()) {
+                    reqItem.put("linkedDonations", linked);
+                    reqItem.put("donationRecord", linked.get(0));
+                    reqItem.put("donationId", linked.get(0).get("donationId"));
+                    reqItem.put("donationRef", linked.get(0).get("refCode"));
+                } else {
+                    // Part 4: A request without a donation is never labelled Fulfilled anywhere
+                    reqItem.put("status", "Closed");
+                    reqItem.put("closeReason", "Closed without a recorded donation");
+                    reqItem.put("close_reason", "Closed without a recorded donation");
+                    reqItem.put("fulfillmentNote", "Closed without a recorded donation");
+                    reqItem.put("fulfillment_note", "Closed without a recorded donation");
+                }
             }
 
             Map<String, Object> acceptedDonor = (reqId > 0) ? notifDao.getAcceptedDonorForRequest(reqId) : null;

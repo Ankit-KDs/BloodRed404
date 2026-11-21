@@ -167,10 +167,10 @@ public class PlatformMetricsService {
                 }
             }
 
-            // 3. Verified Donations & Lives Saved
+            // 3. Verified Donations & Lives Saved (read only approved Check-in donation records)
             try (Statement st = conn.createStatement();
                     ResultSet rs = st.executeQuery(
-                            "SELECT COUNT(*) FROM donations WHERE status IN ('Fulfilled', 'VERIFIED_INTAKE', 'Approved', 'Completed', 'COMPLETED')")) {
+                            "SELECT COUNT(*) FROM donations WHERE UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')")) {
                 if (rs.next()) {
                     verifiedDonations = rs.getInt(1);
                     livesSaved = verifiedDonations;
@@ -178,13 +178,13 @@ public class PlatformMetricsService {
             } catch (Exception ignored) {
             }
 
-            // 4. Blood Requests & Completed Requests
+            // 4. Blood Requests & Completed Requests (read only requests fulfilled with verified check-in donation)
             try (Statement st = conn.createStatement();
                     ResultSet rs = st.executeQuery(
                             "SELECT COUNT(*), " +
-                                    "SUM(CASE WHEN status IN ('Fulfilled', 'Completed', 'COMPLETED') THEN 1 ELSE 0 END) "
-                                    +
-                                    "FROM blood_requests")) {
+                                    "SUM(CASE WHEN UPPER(br.status) IN ('FULFILLED', 'COMPLETED') " +
+                                    "AND EXISTS (SELECT 1 FROM donations d WHERE d.request_id = br.id AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) THEN 1 ELSE 0 END) " +
+                                    "FROM blood_requests br")) {
                 if (rs.next()) {
                     totalRequests = rs.getInt(1);
                     completedRequests = rs.getInt(2);
@@ -196,7 +196,7 @@ public class PlatformMetricsService {
             if (completedRequests >= minCompletedRequests) {
                 try (Statement st = conn.createStatement();
                         ResultSet rs = st.executeQuery(
-                                "SELECT AVG(response_time) FROM donations WHERE response_time IS NOT NULL AND response_time > 0")) {
+                                "SELECT AVG(response_time) FROM donations WHERE response_time IS NOT NULL AND response_time > 0 AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')")) {
                     if (rs.next() && rs.getObject(1) != null) {
                         avgResponseMin = Math.max(1, (int) Math.round(rs.getDouble(1)));
                     }

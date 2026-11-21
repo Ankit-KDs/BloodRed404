@@ -390,6 +390,19 @@ public class BloodRequestDao {
                     req.put("donationRecord", linked.get(0));
                     req.put("donationId", linked.get(0).get("donationId"));
                     req.put("donationRef", linked.get(0).get("refCode"));
+                    List<String> refs = new ArrayList<>();
+                    for (Map<String, Object> ld : linked) {
+                        if (ld.get("refCode") != null) refs.add(ld.get("refCode").toString());
+                    }
+                    req.put("donationRefs", refs);
+                    req.put("donationRecordIds", refs);
+                } else {
+                    // Part 4: A request without a donation is never labelled Fulfilled anywhere
+                    req.put("status", "Closed");
+                    req.put("closeReason", "Closed without a recorded donation");
+                    req.put("close_reason", "Closed without a recorded donation");
+                    req.put("fulfillmentNote", "Closed without a recorded donation");
+                    req.put("fulfillment_note", "Closed without a recorded donation");
                 }
             } catch (Exception ignored) {}
         }

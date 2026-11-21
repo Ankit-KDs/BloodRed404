@@ -527,14 +527,22 @@
     let html = '';
     pastRequests.forEach(req => {
       // Determine final plain result text
+      let s = (req.status || '').toUpperCase();
+      const hasDon = (Array.isArray(req.linkedDonations) && req.linkedDonations.length > 0) || req.donationRef || req.donationId;
+      if (s === 'FULFILLED' && !hasDon) {
+        s = 'CLOSED';
+        req.status = 'Closed';
+        req.finalReason = req.finalReason || 'Closed without a recorded donation';
+      }
+
       let resultText = 'Completed';
-      const s = (req.status || '').toUpperCase();
       if (s === 'WITHDRAWN') {
         resultText = 'Withdrawn by you';
       } else if (s === 'DECLINED') {
         resultText = 'Declined';
       } else if (s === 'FULFILLED') {
-        resultText = 'Fulfilled: Verified donation completed';
+        const donId = req.donationRef || (Array.isArray(req.linkedDonations) && req.linkedDonations[0] && (req.linkedDonations[0].refCode || req.linkedDonations[0].id)) || (req.donationId ? '#' + req.donationId : '');
+        resultText = donId ? `Fulfilled: Donation ${escapeHtml(donId)}` : 'Fulfilled: Verified donation completed';
       } else if (s === 'CLOSED') {
         resultText = req.finalReason ? `Closed by hospital (${escapeHtml(req.finalReason)})` : 'Closed by hospital';
       } else if (s === 'CANCELLED') {

@@ -1355,7 +1355,7 @@ public class DonorDao {
                 "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status, d.request_id AS requestId, d.vitals_json AS vitalsJson FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
-                "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
+                "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE') " +
                 "ORDER BY d.donation_date DESC, d.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -1367,9 +1367,17 @@ public class DonorDao {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> row = new HashMap<>();
-                    row.put("donationId", rs.getInt("donationId"));
-                    row.put("id", "RED-" + String.format("%05d", rs.getInt("donationId")));
+                    int dId = rs.getInt("donationId");
+                    row.put("donationId", dId);
                     Date date = rs.getDate("donationDate");
+                    int year = 2026;
+                    if (date != null) {
+                        try { year = Integer.parseInt(date.toString().substring(0, 4)); } catch (Exception ignored) {}
+                    }
+                    String donCode = "DON-" + year + "-" + String.format("%04d", dId);
+                    row.put("id", donCode);
+                    row.put("refCode", donCode);
+                    row.put("recordId", donCode);
                     row.put("donationDate", date == null ? null : date.toString());
                     row.put("date", date == null ? null : date.toString());
                     String hospName = rs.getString("hospitalName");
@@ -1439,7 +1447,7 @@ public class DonorDao {
                 "d.blood_type AS bloodType, d.units, d.volume_ml AS volumeMl, d.status, d.vitals_json AS vitalsJson FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
                 "WHERE (d.donor_id = ? OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1) OR d.donor_id = (SELECT CAST(id AS CHAR) FROM donors WHERE donor_id = ? LIMIT 1)) " +
-                "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
+                "AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE') " +
                 "ORDER BY d.donation_date DESC, d.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -1451,9 +1459,17 @@ public class DonorDao {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> row = new HashMap<>();
-                    row.put("donationId", rs.getInt("donationId"));
-                    row.put("id", "RED-" + String.format("%05d", rs.getInt("donationId")));
+                    int dId = rs.getInt("donationId");
+                    row.put("donationId", dId);
                     Date date = rs.getDate("donationDate");
+                    int year = 2026;
+                    if (date != null) {
+                        try { year = Integer.parseInt(date.toString().substring(0, 4)); } catch (Exception ignored) {}
+                    }
+                    String donCode = "DON-" + year + "-" + String.format("%04d", dId);
+                    row.put("id", donCode);
+                    row.put("refCode", donCode);
+                    row.put("recordId", donCode);
                     row.put("donationDate", date == null ? null : date.toString());
                     row.put("date", date == null ? null : date.toString());
                     String hospName = rs.getString("hospitalName");
@@ -1505,8 +1521,8 @@ public class DonorDao {
         String sql = "SELECT d.id AS donationId, d.donation_date AS donationDate, h.hospital_name AS hospitalName, " +
                 "d.blood_type AS bloodType, d.units, d.status, d.request_id AS requestId, d.donor_id AS donorId FROM donations d " +
                 "LEFT JOIN hospitals h ON d.hospital_id = h.id " +
-                "WHERE d.request_id = ? AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED') " +
-                "ORDER BY d.donation_date DESC";
+                "WHERE d.request_id = ? AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE') " +
+                "ORDER BY d.donation_date DESC, d.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, requestId);
@@ -1515,9 +1531,16 @@ public class DonorDao {
                     Map<String, Object> row = new HashMap<>();
                     int dId = rs.getInt("donationId");
                     row.put("donationId", dId);
-                    row.put("id", "RED-" + String.format("%05d", dId));
-                    row.put("refCode", "RED-" + String.format("%05d", dId));
                     Date date = rs.getDate("donationDate");
+                    int year = 2026;
+                    if (date != null) {
+                        try { year = Integer.parseInt(date.toString().substring(0, 4)); } catch (Exception ignored) {}
+                    }
+                    String donCode = "DON-" + year + "-" + String.format("%04d", dId);
+                    row.put("id", donCode);
+                    row.put("refCode", donCode);
+                    row.put("donationRef", donCode);
+                    row.put("donationId", dId);
                     row.put("donationDate", date == null ? null : date.toString());
                     row.put("date", date == null ? null : date.toString());
                     String hospName = rs.getString("hospitalName");

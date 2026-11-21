@@ -2607,9 +2607,8 @@ function renderRecordsSummaryCards() {
   if (fulfilledCount === undefined) {
     fulfilledCount = recordsAll.filter(r => {
       const s = (r.status || '').toLowerCase();
-      const uFul = Number(r.unitsFulfilled || r.units_fulfilled) || 0;
       const hasDon = (Array.isArray(r.linkedDonations) && r.linkedDonations.length > 0) || r.donationRef || r.donationId;
-      return s === 'fulfilled' && (uFul > 0 || hasDon);
+      return s === 'fulfilled' && hasDon;
     }).length;
   }
   if (cancelledCount === undefined) {
@@ -2746,8 +2745,18 @@ function renderRecordsPage() {
     else if (urgRaw.includes('URG')) { urgClass = 'urgent'; urgLabel = 'Urgent'; }
 
     // Status (Open, Accepted, Arrived, Fulfilled, Closed, Cancelled, Expired)
-    const status = r.status || 'Active';
-    const sLower = status.toLowerCase();
+    let status = r.status || 'Active';
+    let sLower = status.toLowerCase();
+
+    // Part 4: a request without a donation is never labelled Fulfilled anywhere
+    const hasDonation = (Array.isArray(r.linkedDonations) && r.linkedDonations.length > 0) || r.donationRef || r.donationId;
+    if (sLower === 'fulfilled' && !hasDonation) {
+      status = 'Closed';
+      sLower = 'closed';
+      r.status = 'Closed';
+      r.close_reason = r.close_reason || r.closeReason || 'Closed without a recorded donation';
+    }
+
     let statusClass = 'active';
     if (sLower === 'fulfilled') statusClass = 'available';
     else if (sLower === 'cancelled') statusClass = 'cancelled';
@@ -2761,7 +2770,7 @@ function renderRecordsPage() {
     if ((sLower === 'cancelled' || sLower === 'closed') && reasonText) {
       reasonSubHtml = `<div style="font-size: 11px; color: #94a3b8; margin-top: 3px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(reasonText)}">${escapeHtml(reasonText)}</div>`;
     } else if (sLower === 'fulfilled') {
-      const donId = r.donationRef || (Array.isArray(r.linkedDonations) && r.linkedDonations[0] && r.linkedDonations[0].refCode) || (r.donationId ? '#DON-' + r.donationId : '');
+      const donId = r.donationRef || (Array.isArray(r.linkedDonations) && r.linkedDonations[0] && (r.linkedDonations[0].refCode || r.linkedDonations[0].id)) || (r.donationId ? '#DON-' + r.donationId : '');
       if (donId) {
         reasonSubHtml = `<div style="font-size: 10.5px; color: #86efac; margin-top: 2px; font-family: 'JetBrains Mono', monospace;" title="Linked verified donation">${escapeHtml(donId)}</div>`;
       }
@@ -2868,8 +2877,18 @@ async function openRequestDrawer(r) {
   if (bloodBadge) bloodBadge.innerHTML = getDropBadgeSvg(blood, '');
 
   const statusBadge = document.getElementById('drawerStatusBadge');
-  const status = r.status || 'Active';
-  const sLower = status.toLowerCase();
+  let status = r.status || 'Active';
+  let sLower = status.toLowerCase();
+
+  // Part 4: a request without a donation is never labelled Fulfilled anywhere
+  const hasDonation = (Array.isArray(linkedDonations) && linkedDonations.length > 0) || (Array.isArray(r.linkedDonations) && r.linkedDonations.length > 0) || r.donationRef || r.donationId;
+  if (sLower === 'fulfilled' && !hasDonation) {
+    status = 'Closed';
+    sLower = 'closed';
+    r.status = 'Closed';
+    r.close_reason = r.close_reason || r.closeReason || 'Closed without a recorded donation';
+  }
+
   let statusClass = 'active';
   if (sLower === 'fulfilled') statusClass = 'available';
   else if (sLower === 'cancelled') statusClass = 'cancelled';
