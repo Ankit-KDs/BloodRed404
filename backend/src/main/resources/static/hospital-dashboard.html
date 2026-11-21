@@ -1266,7 +1266,7 @@
     <div id="drawerActionsBar" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--hosp-border);">
       <button type="button" id="btnDrawerCancel" class="btn-secondary" style="color: #f87171; border-color: rgba(248,113,113,0.3); font-size: 12px; padding: 5px 12px;">Cancel Request</button>
       <button type="button" id="btnDrawerExtend" class="btn-secondary" style="font-size: 12px; padding: 5px 12px;">Extend Radius</button>
-      <button type="button" id="btnDrawerFulfill" class="btn-primary-action" style="font-size: 12px; padding: 5px 12px; height: 30px;">Mark Fulfilled</button>
+      <button type="button" id="btnDrawerFulfill" class="btn-primary-action" style="font-size: 12px; padding: 5px 12px; height: 30px;">Close Request</button>
       <button type="button" id="btnDrawerDuplicate" class="btn-secondary" style="font-size: 12px; padding: 5px 12px;">Duplicate</button>
     </div>
 
@@ -1352,20 +1352,45 @@
     </div>
   </div>
 
-  <!-- Mark Fulfilled Modal (Group 4.5) -->
+  <!-- Close Request Modal (Round 12 Part 1) -->
   <div id="modalFulfillRequest" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center;">
-    <div style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 22px; max-width: 420px; width: 90%;">
-      <h3 style="margin: 0 0 8px; color: #22c55e; font-size: 16px;">Mark Request Fulfilled</h3>
+    <div style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 22px; max-width: 440px; width: 90%;">
+      <h3 style="margin: 0 0 8px; color: #f59e0b; font-size: 16px;">Close Emergency Request</h3>
       <p style="font-size: 13px; color: var(--hosp-text-muted); margin-bottom: 12px;">
-        Document fulfillment details for medical records and platform ledger.
+        Closing releases remaining donors and marks the request as closed on the registry.
       </p>
       <div style="margin-bottom: 14px;">
-        <label class="form-label" style="font-size: 12px;">Fulfillment Note *</label>
-        <textarea id="fulfillNoteInput" rows="3" class="form-input" placeholder="e.g. Units received and verified from on-site donor intake." style="width: 100%;"></textarea>
+        <label class="form-label" style="font-size: 12px;">Close Reason *</label>
+        <select id="closeReasonSelect" class="form-input" style="width: 100%; margin-bottom: 10px;">
+          <option value="Fulfilled through other source">Fulfilled through other source</option>
+          <option value="Patient stabilized / no longer needed">Patient stabilized / no longer needed</option>
+          <option value="Patient transferred / deceased">Patient transferred / deceased</option>
+          <option value="Other">Other (specify below)</option>
+        </select>
+        <label class="form-label" style="font-size: 12px;">Additional Note / Details</label>
+        <textarea id="fulfillNoteInput" rows="3" class="form-input" placeholder="Required if 'Other' selected, otherwise optional." style="width: 100%;"></textarea>
       </div>
       <div style="display: flex; gap: 8px; justify-content: flex-end;">
         <button type="button" class="btn-secondary" id="btnFulfillModalClose">Cancel</button>
-        <button type="button" class="btn-primary-action" id="btnConfirmFulfillRequest">Confirm Fulfilled</button>
+        <button type="button" class="btn-primary-action" id="btnConfirmFulfillRequest">Confirm Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Release Donor Modal (Round 12 Part 1) -->
+  <div id="modalReleaseDonor" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: var(--hosp-surface-raised, #1e293b); border: 1px solid var(--hosp-border, #334155); border-radius: 12px; padding: 22px; max-width: 420px; width: 90%;">
+      <h3 style="margin: 0 0 8px; color: #ef4444; font-size: 16px;">Release Donor</h3>
+      <p style="font-size: 13px; color: var(--hosp-text-muted); margin-bottom: 12px;">
+        Free an accepted donor who is not coming or no longer required. The donor will be notified.
+      </p>
+      <div style="margin-bottom: 14px;">
+        <label class="form-label" style="font-size: 12px;">Reason *</label>
+        <input type="text" id="releaseDonorReasonInput" class="form-input" placeholder="e.g. Donor notified hospital they cannot arrive in time." style="width: 100%;">
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" id="btnReleaseDonorModalClose">Cancel</button>
+        <button type="button" class="btn-primary-action" id="btnConfirmReleaseDonor" style="background: #dc2626;">Release Donor</button>
       </div>
     </div>
   </div>

@@ -442,14 +442,16 @@ public class BloodRequestNotificationDao {
         expireOldNotifications();
         List<Map<String, Object>> list = new ArrayList<>();
         String sql = "SELECT n.id as notif_id, n.request_id, n.status as notif_status, n.notified_at, n.responded_at, " +
+                     "n.arrival_deadline, n.release_reason, " +
                      "n.units_requested, n.patient_name, n.notes as hosp_notes, n.blood_type as notif_blood_type, " +
                      "br.hospital_id, br.latitude as hosp_lat, br.longitude as hosp_lng, " +
                      "br.urgency_level, br.needed_within_mins, br.status as req_status, br.created_at as req_created_at, " +
+                     "br.expires_at, br.close_reason, br.cancelled_reason, br.fulfillment_note, " +
                      "h.address as h_address, h.hospital_name as h_name, h.hospital_phone as h_phone, h.emergency_contact as h_emergency_contact " +
                      "FROM blood_request_notifications n " +
                      "JOIN blood_requests br ON n.request_id = br.id " +
                      "LEFT JOIN hospitals h ON br.hospital_id = h.id " +
-                     "WHERE n.donor_id = ? AND UPPER(n.status) IN ('NOTIFIED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'FULFILLED', 'ARRIVED', 'DONATED', 'WITHDRAWN') " +
+                     "WHERE n.donor_id = ? " +
                      "ORDER BY n.id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -459,7 +461,16 @@ public class BloodRequestNotificationDao {
                     Map<String, Object> map = new HashMap<>();
                     int notifId = rs.getInt("notif_id");
                     int reqId = rs.getInt("request_id");
-                    String status = rs.getString("notif_status");
+                    String notifStatus = rs.getString("notif_status");
+                    String reqStatus = rs.getString("req_status");
+                    String closeReason = rs.getString("close_reason");
+                    String cancelledReason = rs.getString("cancelled_reason");
+                    String releaseReason = rs.getString("release_reason");
+                    Timestamp arrivalDeadline = null;
+                    try { arrivalDeadline = rs.getTimestamp("arrival_deadline"); } catch (Exception ignored) {}
+                    Timestamp expiresAt = null;
+                    try { expiresAt = rs.getTimestamp("expires_at"); } catch (Exception ignored) {}
+
                     String bType = rs.getString("notif_blood_type");
                     int units = rs.getInt("units_requested");
                     String patientName = rs.getString("patient_name");
@@ -498,15 +509,77 @@ public class BloodRequestNotificationDao {
                     if (hospPhone == null || hospPhone.isBlank()) hospPhone = "+91 108";
                     map.put("phone", hospPhone);
 
+                    String notifUpper = notifStatus != null ? notifStatus.toUpperCase() : "NOTIFIED";
+                    String reqUpper = reqStatus != null ? reqStatus.toUpperCase() : "OPEN";
+
                     String displayStatus = "New";
-                    if ("ACCEPTED".equalsIgnoreCase(status)) displayStatus = "Accepted";
-                    else if ("ARRIVED".equalsIgnoreCase(status)) displayStatus = "Arrived";
-                    else if ("DONATED".equalsIgnoreCase(status)) displayStatus = "Donated";
-                    else if ("DECLINED".equalsIgnoreCase(status)) displayStatus = "Declined";
-                    else if ("EXPIRED".equalsIgnoreCase(status)) displayStatus = "Expired";
-                    else if ("WITHDRAWN".equalsIgnoreCase(status)) displayStatus = "Withdrawn";
-                    else if ("FULFILLED".equalsIgnoreCase(status)) displayStatus = "Fulfilled";
+                    String finalReason = null;
+                    String helperNote = null;
+                    boolean isActive = false;
+
+                    // 1. Terminal Request Statuses take absolute precedence
+                    if (reqUpper.equals("FULFILLED")) {
+                        displayStatus = "Fulfilled";
+                        if (notifUpper.equals("DONATED")) {
+                            finalReason = "Verified donation completed";
+                        } else {
+                            finalReason = "Request fulfilled";
+                            helperNote = "This request has been fulfilled. Thank you.";
+                        }
+                    } else if (reqUpper.equals("CLOSED")) {
+                        displayStatus = "Closed";
+                        finalReason = closeReason != null && !closeReason.isBlank() ? closeReason : "Closed by hospital";
+                    } else if (reqUpper.equals("CANCELLED")) {
+                        displayStatus = "Cancelled";
+                        finalReason = cancelledReason != null && !cancelledReason.isBlank() ? cancelledReason : "Cancelled";
+                    } else if (reqUpper.equals("EXPIRED")) {
+                        displayStatus = "Expired";
+                        finalReason = cancelledReason != null && !cancelledReason.isBlank() ? cancelledReason : "Request expired";
+                    }
+                    // 2. Terminal Recipient Statuses
+                    else if (notifUpper.equals("DECLINED")) {
+                        displayStatus = "Declined";
+                        finalReason = "Declined by you";
+                    } else if (notifUpper.equals("WITHDRAWN")) {
+                        displayStatus = "Withdrawn";
+                        finalReason = "Withdrawn by you";
+                    } else if (notifUpper.equals("RELEASED")) {
+                        displayStatus = "Released";
+                        finalReason = releaseReason != null && !releaseReason.isBlank() ? releaseReason : "The hospital no longer needs you for this request";
+                    } else if (notifUpper.equals("NO_SHOW") || notifUpper.equals("EXPIRED")) {
+                        displayStatus = "Expired";
+                        finalReason = notifUpper.equals("NO_SHOW") ? "Arrival deadline passed" : "Response time expired";
+                    } else if (notifUpper.equals("DONATED")) {
+                        displayStatus = "Fulfilled";
+                        finalReason = "Verified donation completed";
+                    }
+                    // 3. Active Statuses
+                    else if (notifUpper.equals("ARRIVED")) {
+                        displayStatus = "Arrived";
+                        isActive = true;
+                    } else if (notifUpper.equals("ACCEPTED")) {
+                        displayStatus = "Accepted";
+                        isActive = true;
+                    } else { // NOTIFIED
+                        displayStatus = "New";
+                        isActive = true;
+                    }
+
                     map.put("status", displayStatus);
+                    map.put("displayStatus", displayStatus);
+                    map.put("reqStatus", reqStatus);
+                    map.put("notifStatus", notifStatus);
+                    map.put("isActive", isActive);
+                    map.put("finalReason", finalReason);
+                    map.put("reason", finalReason);
+                    map.put("helperNote", helperNote);
+                    map.put("closeReason", closeReason);
+                    map.put("cancelledReason", cancelledReason);
+                    map.put("releaseReason", releaseReason);
+                    map.put("arrivalDeadline", arrivalDeadline != null ? arrivalDeadline.toString() : null);
+                    map.put("arrivalDeadlineMs", arrivalDeadline != null ? arrivalDeadline.getTime() : null);
+                    map.put("expiresAt", expiresAt != null ? expiresAt.toString() : null);
+                    map.put("expiresAtMs", expiresAt != null ? expiresAt.getTime() : null);
                     map.put("bloodType", bType != null ? bType : "O-");
                     map.put("unitsNeeded", units > 0 ? units : 1);
                     map.put("units", units > 0 ? units : 1);

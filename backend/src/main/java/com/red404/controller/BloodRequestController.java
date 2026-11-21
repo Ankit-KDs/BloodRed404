@@ -139,24 +139,19 @@ public class BloodRequestController {
                 } catch (NumberFormatException ignored) {}
             }
             int donorId = authenticatedDonorId;
-            if (donorId > 0) {
-                Map<String, Object> freshDonor = new com.red404.dao.DonorDao().findById(donorId);
-                if (freshDonor != null && !com.red404.service.DonorEligibilityService.isEligible(freshDonor)) {
-                    return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
-                            .body(new ApiResponse(false, "You are currently not eligible to accept blood requests due to donation recovery interval, deferral or status."));
-                }
-                boolean accepted = new com.red404.dao.BloodRequestNotificationDao().acceptRequestByDonor(id, donorId);
-                if (!accepted) {
-                    return ResponseEntity.badRequest().body(new ApiResponse(false, "This request has expired or is no longer available."));
-                }
-            }
-            requestDao.updateStatus(id, "Accepted");
+            Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorAccept(id, donorId);
             Map<String, Object> req = requestDao.findById(id);
+            if (req == null) req = new HashMap<>();
+            req.putAll(res);
             HttpSession session = request.getSession(false);
             if (session != null) {
                 session.setAttribute("activeMission", req);
             }
             return ok("Request accepted", req);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(false, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -180,8 +175,9 @@ public class BloodRequestController {
                 } catch (NumberFormatException ignored) {}
             }
             int donorId = authenticatedDonorId;
-            new com.red404.dao.BloodRequestNotificationDao().updateDonorResponse(id, donorId, "DECLINED");
-            return ok("Request declined", null);
+            String reason = body != null && body.containsKey("reason") ? String.valueOf(body.get("reason")) : "Donor declined";
+            Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorDecline(id, donorId, reason);
+            return ok("Request declined", res);
         } catch (Exception e) {
             return serverError(e);
         }
@@ -191,23 +187,8 @@ public class BloodRequestController {
 
     @PutMapping("/{id}/complete")
     public ResponseEntity<ApiResponse> complete(@PathVariable int id, HttpServletRequest request) {
-        try {
-            Map<String, Object> req = requestDao.findById(id);
-            if (req == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Request not found"));
-            }
-            Integer sessionHospId = hospitalIdFromSession(request);
-            boolean isAdmin = isAdminSession(request);
-            Object reqHospId = req.get("hospitalId") != null ? req.get("hospitalId") : req.get("hospital_id");
-            if (!isAdmin && (sessionHospId == null || reqHospId == null || !sessionHospId.toString().equals(reqHospId.toString()))) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ApiResponse(false, "Forbidden: Ownership verification failed."));
-            }
-            requestDao.updateStatus(id, "Fulfilled");
-            return ok("Request fulfilled", requestDao.findById(id));
-        } catch (Exception e) {
-            return serverError(e);
-        }
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(new ApiResponse(false, "Manual fulfillment is deprecated. Requests are fulfilled automatically upon verified check-in donation approval, or closed via 'Close request'."));
     }
 
     // ======================== DELETE ========================

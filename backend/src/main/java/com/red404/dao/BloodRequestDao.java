@@ -103,9 +103,12 @@ public class BloodRequestDao {
             try { neededWithinMins = Integer.parseInt(String.valueOf(nwObj).trim()); } catch (Exception ignored) {}
         }
 
+        int expiryMins = (neededWithinMins != null && neededWithinMins > 0) ? neededWithinMins : com.red404.service.RequestLifecycleService.getRequestExpiryMinutes();
+        Timestamp expiresAt = new Timestamp(System.currentTimeMillis() + (expiryMins * 60L * 1000L));
+
         String sql = "INSERT INTO blood_requests (hospital_id, patient_name, blood_type, units_requested, " +
-                "urgency_level, required_before, status, latitude, longitude, needed_within_mins, created_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, CURRENT_TIMESTAMP)";
+                "urgency_level, required_before, status, latitude, longitude, needed_within_mins, expires_at, created_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, 'Open', ?, ?, ?, ?, CURRENT_TIMESTAMP)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, hospitalId);
@@ -125,13 +128,14 @@ public class BloodRequestDao {
             } else {
                 ps.setInt(9, neededWithinMins);
             }
+            ps.setTimestamp(10, expiresAt);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);
             }
         } catch (SQLException e) {
             String fallbackSql = "INSERT INTO blood_requests (hospital_id, patient_name, blood_type, units_requested, " +
-                    "urgency_level, required_before, status, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, 'Active', ?, ?)";
+                    "urgency_level, required_before, status, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, 'Open', ?, ?)";
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement ps = conn.prepareStatement(fallbackSql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, hospitalId);
@@ -359,6 +363,13 @@ public class BloodRequestDao {
             req.put("unitsFulfilled", rs.getInt("units_fulfilled"));
             req.put("fulfillmentNote", rs.getString("fulfillment_note"));
             req.put("cancelledReason", rs.getString("cancelled_reason"));
+            req.put("closeReason", rs.getString("close_reason"));
+            req.put("close_reason", rs.getString("close_reason"));
+            Timestamp exp = rs.getTimestamp("expires_at");
+            req.put("expiresAt", exp == null ? null : exp.toString());
+            req.put("expires_at", exp == null ? null : exp.toString());
+            Timestamp cls = rs.getTimestamp("closed_at");
+            req.put("closedAt", cls == null ? null : cls.toString());
         } catch (SQLException ignored) {
             req.put("unitsFulfilled", 0);
         }

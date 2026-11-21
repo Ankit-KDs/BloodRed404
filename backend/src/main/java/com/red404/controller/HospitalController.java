@@ -824,7 +824,11 @@ public class HospitalController {
                         int m = Integer.parseInt(parts[1]);
                         if (y == currentYear && m == currentMonth) {
                             if (st.equals("fulfilled")) {
-                                fulfilledThisMonth++;
+                                Object uFul = reqItem.get("unitsFulfilled");
+                                int uCount = uFul instanceof Number ? ((Number) uFul).intValue() : 0;
+                                if (uCount > 0) {
+                                    fulfilledThisMonth++;
+                                }
                             } else if (st.equals("cancelled")) {
                                 cancelledThisMonth++;
                             }
@@ -939,13 +943,93 @@ public class HospitalController {
         try {
             ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
             if (gate != null) return gate;
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
             String reason = body != null ? JsonUtil.textOrNull(body, "reason") : null;
             if (reason == null || reason.trim().length() < 3) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Cancellation reason is required (minimum 3 characters)."));
             }
-            requestDao.updateStatusWithReason(id, "Cancelled", reason.trim());
-            return ok("Request cancelled", null);
+            Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance()
+                    .handleHospitalCancel(id, hospitalId, reason.trim());
+            return ok("Request cancelled", res);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, e.getMessage()));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping("/requests/{id}/close")
+    public ResponseEntity<ApiResponse> closeRequest(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
+        try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
+
+            String reason = body != null ? JsonUtil.textOrNull(body, "reason") : null;
+            String note = body != null ? JsonUtil.textOrNull(body, "note") : null;
+
+            Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance()
+                    .handleHospitalCloseRequest(id, hospitalId, reason, note);
+            return ok("Request closed successfully", res);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, e.getMessage()));
+        } catch (Exception e) {
+            return serverError(e);
+        }
+    }
+
+    @PostMapping({"/requests/{id}/release-donor", "/requests/{id}/release"})
+    public ResponseEntity<ApiResponse> releaseDonor(
+            @PathVariable int id,
+            @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
+        try {
+            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
+            if (gate != null) return gate;
+            Integer hospitalId = getHospitalId(request);
+            if (hospitalId == null) {
+                Map<String, Object> sessionHosp = requireHospital(request);
+                if (sessionHosp != null && sessionHosp.get("id") != null) {
+                    hospitalId = ((Number) sessionHosp.get("id")).intValue();
+                }
+            }
+            if (hospitalId == null) return unauthorized();
+
+            int donorId = body != null ? JsonUtil.asInt(body, "donorId", 0) : 0;
+            String reason = body != null ? JsonUtil.textOrNull(body, "reason") : null;
+            if (donorId <= 0) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Donor ID is required."));
+            }
+
+            Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance()
+                    .handleHospitalReleaseDonor(id, donorId, hospitalId, reason);
+            return ok("Donor released successfully", res);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -956,19 +1040,9 @@ public class HospitalController {
             @PathVariable int id,
             @RequestBody(required = false) JsonNode body,
             HttpServletRequest request) {
-        try {
-            ResponseEntity<ApiResponse> gate = checkHospitalVerified(request);
-            if (gate != null) return gate;
-            String note = body != null ? JsonUtil.textOrNull(body, "note") : null;
-            if (note == null || note.trim().length() < 3) {
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Fulfillment note is required when manually marking a request as fulfilled."));
-            }
-            requestDao.updateStatusWithNote(id, "Fulfilled", note.trim());
-            return ok("Request marked as fulfilled", null);
-        } catch (Exception e) {
-            return serverError(e);
-        }
+        // Part 1 Rule 5: FULFILLED is set only by the system upon verified donation check-in approval.
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(new ApiResponse(false, "Manual fulfillment is disabled. Requests are fulfilled automatically when donor check-in donation is approved, or closed via 'Close request'."));
     }
 
     @GetMapping("/requests/{id}/donors")
@@ -1672,6 +1746,24 @@ public class HospitalController {
                         "You have successfully checked in at " + hospName + " for blood donation verification.", "checkin");
             }
 
+            // Mark arrived if donor has an accepted active request with this hospital
+            if (donorNumId > 0) {
+                try {
+                    List<Map<String, Object>> notifs = notificationDao.getNotificationsForDonor(donorNumId, null, null);
+                    for (Map<String, Object> n : notifs) {
+                        Object hIdObj = n.get("hospital_id");
+                        if (hIdObj == null) hIdObj = n.get("hospitalId");
+                        if (hIdObj != null && Integer.parseInt(hIdObj.toString()) == hospitalId) {
+                            String st = (String) n.get("status");
+                            if ("Accepted".equalsIgnoreCase(st)) {
+                                int rId = ((Number) n.get("requestId")).intValue();
+                                com.red404.service.RequestLifecycleService.getInstance().handleDonorCheckinArrival(rId, donorNumId);
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
             // Real backend data calculation
             Map<String, Object> details = new HashMap<>();
             String matchedDonorId = (String) donor.get("donor_id");
@@ -2074,9 +2166,11 @@ public class HospitalController {
             // If linked to active blood request, update donor status to DONATED and increment request fulfillment
             if (reqId > 0 && donorIntId > 0) {
                 try {
-                    notificationDao.markDonorDonated(reqId, donorIntId);
-                    requestDao.incrementUnitsFulfilled(reqId);
-                } catch (Exception ignored) {}
+                    com.red404.service.RequestLifecycleService.getInstance()
+                            .handleCheckinDonationApproved(reqId, donorIntId, hospitalId, linkedDonationId);
+                } catch (Exception ex) {
+                    log.warn("Notice updating request lifecycle on donation approved: {}", ex.getMessage());
+                }
             }
 
             // Immediately mark that donor's other open requests as "Withdrawn - not eligible" and stop notifying them (Part 1, Requirement 3)

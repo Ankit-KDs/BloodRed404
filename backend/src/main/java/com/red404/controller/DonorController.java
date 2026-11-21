@@ -21,6 +21,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,6 +57,30 @@ import com.red404.service.RateLimitService;
 public class DonorController {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DonorController.class);
+
+    private static final Map<Integer, List<SseEmitter>> donorEmitters = new ConcurrentHashMap<>();
+
+    private static void removeDonorEmitter(int donorId, SseEmitter emitter) {
+        List<SseEmitter> list = donorEmitters.get(donorId);
+        if (list != null) {
+            list.remove(emitter);
+            if (list.isEmpty()) donorEmitters.remove(donorId);
+        }
+    }
+
+    public static void broadcastDonorEvent(int donorId, String eventName, Object data) {
+        List<SseEmitter> list = donorEmitters.get(donorId);
+        if (list == null || list.isEmpty()) return;
+        List<SseEmitter> dead = new java.util.ArrayList<>();
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.send(SseEmitter.event().name(eventName).data(data));
+            } catch (Exception e) {
+                dead.add(emitter);
+            }
+        }
+        list.removeAll(dead);
+    }
 
     public static final int FRESHNESS_HOURS = DonorDao.FRESHNESS_HOURS;
 
@@ -1563,25 +1590,20 @@ public class DonorController {
                 donor = donorDao.findById(donorId);
             }
 
-            com.red404.dao.BloodRequestNotificationDao notifDao = new com.red404.dao.BloodRequestNotificationDao();
             if ("Accepted".equalsIgnoreCase(status)) {
-                // Authoritative server enforcement of isEligible (Part 1, Requirement 2)
-                Map<String, Object> freshDonor = donorDao.findById(donorId);
-                if (freshDonor != null) donor = freshDonor;
-                if (!DonorEligibilityService.isEligible(donor)) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(new ApiResponse(false, "You are currently not eligible to accept blood requests due to donation recovery interval, deferral or status."));
-                }
-                boolean accepted = notifDao.acceptRequestByDonor(requestId, donorId);
-                if (!accepted) {
-                    return ResponseEntity.badRequest().body(new ApiResponse(false, "This request has expired or is no longer available to accept."));
-                }
-                requestDao.updateStatus(requestId, "Accepted");
+                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorAccept(requestId, donorId);
+                Map<String, Object> bloodRequest = requestDao.findById(requestId);
+                if (bloodRequest == null) bloodRequest = new HashMap<>();
+                bloodRequest.putAll(res);
+                return ok("Request accepted", bloodRequest);
             } else if ("Declined".equalsIgnoreCase(status)) {
-                notifDao.updateDonorResponse(requestId, donorId, "DECLINED");
+                String reason = body != null && body.containsKey("reason") ? String.valueOf(body.get("reason")) : "Donor declined";
+                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorDecline(requestId, donorId, reason);
+                return ok("Request declined", res);
             } else if ("Withdrawn".equalsIgnoreCase(status)) {
-                notifDao.updateDonorResponse(requestId, donorId, "WITHDRAWN");
-                requestDao.updateStatus(requestId, "Open");
+                String reason = body != null && body.containsKey("reason") ? String.valueOf(body.get("reason")) : "Donor withdrew";
+                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorWithdraw(requestId, donorId, reason);
+                return ok("Request withdrawn", res);
             }
 
             Map<String, Object> bloodRequest = requestDao.findById(requestId);
@@ -1592,9 +1614,41 @@ public class DonorController {
             bloodRequest.put("distanceKm", 0);
             bloodRequest.put("etaMinutes", 0);
             return ok("Request " + status.toLowerCase(), bloodRequest);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(false, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
             return serverError(e);
         }
+    }
+
+    @GetMapping(value = {"/events", "/stream-events"}, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamDonorEvents(HttpServletRequest request) {
+        Map<String, Object> donor = requireDonor(request);
+        Integer donorId = null;
+        if (donor != null && donor.get("id") != null) {
+            donorId = ((Number) donor.get("id")).intValue();
+        }
+        if (donorId == null) {
+            SseEmitter dead = new SseEmitter(0L);
+            dead.complete();
+            return dead;
+        }
+
+        SseEmitter emitter = new SseEmitter(1800000L); // 30 mins
+        donorEmitters.computeIfAbsent(donorId, k -> new CopyOnWriteArrayList<>()).add(emitter);
+
+        final int did = donorId;
+        emitter.onCompletion(() -> removeDonorEmitter(did, emitter));
+        emitter.onTimeout(() -> removeDonorEmitter(did, emitter));
+        emitter.onError((e) -> removeDonorEmitter(did, emitter));
+
+        try {
+            emitter.send(SseEmitter.event().name("connected").data(Map.of("donorId", did, "status", "connected")));
+        } catch (Exception ignored) {}
+
+        return emitter;
     }
 
     @SuppressWarnings("unchecked")

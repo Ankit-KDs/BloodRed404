@@ -39,6 +39,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             migrateDonorsTable(conn);
             migrateHospitalsTable(conn);
             migrateBloodRequestsTable(conn);
+            migrateBloodRequestNotificationsTable(conn);
             migrateDonationsTable(conn);
             migrateHospitalInventoryTable(conn);
             migrateIntakeSnapshotsTable(conn);
@@ -161,6 +162,16 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
             "    token VARCHAR(120) PRIMARY KEY," +
             "    donor_id VARCHAR(30) NULL," +
             "    snapshot_json MEDIUMTEXT NOT NULL," +
+            "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+            ")",
+
+            "CREATE TABLE IF NOT EXISTS blood_request_audits (" +
+            "    id INT AUTO_INCREMENT PRIMARY KEY," +
+            "    request_id INT NOT NULL," +
+            "    actor VARCHAR(100) NOT NULL," +
+            "    from_status VARCHAR(50)," +
+            "    to_status VARCHAR(50)," +
+            "    reason VARCHAR(255)," +
             "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
             ")",
 
@@ -649,22 +660,40 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("last_donation_self_reported", "DATE NULL DEFAULT NULL");
         requiredColumns.put("email_verified", "BOOLEAN DEFAULT FALSE");
         requiredColumns.put("email_verified_at", "TIMESTAMP NULL DEFAULT NULL");
+        requiredColumns.put("expires_at", "TIMESTAMP NULL DEFAULT NULL");
+        requiredColumns.put("closed_at", "TIMESTAMP NULL DEFAULT NULL");
+        requiredColumns.put("close_reason", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("needed_within_mins", "INT NULL DEFAULT NULL");
 
         ensureColumns(conn, "blood_requests", requiredColumns);
 
-        // Fix unapproved historical requests marked 'Fulfilled' without verified donations or staff fulfillment note
+        // Data repair migration (Round 12 Part 1, Item 7)
         try (Statement st = conn.createStatement()) {
+            // 1. Any request set to Fulfilled without a linked donation becomes closed (manual)
             st.executeUpdate(
                 "UPDATE blood_requests br " +
-                "SET br.status = CASE " +
-                "    WHEN br.created_at < DATE_SUB(NOW(), INTERVAL 60 MINUTE) THEN 'Expired' " +
-                "    ELSE 'Open' " +
-                "END " +
+                "SET br.status = 'Closed', " +
+                "    br.close_reason = 'Closed without a recorded donation', " +
+                "    br.fulfillment_note = 'Closed without a recorded donation' " +
                 "WHERE UPPER(br.status) = 'FULFILLED' " +
-                "AND (br.fulfillment_note IS NULL OR TRIM(br.fulfillment_note) = '') " +
                 "AND NOT EXISTS (SELECT 1 FROM donations d WHERE d.request_id = br.id AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED'))"
             );
+
+            // 2. REQ-037 gets reason "Donor withdrew"
+            st.executeUpdate(
+                "UPDATE blood_requests br " +
+                "SET br.status = 'Cancelled', " +
+                "    br.cancelled_reason = 'Donor withdrew' " +
+                "WHERE br.id = 37 OR br.patient_name LIKE '%REQ-037%'"
+            );
         } catch (Exception ignored) {}
+    }
+
+    private void migrateBloodRequestNotificationsTable(Connection conn) {
+        Map<String, String> requiredColumns = new LinkedHashMap<>();
+        requiredColumns.put("arrival_deadline", "TIMESTAMP NULL DEFAULT NULL");
+        requiredColumns.put("release_reason", "VARCHAR(255) NULL DEFAULT NULL");
+        ensureColumns(conn, "blood_request_notifications", requiredColumns);
     }
 
     private void migrateDonationsTable(Connection conn) {

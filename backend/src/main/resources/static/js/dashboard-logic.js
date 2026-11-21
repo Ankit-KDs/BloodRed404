@@ -332,8 +332,34 @@
 
     // Initial alert fetch & real-time background sync
     fetchDonorAlerts();
+    initDonorRealtimeEvents();
     if (!window._donorAlertsInterval) {
-      window._donorAlertsInterval = setInterval(fetchDonorAlerts, 4000);
+      window._donorAlertsInterval = setInterval(fetchDonorAlerts, 10000);
+    }
+  }
+
+  function initDonorRealtimeEvents() {
+    if (window._donorEventSource) return;
+    try {
+      const es = new EventSource('/api/donor/events');
+      window._donorEventSource = es;
+      const handleEvt = () => {
+        fetchDonorAlerts();
+      };
+      es.addEventListener('request-updated', handleEvt);
+      es.addEventListener('donor-accepted', handleEvt);
+      es.addEventListener('donor-declined', handleEvt);
+      es.addEventListener('donor-withdrew', handleEvt);
+      es.addEventListener('donor-released', handleEvt);
+      es.addEventListener('request-closed', handleEvt);
+      es.addEventListener('request-cancelled', handleEvt);
+      es.addEventListener('request-expired', handleEvt);
+      es.addEventListener('request-fulfilled', handleEvt);
+      es.onerror = () => {
+        // Fallback polling every 10s handles it seamlessly
+      };
+    } catch (e) {
+      console.debug('Donor SSE notice:', e);
     }
   }
 
@@ -346,8 +372,11 @@
       .then(json => {
         if (json && Array.isArray(json.data)) {
           donorData.activeAlerts = json.data.filter(r => {
+            if (r.isActive !== undefined) return Boolean(r.isActive);
             const s = (r.status || r.notifStatus || 'New').toUpperCase();
-            return s !== 'DECLINED' && s !== 'CANCELLED' && s !== 'FULFILLED' && s !== 'COMPLETED' && s !== 'WITHDRAWN' && s !== 'EXPIRED';
+            const reqS = (r.reqStatus || '').toUpperCase();
+            if (['FULFILLED', 'CLOSED', 'CANCELLED', 'EXPIRED'].includes(reqS)) return false;
+            return ['NEW', 'ACCEPTED', 'ARRIVED', 'NOTIFIED'].includes(s);
           });
           renderAlerts();
         } else {
@@ -357,8 +386,11 @@
             .then(json2 => {
               if (json2 && Array.isArray(json2.data)) {
                 donorData.activeAlerts = json2.data.filter(r => {
+                  if (r.isActive !== undefined) return Boolean(r.isActive);
                   const s = (r.status || r.notifStatus || 'New').toUpperCase();
-                  return s !== 'DECLINED' && s !== 'CANCELLED' && s !== 'FULFILLED' && s !== 'COMPLETED' && s !== 'WITHDRAWN' && s !== 'EXPIRED';
+                  const reqS = (r.reqStatus || '').toUpperCase();
+                  if (['FULFILLED', 'CLOSED', 'CANCELLED', 'EXPIRED'].includes(reqS)) return false;
+                  return ['NEW', 'ACCEPTED', 'ARRIVED', 'NOTIFIED'].includes(s);
                 });
                 renderAlerts();
               }

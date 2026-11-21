@@ -26,12 +26,40 @@ document.addEventListener('DOMContentLoaded', () => {
   initHospitalProfile();
   initHospitalLogout();
   initDashboard();
+  initHospitalRealtimeEvents();
   initDonationDrives();
   initDispatchRadar();
   initInventory();
   initDonorCheckin();
   initRecords();
 });
+
+function initHospitalRealtimeEvents() {
+  if (window._hospitalEventSource) return;
+  try {
+    const es = new EventSource('/api/hospital/stream-events');
+    window._hospitalEventSource = es;
+    const handleEvt = () => {
+      loadDashboardData();
+      if (typeof loadRecordsTable === 'function') loadRecordsTable();
+      if (typeof selectedRequest !== 'undefined' && selectedRequest && typeof loadRequestDonorsList === 'function') {
+        loadRequestDonorsList(selectedRequest.id);
+      }
+    };
+    es.addEventListener('request-updated', handleEvt);
+    es.addEventListener('donor-accepted', handleEvt);
+    es.addEventListener('donor-declined', handleEvt);
+    es.addEventListener('donor-withdrew', handleEvt);
+    es.addEventListener('donor-released', handleEvt);
+    es.addEventListener('donor-arrived', handleEvt);
+    es.addEventListener('request-closed', handleEvt);
+    es.addEventListener('request-cancelled', handleEvt);
+    es.addEventListener('request-expired', handleEvt);
+    es.addEventListener('request-fulfilled', handleEvt);
+  } catch (e) {
+    console.debug('Hospital SSE notice:', e);
+  }
+}
 
 /* ============================================================
    1. MEDICINE FLOW BACKGROUND (SUBTLE HERO AREA ONLY)
@@ -1278,6 +1306,8 @@ function renderActiveRequests(requests) {
       `;
     }
 
+    const canClose = ['open', 'active', 'accepted', 'arrived'].includes((r.status || '').toLowerCase()) && (accepted > 0 || isArrived);
+
     return `
       <div class="active-req-item" data-id="${r.id}">
         <div class="req-item-top">
@@ -1335,19 +1365,19 @@ function renderActiveRequests(requests) {
         <div class="req-item-actions">
           ${isArrived ? `<button type="button" class="btn-action-checkin" onclick="switchTab('tab-checkin')">Start check-in</button>` : ''}
           <button type="button" class="btn-action-cancel" data-id="${r.id}">Cancel request</button>
-          <button type="button" class="btn-action-fulfill" data-id="${r.id}">Mark fulfilled</button>
+          <button type="button" class="btn-action-close-request" data-id="${r.id}" ${canClose ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;" title="Requires an accepted or arrived donor"'}><i class="fa-solid fa-lock" style="font-size:11px; margin-right:4px;"></i>Close request</button>
         </div>
       </div>
     `;
   }).join('');
 
-  // Wire Cancel and Fulfill Actions with Confirm Modal and Required Notes/Reasons (Step 1 requirement 4 & 5)
+  // Wire Cancel and Close Actions
   container.querySelectorAll('.btn-action-cancel').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       if (!id) return;
       const reason = window.prompt('Please enter a required reason for cancelling this emergency request:');
-      if (reason === null) return; // User cancelled prompt
+      if (reason === null) return;
       if (!reason.trim() || reason.trim().length < 3) {
         alert('Cancellation reason is required (minimum 3 characters).');
         return;
@@ -1372,33 +1402,16 @@ function renderActiveRequests(requests) {
     });
   });
 
-  container.querySelectorAll('.btn-action-fulfill').forEach(btn => {
-    btn.addEventListener('click', async () => {
+  container.querySelectorAll('.btn-action-close-request').forEach(btn => {
+    btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       if (!id) return;
-      const note = window.prompt('Please enter a required fulfillment note (e.g. units received via mutual blood bank exchange):');
-      if (note === null) return; // User cancelled prompt
-      if (!note.trim() || note.trim().length < 3) {
-        alert('Fulfillment note is required when manually marking a request fulfilled (minimum 3 characters).');
-        return;
-      }
-
-      try {
-        const resp = await fetch(`/api/hospital/requests/${id}/fulfill`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ note: note.trim() })
-        });
-        const res = await resp.json();
-        if (res && res.success) {
-          loadDashboardData();
-        } else {
-          alert((res && res.message) || 'Failed to fulfill request.');
-        }
-      } catch (e) {
-        console.error('Fulfill request error:', e);
-      }
+      selectedRequest = activeRequests.find(req => String(req.id) === String(id));
+      if (!selectedRequest) return;
+      const modal = document.getElementById('modalFulfillRequest');
+      const inputNote = document.getElementById('fulfillNoteInput');
+      if (inputNote) inputNote.value = '';
+      if (modal) modal.style.display = 'flex';
     });
   });
 }
@@ -2883,6 +2896,22 @@ async function loadRequestDonorsList(reqId) {
       const donors = Array.isArray(json.data) ? json.data : [];
       if (countEl) countEl.textContent = donors.length;
 
+      const hasAccepted = donors.some(d => ['ACCEPTED', 'ARRIVED'].includes((d.status || '').toUpperCase()));
+      const btnCloseReq = document.getElementById('btnDrawerFulfill');
+      if (btnCloseReq) {
+        if (!hasAccepted && selectedRequest && ['open', 'active'].includes((selectedRequest.status || '').toLowerCase())) {
+          btnCloseReq.disabled = true;
+          btnCloseReq.title = 'Requires at least one accepted or arrived donor to close. Use Cancel for unanswered requests.';
+          btnCloseReq.style.opacity = '0.5';
+          btnCloseReq.style.cursor = 'not-allowed';
+        } else {
+          btnCloseReq.disabled = false;
+          btnCloseReq.title = '';
+          btnCloseReq.style.opacity = '1';
+          btnCloseReq.style.cursor = 'pointer';
+        }
+      }
+
       if (donors.length === 0) {
         container.innerHTML = '<div style="font-size: 12.5px; color: var(--hosp-text-muted); padding: 10px; background: rgba(255,255,255,0.02); border-radius: 6px;">No donors contacted yet.</div>';
         return;
@@ -2916,6 +2945,12 @@ async function loadRequestDonorsList(reqId) {
                   <i class="fa-solid fa-envelope"></i>
                   <span>${escapeHtml(d.email)}</span>
                 </a>
+              ` : ''}
+              ${dStatus === 'ACCEPTED' ? `
+                <button type="button" class="btn-release-donor" onclick="window.openReleaseDonorModal(${reqId}, ${d.donor_pk || d.donorId || d.id})" style="background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-user-xmark"></i>
+                  <span>Release donor</span>
+                </button>
               ` : ''}
             </div>
           `;
@@ -3047,47 +3082,102 @@ function setupDrawerActions() {
     });
   }
 
-  // 3. Mark Fulfilled Action
-  const btnFulfill = document.getElementById('btnDrawerFulfill');
-  const modalFulfill = document.getElementById('modalFulfillRequest');
-  const btnFulfillClose = document.getElementById('btnFulfillModalClose');
-  const btnConfirmFulfill = document.getElementById('btnConfirmFulfillRequest');
-  const inputFulfillNote = document.getElementById('fulfillNoteInput');
+  // 3. Close Request Action (Round 12 Part 1)
+  const btnCloseReq = document.getElementById('btnDrawerFulfill');
+  const modalCloseReq = document.getElementById('modalFulfillRequest');
+  const btnCloseModalClose = document.getElementById('btnFulfillModalClose');
+  const btnConfirmCloseReq = document.getElementById('btnConfirmFulfillRequest');
+  const selectCloseReason = document.getElementById('closeReasonSelect');
+  const inputCloseNote = document.getElementById('fulfillNoteInput');
 
-  if (btnFulfill && modalFulfill) {
-    btnFulfill.addEventListener('click', () => {
-      if (inputFulfillNote) inputFulfillNote.value = '';
-      modalFulfill.style.display = 'flex';
+  if (btnCloseReq && modalCloseReq) {
+    btnCloseReq.addEventListener('click', () => {
+      if (inputCloseNote) inputCloseNote.value = '';
+      modalCloseReq.style.display = 'flex';
     });
   }
-  if (btnFulfillClose && modalFulfill) {
-    btnFulfillClose.addEventListener('click', () => { modalFulfill.style.display = 'none'; });
+  if (btnCloseModalClose && modalCloseReq) {
+    btnCloseModalClose.addEventListener('click', () => { modalCloseReq.style.display = 'none'; });
   }
-  if (btnConfirmFulfill && modalFulfill) {
-    btnConfirmFulfill.addEventListener('click', async () => {
-      const note = (inputFulfillNote ? inputFulfillNote.value : '').trim();
-      if (!note || note.length < 3) {
-        alert('Please enter a fulfillment note (minimum 3 characters).');
+  if (btnConfirmCloseReq && modalCloseReq) {
+    btnConfirmCloseReq.addEventListener('click', async () => {
+      if (!selectedRequest) return;
+      const reason = (selectCloseReason ? selectCloseReason.value : 'Fulfilled through other source').trim();
+      const note = (inputCloseNote ? inputCloseNote.value : '').trim();
+      if (reason === 'Other' && (!note || note.length < 3)) {
+        alert('Please enter details in the note field when selecting "Other" (minimum 3 characters).');
         return;
       }
       try {
-        const res = await fetch(`/api/hospital/requests/${selectedRequest.id}/fulfill`, {
+        const res = await fetch(`/api/hospital/requests/${selectedRequest.id}/close`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ note })
+          body: JSON.stringify({ reason, note })
         });
         if (res.ok) {
-          modalFulfill.style.display = 'none';
-          showToast('Request marked as fulfilled', 'success');
+          modalCloseReq.style.display = 'none';
+          showToast('Request closed successfully', 'success');
           closeRequestDrawer();
+          loadDashboardData();
           loadRecordsTable();
         } else {
           const err = await res.json();
-          alert(err.message || 'Failed to fulfill request');
+          alert(err.message || 'Failed to close request');
         }
       } catch (e) {
-        alert('Network error fulfilling request');
+        alert('Network error closing request');
+      }
+    });
+  }
+
+  // Release Donor Modal Wiring
+  window.openReleaseDonorModal = function(requestId, donorId) {
+    window._releaseTarget = { requestId, donorId };
+    const m = document.getElementById('modalReleaseDonor');
+    const inp = document.getElementById('releaseDonorReasonInput');
+    if (inp) inp.value = '';
+    if (m) m.style.display = 'flex';
+  };
+
+  const btnRelClose = document.getElementById('btnReleaseDonorModalClose');
+  const btnConfirmRel = document.getElementById('btnConfirmReleaseDonor');
+  if (btnRelClose) {
+    btnRelClose.addEventListener('click', () => {
+      const m = document.getElementById('modalReleaseDonor');
+      if (m) m.style.display = 'none';
+    });
+  }
+  if (btnConfirmRel) {
+    btnConfirmRel.addEventListener('click', async () => {
+      if (!window._releaseTarget) return;
+      const inp = document.getElementById('releaseDonorReasonInput');
+      const reason = (inp ? inp.value : '').trim();
+      if (!reason || reason.length < 3) {
+        alert('Release reason is required (minimum 3 characters).');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/hospital/requests/${window._releaseTarget.requestId}/release-donor`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ donorId: window._releaseTarget.donorId, reason })
+        });
+        if (res.ok) {
+          const m = document.getElementById('modalReleaseDonor');
+          if (m) m.style.display = 'none';
+          showToast('Donor released successfully', 'success');
+          loadDashboardData();
+          if (typeof loadRequestDonorsList === 'function' && selectedRequest) {
+            loadRequestDonorsList(selectedRequest.id);
+          }
+        } else {
+          const err = await res.json();
+          alert(err.message || 'Failed to release donor');
+        }
+      } catch (e) {
+        alert('Network error releasing donor');
       }
     });
   }

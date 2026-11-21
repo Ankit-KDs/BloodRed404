@@ -58,12 +58,35 @@
 
     // 1. Retrieve Donor's Real GPS Coordinates on page load
     requestLiveGeolocation();
+    initDonorAlertsRealtime();
 
     // 2. Set up 10-second interval polling for real-time hospital broadcasts
     setInterval(() => {
       fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
     }, 10000);
   });
+
+  function initDonorAlertsRealtime() {
+    if (window._donorAlertsEventSource) return;
+    try {
+      const es = new EventSource('/api/donor/events');
+      window._donorAlertsEventSource = es;
+      const handleEvt = () => {
+        fetchActiveAlerts(currentDonor.latitude, currentDonor.longitude);
+      };
+      es.addEventListener('request-updated', handleEvt);
+      es.addEventListener('donor-accepted', handleEvt);
+      es.addEventListener('donor-declined', handleEvt);
+      es.addEventListener('donor-withdrew', handleEvt);
+      es.addEventListener('donor-released', handleEvt);
+      es.addEventListener('request-closed', handleEvt);
+      es.addEventListener('request-cancelled', handleEvt);
+      es.addEventListener('request-expired', handleEvt);
+      es.addEventListener('request-fulfilled', handleEvt);
+    } catch (e) {
+      console.debug('Donor alerts SSE notice:', e);
+    }
+  }
 
   // ======================== 1. PROFILE & SESSION ========================
   async function initDonorProfile() {
@@ -431,10 +454,6 @@
               <i class="fas fa-phone"></i>
               <span>Call hospital (${escapeHtml(req.phone || '+91 108')})</span>
             </a>
-            <button type="button" class="btn-sos-withdraw" onclick="window.withdrawAlert(${req.id})" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:9px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:13px; cursor:pointer;">
-              <i class="fas fa-undo"></i>
-              <span>Withdraw</span>
-            </button>
           </div>
         `;
       } else if (displayStatus === 'Declined') {
@@ -842,7 +861,11 @@
   };
 
   window.withdrawAlert = async function (requestId) {
-    const selected = activeRequests.find(r => String(r.id) === String(requestId));
+    const selected = activeRequests.find(r => String(r.id) === String(requestId) || String(r.requestId) === String(requestId));
+    if (selected && String(selected.status).toUpperCase() === 'ACCEPTED') {
+      alert('Withdraw is not permitted after accepting. Please call the hospital directly if you cannot arrive.');
+      return;
+    }
     if (selected) {
       selected.status = 'Withdrawn';
     }
