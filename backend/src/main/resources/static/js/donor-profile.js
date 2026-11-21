@@ -373,6 +373,12 @@
             if (currentDonor.weight == null && d.latestHealthCheck.weight != null) currentDonor.weight = d.latestHealthCheck.weight;
           }
           if (d.healthStatus) currentDonor.healthStatus = d.healthStatus;
+          if (d.availability) currentDonor.availability = d.availability;
+          if (d.pausedUntil || d.paused_until) currentDonor.pausedUntil = d.pausedUntil || d.paused_until;
+          if (d.bloodGroupStatus || d.blood_group_status) currentDonor.bloodGroupStatus = d.bloodGroupStatus || d.blood_group_status;
+          if (d.bloodGroupVerifiedByHospitalName) currentDonor.bloodGroupVerifiedByHospitalName = d.bloodGroupVerifiedByHospitalName;
+          if (d.publicSearchOptIn !== undefined || d.public_search_opt_in !== undefined) currentDonor.publicSearchOptIn = d.publicSearchOptIn !== undefined ? d.publicSearchOptIn : d.public_search_opt_in;
+          if (d.publicConsentAt || d.public_consent_at) currentDonor.publicConsentAt = d.publicConsentAt || d.public_consent_at;
         }
       }
     } catch (e) {
@@ -390,6 +396,7 @@
     }
     updateGPSDisplay(currentDonor.latitude, currentDonor.longitude);
     renderDigitalIdAndIntakePayload();
+    renderAccountDetails();
   }
 
   // ======================== 2. LOAD DONATION HISTORY ========================
@@ -1017,6 +1024,159 @@
     setupDigitalIdActions(storageKey, uniqueIdStr);
   }
 
+  // ======================== PART 6: RENDER ALL DONOR PROFILE DETAILS ========================
+  function renderAccountDetails() {
+    function notProvided(fieldId) {
+      const click = fieldId ? `onclick="window.openEditModalFor('${fieldId}')"` : `onclick="window.openEditModalFor('editDonorFullName')"`;
+      return `<span style="color: #9b9a96;">Not provided</span> <button type="button" class="btn-add-inline" ${click} aria-label="Add this detail">[+ Add]</button>`;
+    }
+
+    // 1. Donor ID
+    const donorId = currentDonor.donorId || currentDonor.donor_id;
+    const elDonorId = document.getElementById('detDonorId');
+    if (elDonorId) elDonorId.textContent = donorId || '--';
+
+    // 2. Full Name
+    const elName = document.getElementById('detFullName');
+    if (elName) {
+      elName.innerHTML = currentDonor.name ? escapeHtml(currentDonor.name) : notProvided('editDonorFullName');
+    }
+
+    // 3. DOB & Age
+    const elDobAge = document.getElementById('detDobAge');
+    if (elDobAge) {
+      if (currentDonor.dob) {
+        const formattedDob = formatDate(currentDonor.dob);
+        const ageStr = (currentDonor.age !== null && currentDonor.age !== undefined) ? ` (${currentDonor.age} yrs)` : '';
+        elDobAge.textContent = `${formattedDob}${ageStr}`;
+      } else {
+        elDobAge.innerHTML = notProvided('editDonorDob');
+      }
+    }
+
+    // 4. Gender
+    const elGender = document.getElementById('detGender');
+    if (elGender) {
+      elGender.innerHTML = currentDonor.gender ? capitalize(currentDonor.gender) : notProvided('editDonorGender');
+    }
+
+    // 5. Blood Group with Status
+    const elBg = document.getElementById('detBloodGroup');
+    if (elBg) {
+      const bg = currentDonor.bloodType || 'A+';
+      const isVerified = (currentDonor.bloodGroupStatus === 'hospital_verified');
+      const statusLabel = isVerified ? 'Hospital Verified' : 'Self-declared';
+      const statusStyle = isVerified
+        ? 'background: rgba(62, 207, 142, 0.15); color: #3ecf8e;'
+        : 'background: rgba(110, 168, 255, 0.15); color: #6ea8ff;';
+      elBg.innerHTML = `${escapeHtml(bg)} <span class="bg-status-pill" style="${statusStyle}">${statusLabel}</span>`;
+    }
+
+    // 6. Weight
+    const elWeight = document.getElementById('detWeight');
+    if (elWeight) {
+      elWeight.innerHTML = (currentDonor.weight !== null && currentDonor.weight !== undefined && String(currentDonor.weight).trim() !== '')
+        ? `${currentDonor.weight} kg`
+        : notProvided('editDonorWeight');
+    }
+
+    // 7. Phone
+    const elPhone = document.getElementById('detPhone');
+    if (elPhone) {
+      elPhone.innerHTML = currentDonor.phone ? escapeHtml(formatPhoneNumber(currentDonor.phone)) : notProvided('editDonorPhone');
+    }
+
+    // 8. Email (verified badge)
+    const elEmail = document.getElementById('detEmail');
+    if (elEmail) {
+      if (currentDonor.email) {
+        elEmail.innerHTML = `${escapeHtml(currentDonor.email)} <span class="badge-verified-email"><i class="fa-solid fa-circle-check"></i> Verified</span>`;
+      } else {
+        elEmail.innerHTML = notProvided('editDonorEmail');
+      }
+    }
+
+    // 9. Full Address (House/street/locality, city, state, pin, India)
+    const elAddr = document.getElementById('detFullAddress');
+    const street = (currentDonor.address || '').trim();
+    const city = (currentDonor.city || '').trim();
+    const state = (currentDonor.state || '').trim();
+    const pin = (currentDonor.pincode || '').trim();
+    const country = 'India';
+
+    if (elAddr) {
+      const hasAny = Boolean(street || city || state || pin);
+      if (!hasAny) {
+        elAddr.innerHTML = notProvided('editDonorAddress');
+      } else {
+        const parts = [];
+        if (street) parts.push(escapeHtml(street));
+        if (city) parts.push(escapeHtml(city));
+        if (state) parts.push(escapeHtml(state));
+        if (pin) parts.push(`PIN: ${escapeHtml(pin)}`);
+        parts.push(country);
+        let fullHtml = `<span>${parts.join(', ')}</span>`;
+        if (!street) {
+          fullHtml += `<div style="margin-top: 6px; font-size: 12px; color: #f5a524;">
+            <i class="fa-solid fa-triangle-exclamation"></i> House / street / locality: <span style="color:#9b9a96;">Not provided</span>
+            <button type="button" class="btn-add-inline" onclick="window.openEditModalFor('editDonorAddress')">[+ Add]</button>
+          </div>`;
+        }
+        elAddr.innerHTML = fullHtml;
+      }
+    }
+
+    // Existing donor empty address prompt banner
+    const promptBanner = document.getElementById('profileAddressPrompt');
+    if (promptBanner) {
+      promptBanner.style.display = (!street) ? 'flex' : 'none';
+    }
+
+    // 10. Preferred Language
+    const elLang = document.getElementById('detLanguage');
+    if (elLang) {
+      elLang.textContent = (currentDonor.preferredLanguage === 'hi') ? 'हिन्दी (Hindi)' : 'English';
+    }
+
+    // 11. Notifications
+    const elNotif = document.getElementById('detNotifications');
+    if (elNotif) {
+      const sms = currentDonor.smsNotif ? 'On' : 'Off';
+      const email = currentDonor.emailNotif !== false ? 'On' : 'Off';
+      const push = currentDonor.pushNotif !== false ? 'On' : 'Off';
+      elNotif.textContent = `SMS: ${sms} · Email: ${email} · Push: ${push}`;
+    }
+
+    // 12. Availability Settings
+    const elAvail = document.getElementById('detAvailability');
+    if (elAvail) {
+      if (currentDonor.availability === 'Paused') {
+        const untilStr = currentDonor.pausedUntil ? ` (Paused until ${formatDate(currentDonor.pausedUntil)})` : ' (Paused)';
+        elAvail.innerHTML = `<span style="color: #f5a524;"><i class="fa-solid fa-pause-circle"></i> Paused</span>${untilStr}`;
+      } else {
+        elAvail.innerHTML = `<span style="color: #3ecf8e;"><i class="fa-solid fa-circle-check"></i> Available to donate</span>`;
+      }
+    }
+
+    // 13. Consents & Dates
+    const elPublic = document.getElementById('detPublicSearch');
+    if (elPublic) {
+      const isOpted = Boolean(currentDonor.publicSearchOptIn);
+      const consentDate = currentDonor.publicConsentAt ? formatDate(currentDonor.publicConsentAt) : null;
+      if (isOpted) {
+        elPublic.innerHTML = `<span style="color: #3ecf8e;"><i class="fa-solid fa-eye"></i> Listed (Opted-in)</span>${consentDate ? '<span style="color:#9b9a96; font-size:12px;"> · Updated ' + consentDate + '</span>' : ''}`;
+      } else {
+        elPublic.innerHTML = `<span style="color: #9b9a96;"><i class="fa-solid fa-eye-slash"></i> Unlisted (Opted-out)</span>${consentDate ? '<span style="color:#9b9a96; font-size:12px;"> · Updated ' + consentDate + '</span>' : ''}`;
+      }
+    }
+
+    // 14. Member Since
+    const elMember = document.getElementById('detMemberSince');
+    if (elMember) {
+      elMember.innerHTML = currentDonor.createdAt ? formatDate(currentDonor.createdAt) : notProvided();
+    }
+  }
+
   function generateSecureToken() {
     const chars = '0123456789ABCDEF';
     let rand = '';
@@ -1254,9 +1414,24 @@
     const btnEditDetail = document.getElementById('btnEditDetail');
     const btnEditCard = document.getElementById('btnEditDonorCard');
     const btnOpenModal = document.getElementById('btnOpenEditModal');
+    const btnEditProfileDetails = document.getElementById('btnEditProfileDetails');
     const btnCloseModal = document.getElementById('btnCloseEditModal');
     const btnCancelModal = document.getElementById('btnCancelEditModal');
     const form = document.getElementById('editDonorProfileForm');
+
+    window.openDonorEditModal = openModal;
+    window.openEditModalFor = function (fieldId) {
+      openModal();
+      if (fieldId) {
+        setTimeout(() => {
+          const el = document.getElementById(fieldId);
+          if (el) {
+            el.focus();
+            if (typeof el.select === 'function') el.select();
+          }
+        }, 150);
+      }
+    };
 
     function openModal() {
       // Pre-fill form fields from currentDonor state
@@ -1478,6 +1653,10 @@
       btnCancelModal.dataset.bound = 'true';
       btnCancelModal.addEventListener('click', closeModal);
     }
+    if (btnEditProfileDetails && !btnEditProfileDetails.dataset.bound) {
+      btnEditProfileDetails.dataset.bound = 'true';
+      btnEditProfileDetails.addEventListener('click', openModal);
+    }
 
     const btnSyncGps = document.getElementById('btnSyncGpsInEditForm');
     const noticeEl = document.getElementById('editLocationCoordsNotice');
@@ -1589,9 +1768,17 @@
                 const cityInput = document.getElementById('editDonorCity');
                 const stateInput = document.getElementById('editDonorState');
                 const pinInput = document.getElementById('editDonorPincode');
+                const addrInput = document.getElementById('editDonorAddress');
+                const houseNo = addr.house_number || '';
+                const road = addr.road || addr.street || '';
+                const area = addr.suburb || addr.neighbourhood || addr.city_district || addr.locality || '';
+                const suggestedLocality = [houseNo, road, area].filter(Boolean).join(', ');
+                if (addrInput && !addrInput.value && suggestedLocality) {
+                  addrInput.value = suggestedLocality;
+                }
                 if (cityInput && !cityInput.value) cityInput.value = addr.city || addr.town || addr.county || '';
                 if (stateInput && !stateInput.value) stateInput.value = addr.state || '';
-                if (pinInput && !pinInput.value) pinInput.value = addr.postcode || '';
+                if (pinInput && !pinInput.value) pinInput.value = (addr.postcode || '').replace(/\D/g, '').substring(0, 6);
               }
             } catch (_) { }
           },
@@ -1751,6 +1938,7 @@
 
           try {
             renderDigitalIdAndIntakePayload();
+            renderAccountDetails();
           } catch (renderErr) {
             console.warn('Digital ID render error ignored:', renderErr);
           }

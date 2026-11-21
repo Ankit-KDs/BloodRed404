@@ -1970,6 +1970,11 @@ public class DonorDao {
             donor.put("publicSearchOptIn", rs.getObject("public_search_opt_in") != null ? rs.getBoolean("public_search_opt_in") : false);
             donor.put("public_search_opt_in", donor.get("publicSearchOptIn"));
             donor.put("publicDisplayName", rs.getString("public_display_name"));
+            try {
+                Date pu = rs.getDate("paused_until");
+                donor.put("pausedUntil", pu != null ? pu.toString() : null);
+                donor.put("paused_until", pu != null ? pu.toString() : null);
+            } catch (SQLException ignored) {}
         } catch (SQLException ignored) {
             donor.put("preferredLanguage", "en");
             donor.put("preferred_language", "en");

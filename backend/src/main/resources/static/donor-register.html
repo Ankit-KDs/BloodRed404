@@ -373,12 +373,12 @@
         <!-- ==================== STEP 3: LOCATION ==================== -->
         <div class="reg-step-content" id="stepContent3" style="display:none;">
           <h2 class="reg-step-heading">Location &amp; Match Radius</h2>
-          <p class="reg-step-subtext">Set your general city and PIN code. Exact street address is never requested or stored.</p>
+          <p class="reg-step-subtext">Set your general location and optional address. Hospitals and public users never receive your street address.</p>
 
           <div class="reg-notice">
             <i class="fas fa-shield-alt"></i>
             <div class="reg-notice-text">
-              <strong>Location Privacy:</strong> We use your coordinates solely to find nearby hospital requests within a 5–25 km radius. Hospitals never see your exact coordinates or building address.
+              <strong>Location Privacy:</strong> We use your coordinates solely to find nearby hospital requests within a 5–25 km radius. Hospitals and public users never see your street address or exact coordinates.
             </div>
           </div>
 
@@ -433,10 +433,16 @@
             </div>
           </div>
 
-          <div class="reg-form-group">
-            <label class="reg-label" for="locality">Area / Locality (Optional)</label>
-            <input type="text" id="locality" name="locality" class="reg-input" placeholder="e.g. Shastri Nagar / Civil Lines" />
-            <div class="reg-helper">Helpful for grouping nearby emergency requests without disclosing your street address.</div>
+          <div style="display: grid; grid-template-columns: 1fr 140px; gap: 1rem; align-items: start;">
+            <div class="reg-form-group">
+              <label class="reg-label" for="locality">House / street / locality (Optional)</label>
+              <input type="text" id="locality" name="locality" class="reg-input" placeholder="e.g. House No. 42, Mall Road, Tallital" />
+              <div class="reg-helper">Optional. Stored securely and never shown to hospitals or public users.</div>
+            </div>
+            <div class="reg-form-group">
+              <label class="reg-label" for="regCountry">Country</label>
+              <input type="text" id="regCountry" class="reg-input" value="India" readonly disabled style="opacity: 0.85; cursor: not-allowed;" />
+            </div>
           </div>
 
           <!-- GPS Detection -->
@@ -964,6 +970,9 @@
               const city = addr.city || addr.town || addr.village || '';
               const state = addr.state || '';
               const post = addr.postcode || '';
+              const houseNo = addr.house_number || '';
+              const road = addr.road || addr.street || '';
+              const suggestedLocality = [houseNo, road, area].filter(Boolean).join(', ');
 
               if (city && !document.getElementById('city').value) document.getElementById('city').value = city;
               if (post && !document.getElementById('pincode').value) document.getElementById('pincode').value = post.replace(/\D/g, '').substring(0, 6);
@@ -971,7 +980,11 @@
                 const opt = Array.from(document.getElementById('state').options).find(o => o.value.toLowerCase() === state.toLowerCase());
                 if (opt) opt.selected = true;
               }
-              if (area && !document.getElementById('locality').value) document.getElementById('locality').value = area;
+              if (suggestedLocality && !document.getElementById('locality').value) {
+                document.getElementById('locality').value = suggestedLocality;
+              } else if (area && !document.getElementById('locality').value) {
+                document.getElementById('locality').value = area;
+              }
 
               resName.style.display = 'block';
               resName.textContent = `📍 Captured: ${[area, city, state].filter(Boolean).join(', ')}`;

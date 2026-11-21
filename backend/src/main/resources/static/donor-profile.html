@@ -1545,6 +1545,114 @@
       </section>
       </div>
 
+      <!-- CARD: DONOR REGISTRATION & PROFILE DETAILS (Part 6) -->
+      <section class="profile-card" id="donorAccountDetailsCard">
+        <div class="card-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <div>
+            <h2 class="card-title" style="margin: 0;">Donor Profile &amp; Registration Details</h2>
+            <p style="font-size: 13px; color: #9b9a96; margin: 4px 0 0 0;">All details you provided during registration and profile setup.</p>
+          </div>
+          <button type="button" class="btn-edit-detail" id="btnEditProfileDetails" onclick="window.openEditModalFor('editDonorFullName')" style="padding: 6px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid #2a2c31; border-radius: 6px; color: #ecebe8;">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Edit Profile</span>
+          </button>
+        </div>
+
+        <!-- Address Missing Prompt for Existing Donors -->
+        <div id="profileAddressPrompt" class="profile-prompt-banner" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-location-dot" style="font-size: 16px;"></i>
+            <span><strong>Add your house / street / locality:</strong> Your street address is currently not set. Adding it helps verified partner hospitals coordinate with you faster during emergencies. Never shared with public search.</span>
+          </div>
+          <button type="button" class="btn-prompt-action" onclick="window.openEditModalFor('editDonorAddress')">
+            Add address &rarr;
+          </button>
+        </div>
+
+        <!-- 4-Block Grid of Details -->
+        <div class="donor-details-grid">
+          
+          <!-- Block 1: Identity & Demographics -->
+          <div class="details-group-box">
+            <h3>
+              <i class="fa-solid fa-id-card" style="color: #6ea8ff;"></i>
+              <span>Identity &amp; Demographics</span>
+            </h3>
+            <dl class="details-dl">
+              <dt>Donor ID</dt>
+              <dd id="detDonorId" style="font-family: 'Space Mono', monospace; font-weight: 600;">--</dd>
+
+              <dt>Full Name</dt>
+              <dd id="detFullName" style="font-weight: 500;">--</dd>
+
+              <dt>DOB &amp; Age</dt>
+              <dd id="detDobAge">--</dd>
+
+              <dt>Gender</dt>
+              <dd id="detGender">--</dd>
+
+              <dt>Blood Group</dt>
+              <dd id="detBloodGroup">--</dd>
+
+              <dt>Weight</dt>
+              <dd id="detWeight">--</dd>
+            </dl>
+          </div>
+
+          <!-- Block 2: Contact & Residential Address -->
+          <div class="details-group-box">
+            <h3>
+              <i class="fa-solid fa-location-dot" style="color: #e5383b;"></i>
+              <span>Contact &amp; Full Address</span>
+            </h3>
+            <dl class="details-dl">
+              <dt>Phone</dt>
+              <dd id="detPhone" style="font-family: 'Space Mono', monospace;">--</dd>
+
+              <dt>Email</dt>
+              <dd id="detEmail">--</dd>
+
+              <dt>Full Address</dt>
+              <dd id="detFullAddress">--</dd>
+            </dl>
+          </div>
+
+          <!-- Block 3: Preferences & Availability -->
+          <div class="details-group-box">
+            <h3>
+              <i class="fa-solid fa-sliders" style="color: #f5a524;"></i>
+              <span>Preferences &amp; Availability</span>
+            </h3>
+            <dl class="details-dl">
+              <dt>Preferred Language</dt>
+              <dd id="detLanguage">--</dd>
+
+              <dt>Notifications</dt>
+              <dd id="detNotifications">--</dd>
+
+              <dt>Availability</dt>
+              <dd id="detAvailability">--</dd>
+            </dl>
+          </div>
+
+          <!-- Block 4: Consents & Membership -->
+          <div class="details-group-box">
+            <h3>
+              <i class="fa-solid fa-shield-halved" style="color: #3ecf8e;"></i>
+              <span>Consents &amp; Membership</span>
+            </h3>
+            <dl class="details-dl">
+              <dt>Public Search</dt>
+              <dd id="detPublicSearch">--</dd>
+
+              <dt>Member Since</dt>
+              <dd id="detMemberSince">--</dd>
+            </dl>
+          </div>
+
+        </div>
+      </section>
+
       <!-- CARD 3: DONOR IMPACT MILESTONES (3x2 3D Glassmorphic Grid) -->
       <section class="profile-card" id="milestonesCard">
         <div class="card-header-row">
@@ -2109,9 +2217,12 @@
                 placeholder="Email address" />
             </div>
             <div class="form-field-group full-width">
-              <label for="editDonorAddress">Residential Address</label>
+              <label for="editDonorAddress">House / street / locality (Optional)</label>
               <input type="text" id="editDonorAddress" name="d_user_street" autocomplete="off" data-lpignore="true"
-                placeholder="Residential street address" />
+                placeholder="e.g. House No. 42, Mall Road, Tallital" />
+              <div class="form-helper" style="font-size: 12px; color: #9b9a96; margin-top: 4px;">
+                Optional. Stored securely and never shared with hospitals or public users.
+              </div>
             </div>
             <div class="form-field-group">
               <label for="editDonorCity">City</label>
@@ -2127,6 +2238,11 @@
               <label for="editDonorPincode">PIN Code</label>
               <input type="text" id="editDonorPincode" name="d_user_postalcode" autocomplete="off" data-lpignore="true"
                 placeholder="PIN code" />
+            </div>
+            <div class="form-field-group">
+              <label for="editDonorCountry">Country</label>
+              <input type="text" id="editDonorCountry" name="country" value="India" readonly disabled
+                style="opacity: 0.85; background: rgba(255,255,255,0.04); cursor: not-allowed; border-color: rgba(255,255,255,0.1);" />
             </div>
             <div class="form-field-group">
               <label for="editDonorPreferredLanguage">Preferred Language</label>

@@ -364,7 +364,7 @@ public class AdminController {
 
         String countSql = "SELECT COUNT(*) FROM donors d" + whereClause.toString();
         String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
-                "d.donor_type, d.availability, d.city, d.state, d.pincode, d.zone, " +
+                "d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
                 "d.location_updated_at, d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) AS total_donations " +
                 "FROM donors d" + whereClause.toString() + " ORDER BY d.id DESC LIMIT ? OFFSET ?";
@@ -463,7 +463,7 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
-                "d.donor_type, d.availability, d.city, d.state, d.pincode, d.zone, " +
+                "d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
                 "d.location_updated_at, d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) AS total_donations " +
                 "FROM donors d WHERE d.id = ?";
@@ -567,6 +567,10 @@ public class AdminController {
                     Map<String, Object> contact = new LinkedHashMap<>();
                     contact.put("maskedEmail", maskEmail(rs.getString("email")));
                     contact.put("maskedPhone", maskPhone(rs.getString("phone")));
+                    String rawAddr = rs.getString("address");
+                    boolean hasAddr = (rawAddr != null && !rawAddr.isBlank()) || (city != null && !city.isBlank()) || (rs.getString("pincode") != null && !rs.getString("pincode").isBlank());
+                    contact.put("maskedAddress", hasAddr ? "••••••••••••" : "Not provided");
+                    contact.put("hasAddress", hasAddr);
                     data.put("contact", contact);
 
                     // Group 4: Consents (No coordinates)
@@ -624,17 +628,36 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         String field = body != null && body.has("field") ? body.get("field").asText().trim().toLowerCase() : "";
-        if (!"email".equals(field) && !"phone".equals(field)) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid field to reveal. Supported: email, phone"));
+        if (!"email".equals(field) && !"phone".equals(field) && !"address".equals(field)) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid field to reveal. Supported: email, phone, address"));
         }
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name, email, phone FROM donors WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name, email, phone, address, city, state, pincode FROM donors WHERE id = ?")) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     String smartId = rs.getString("donor_id");
-                    String rawValue = "email".equals(field) ? rs.getString("email") : rs.getString("phone");
+                    String rawValue;
+                    if ("address".equals(field)) {
+                        String addr = rs.getString("address");
+                        String city = rs.getString("city");
+                        String state = rs.getString("state");
+                        String pin = rs.getString("pincode");
+                        List<String> parts = new ArrayList<>();
+                        if (addr != null && !addr.isBlank()) parts.add(addr.trim());
+                        if (city != null && !city.isBlank()) parts.add(city.trim());
+                        if (state != null && !state.isBlank()) parts.add(state.trim());
+                        if (pin != null && !pin.isBlank()) parts.add("PIN: " + pin.trim());
+                        parts.add("India");
+                        rawValue = ((addr != null && !addr.isBlank()) || (city != null && !city.isBlank()))
+                                ? String.join(", ", parts)
+                                : "Not provided";
+                    } else if ("email".equals(field)) {
+                        rawValue = rs.getString("email");
+                    } else {
+                        rawValue = rs.getString("phone");
+                    }
                     String adminUser = getAdminIdentifier(request);
 
                     // Record in audit log

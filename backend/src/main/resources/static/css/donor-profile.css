@@ -4159,3 +4159,124 @@ body.donor-profile-body {
   text-shadow: none !important;
   filter: none !important;
 }
+
+/* ==================== PART 6: DONOR REGISTRATION & PROFILE DETAILS ==================== */
+#donorAccountDetailsCard {
+  background: #17181b;
+  border: 1px solid #2a2c31;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: none;
+}
+
+.profile-prompt-banner {
+  background: rgba(245, 165, 36, 0.08);
+  border: 1px solid rgba(245, 165, 36, 0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 1.25rem;
+  font-size: 13px;
+  color: #f5a524;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-prompt-banner .btn-prompt-action {
+  white-space: nowrap;
+  background: #f5a524;
+  color: #17181b;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.profile-prompt-banner .btn-prompt-action:hover {
+  opacity: 0.9;
+}
+
+.donor-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.details-group-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #2a2c31;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.details-group-box h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ecebe8;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.details-dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px 12px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.details-dl dt {
+  color: #9b9a96;
+  font-weight: 500;
+}
+
+.details-dl dd {
+  color: #ecebe8;
+  margin: 0;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.btn-add-inline {
+  background: none;
+  border: none;
+  color: #6ea8ff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 4px;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.btn-add-inline:hover {
+  color: #93c5fd;
+}
+
+.bg-status-pill {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.badge-verified-email {
+  font-size: 11px;
+  color: #3ecf8e;
+  background: rgba(62, 207, 142, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}

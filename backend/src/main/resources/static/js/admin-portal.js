@@ -488,10 +488,16 @@
     // Group 3: Contact (Masked by default)
     setElemText('donor-val-email', con.maskedEmail || maskClientEmail(data.email));
     setElemText('donor-val-phone', con.maskedPhone || maskClientPhone(data.phone));
+    setElemText('donor-val-address', con.maskedAddress || '••••••••••••');
 
     // Reset reveal buttons
     resetRevealButton('btnRevealDonorEmail');
     resetRevealButton('btnRevealDonorPhone');
+    resetRevealButton('btnRevealDonorAddress');
+    const btnAddr = document.getElementById('btnRevealDonorAddress');
+    if (btnAddr && con.maskedAddress === 'Not provided') {
+      btnAddr.style.display = 'none';
+    }
 
     // Group 4: Consents
     setElemText('donor-val-publicSearch', cns.publicSearch || 'Enabled');
@@ -620,8 +626,10 @@
 
   window.revealDonorContact = async function (field) {
     if (!currentDonorId) return;
-    const btn = document.getElementById(field === 'email' ? 'btnRevealDonorEmail' : 'btnRevealDonorPhone');
-    const valEl = document.getElementById(field === 'email' ? 'donor-val-email' : 'donor-val-phone');
+    const btnId = field === 'email' ? 'btnRevealDonorEmail' : (field === 'address' ? 'btnRevealDonorAddress' : 'btnRevealDonorPhone');
+    const valId = field === 'email' ? 'donor-val-email' : (field === 'address' ? 'donor-val-address' : 'donor-val-phone');
+    const btn = document.getElementById(btnId);
+    const valEl = document.getElementById(valId);
     if (!btn || !valEl) return;
 
     btn.disabled = true;
@@ -644,8 +652,10 @@
             remaining--;
             if (remaining <= 0) {
               clearInterval(timer);
-              valEl.textContent = field === 'email' ? maskClientEmail(rawVal) : maskClientPhone(rawVal);
-              resetRevealButton(field === 'email' ? 'btnRevealDonorEmail' : 'btnRevealDonorPhone');
+              if (field === 'email') valEl.textContent = maskClientEmail(rawVal);
+              else if (field === 'address') valEl.textContent = '••••••••••••';
+              else valEl.textContent = maskClientPhone(rawVal);
+              resetRevealButton(btnId);
             } else {
               const pill = btn.querySelector('.reveal-timer-pill');
               if (pill) pill.textContent = `Auto-hiding in ${remaining}s`;
@@ -656,7 +666,7 @@
       }
     } catch (err) {
       showToast('Error revealing contact info', 'error');
-      resetRevealButton(field === 'email' ? 'btnRevealDonorEmail' : 'btnRevealDonorPhone');
+      resetRevealButton(btnId);
     }
   };
 
