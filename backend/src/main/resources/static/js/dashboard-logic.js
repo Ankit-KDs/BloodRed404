@@ -863,12 +863,47 @@
       });
     }
 
-    // 4. Public Search Opt-in Toggle
+    // 4. Public Search Opt-in Toggle (Clear switch + last changed time + non-blocking prompt)
+    const switchPublicSearch = document.getElementById('switchPublicSearch');
+    const publicSearchBadge = document.getElementById('publicSearchBadge');
+    const publicSearchLastChanged = document.getElementById('publicSearchLastChanged');
     const btnPublicSearch = document.getElementById('btnTogglePublicSearch');
     const statusPublicSearchText = document.getElementById('statusPublicSearchText');
 
+    function formatLastChanged(ts) {
+      if (!ts) return 'Default: Off (Not changed yet)';
+      try {
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return String(ts);
+        const diffMs = Date.now() - d.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1) return 'Updated just now';
+        if (diffMin < 60) return `Updated ${diffMin}m ago`;
+        const diffHr = Math.floor(diffMin / 60);
+        if (diffHr < 24) return `Updated ${diffHr}h ago`;
+        const diffDay = Math.floor(diffHr / 24);
+        if (diffDay < 7) return `Updated ${diffDay}d ago`;
+        return `Updated on ${d.toLocaleDateString()}`;
+      } catch (e) {
+        return String(ts);
+      }
+    }
+
     function updatePublicSearchUI() {
       const isOpted = donorData.publicSearchOptIn === true || donorData.public_search_opt_in === true;
+      if (switchPublicSearch) {
+        switchPublicSearch.checked = isOpted;
+      }
+      if (publicSearchBadge) {
+        publicSearchBadge.textContent = isOpted ? 'On' : 'Off';
+        publicSearchBadge.style.color = isOpted ? '#22c55e' : '#94a3b8';
+        publicSearchBadge.style.borderColor = isOpted ? 'rgba(34, 197, 94, 0.4)' : 'rgba(255,255,255,0.12)';
+        publicSearchBadge.style.background = isOpted ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.06)';
+      }
+      if (publicSearchLastChanged) {
+        const consentTs = donorData.publicConsentAt || donorData.public_consent_at;
+        publicSearchLastChanged.textContent = formatLastChanged(consentTs);
+      }
       if (statusPublicSearchText) {
         statusPublicSearchText.textContent = isOpted ? 'On' : 'Off';
       }
@@ -885,38 +920,121 @@
       }
     }
 
+    async function togglePublicSearch(nextOpt) {
+      try {
+        let res = await fetch('/api/donors/public-search-opt-in', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ optIn: nextOpt })
+        });
+        if (!res.ok) {
+          res = await fetch('/api/donors/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ publicSearchOptIn: nextOpt })
+          });
+        }
+        if (res.ok) {
+          const resData = await res.json().catch(() => ({}));
+          const consentAt = resData.data?.publicConsentAt || new Date().toISOString();
+          donorData.publicSearchOptIn = nextOpt;
+          donorData.public_search_opt_in = nextOpt;
+          donorData.publicConsentAt = consentAt;
+          donorData.public_consent_at = consentAt;
+          updatePublicSearchUI();
+          if (publicSearchLastChanged) {
+            publicSearchLastChanged.textContent = 'Updated just now';
+          }
+        }
+      } catch (e) {
+        console.error('Public search opt-in toggle error:', e);
+      }
+    }
+
     updatePublicSearchUI();
+
+    if (switchPublicSearch && !switchPublicSearch.dataset.bound) {
+      switchPublicSearch.dataset.bound = 'true';
+      switchPublicSearch.addEventListener('change', () => {
+        togglePublicSearch(switchPublicSearch.checked);
+      });
+    }
 
     if (btnPublicSearch && !btnPublicSearch.dataset.bound) {
       btnPublicSearch.dataset.bound = 'true';
-      btnPublicSearch.addEventListener('click', async () => {
+      btnPublicSearch.addEventListener('click', () => {
         const currentOpt = donorData.publicSearchOptIn === true || donorData.public_search_opt_in === true;
-        const nextOpt = !currentOpt;
-        try {
-          let res = await fetch('/api/donors/public-search-opt-in', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ optIn: nextOpt })
-          });
-          if (!res.ok) {
-            res = await fetch('/api/donors/profile', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ publicSearchOptIn: nextOpt })
-            });
-          }
-          if (res.ok) {
-            donorData.publicSearchOptIn = nextOpt;
-            donorData.public_search_opt_in = nextOpt;
-            updatePublicSearchUI();
-          }
-        } catch (e) {
-          console.error('Public search opt-in toggle error:', e);
-        }
+        togglePublicSearch(!currentOpt);
       });
     }
+
+    // Non-blocking prompt after registration or after first donation
+    function checkPublicSearchPrompt() {
+      const isOpted = donorData.publicSearchOptIn === true || donorData.public_search_opt_in === true;
+      if (isOpted) return;
+
+      const justRegistered = sessionStorage.getItem('red404_just_registered') === 'true' || new URLSearchParams(window.location.search).get('registered') === 'true';
+      const promptDismissed = localStorage.getItem('red404_public_search_prompt_dismissed') === 'true';
+      const totalDonations = parseInt(donorData.totalDonations || donorData.totalVerifiedDonations || 0, 10);
+      const firstDonationPromptSeen = localStorage.getItem('red404_first_donation_prompt_seen') === 'true';
+
+      const showForRegistration = justRegistered && !promptDismissed;
+      const showForFirstDonation = (totalDonations === 1) && !firstDonationPromptSeen;
+
+      if (!showForRegistration && !showForFirstDonation) return;
+
+      const targetCard = document.getElementById('publicSearchCard') || document.getElementById('systemStatusBar');
+      if (!targetCard || document.getElementById('publicSearchPromptBanner')) return;
+
+      const isHi = window.RED404_I18N && window.RED404_I18N.getLanguage() === 'hi';
+      const banner = document.createElement('div');
+      banner.id = 'publicSearchPromptBanner';
+      banner.style.cssText = 'background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;';
+      banner.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(34, 197, 94, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #22c55e; font-size: 16px;">
+            <i class="fa-solid fa-shield-heart"></i>
+          </div>
+          <div>
+            <strong style="color: #ecebe8; font-size: 14px; display: block; margin-bottom: 2px;">
+              ${showForFirstDonation ? (isHi ? 'पहले रक्तदान के लिए धन्यवाद! क्या आप सार्वजनिक खोज में दिखना चाहते हैं?' : 'Thank you for your first donation! Show in public donor search?') : (isHi ? 'क्या आप सार्वजनिक रक्तदाता खोज में दिखना चाहते हैं?' : 'Show me in public donor search?')}
+            </strong>
+            <p style="margin: 0; font-size: 12.5px; color: #9b9a96; line-height: 1.4;">
+              (first name + last initial, blood group, approximate distance, number of donations; never phone, address or exact location)
+            </p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" id="btnPromptEnablePublicSearch" style="background: #22c55e; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+            ${isHi ? 'चालू करें' : 'Enable'}
+          </button>
+          <button type="button" id="btnPromptDismissPublicSearch" style="background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer;">
+            ${isHi ? 'अभी नहीं' : 'Not now'}
+          </button>
+        </div>
+      `;
+
+      targetCard.parentNode.insertBefore(banner, targetCard);
+
+      document.getElementById('btnPromptEnablePublicSearch')?.addEventListener('click', async () => {
+        await togglePublicSearch(true);
+        if (showForFirstDonation) localStorage.setItem('red404_first_donation_prompt_seen', 'true');
+        else localStorage.setItem('red404_public_search_prompt_dismissed', 'true');
+        sessionStorage.removeItem('red404_just_registered');
+        banner.remove();
+      });
+
+      document.getElementById('btnPromptDismissPublicSearch')?.addEventListener('click', () => {
+        if (showForFirstDonation) localStorage.setItem('red404_first_donation_prompt_seen', 'true');
+        else localStorage.setItem('red404_public_search_prompt_dismissed', 'true');
+        sessionStorage.removeItem('red404_just_registered');
+        banner.remove();
+      });
+    }
+
+    checkPublicSearchPrompt();
 
     if (btnPauseDate && !btnPauseDate.dataset.bound) {
       btnPauseDate.dataset.bound = 'true';

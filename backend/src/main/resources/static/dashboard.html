@@ -26,6 +26,26 @@
   <link rel="stylesheet" href="css/common.css?v=20261113_v40" />
   <link rel="stylesheet" href="css/command-nav.css?v=20261113_v40" />
   <link rel="stylesheet" href="css/dashboard-bento.css?v=20261113_v40" />
+  <style>
+    .custom-switch input:checked + .custom-switch-slider {
+      background-color: #22c55e !important;
+      border-color: #22c55e !important;
+    }
+    .custom-switch .custom-switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    .custom-switch input:checked + .custom-switch-slider:before {
+      transform: translateX(20px);
+    }
+  </style>
 </head>
 <body class="bento-dashboard-body">
   <!-- Blood Drop Floating & Particle Elements (Theme Matching Home Page) -->
@@ -181,6 +201,28 @@
         <button type="button" id="btnToggleAvailability" style="padding: 5px 14px; font-size: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; background: #22c55e; color: #fff; transition: background 0.2s;">Available to donate</button>
         <span id="pausedUntilLabel" style="display: none; font-size: 11px; color: #facc15;"></span>
         <button type="button" id="btnSetPauseDate" style="padding: 3px 8px; font-size: 11px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;">Pause Until</button>
+      </div>
+    </section>
+
+    <!-- PUBLIC SEARCH VISIBILITY CARD -->
+    <section class="public-search-visibility-card" id="publicSearchCard" style="margin-bottom: 24px; padding: 14px 20px; background: #17181b; border: 1px solid #2a2c31; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <div style="flex: 1; min-width: 280px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <label for="switchPublicSearch" style="font-weight: 600; font-size: 14px; color: #ecebe8; cursor: pointer;" data-i18n="dashboard.showMePublicSearch">Show me in public donor search</label>
+          <span id="publicSearchBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12);">Off</span>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: #9b9a96; line-height: 1.4;" data-i18n="dashboard.publicSearchExpl">
+          (first name + last initial, blood group, approximate distance, number of donations; never phone, address or exact location)
+        </p>
+        <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+          <span data-i18n="dashboard.lastChanged">Last changed:</span> <span id="publicSearchLastChanged">Default: Off (Not changed yet)</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <label class="custom-switch" style="position: relative; display: inline-block; width: 46px; height: 26px; margin: 0; cursor: pointer;">
+          <input type="checkbox" id="switchPublicSearch" style="opacity: 0; width: 0; height: 0;">
+          <span class="custom-switch-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2a2c31; transition: .2s; border-radius: 26px; border: 1px solid rgba(255,255,255,0.15);"></span>
+        </label>
       </div>
     </section>
 

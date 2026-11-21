@@ -854,30 +854,56 @@
         const body = await res.json();
         const data = body.data || body;
         const donors = Array.isArray(data.donors) ? data.donors : [];
-        const summaryLine = data.summaryLine || `${donors.length} eligible donors found.`;
+        const eligibleCount = typeof data.eligibleNearbyCount === 'number' ? data.eligibleNearbyCount : (data.totalEligibleCount || 0);
+        const locationOffCount = data.locationOffCount || 0;
+
+        // Line 1: "N eligible donors nearby" (fewer-than-3 rule: if 0 < count < 3, say "Fewer than 3 donors nearby")
+        let line1Text = '';
+        if (eligibleCount === 0) {
+          line1Text = isHi ? `${radius} किमी दायरे में कोई पात्र रक्तदाता नहीं मिला` : `No eligible donors found within ${radius} km`;
+        } else if (eligibleCount < 3) {
+          line1Text = isHi ? 'नजदीक 3 से कम रक्तदाता' : 'Fewer than 3 donors nearby';
+        } else {
+          line1Text = isHi ? `${eligibleCount} पात्र रक्तदाता नजदीक` : `${eligibleCount} eligible donors nearby`;
+        }
+
+        let locOffText = '';
+        if (locationOffCount > 0) {
+          locOffText = isHi ? `(${locationOffCount} रक्तदाताओं का स्थान बंद है)` : `(${locationOffCount} ${locationOffCount === 1 ? 'donor has' : 'donors have'} location turned off)`;
+        }
 
         if (metaBar) metaBar.style.display = 'flex';
         if (countText) {
-          countText.textContent = isHi
-            ? (data.totalEligibleDisplay === 'Fewer than 3'
-                ? `${radius} किमी दायरे में 3 से कम पात्र रक्तदाता। जिन्होंने सूची में शामिल होने का विकल्प चुना है वे नीचे दिखाए गए हैं।`
-                : (data.totalEligibleCount === 0 || data.totalEligibleDisplay === 'None'
-                    ? `${radius} किमी दायरे में कोई पात्र रक्तदाता नहीं मिला।`
-                    : `${data.totalEligibleCount} पात्र रक्तदाता ${radius} किमी दायरे में। जिन्होंने सूची में शामिल होने का विकल्प चुना है वे नीचे दिखाए गए हैं।`))
-            : summaryLine;
+          countText.innerHTML = `<span>${escapeHtml(line1Text)}</span>${locOffText ? ` <span style="font-weight: 400; color: #9b9a96; font-size: 13px; margin-left: 6px;">${escapeHtml(locOffText)}</span>` : ''}`;
         }
 
         // Empty state: no opted-in donors found
         if (donors.length === 0) {
+          const emptyTitle = eligibleCount > 0
+            ? (isHi ? 'रक्तदाता सार्वजनिक सूची में शामिल नहीं हैं' : 'No Listed Donors in this Area')
+            : (isHi ? 'इस दायरे में कोई पात्र रक्तदाता नहीं मिला' : 'No Eligible Donors Found in this Area');
+
+          const emptyDesc = eligibleCount > 0
+            ? (isHi ? 'नजदीकी रक्तदाताओं ने सार्वजनिक सूची में दिखने का विकल्प नहीं चुना है। केवल अस्पताल ही रक्तदाताओं से संपर्क कर सकते हैं।' : 'Donors nearby have not chosen to be listed. Only hospitals can contact donors.')
+            : (isHi ? 'दायरा बढ़ाकर देखें या कोई अन्य शहर / पिन कोड दर्ज करें।' : `No eligible donors found within ${radius} km. Try searching another city or PIN code.`);
+
+          const isMaxRadius = radius >= 20;
+
           container.innerHTML = `
             <div class="state-box">
               <i class="fas fa-users-slash" style="color: #9b9a96;"></i>
-              <h4>${isHi ? 'इस दायरे में कोई सूचीबद्ध रक्तदाता नहीं मिला' : 'No Listed Donors in this Area'}</h4>
-              <p>${isHi ? 'रक्तदाता स्वेच्छा से सार्वजनिक खोज में शामिल होने का विकल्प चुनते हैं। दायरा बढ़ाकर देखें या नजदीकी शहर दर्ज करें।' : 'Donors must actively choose to appear in public search. Try expanding your radius or searching a neighboring city.'}</p>
+              <h4>${emptyTitle}</h4>
+              <p>${emptyDesc}</p>
               <div style="margin-top: 1.25rem; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                <button type="button" class="btn-retry-action" onclick="document.getElementById('selectRadius').value = '20'; executeAvailabilitySearch();">
-                  <i class="fas fa-expand"></i> <span>${isHi ? '20 किमी तक बढ़ाएं' : 'Expand to 20 km'}</span>
-                </button>
+                ${!isMaxRadius ? `
+                  <button type="button" class="btn-retry-action" onclick="document.getElementById('selectRadius').value = '20'; executeAvailabilitySearch();">
+                    <i class="fas fa-expand"></i> <span>${isHi ? '20 किमी तक बढ़ाएं' : 'Expand to 20 km'}</span>
+                  </button>
+                ` : `
+                  <button type="button" class="btn-retry-action" onclick="document.getElementById('inputLocation').focus();">
+                    <i class="fas fa-magnifying-glass-location"></i> <span>${isHi ? 'अन्य शहर या पिन कोड आज़माएं' : 'Try another city or PIN code'}</span>
+                  </button>
+                `}
                 <a href="blood-banks.html" class="btn-retry-action" style="text-decoration: none;">
                   <i class="fas fa-hospital"></i> <span>${isHi ? 'रक्त बैंक निर्देशिका देखें' : 'View Blood Bank Directory'}</span>
                 </a>

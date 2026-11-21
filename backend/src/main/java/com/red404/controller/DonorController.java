@@ -434,6 +434,8 @@ public class DonorController {
             stats.put("donorLevel", history.size() >= 5 ? "Active Donor" : "New Donor");
             stats.put("donorLevelNumber", 1);
             stats.put("donationsToNextLevel", Math.max(0, 5 - history.size()));
+            stats.put("publicSearchOptIn", donor.get("publicSearchOptIn") != null ? donor.get("publicSearchOptIn") : donor.get("public_search_opt_in"));
+            stats.put("publicConsentAt", donor.get("publicConsentAt") != null ? donor.get("publicConsentAt") : donor.get("public_consent_at"));
             stats.put("nextLevel", "Active Donor");
             stats.put("nextLevelThreshold", 5);
             return ok("Stats loaded", stats);

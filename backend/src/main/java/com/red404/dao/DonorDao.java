@@ -561,11 +561,7 @@ public class DonorDao {
             Object b = fields.get(fields.containsKey("public_search_opt_in") ? "public_search_opt_in" : "publicSearchOptIn");
             boolean optIn = b instanceof Boolean ? (Boolean) b : Boolean.parseBoolean(str(b));
             params.add(optIn);
-            if (optIn) {
-                setClauses.add("public_consent_at = CURRENT_TIMESTAMP");
-            } else {
-                setClauses.add("public_consent_at = NULL");
-            }
+            setClauses.add("public_consent_at = CURRENT_TIMESTAMP");
         }
         if (fields.containsKey("public_display_name") || fields.containsKey("publicDisplayName")) {
             setClauses.add("public_display_name = ?");

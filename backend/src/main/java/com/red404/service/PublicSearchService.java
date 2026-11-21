@@ -90,7 +90,7 @@ public class PublicSearchService {
     }
 
     public static int getFreshnessHours() {
-        return getEnvInt("DONOR_LOCATION_FRESHNESS_HOURS", 24);
+        return getEnvInt("DONOR_LOCATION_FRESHNESS_HOURS", 48);
     }
 
     // Rate Limiting Tracking Structures
@@ -323,13 +323,15 @@ public class PublicSearchService {
         // 1. Query Eligible Matching Donors in Radius
         List<Map<String, Object>> optedInDonors = new ArrayList<>();
         int totalEligibleInRadius = 0;
+        int locationOffCount = 0;
 
         int freshnessHours = getFreshnessHours();
         long freshnessCutoff = System.currentTimeMillis() - (freshnessHours * 3600_000L);
 
         String donorSql = "SELECT d.*, " +
-                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'VERIFIED', 'APPROVED')) AS total_donations " +
-                "FROM donors d WHERE (d.availability IS NULL OR (LOWER(d.availability) NOT IN ('unavailable', 'busy', 'paused') AND (d.paused_until IS NULL OR d.paused_until <= CURRENT_DATE)))";
+                "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'VERIFIED', 'APPROVED', 'VERIFIED_INTAKE')) AS total_donations " +
+                "FROM donors d WHERE (d.status IS NULL OR LOWER(d.status) NOT IN ('inactive', 'suspended', 'deleted')) " +
+                "AND (d.availability IS NULL OR (LOWER(d.availability) NOT IN ('unavailable', 'busy', 'paused') AND (d.paused_until IS NULL OR d.paused_until <= CURRENT_DATE)))";
 
         try (Connection conn = DBConnection.getConnection();
                 Statement st = conn.createStatement();
@@ -343,35 +345,25 @@ public class PublicSearchService {
                     continue;
                 }
 
-                Object latObj = getVal(donorMap, "latitude", "LATITUDE");
-                Object lngObj = getVal(donorMap, "longitude", "LONGITUDE");
-                if (!(latObj instanceof Number) || !(lngObj instanceof Number))
+                // Active check (double check)
+                String status = (String) getVal(donorMap, "status", "STATUS");
+                if (status != null && (status.equalsIgnoreCase("inactive") || status.equalsIgnoreCase("suspended") || status.equalsIgnoreCase("deleted"))) {
                     continue;
-                double dLat = ((Number) latObj).doubleValue();
-                double dLng = ((Number) lngObj).doubleValue();
-                if ((dLat == 0.0 && dLng == 0.0) || dLat < -90.0 || dLat > 90.0 || dLng < -180.0 || dLng > 180.0)
-                    continue;
-
-                // Location Freshness Check
-                Timestamp locUpdated = null;
-                Object locObj = getVal(donorMap, "location_updated_at", "LOCATION_UPDATED_AT");
-                if (locObj instanceof Timestamp) locUpdated = (Timestamp) locObj;
-                if (locUpdated == null) {
-                    Object crObj = getVal(donorMap, "created_at", "CREATED_AT");
-                    if (crObj instanceof Timestamp) locUpdated = (Timestamp) crObj;
-                }
-                if (locUpdated != null && locUpdated.getTime() < freshnessCutoff) {
-                    continue; // Stale location
                 }
 
-                // 1 km grid-rounded position of the donor
-                double donorGridLat = Math.round(dLat * 100.0) / 100.0;
-                double donorGridLng = Math.round(dLng * 100.0) / 100.0;
-
-                // Grid-to-grid distance
-                double dist = DistanceCalculator.calculateDistance(gridLat, gridLng, donorGridLat, donorGridLng);
-                if (dist > radiusKm)
-                    continue;
+                // Availability & Paused check
+                String avail = (String) getVal(donorMap, "availability", "AVAILABILITY");
+                if (avail != null && (avail.equalsIgnoreCase("unavailable") || avail.equalsIgnoreCase("busy") || avail.equalsIgnoreCase("paused"))) {
+                    Object pausedUntilObj = getVal(donorMap, "paused_until", "PAUSED_UNTIL");
+                    if (pausedUntilObj instanceof java.sql.Date) {
+                        java.sql.Date pDate = (java.sql.Date) pausedUntilObj;
+                        if (pDate.after(new java.util.Date())) {
+                            continue;
+                        }
+                    } else if (pausedUntilObj != null) {
+                        continue;
+                    }
+                }
 
                 // Blood group compatibility check
                 String donorBlood = (String) getVal(donorMap, "blood_type", "BLOOD_TYPE");
@@ -387,6 +379,41 @@ public class PublicSearchService {
                     continue;
                 }
 
+                // Location Check: donors with location off/not shared are counted in locationOffCount aggregate, NEVER listed
+                Object latObj = getVal(donorMap, "latitude", "LATITUDE");
+                Object lngObj = getVal(donorMap, "longitude", "LONGITUDE");
+                if (latObj == null || lngObj == null || !(latObj instanceof Number) || !(lngObj instanceof Number)) {
+                    locationOffCount++;
+                    continue; // Never listed
+                }
+                double dLat = ((Number) latObj).doubleValue();
+                double dLng = ((Number) lngObj).doubleValue();
+                if ((dLat == 0.0 && dLng == 0.0) || dLat < -90.0 || dLat > 90.0 || dLng < -180.0 || dLng > 180.0) {
+                    locationOffCount++;
+                    continue; // Never listed
+                }
+
+                // Location Freshness Check (default 48 hours)
+                Timestamp locUpdated = null;
+                Object locObj = getVal(donorMap, "location_updated_at", "LOCATION_UPDATED_AT");
+                if (locObj instanceof Timestamp) locUpdated = (Timestamp) locObj;
+                if (locUpdated == null) {
+                    Object crObj = getVal(donorMap, "created_at", "CREATED_AT");
+                    if (crObj instanceof Timestamp) locUpdated = (Timestamp) crObj;
+                }
+                if (locUpdated != null && locUpdated.getTime() < freshnessCutoff) {
+                    continue; // Stale location (> 48 hours)
+                }
+
+                // 1 km grid-rounded position of the donor
+                double donorGridLat = Math.round(dLat * 100.0) / 100.0;
+                double donorGridLng = Math.round(dLng * 100.0) / 100.0;
+
+                // Grid-to-grid distance
+                double dist = DistanceCalculator.calculateDistance(gridLat, gridLng, donorGridLat, donorGridLng);
+                if (dist > radiusKm)
+                    continue;
+
                 // Donor is eligible, active, matching, and within radius
                 totalEligibleInRadius++;
 
@@ -397,12 +424,11 @@ public class PublicSearchService {
                     continue; // Only opted-in donors are displayed in results
                 }
 
-                // Privacy: display name is custom or derived (first name + last initial)
+                // Privacy: display name is strictly first name + last initial (e.g. "Oggy C.")
                 String rawName = (String) getVal(donorMap, "name", "NAME");
-                String customName = (String) getVal(donorMap, "public_display_name", "PUBLIC_DISPLAY_NAME");
-                String displayName = (customName != null && !customName.isBlank()) ? customName.trim() : deriveDisplayName(rawName);
+                String displayName = deriveDisplayName(rawName);
 
-                // Privacy: approximate distance "~N km" (computed from 1 km grid-rounded positions of both sides, rounded up)
+                // Privacy: approximate distance "~N km" (grid-rounded, ceiling)
                 int roundedUpKm = (int) Math.ceil(dist);
                 if (roundedUpKm < 1) roundedUpKm = 1;
                 String distanceDisplay = "~" + roundedUpKm + " km";
@@ -449,15 +475,32 @@ public class PublicSearchService {
             optedInDonors = new ArrayList<>(optedInDonors.subList(0, 20));
         }
 
-        // Summary line applying "Fewer than 3" rule to totalEligibleInRadius
-        String maskedCount = maskCount(totalEligibleInRadius);
-        String summaryLine;
-        if ("None".equals(maskedCount) || totalEligibleInRadius == 0) {
-            summaryLine = "No eligible donors found within " + (int) radiusKm + " km.";
-        } else if ("Fewer than 3".equals(maskedCount)) {
-            summaryLine = "Fewer than 3 eligible donors within " + (int) radiusKm + " km. Donors who chose to be listed are shown below.";
+        // Fewer-than-3 rule for eligible nearby donors:
+        // if 0: "No eligible donors found within {radius} km."
+        // if 0 < count < 3: "Fewer than 3 donors nearby"
+        // if >= 3: "{count} eligible donors nearby"
+        String eligibleNearbyDisplay;
+        if (totalEligibleInRadius <= 0) {
+            eligibleNearbyDisplay = "No eligible donors found within " + (int) radiusKm + " km.";
+        } else if (totalEligibleInRadius < 3) {
+            eligibleNearbyDisplay = "Fewer than 3 donors nearby";
         } else {
-            summaryLine = totalEligibleInRadius + " eligible donors within " + (int) radiusKm + " km. Donors who chose to be listed are shown below.";
+            eligibleNearbyDisplay = totalEligibleInRadius + " eligible donors nearby";
+        }
+
+        String locationOffDisplay = "";
+        if (locationOffCount > 0) {
+            locationOffDisplay = locationOffCount == 1 ? "1 donor has location turned off" : (locationOffCount + " donors have location turned off");
+        }
+
+        String unlistedReason = null;
+        if (totalEligibleInRadius > 0 && optedInDonors.isEmpty()) {
+            unlistedReason = "Donors nearby have not chosen to be listed. Only hospitals can contact donors.";
+        }
+
+        String summaryLine = eligibleNearbyDisplay;
+        if (!locationOffDisplay.isEmpty()) {
+            summaryLine += " (" + locationOffDisplay + ")";
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -467,9 +510,15 @@ public class PublicSearchService {
         result.put("gridCell", gridCell);
         result.put("locationNotice", "Your location is approximate.");
         result.put("totalEligibleCount", totalEligibleInRadius);
-        result.put("totalEligibleDisplay", maskedCount);
+        result.put("eligibleNearbyCount", totalEligibleInRadius);
+        result.put("eligibleNearbyDisplay", eligibleNearbyDisplay);
+        result.put("locationOffCount", locationOffCount);
+        result.put("locationOffDisplay", locationOffDisplay);
+        result.put("totalEligibleDisplay", maskCount(totalEligibleInRadius));
         result.put("summaryLine", summaryLine);
+        result.put("unlistedReason", unlistedReason);
         result.put("donors", optedInDonors);
+        result.put("listedDonorsCount", optedInDonors.size());
         result.put("infoLine", "Only hospitals can send blood requests.");
         result.put("timestamp", Instant.now().toString());
 
