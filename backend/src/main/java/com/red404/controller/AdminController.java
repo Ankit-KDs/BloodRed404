@@ -1,6 +1,7 @@
 package com.red404.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.red404.dao.HealthCheckDao;
 import com.red404.model.ApiResponse;
 import com.red404.service.DonorEligibilityService;
 import com.red404.service.StockService;
@@ -332,14 +333,16 @@ public class AdminController {
     public ResponseEntity<ApiResponse> getDonors(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer size,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) String bloodType,
             @RequestParam(required = false) String status,
             HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
         int effectivePage = (page != null && page > 0) ? page : 1;
-        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 100) : 25;
+        int effectiveLimit = (limit != null && limit > 0) ? Math.min(limit, 100) : ((size != null && size > 0) ? Math.min(size, 100) : 25);
         int offset = (effectivePage - 1) * effectiveLimit;
 
         List<Map<String, Object>> donors = new ArrayList<>();
@@ -348,10 +351,11 @@ public class AdminController {
         StringBuilder whereClause = new StringBuilder(" WHERE (d.availability IS NULL OR LOWER(d.availability) <> 'deleted')");
         List<Object> params = new ArrayList<>();
 
-        if (search != null && !search.isBlank()) {
-            String s = "%" + search.trim().toLowerCase() + "%";
-            whereClause.append(" AND (LOWER(d.name) LIKE ? OR LOWER(d.donor_id) LIKE ? OR LOWER(d.city) LIKE ? OR LOWER(d.phone) LIKE ? OR LOWER(d.email) LIKE ?)");
-            params.add(s); params.add(s); params.add(s); params.add(s); params.add(s);
+        String term = (search != null && !search.isBlank()) ? search.trim() : ((query != null && !query.isBlank()) ? query.trim() : null);
+        if (term != null) {
+            String s = "%" + term.toLowerCase() + "%";
+            whereClause.append(" AND (LOWER(d.name) LIKE ? OR LOWER(d.donor_id) LIKE ? OR LOWER(d.city) LIKE ? OR LOWER(d.phone) LIKE ? OR LOWER(d.email) LIKE ? OR LOWER(d.blood_type) LIKE ?)");
+            params.add(s); params.add(s); params.add(s); params.add(s); params.add(s); params.add(s);
         }
         if (bloodType != null && !bloodType.isBlank() && !"all".equalsIgnoreCase(bloodType.trim())) {
             whereClause.append(" AND UPPER(d.blood_type) = ?");
@@ -365,7 +369,7 @@ public class AdminController {
         String countSql = "SELECT COUNT(*) FROM donors d" + whereClause.toString();
         String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
                 "d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
-                "d.location_updated_at, d.last_donation, d.created_at, " +
+                "d.latitude, d.longitude, d.location_updated_at, d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) AS total_donations " +
                 "FROM donors d" + whereClause.toString() + " ORDER BY d.id DESC LIMIT ? OFFSET ?";
 
@@ -417,13 +421,27 @@ public class AdminController {
                         item.put("registeredCity", regCity);
                         item.put("location", regCity);
 
-                        // Masked contact for list views
+                        // Masked contact for directory list view
                         item.put("email", maskEmail(rs.getString("email")));
                         item.put("phone", maskPhone(rs.getString("phone")));
                         item.put("maskedEmail", maskEmail(rs.getString("email")));
                         item.put("maskedPhone", maskPhone(rs.getString("phone")));
 
-                        item.put("zone", rs.getString("zone") != null ? rs.getString("zone") : "Location not shared");
+                        String zoneStr = rs.getString("zone") != null ? rs.getString("zone") : "Location not shared";
+                        item.put("zone", zoneStr);
+                        Double lat = rs.getObject("latitude") != null ? rs.getDouble("latitude") : null;
+                        Double lng = rs.getObject("longitude") != null ? rs.getDouble("longitude") : null;
+                        java.sql.Timestamp locUpdated = rs.getTimestamp("location_updated_at");
+                        if (locUpdated != null) {
+                            long diffMins = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
+                            String timeAgo = diffMins < 60 ? (diffMins + " mins ago") : ((diffMins / 60) + " hrs ago");
+                            item.put("lastSeenLocationTime", timeAgo + (lat != null && lng != null ? String.format(" (%.4f, %.4f)", lat, lng) : ""));
+                        } else if (lat != null && lng != null) {
+                            item.put("lastSeenLocationTime", String.format("%.4f, %.4f", lat, lng));
+                        } else {
+                            item.put("lastSeenLocationTime", "Location not shared");
+                        }
+
                         item.put("lastDonation", rs.getString("last_donation"));
                         item.put("totalDonations", rs.getInt("total_donations"));
                         item.put("createdAt", rs.getString("created_at"));
@@ -456,15 +474,16 @@ public class AdminController {
     }
 
     // ==========================================
-    // 3a. DONOR DETAILS (Part 2: 4 Groups, Age Only, Masked, No Coords, ETag)
+    // 3a. DONOR DETAILS (Part 2: All Details Direct, Audit Logged, ETag)
     // ==========================================
     @GetMapping("/donors/{id}")
     public ResponseEntity<ApiResponse> getDonorDetails(@PathVariable int id, HttpServletRequest request) {
         if (!isAdmin(request)) return unauthorized();
 
-        String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
-                "d.donor_type, d.availability, d.address, d.line1, d.locality, d.district, d.city, d.state, d.pincode, d.country, d.zone, " +
-                "d.latitude, d.longitude, d.location_updated_at, d.last_donation, d.created_at, " +
+        String sql = "SELECT d.id, d.donor_id, d.name, d.father_name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
+                "d.weight, d.donor_type, d.availability, d.paused_until, d.address, d.line1, d.locality, d.district, d.city, d.state, d.pincode, d.country, d.zone, " +
+                "d.latitude, d.longitude, d.location_updated_at, d.last_donation, d.preferred_language, d.push_notif, d.email_notif, d.sms_notif, " +
+                "d.public_search_opt_in, d.public_consent_at, d.email_verified, d.email_verified_at, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) AS total_donations " +
                 "FROM donors d WHERE d.id = ?";
 
@@ -478,11 +497,16 @@ public class AdminController {
                     String updatedAt = rs.getString("created_at");
 
                     // Check ETag
-                    String eTag = "W/\"donor-" + id + "-" + (updatedAt != null ? updatedAt.hashCode() : 0) + "\"";
+                    String eTag = "W/\"donor-details-" + id + "-" + (updatedAt != null ? updatedAt.hashCode() : 0) + "\"";
                     String ifNoneMatch = request.getHeader("If-None-Match");
                     if (ifNoneMatch != null && ifNoneMatch.equals(eTag)) {
                         return ResponseEntity.status(HttpStatus.NOT_MODIFIED).header("ETag", eTag).build();
                     }
+
+                    // Write ONE audit entry for opening drawer: {admin, donor, time}
+                    String adminUser = getAdminIdentifier(request);
+                    recordDonorAudit(id, adminUser, "PROFILE_VIEW", "Admin opened donor profile " + smartId);
+                    addLog("ADMIN_DONOR_VIEW", "Admin " + adminUser + " viewed donor profile " + smartId);
 
                     Map<String, Object> data = new LinkedHashMap<>();
 
@@ -491,17 +515,35 @@ public class AdminController {
                     account.put("id", id);
                     account.put("smartId", smartId);
                     account.put("name", rs.getString("name"));
-                    account.put("age", computeAge(rs.getString("dob")));
-                    account.put("gender", rs.getString("gender") != null ? rs.getString("gender") : "Not specified");
-                    String city = rs.getString("city");
-                    String state = rs.getString("state");
-                    account.put("city", (city != null && !city.isBlank()) ? city : "Not provided");
-                    account.put("state", (state != null && !state.isBlank()) ? state : "Not provided");
+                    String fatherName = rs.getString("father_name");
+                    account.put("fatherName", (fatherName != null && !fatherName.isBlank()) ? fatherName : null);
+                    String dobStr = rs.getString("dob");
+                    int age = computeAge(dobStr);
+                    account.put("dob", (dobStr != null && !dobStr.isBlank()) ? dobStr : null);
+                    account.put("age", age > 0 ? age : null);
+                    if (dobStr != null && !dobStr.isBlank()) {
+                        account.put("dobAndAge", dobStr + (age > 0 ? " (" + age + " yrs)" : ""));
+                    } else if (age > 0) {
+                        account.put("dobAndAge", age + " yrs");
+                    } else {
+                        account.put("dobAndAge", null);
+                    }
+                    account.put("gender", rs.getString("gender") != null ? rs.getString("gender") : null);
                     account.put("registeredOn", rs.getString("created_at"));
-                    account.put("availability", rs.getString("availability") != null ? rs.getString("availability") : "Active");
+
+                    String rawAvail = rs.getString("availability") != null ? rs.getString("availability") : "Active";
+                    String pausedUntil = rs.getString("paused_until");
+                    account.put("status", rawAvail);
+                    account.put("availability", rawAvail);
+                    account.put("pausedUntil", (pausedUntil != null && !pausedUntil.isBlank()) ? pausedUntil : null);
+                    if ("Paused".equalsIgnoreCase(rawAvail) && pausedUntil != null && !pausedUntil.isBlank()) {
+                        account.put("availabilityStatusText", "Paused (until " + pausedUntil + ")");
+                    } else {
+                        account.put("availabilityStatusText", rawAvail);
+                    }
 
                     // Last login lookup
-                    String lastLogin = "Never";
+                    String lastLogin = null;
                     try (PreparedStatement sessPs = conn.prepareStatement(
                             "SELECT last_access FROM user_sessions WHERE (user_id = ? OR user_id = ?) AND user_type = 'DONOR' ORDER BY last_access DESC LIMIT 1")) {
                         sessPs.setString(1, String.valueOf(id));
@@ -512,10 +554,86 @@ public class AdminController {
                             }
                         }
                     } catch (Exception ignored) {}
-                    account.put("lastLogin", lastLogin);
+                    account.put("lastLogin", lastLogin != null ? lastLogin : "Never");
                     data.put("account", account);
 
-                    // Group 2: Blood and health summary
+                    // Group 2: Contact (Direct unmasked values)
+                    Map<String, Object> contact = new LinkedHashMap<>();
+                    String directPhone = rs.getString("phone");
+                    String directEmail = rs.getString("email");
+                    contact.put("phone", (directPhone != null && !directPhone.isBlank()) ? directPhone : null);
+                    contact.put("email", (directEmail != null && !directEmail.isBlank()) ? directEmail : null);
+
+                    boolean emailVerified = rs.getBoolean("email_verified");
+                    String emailVerifiedAt = rs.getString("email_verified_at");
+                    contact.put("emailVerified", emailVerified);
+                    contact.put("emailVerifiedAt", emailVerifiedAt);
+                    if (emailVerified) {
+                        String verDate = (emailVerifiedAt != null && emailVerifiedAt.length() >= 10) ? emailVerifiedAt.substring(0, 10) : "";
+                        contact.put("emailStatusText", "Verified" + (!verDate.isEmpty() ? " on " + verDate : ""));
+                    } else {
+                        contact.put("emailStatusText", "Unverified");
+                    }
+                    data.put("contact", contact);
+
+                    // Group 3: Address (Clean separate structured fields + formatted line)
+                    Map<String, Object> address = new LinkedHashMap<>();
+                    String l1 = rs.getString("line1");
+                    if (l1 == null || l1.isBlank()) l1 = rs.getString("address");
+                    String locality = rs.getString("locality");
+                    String rawCity = rs.getString("city");
+                    String district = rs.getString("district");
+                    String rawState = rs.getString("state");
+                    String pincode = rs.getString("pincode");
+                    String country = rs.getString("country") != null ? rs.getString("country") : "India";
+
+                    address.put("line1", (l1 != null && !l1.isBlank()) ? l1 : null);
+                    address.put("locality", (locality != null && !locality.isBlank()) ? locality : null);
+                    address.put("city", (rawCity != null && !rawCity.isBlank()) ? rawCity : null);
+                    address.put("district", (district != null && !district.isBlank()) ? district : null);
+                    address.put("state", (rawState != null && !rawState.isBlank()) ? rawState : null);
+                    address.put("pincode", (pincode != null && !pincode.isBlank()) ? pincode : null);
+                    address.put("country", country);
+
+                    String formattedAddr = com.red404.util.AddressFormatter.formatAddress(l1, locality, rawCity, district, rawState, pincode, country);
+                    address.put("formattedAddress", (formattedAddr != null && !formattedAddr.isBlank() && !formattedAddr.equalsIgnoreCase("India")) ? formattedAddr : null);
+
+                    // Saved map location
+                    Map<String, Object> mapLocation = new LinkedHashMap<>();
+                    String zone = rs.getString("zone");
+                    mapLocation.put("areaName", (zone != null && !zone.isBlank()) ? zone : ((rawCity != null && !rawCity.isBlank()) ? rawCity : null));
+                    Double lat = rs.getObject("latitude") != null ? rs.getDouble("latitude") : null;
+                    Double lng = rs.getObject("longitude") != null ? rs.getDouble("longitude") : null;
+                    mapLocation.put("latitude", lat);
+                    mapLocation.put("longitude", lng);
+                    if (lat != null && lng != null) {
+                        mapLocation.put("coordinates", String.format("%.6f, %.6f", lat, lng));
+                    } else {
+                        mapLocation.put("coordinates", null);
+                    }
+
+                    java.sql.Timestamp locUpdated = null;
+                    try { locUpdated = rs.getTimestamp("location_updated_at"); } catch (Exception ignored) {}
+                    String locTimeAgo = null;
+                    if (locUpdated != null) {
+                        long diffMins = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
+                        locTimeAgo = diffMins < 60 ? (diffMins + " mins ago") : ((diffMins / 60) + " hrs ago");
+                        mapLocation.put("lastUpdated", "last updated " + locTimeAgo);
+                    } else {
+                        mapLocation.put("lastUpdated", null);
+                    }
+                    address.put("savedMapLocation", mapLocation);
+
+                    // Registered city vs last seen location
+                    String regCityLine = (rawCity != null && !rawCity.isBlank()) ? rawCity : "Not provided";
+                    if (rawState != null && !rawState.isBlank() && !regCityLine.equalsIgnoreCase("Not provided")) {
+                        regCityLine += ", " + rawState;
+                    }
+                    String lastSeenPart = (zone != null && !zone.isBlank()) ? zone : (lat != null && lng != null ? String.format("%.4f, %.4f", lat, lng) : "Location not shared");
+                    address.put("registeredCityVsLastSeen", "Registered: " + regCityLine + " | Last Seen: " + lastSeenPart + (locTimeAgo != null ? " (" + locTimeAgo + ")" : ""));
+                    data.put("address", address);
+
+                    // Group 4: Blood and donation
                     Map<String, Object> bloodHealth = new LinkedHashMap<>();
                     String bloodGroup = rs.getString("blood_type") != null ? rs.getString("blood_type") : "Unknown";
                     bloodHealth.put("bloodGroup", bloodGroup);
@@ -529,89 +647,101 @@ public class AdminController {
                             if (bgRs.next()) {
                                 String hosp = bgRs.getString("verified_by_hospital");
                                 String vDate = bgRs.getString("verified_at");
-                                bloodGroupStatus = "Verified by " + (hosp != null ? hosp : "Hospital") + " on " + (vDate != null ? vDate : "record");
+                                String vDateClean = (vDate != null && vDate.length() >= 10) ? vDate.substring(0, 10) : vDate;
+                                bloodGroupStatus = "Verified by " + (hosp != null ? hosp : "Hospital") + " on " + (vDateClean != null ? vDateClean : "record");
                             }
                         }
                     } catch (Exception ignored) {}
                     bloodHealth.put("bloodGroupStatus", bloodGroupStatus);
+
+                    Double weightVal = rs.getObject("weight") != null ? rs.getDouble("weight") : null;
+                    bloodHealth.put("weight", weightVal != null ? (weightVal + " kg") : null);
+
                     int totalDonations = rs.getInt("total_donations");
                     bloodHealth.put("totalVerifiedDonations", totalDonations);
                     String lastDonation = rs.getString("last_donation");
-                    bloodHealth.put("lastDonationDate", lastDonation != null ? lastDonation : "Never");
+                    bloodHealth.put("lastDonationDate", lastDonation != null ? lastDonation : null);
 
-                    // Next eligible date
+                    // Next eligible date and gap in days
                     Map<String, Object> tempMap = new HashMap<>();
                     tempMap.put("lastDonation", lastDonation);
                     DonorEligibilityService.attachEligibility(tempMap);
                     bloodHealth.put("nextEligibleDate", tempMap.getOrDefault("nextEligibleDate", "Eligible now"));
                     bloodHealth.put("eligibilityStatus", tempMap.getOrDefault("eligibilityStatus", "Eligible"));
+                    Object cooldownDays = tempMap.get("cooldownDays");
+                    if (cooldownDays != null && Number.class.isAssignableFrom(cooldownDays.getClass()) && ((Number) cooldownDays).intValue() > 0) {
+                        bloodHealth.put("gapInDays", ((Number) cooldownDays).intValue() + " days cooldown remaining");
+                    } else if (lastDonation != null) {
+                        bloodHealth.put("gapInDays", "Standard 90 days gap satisfied (Eligible)");
+                    } else {
+                        bloodHealth.put("gapInDays", "Eligible now (No prior donation recorded)");
+                    }
 
-                    // Last health check date & outcome ONLY (NO vitals, NO questionnaire answers!)
-                    String healthDate = "No health checks recorded";
-                    String healthOutcome = "None";
-                    try (PreparedStatement hcPs = conn.prepareStatement(
-                            "SELECT check_date, outcome FROM health_checks WHERE donor_id = ? ORDER BY id DESC LIMIT 1")) {
-                        hcPs.setInt(1, id);
-                        try (ResultSet hcRs = hcPs.executeQuery()) {
-                            if (hcRs.next()) {
-                                healthDate = hcRs.getString("check_date") != null ? hcRs.getString("check_date") : "Recorded";
-                                healthOutcome = hcRs.getString("outcome") != null ? hcRs.getString("outcome") : "Fit";
+                    // Current deferral
+                    String deferralText = "None (Active)";
+                    try (PreparedStatement defPs = conn.prepareStatement(
+                            "SELECT outcome, defer_until, defer_reason_category FROM health_checks WHERE (donor_id = ? OR donor_id = CAST(? AS CHAR)) AND LOWER(outcome) = 'deferred' AND (defer_until IS NULL OR defer_until >= CURRENT_DATE) ORDER BY id DESC LIMIT 1")) {
+                        defPs.setString(1, smartId);
+                        defPs.setInt(2, id);
+                        try (ResultSet defRs = defPs.executeQuery()) {
+                            if (defRs.next()) {
+                                String du = defRs.getString("defer_until");
+                                String drc = defRs.getString("defer_reason_category");
+                                deferralText = "Deferred" + (du != null ? " until " + du : "") + (drc != null ? " (Reason: " + drc + ")" : "");
                             }
                         }
                     } catch (Exception ignored) {}
-                    bloodHealth.put("lastHealthCheckDate", healthDate);
-                    bloodHealth.put("lastHealthCheckOutcome", healthOutcome);
+                    bloodHealth.put("currentDeferral", deferralText);
                     data.put("bloodHealth", bloodHealth);
 
-                    // Group 3: Contact (Masked by default)
-                    Map<String, Object> contact = new LinkedHashMap<>();
-                    contact.put("maskedEmail", maskEmail(rs.getString("email")));
-                    contact.put("maskedPhone", maskPhone(rs.getString("phone")));
-                    String l1 = rs.getString("line1");
-                    if (l1 == null || l1.isBlank()) l1 = rs.getString("address");
-                    String locality = rs.getString("locality");
-                    String district = rs.getString("district");
-                    String country = rs.getString("country") != null ? rs.getString("country") : "India";
-                    String pincode = rs.getString("pincode");
-                    String formattedAddr = com.red404.util.AddressFormatter.formatAddress(l1, locality, city, district, state, pincode, country);
-
-                    boolean hasAddr = (l1 != null && !l1.isBlank()) || (locality != null && !locality.isBlank()) || (city != null && !city.isBlank());
-                    contact.put("maskedAddress", hasAddr ? "••••••••••••" : "Not provided");
-                    contact.put("hasAddress", hasAddr);
-                    contact.put("line1", (l1 != null && !l1.isBlank()) ? l1 : "Not provided");
-                    contact.put("locality", (locality != null && !locality.isBlank()) ? locality : "Not provided");
-                    contact.put("city", (city != null && !city.isBlank()) ? city : "Not provided");
-                    contact.put("district", (district != null && !district.isBlank()) ? district : "Not provided");
-                    contact.put("state", (state != null && !state.isBlank()) ? state : "Not provided");
-                    contact.put("pincode", (pincode != null && !pincode.isBlank()) ? pincode : "Not provided");
-                    contact.put("country", country);
-                    contact.put("formattedAddress", (formattedAddr != null && !formattedAddr.isBlank() && !formattedAddr.equalsIgnoreCase("India")) ? formattedAddr : "Not provided");
-                    data.put("contact", contact);
-
-                    // Group 4: Consents (No coordinates)
-                    Map<String, Object> consents = new LinkedHashMap<>();
-                    consents.put("publicSearch", "Enabled");
-                    consents.put("termsAccepted", "v1.0 (Accepted on " + (rs.getString("created_at") != null ? rs.getString("created_at") : "Registration") + ")");
-                    java.sql.Timestamp locUpdated = null;
-                    try { locUpdated = rs.getTimestamp("location_updated_at"); } catch (Exception ignored) {}
-                    boolean hasLocation = locUpdated != null;
-                    if (hasLocation) {
-                        long diffMins = Math.max(1, (System.currentTimeMillis() - locUpdated.getTime()) / 60000L);
-                        String timeAgo = diffMins < 60 ? (diffMins + " mins ago") : ((diffMins / 60) + " hrs ago");
-                        consents.put("locationShared", "Yes (Last updated " + timeAgo + ")");
+                    // Group 5: Preferences and consents
+                    Map<String, Object> preferencesConsents = new LinkedHashMap<>();
+                    String prefLang = rs.getString("preferred_language");
+                    if ("hi".equalsIgnoreCase(prefLang)) {
+                        preferencesConsents.put("preferredLanguage", "Hindi (hi)");
                     } else {
-                        consents.put("locationShared", "No");
+                        preferencesConsents.put("preferredLanguage", "English (en)");
                     }
-                    data.put("consents", consents);
 
-                    // Legacy flat fields for backward compatibility with existing views
+                    boolean pushNotif = rs.getObject("push_notif") != null ? rs.getBoolean("push_notif") : true;
+                    boolean emailNotif = rs.getObject("email_notif") != null ? rs.getBoolean("email_notif") : true;
+                    boolean smsNotif = rs.getObject("sms_notif") != null ? rs.getBoolean("sms_notif") : true;
+                    preferencesConsents.put("pushNotif", pushNotif);
+                    preferencesConsents.put("emailNotif", emailNotif);
+                    preferencesConsents.put("smsNotif", smsNotif);
+                    preferencesConsents.put("notificationChannelsText", "Push: " + (pushNotif ? "ON" : "OFF") + ", Email: " + (emailNotif ? "ON" : "OFF") + ", SMS: " + (smsNotif ? "ON" : "OFF"));
+
+                    boolean pubSearch = rs.getObject("public_search_opt_in") != null ? rs.getBoolean("public_search_opt_in") : false;
+                    String pubConsentAt = rs.getString("public_consent_at");
+                    preferencesConsents.put("publicSearch", pubSearch);
+                    preferencesConsents.put("publicConsentAt", pubConsentAt);
+                    if (pubSearch) {
+                        String cleanPubDate = (pubConsentAt != null && pubConsentAt.length() >= 19) ? pubConsentAt.substring(0, 19) : pubConsentAt;
+                        preferencesConsents.put("publicSearchText", "Enabled" + (cleanPubDate != null ? " (Opted in on " + cleanPubDate + ")" : ""));
+                    } else {
+                        preferencesConsents.put("publicSearchText", "Disabled");
+                    }
+
+                    // Consent records
+                    String regCreated = rs.getString("created_at");
+                    String cleanRegDate = (regCreated != null && regCreated.length() >= 10) ? regCreated.substring(0, 10) : "Registration";
+                    preferencesConsents.put("termsVersionAndDate", "v1.0 (Accepted on " + cleanRegDate + ")");
+                    preferencesConsents.put("privacyPolicy", "v1.0 (Accepted on " + cleanRegDate + ")");
+                    if (locUpdated != null) {
+                        preferencesConsents.put("locationConsent", "Granted (Updated " + (locTimeAgo != null ? locTimeAgo : "recently") + ")");
+                    } else {
+                        preferencesConsents.put("locationConsent", "Not granted");
+                    }
+                    data.put("preferencesConsents", preferencesConsents);
+
+                    // Legacy backward-compatibility aliases
                     data.put("id", id);
                     data.put("smartId", smartId);
                     data.put("name", rs.getString("name"));
-                    data.put("age", computeAge(rs.getString("dob")));
+                    data.put("age", age);
                     data.put("gender", rs.getString("gender"));
                     data.put("bloodGroup", bloodGroup);
-                    data.put("status", rs.getString("availability") != null ? rs.getString("availability") : "Active");
+                    data.put("status", rawAvail);
                     data.put("totalDonations", totalDonations);
                     data.put("lastDonation", lastDonation);
                     data.put("createdAt", rs.getString("created_at"));
@@ -626,14 +756,146 @@ public class AdminController {
                 }
             }
         } catch (Exception e) {
-            log.error("Error loading donor profile for admin: {}", e.getMessage());
+            log.error("Error loading donor profile for admin: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Failed to load donor details: " + e.getMessage()));
         }
     }
 
     // ==========================================
-    // 3b. REVEAL DONOR CONTACT FIELD (Audit-logged, 30s auto-hide)
+    // 3b. DONOR HEALTH TAB (Audit-logged on open, Vitals + History + Questionnaire)
+    // ==========================================
+    @GetMapping("/donors/{id}/health")
+    public ResponseEntity<ApiResponse> getDonorHealth(@PathVariable int id, HttpServletRequest request) {
+        if (!isAdmin(request)) return unauthorized();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT id, donor_id, name, pulse, hemoglobin, blood_pressure, body_temp, weight, verified_facility, verified_date, health_answers_json FROM donors WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String smartId = rs.getString("donor_id") != null ? rs.getString("donor_id") : "DNR-" + id;
+                    String adminUser = getAdminIdentifier(request);
+
+                    // Write separate audit entry: {admin, donor, "viewed health information", time}
+                    recordDonorAudit(id, adminUser, "HEALTH_VIEW", "Admin viewed health information for donor " + smartId);
+                    addLog("ADMIN_HEALTH_VIEW", "Admin " + adminUser + " viewed health information for donor " + smartId);
+
+                    Map<String, Object> data = new LinkedHashMap<>();
+
+                    // 1. Latest vitals
+                    Map<String, Object> latestVitals = new LinkedHashMap<>();
+                    latestVitals.put("pulse", rs.getObject("pulse") != null ? (rs.getInt("pulse") + " bpm") : null);
+                    latestVitals.put("hemoglobin", rs.getObject("hemoglobin") != null ? (rs.getDouble("hemoglobin") + " g/dL") : null);
+                    latestVitals.put("bloodPressure", rs.getString("blood_pressure") != null ? (rs.getString("blood_pressure") + " mmHg") : null);
+                    latestVitals.put("bodyTemp", rs.getObject("body_temp") != null ? (rs.getDouble("body_temp") + " °F") : null);
+                    latestVitals.put("weight", rs.getObject("weight") != null ? (rs.getDouble("weight") + " kg") : null);
+                    latestVitals.put("verifiedFacility", rs.getString("verified_facility"));
+                    latestVitals.put("verifiedDate", rs.getString("verified_date"));
+                    data.put("latestVitals", latestVitals);
+
+                    // 2. Last 5 health checks
+                    HealthCheckDao hcDao = new HealthCheckDao();
+                    List<Map<String, Object>> checks = hcDao.getHealthCheckHistory(smartId, 5);
+                    List<Map<String, Object>> formattedChecks = new ArrayList<>();
+                    for (Map<String, Object> hc : checks) {
+                        Map<String, Object> cMap = new LinkedHashMap<>();
+                        cMap.put("id", hc.get("id"));
+                        cMap.put("date", hc.get("date"));
+                        cMap.put("hospitalName", hc.get("hospitalName"));
+                        cMap.put("outcome", hc.get("outcome"));
+
+                        List<String> valParts = new ArrayList<>();
+                        if (hc.get("weight") != null) valParts.add("Weight: " + hc.get("weight") + " kg");
+                        if (hc.get("hemoglobin") != null) valParts.add("Hb: " + hc.get("hemoglobin") + " g/dL");
+                        if (hc.get("bloodPressure") != null) valParts.add("BP: " + hc.get("bloodPressure"));
+                        if (hc.get("pulse") != null) valParts.add("Pulse: " + hc.get("pulse") + " bpm");
+                        if (hc.get("temperature") != null) valParts.add("Temp: " + hc.get("temperature") + "°F");
+                        if (hc.get("deferReasonCategory") != null) valParts.add("Reason: " + hc.get("deferReasonCategory"));
+                        if (hc.get("deferUntil") != null) valParts.add("Deferred until: " + hc.get("deferUntil"));
+                        cMap.put("values", String.join(" • ", valParts));
+                        cMap.put("deferReasonCategory", hc.get("deferReasonCategory"));
+                        cMap.put("deferUntil", hc.get("deferUntil"));
+                        formattedChecks.add(cMap);
+                    }
+                    data.put("healthChecks", formattedChecks);
+
+                    // 3. Registration health answers (decrypted clean Yes/No list)
+                    String rawHealthJson = rs.getString("health_answers_json");
+                    List<Map<String, String>> answers = parseHealthAnswers(rawHealthJson);
+                    data.put("registrationHealthAnswers", answers);
+
+                    return ResponseEntity.ok(new ApiResponse(true, "Health details loaded", data));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Donor not found"));
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error loading donor health for admin: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Failed to load health details: " + e.getMessage()));
+        }
+    }
+
+    private List<Map<String, String>> parseHealthAnswers(String encOrRawJson) {
+        List<Map<String, String>> list = new ArrayList<>();
+        if (encOrRawJson == null || encOrRawJson.isBlank()) {
+            return list;
+        }
+
+        String jsonStr = encOrRawJson;
+        // If it looks encrypted, decrypt it
+        if (!jsonStr.trim().startsWith("{")) {
+            try {
+                String dec = com.red404.util.AesGcmEncryptionUtil.decrypt(jsonStr);
+                if (dec != null && !dec.isBlank()) {
+                    jsonStr = dec;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        try {
+            com.fasterxml.jackson.databind.JsonNode root = JsonUtil.mapper().readTree(jsonStr);
+            if (root != null && root.isObject()) {
+                String[][] questions = {
+                    {"feverNow", "1. Do you currently have a fever, cough, flu, or active infection?"},
+                    {"antibioticsNow", "2. Are you taking antibiotics or prescription medication?"},
+                    {"surgery6m", "3. Have you had major surgery in the last 6 months?"},
+                    {"tattoo6m", "4. Have you gotten a tattoo or body piercing in the last 6 months?"},
+                    {"vaccine4w", "5. Have you received any vaccine in the past 4 weeks?"},
+                    {"travelOutside", "6. Have you traveled outside India in the last 6 months?"},
+                    {"pregnantNursing", "7. Are you currently pregnant or breastfeeding?"},
+                    {"chronicConditions", "8. Do you have any chronic conditions (diabetes, high BP, heart condition)?"}
+                };
+
+                for (String[] q : questions) {
+                    String key = q[0];
+                    String questionText = q[1];
+                    String ans = "No";
+                    if (root.has(key)) {
+                        String val = root.get(key).asText("no").trim();
+                        if ("yes".equalsIgnoreCase(val) || "true".equalsIgnoreCase(val)) {
+                            ans = "Yes";
+                        } else {
+                            ans = "No";
+                        }
+                    }
+                    Map<String, String> item = new LinkedHashMap<>();
+                    item.put("key", key);
+                    item.put("question", questionText);
+                    item.put("answer", ans);
+                    list.add(item);
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Notice parsing health answers JSON: {}", ex.getMessage());
+        }
+        return list;
+    }
+
+    // ==========================================
+    // 3b-legacy. REVEAL DONOR CONTACT FIELD (Backward-compatibility preserved)
     // ==========================================
     @PostMapping("/donors/{id}/reveal")
     public ResponseEntity<ApiResponse> revealDonorField(
@@ -711,7 +973,7 @@ public class AdminController {
         int totalEvents = 0;
 
         try (Connection conn = DBConnection.getConnection()) {
-            // Count from donor_audit_logs
+            // Count total events from 4 sources
             try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM donor_audit_logs WHERE donor_id = ?")) {
                 cps.setInt(1, id);
                 try (ResultSet crs = cps.executeQuery()) {
@@ -726,20 +988,43 @@ public class AdminController {
                 }
             } catch (Exception ignored) {}
 
-            // Union queries from audit logs and donations
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM blood_request_notifications WHERE donor_id = ?")) {
+                cps.setInt(1, id);
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalEvents += crs.getInt(1);
+                }
+            } catch (Exception ignored) {}
+
+            try (PreparedStatement cps = conn.prepareStatement("SELECT COUNT(*) FROM user_sessions WHERE (user_id = CAST(? AS CHAR) OR user_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)) AND user_type = 'DONOR'")) {
+                cps.setInt(1, id); cps.setInt(2, id);
+                try (ResultSet crs = cps.executeQuery()) {
+                    if (crs.next()) totalEvents += crs.getInt(1);
+                }
+            } catch (Exception ignored) {}
+
+            // Union queries from all 4 sources
             String sql = "SELECT * FROM (" +
-                    "SELECT id, action, details, admin_user as actor, CAST(created_at AS CHAR(64)) as ev_time FROM donor_audit_logs WHERE donor_id = ? " +
+                    "SELECT id, action, details, COALESCE(admin_user, 'System Admin') as actor, CAST(created_at AS CHAR(64)) as ev_time FROM donor_audit_logs WHERE donor_id = ? " +
                     "UNION ALL " +
-                    "SELECT id, 'DONATION_RECORDED' as action, CONCAT('Completed donation at ', COALESCE(hospital_name, 'Partner Blood Bank')) as details, 'Hospital Staff' as actor, CAST(donation_date AS CHAR(64)) as ev_time " +
-                    " FROM donations WHERE (donor_id = CAST(? AS CHAR) OR donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')" +
+                    "SELECT d.id, 'DONATION_RECORDED' as action, CONCAT('Completed donation at ', COALESCE(h.hospital_name, 'Partner Blood Bank'), ' (', d.units, ' unit)') as details, 'Hospital Staff' as actor, CAST(d.donation_date AS CHAR(64)) as ev_time " +
+                    " FROM donations d LEFT JOIN hospitals h ON d.hospital_id = h.id WHERE (d.donor_id = CAST(? AS CHAR) OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)) AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')" +
+                    "UNION ALL " +
+                    "SELECT n.id, CONCAT('REQUEST_', UPPER(n.status)) as action, CONCAT('Blood request #', n.request_id, ' for ', COALESCE(br.blood_type, 'blood'), ' (Status: ', n.status, ')') as details, 'Emergency Dispatcher' as actor, CAST(COALESCE(n.responded_at, n.created_at) AS CHAR(64)) as ev_time " +
+                    " FROM blood_request_notifications n LEFT JOIN blood_requests br ON n.request_id = br.id WHERE n.donor_id = ? " +
+                    "UNION ALL " +
+                    "SELECT 0 as id, 'LOGIN' as action, CONCAT('Donor session started from ', COALESCE(ip_address, 'web client')) as details, 'Donor' as actor, CAST(created_at AS CHAR(64)) as ev_time " +
+                    " FROM user_sessions WHERE (user_id = CAST(? AS CHAR) OR user_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)) AND user_type = 'DONOR' " +
                     ") AS combined_events ORDER BY ev_time DESC LIMIT ? OFFSET ?";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, id);
                 ps.setInt(2, id);
                 ps.setInt(3, id);
-                ps.setInt(4, effectiveLimit);
-                ps.setInt(5, offset);
+                ps.setInt(4, id);
+                ps.setInt(5, id);
+                ps.setInt(6, id);
+                ps.setInt(7, effectiveLimit);
+                ps.setInt(8, offset);
 
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {

@@ -2686,3 +2686,136 @@ body.admin-body {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ============================================================
+   ROUND 12 PART 2 - ADMIN DONOR DRAWER ENHANCEMENTS
+   ============================================================ */
+.val-muted-empty {
+  color: #94a3b8 !important;
+  font-style: italic !important;
+}
+
+.admin-data-table tbody tr.donor-clickable-row {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.admin-data-table tbody tr.donor-clickable-row:hover {
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.health-notice-banner {
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #38bdf8;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.health-checks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.health-check-card {
+  background: #131d31;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.health-check-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.health-check-values {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.health-qn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.health-qn-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #131d31;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  gap: 12px;
+}
+
+.health-qn-q {
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.health-qn-ans {
+  flex-shrink: 0;
+}
+
+.yn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.yn-chip.yn-no {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.yn-chip.yn-yes {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.verified-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.verified-badge-chip.verified {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.verified-badge-chip.unverified {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}

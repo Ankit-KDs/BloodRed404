@@ -1224,6 +1224,25 @@ public class DonorDao {
                     }
                 }
                 donor.remove("password");
+                // Access rule: hospital search responses contain no address, DOB, email, health answers or coordinates
+                donor.remove("address");
+                donor.remove("fullAddress");
+                donor.remove("line1");
+                donor.remove("locality");
+                donor.remove("district");
+                donor.remove("pincode");
+                donor.remove("pin_code");
+                donor.remove("dob");
+                donor.remove("dateOfBirth");
+                donor.remove("email");
+                donor.remove("latitude");
+                donor.remove("longitude");
+                donor.remove("healthAnswersJson");
+                donor.remove("health_answers_json");
+                donor.remove("allergies");
+                donor.remove("conditions");
+                donor.remove("medications");
+                donor.remove("surgeries");
 
                 // Flag exact match for sorting
                 boolean isExact = dBlood.equalsIgnoreCase(targetBlood);

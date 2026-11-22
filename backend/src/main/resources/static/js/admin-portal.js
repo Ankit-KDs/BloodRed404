@@ -201,17 +201,19 @@
       const registeredCity = d.registeredCity || (d.city ? `${d.city}${d.state ? ', ' + d.state : ''}` : 'Not provided');
       const lastSeen = d.lastSeenLocationTime || (d.latitude && d.longitude ? `${d.latitude}, ${d.longitude}` : 'Location not shared');
 
+      tr.className = 'donor-clickable-row';
+      tr.title = 'Click row to open Donor Drawer';
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.kebab-dropdown') || e.target.closest('input')) return;
+        openDonorDrawer(d.id);
+      });
+
       tr.innerHTML = `
-        <!-- Column 1: Smart ID & Burned-ID Privacy -->
+        <!-- Column 1: Smart ID & Direct Full Name -->
         <td data-label="Smart ID">
-          <div class="smart-id-cell">
+          <div class="smart-id-cell" style="display: flex; flex-direction: column; gap: 3px;">
             <span class="smart-id-tag">${escapeHtml(d.smartId || '-')}</span>
-            <div class="donor-name-reveal-wrap">
-              <span class="real-name-hidden" id="donor-name-${d.id}" data-masked="true" data-name="${escapeHtml(d.name || 'Anonymous')}">***</span>
-              <button type="button" class="btn-reveal-name" onclick="window.toggleRevealName(${d.id})" title="Reveal Real Name">
-                <i class="fas fa-eye" id="reveal-icon-${d.id}"></i>
-              </button>
-            </div>
+            <span class="donor-name-direct" style="font-size: 13px; font-weight: 600; color: #f8fafc;">${escapeHtml(d.name || 'Anonymous')}</span>
           </div>
         </td>
 
@@ -358,7 +360,7 @@
   }
 
   /* ============================================================
-     ADMIN DONOR DRAWER (Part 2 & Part 4)
+     ADMIN DONOR DRAWER (Round 12 Part 2 - All Details & 3 Tabs)
   ============================================================ */
   let currentDonorId = null;
   let currentDonorSmartId = null;
@@ -366,6 +368,7 @@
   let lastActiveElement = null;
   let donorActivityPage = 1;
   const donorCache = {};
+  const donorHealthLoaded = {};
 
   window.openDonorDrawer = async function (donorId) {
     if (!donorId) return;
@@ -378,7 +381,7 @@
     if (!overlay) return;
 
     // 1. Instant Shell Populate (<10ms) from table cache
-    const cachedRow = allDonors.find(d => d.id === donorId);
+    const cachedRow = (allDonors || []).find(d => d.id === donorId);
     if (cachedRow) {
       currentDonorSmartId = cachedRow.smartId || ('DNR-' + donorId);
       currentDonorName = cachedRow.name || 'Donor Profile';
@@ -393,12 +396,13 @@
       document.getElementById('donorDrawerRegistered').textContent = 'Registered ' + (cachedRow.createdAt ? new Date(cachedRow.createdAt).toLocaleDateString() : '-');
       document.getElementById('donor-val-smartId').textContent = currentDonorSmartId;
       document.getElementById('donor-val-name').textContent = currentDonorName;
+      document.getElementById('donor-val-status').textContent = cachedRow.status || 'Active';
       document.getElementById('donor-val-availability').textContent = cachedRow.status || 'Active';
       document.getElementById('donor-val-bloodGroup').textContent = cachedRow.bloodGroup || '-';
     }
 
-    // Reset to Profile tab
-    switchDonorDrawerTab('profile');
+    // Reset to Details tab
+    switchDonorDrawerTab('details');
 
     // Show drawer instantly
     overlay.style.display = 'flex';
@@ -432,20 +436,36 @@
   window.viewDonorProfile = window.openDonorDrawer;
 
   function setDonorDrawerSkeletons() {
-    ['donor-val-ageGender', 'donor-val-cityState', 'donor-val-registeredOn', 'donor-val-lastLogin',
-     'donor-val-totalDonations', 'donor-val-lastDonation', 'donor-val-nextEligible', 'donor-val-healthCheck',
-     'donor-val-email', 'donor-val-phone', 'donor-val-publicSearch', 'donor-val-termsAccepted', 'donor-val-locationShared'].forEach(id => {
+    [
+      'donor-val-fatherName', 'donor-val-dobAge', 'donor-val-gender', 'donor-val-registeredOn', 'donor-val-lastLogin',
+      'donor-val-status', 'donor-val-availability', 'donor-val-phone', 'donor-val-email',
+      'donor-val-line1', 'donor-val-locality', 'donor-val-city', 'donor-val-district', 'donor-val-state', 'donor-val-pincode',
+      'donor-val-formattedAddress', 'donor-val-mapLocation', 'donor-val-cityVsLastSeen',
+      'donor-val-bloodGroup', 'donor-val-weight', 'donor-val-totalDonations', 'donor-val-lastDonation', 'donor-val-nextEligible', 'donor-val-gapDays', 'donor-val-deferral',
+      'donor-val-prefLanguage', 'donor-val-notifChannels', 'donor-val-publicSearch', 'donor-val-termsAccepted', 'donor-val-privacyPolicy', 'donor-val-locationConsent'
+    ].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = '<span class="drawer-skeleton"></span>';
     });
   }
 
+  function setVal(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (value === null || value === undefined || String(value).trim() === '' || String(value).trim().toLowerCase() === 'null') {
+      el.innerHTML = '<span class="val-muted-empty">Not provided</span>';
+    } else {
+      el.textContent = String(value).trim();
+    }
+  }
+
   function populateDonorDrawerDetails(data) {
     if (!data) return;
     const acc = data.account || {};
-    const bh = data.bloodHealth || {};
     const con = data.contact || {};
-    const cns = data.consents || {};
+    const addr = data.address || {};
+    const bh = data.bloodHealth || {};
+    const pc = data.preferencesConsents || {};
 
     currentDonorSmartId = acc.smartId || ('DNR-' + currentDonorId);
     currentDonorName = acc.name || 'Donor Profile';
@@ -465,75 +485,78 @@
     if (regEl) regEl.textContent = 'Registered ' + (acc.registeredOn ? new Date(acc.registeredOn).toLocaleDateString() : '-');
 
     // Group 1: Account
-    setElemText('donor-val-smartId', currentDonorSmartId);
-    setElemText('donor-val-name', currentDonorName);
-    const ageGender = (acc.age ? (acc.age + ' yrs') : 'Age not provided') + (acc.gender ? (', ' + acc.gender) : '');
-    setElemText('donor-val-ageGender', ageGender);
-    setElemText('donor-val-cityState', (acc.city && acc.city !== 'Not provided') ? `${acc.city}${acc.state ? ', ' + acc.state : ''}` : 'Not provided');
-    setElemText('donor-val-registeredOn', acc.registeredOn ? formatTimestamp(acc.registeredOn) : 'Not provided');
-    setElemText('donor-val-lastLogin', acc.lastLogin ? formatTimestamp(acc.lastLogin) : 'Never');
-    setElemText('donor-val-availability', acc.availability || 'Active');
+    setVal('donor-val-smartId', currentDonorSmartId);
+    setVal('donor-val-name', currentDonorName);
+    setVal('donor-val-fatherName', acc.fatherName);
+    setVal('donor-val-dobAge', acc.dobAndAge);
+    setVal('donor-val-gender', acc.gender);
+    setVal('donor-val-registeredOn', acc.registeredOn ? formatTimestamp(acc.registeredOn) : null);
+    setVal('donor-val-lastLogin', acc.lastLogin ? (acc.lastLogin === 'Never' ? 'Never' : formatTimestamp(acc.lastLogin)) : 'Never');
+    setVal('donor-val-status', acc.status || 'Active');
+    setVal('donor-val-availability', acc.availabilityStatusText || acc.availability || 'Active');
 
-    // Group 2: Blood and health summary
-    const bgStatusStr = (bh.bloodGroup || data.bloodGroup || 'Unknown') + ' (' + (bh.bloodGroupStatus || 'Self-declared') + ')';
-    setElemText('donor-val-bloodGroup', bgStatusStr);
-    setElemText('donor-val-totalDonations', (bh.totalVerifiedDonations !== undefined ? bh.totalVerifiedDonations : data.totalDonations || 0) + ' verified donations');
-    setElemText('donor-val-lastDonation', bh.lastDonationDate || data.lastDonation || 'Never');
-    setElemText('donor-val-nextEligible', bh.nextEligibleDate || 'Eligible now');
-    const hcStr = (bh.lastHealthCheckDate && bh.lastHealthCheckDate !== 'No health checks recorded')
-      ? `${bh.lastHealthCheckDate} — ${bh.lastHealthCheckOutcome || 'Fit'}`
-      : 'No health checks recorded';
-    setElemText('donor-val-healthCheck', hcStr);
-
-    // Group 3: Contact (Masked by default)
-    setElemText('donor-val-email', con.maskedEmail || maskClientEmail(data.email));
-    setElemText('donor-val-phone', con.maskedPhone || maskClientPhone(data.phone));
-    setElemText('donor-val-address', con.maskedAddress || '••••••••••••');
-
-    // Reset reveal buttons
-    resetRevealButton('btnRevealDonorEmail');
-    resetRevealButton('btnRevealDonorPhone');
-    resetRevealButton('btnRevealDonorAddress');
-    const btnAddr = document.getElementById('btnRevealDonorAddress');
-    if (btnAddr && con.maskedAddress === 'Not provided') {
-      btnAddr.style.display = 'none';
+    // Group 2: Contact (Direct Unmasked)
+    setVal('donor-val-phone', con.phone);
+    const emailEl = document.getElementById('donor-val-email');
+    const emailStatusEl = document.getElementById('donor-val-emailStatus');
+    if (con.email) {
+      if (emailEl) emailEl.textContent = con.email;
+      if (emailStatusEl) {
+        if (con.emailVerified) {
+          emailStatusEl.innerHTML = `<span class="verified-badge-chip verified"><i class="fas fa-check-circle"></i> ${escapeHtml(con.emailStatusText || 'Verified')}</span>`;
+        } else {
+          emailStatusEl.innerHTML = `<span class="verified-badge-chip unverified"><i class="fas fa-circle-question"></i> Unverified</span>`;
+        }
+      }
+    } else {
+      if (emailEl) emailEl.innerHTML = '<span class="val-muted-empty">Not provided</span>';
+      if (emailStatusEl) emailStatusEl.innerHTML = '';
     }
 
-    // Group 4: Consents
-    setElemText('donor-val-publicSearch', cns.publicSearch || 'Enabled');
-    setElemText('donor-val-termsAccepted', cns.termsAccepted || 'v1.0 (Accepted on Registration)');
-    setElemText('donor-val-locationShared', cns.locationShared || 'No');
+    // Group 3: Address
+    setVal('donor-val-line1', addr.line1);
+    setVal('donor-val-locality', addr.locality);
+    setVal('donor-val-city', addr.city);
+    setVal('donor-val-district', addr.district);
+    setVal('donor-val-state', addr.state);
+    setVal('donor-val-pincode', addr.pincode);
+    setVal('donor-val-country', addr.country || 'India');
+    setVal('donor-val-formattedAddress', addr.formattedAddress);
+
+    const mapLoc = addr.savedMapLocation || {};
+    let mapLocStr = '';
+    if (mapLoc.areaName) mapLocStr += mapLoc.areaName;
+    if (mapLoc.coordinates) {
+      mapLocStr += (mapLocStr ? ' (' : '') + mapLoc.coordinates + (mapLocStr ? ')' : '');
+    }
+    if (mapLoc.lastUpdated) {
+      mapLocStr += (mapLocStr ? ' • ' : '') + mapLoc.lastUpdated;
+    }
+    setVal('donor-val-mapLocation', mapLocStr);
+    setVal('donor-val-cityVsLastSeen', addr.registeredCityVsLastSeen);
+
+    // Group 4: Blood and donation
+    const bgStr = (bh.bloodGroup || data.bloodGroup || '-') + ' (' + (bh.bloodGroupStatus || 'Self-declared') + ')';
+    setVal('donor-val-bloodGroup', bgStr);
+    setVal('donor-val-weight', bh.weight);
+    setVal('donor-val-totalDonations', (bh.totalVerifiedDonations !== undefined ? bh.totalVerifiedDonations : (data.totalDonations || 0)) + ' verified donations');
+    setVal('donor-val-lastDonation', bh.lastDonationDate ? formatTimestamp(bh.lastDonationDate) : 'Never');
+    setVal('donor-val-nextEligible', bh.nextEligibleDate || 'Eligible now');
+    setVal('donor-val-gapDays', bh.gapInDays);
+    setVal('donor-val-deferral', bh.currentDeferral || 'None (Active)');
+
+    // Group 5: Preferences and consents
+    setVal('donor-val-prefLanguage', pc.preferredLanguage || 'English (en)');
+    setVal('donor-val-notifChannels', pc.notificationChannelsText);
+    setVal('donor-val-publicSearch', pc.publicSearchText);
+    setVal('donor-val-termsAccepted', pc.termsVersionAndDate || 'v1.0 (Accepted on Registration)');
+    setVal('donor-val-privacyPolicy', pc.privacyPolicy || 'v1.0 (Accepted on Registration)');
+    setVal('donor-val-locationConsent', pc.locationConsent || 'Not granted');
 
     // Footer Toggle Status Label
     const toggleLabel = document.getElementById('donorStatusToggleLabel');
     if (toggleLabel) {
       toggleLabel.textContent = (acc.availability === 'Suspended') ? 'Reactivate' : 'Suspend';
-    }
-  }
-
-  function setElemText(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = (text !== null && text !== undefined && String(text).trim()) ? String(text).trim() : 'Not provided';
-  }
-
-  function maskClientEmail(e) {
-    if (!e || !e.includes('@')) return 'Not provided';
-    const at = e.indexOf('@');
-    return e.charAt(0) + '***@' + e.substring(at + 1);
-  }
-
-  function maskClientPhone(p) {
-    if (!p || p.length < 5) return 'Not provided';
-    const c = p.replace(/\D/g, '');
-    return c.substring(0, 2) + '******' + c.substring(c.length - 2);
-  }
-
-  function resetRevealButton(btnId) {
-    const btn = document.getElementById(btnId);
-    if (btn) {
-      btn.style.display = 'inline-flex';
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-eye"></i> <span>Reveal</span>';
     }
   }
 
@@ -553,25 +576,127 @@
   window.closeDonorProfileModal = window.closeDonorDrawer;
 
   window.switchDonorDrawerTab = function (tabName) {
-    const btnProf = document.getElementById('tabBtnDonorProfile');
+    const btnDetails = document.getElementById('tabBtnDonorDetails') || document.getElementById('tabBtnDonorProfile');
+    const btnHealth = document.getElementById('tabBtnDonorHealth');
     const btnAct = document.getElementById('tabBtnDonorActivity');
-    const paneProf = document.getElementById('donorPaneProfile');
+
+    const paneDetails = document.getElementById('donorPaneDetails') || document.getElementById('donorPaneProfile');
+    const paneHealth = document.getElementById('donorPaneHealth');
     const paneAct = document.getElementById('donorPaneActivity');
 
-    if (tabName === 'activity') {
-      btnProf?.classList.remove('active');
+    // Reset tab buttons
+    btnDetails?.classList.remove('active');
+    btnHealth?.classList.remove('active');
+    btnAct?.classList.remove('active');
+
+    // Hide all panes
+    if (paneDetails) paneDetails.style.display = 'none';
+    if (paneHealth) paneHealth.style.display = 'none';
+    if (paneAct) paneAct.style.display = 'none';
+
+    if (tabName === 'health') {
+      btnHealth?.classList.add('active');
+      if (paneHealth) paneHealth.style.display = 'flex';
+      if (!donorHealthLoaded[currentDonorId]) {
+        fetchDonorHealth(currentDonorId);
+      }
+    } else if (tabName === 'activity') {
       btnAct?.classList.add('active');
-      if (paneProf) paneProf.style.display = 'none';
       if (paneAct) paneAct.style.display = 'flex';
       donorActivityPage = 1;
       fetchDonorActivity(currentDonorId, 1);
     } else {
-      btnAct?.classList.remove('active');
-      btnProf?.classList.add('active');
-      if (paneAct) paneAct.style.display = 'none';
-      if (paneProf) paneProf.style.display = 'flex';
+      // Default to details
+      btnDetails?.classList.add('active');
+      if (paneDetails) paneDetails.style.display = 'flex';
     }
   };
+
+  async function fetchDonorHealth(donorId) {
+    if (!donorId) return;
+    const checksContainer = document.getElementById('donorHealthChecksContainer');
+    const qnContainer = document.getElementById('donorHealthAnswersContainer');
+
+    if (checksContainer) checksContainer.innerHTML = '<div style="color: #94a3b8; font-size: 13px;"><i class="fas fa-spinner fa-spin"></i> Loading health checks...</div>';
+    if (qnContainer) qnContainer.innerHTML = '<div style="color: #94a3b8; font-size: 13px;"><i class="fas fa-spinner fa-spin"></i> Loading health questionnaire...</div>';
+
+    try {
+      const res = await fetch(`/api/admin/donors/${donorId}/health`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          donorHealthLoaded[donorId] = true;
+          renderDonorHealthData(json.data);
+        }
+      } else {
+        if (checksContainer) checksContainer.innerHTML = '<div style="color: #f87171; font-size: 13px;">Failed to load health checks.</div>';
+        if (qnContainer) qnContainer.innerHTML = '<div style="color: #f87171; font-size: 13px;">Failed to load health answers.</div>';
+      }
+    } catch (err) {
+      console.warn('Error loading donor health:', err);
+      if (checksContainer) checksContainer.innerHTML = '<div style="color: #f87171; font-size: 13px;">Error connecting to health records.</div>';
+      if (qnContainer) qnContainer.innerHTML = '<div style="color: #f87171; font-size: 13px;">Error connecting to health records.</div>';
+    }
+  }
+
+  function renderDonorHealthData(data) {
+    if (!data) return;
+    const vitals = data.latestVitals || {};
+    setVal('donor-health-pulse', vitals.pulse);
+    setVal('donor-health-hemoglobin', vitals.hemoglobin);
+    setVal('donor-health-bp', vitals.bloodPressure);
+    setVal('donor-health-temp', vitals.bodyTemp);
+    setVal('donor-health-weight', vitals.weight);
+    setVal('donor-health-facility', vitals.verifiedFacility);
+    setVal('donor-health-date', vitals.verifiedDate ? formatTimestamp(vitals.verifiedDate) : null);
+
+    // Health Checks
+    const checksContainer = document.getElementById('donorHealthChecksContainer');
+    if (checksContainer) {
+      checksContainer.innerHTML = '';
+      const checks = data.healthChecks || [];
+      if (checks.length === 0) {
+        checksContainer.innerHTML = '<div style="color: #94a3b8; font-size: 13px; font-style: italic;">No on-site hospital health checks recorded yet.</div>';
+      } else {
+        checks.forEach(hc => {
+          const card = document.createElement('div');
+          card.className = 'health-check-card';
+          const isApproved = String(hc.outcome || '').toLowerCase() === 'approved';
+          card.innerHTML = `
+            <div class="health-check-header">
+              <span>${escapeHtml(hc.hospitalName || 'Verified Hospital')} &bull; ${escapeHtml(hc.date || 'Recorded')}</span>
+              <span class="status-chip ${isApproved ? 'chip-active' : 'chip-suspended'}">${escapeHtml(hc.outcome || 'Fit')}</span>
+            </div>
+            <div class="health-check-values">${escapeHtml(hc.values || 'Standard vitals recorded')}</div>
+          `;
+          checksContainer.appendChild(card);
+        });
+      }
+    }
+
+    // Health Questionnaire Answers (Decrypted)
+    const qnContainer = document.getElementById('donorHealthAnswersContainer');
+    if (qnContainer) {
+      qnContainer.innerHTML = '';
+      const qns = data.registrationHealthAnswers || [];
+      if (qns.length === 0) {
+        qnContainer.innerHTML = '<div style="color: #94a3b8; font-size: 13px; font-style: italic;">No preliminary questionnaire on file.</div>';
+      } else {
+        qns.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'health-qn-item';
+          const isYes = String(item.answer || '').toLowerCase() === 'yes';
+          row.innerHTML = `
+            <div class="health-qn-q">${escapeHtml(item.question || '')}</div>
+            <div class="health-qn-ans">
+              <span class="yn-chip ${isYes ? 'yn-yes' : 'yn-no'}">${isYes ? 'Yes' : 'No'}</span>
+            </div>
+          `;
+          qnContainer.appendChild(row);
+        });
+      }
+    }
+  }
 
   async function fetchDonorActivity(donorId, page = 1) {
     const container = document.getElementById('donorActivityTimeline');
@@ -2391,64 +2516,16 @@
     }
   }
 
-  /* ==================== 9. SEARCH FILTERS ==================== */
+  /* ==================== 9. SEARCH FILTERS (Server-Side) ==================== */
+  let donorSearchTimeout = null;
   function initSearchFilters() {
     const donorSearch = document.getElementById('donorSearchInput');
     if (donorSearch) {
-      donorSearch.addEventListener('input', e => {
-        const rawQ = (e.target.value || '').trim();
-        const q = rawQ.toLowerCase();
-        const badge = document.getElementById('donor-count-badge');
-
-        if (!q) {
-          renderDonorsTable(allDonors);
-          if (badge) badge.textContent = allDonors.length;
-          return;
-        }
-
-        const cleanQ = q.replace(/\s+/g, '');
-        const validBloodGroups = ['a+', 'a-', 'b+', 'b-', 'o+', 'o-', 'ab+', 'ab-'];
-        let filtered = [];
-
-        // 1. If user is explicitly searching a blood group (e.g. "O+", "A-", "AB+", etc.)
-        if (validBloodGroups.includes(cleanQ)) {
-          filtered = allDonors.filter(d => {
-            const bg = (d.bloodGroup || '').toLowerCase().replace(/\s+/g, '');
-            return bg === cleanQ;
-          });
-        }
-        // 2. If user is searching by Smart ID (e.g. "DNR-1505-S184", "dnr")
-        else if (cleanQ.startsWith('dnr')) {
-          filtered = allDonors.filter(d => {
-            const sid = (d.smartId || '').toLowerCase().replace(/\s+/g, '');
-            return sid.includes(cleanQ);
-          });
-        }
-        // 3. Name, city, phone, zone or precise attribute search
-        else {
-          filtered = allDonors.filter(d => {
-            const name = (d.name || '').toLowerCase();
-            const sid = (d.smartId || '').toLowerCase();
-            const email = (d.email || '').toLowerCase();
-            const phone = (d.phone || '').toLowerCase();
-            const city = (d.city || '').toLowerCase();
-            const zone = (d.zone || '').toLowerCase();
-            const state = (d.state || '').toLowerCase();
-            const bg = (d.bloodGroup || '').toLowerCase().replace(/\s+/g, '');
-
-            return name.includes(q) ||
-              sid.includes(q) ||
-              email.includes(q) ||
-              phone.includes(q) ||
-              city.includes(q) ||
-              zone.includes(q) ||
-              state.includes(q) ||
-              bg === cleanQ;
-          });
-        }
-
-        if (badge) badge.textContent = filtered.length;
-        renderDonorsTable(filtered);
+      donorSearch.addEventListener('input', () => {
+        if (donorSearchTimeout) clearTimeout(donorSearchTimeout);
+        donorSearchTimeout = setTimeout(() => {
+          loadDonors(1);
+        }, 250);
       });
     }
 

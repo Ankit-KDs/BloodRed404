@@ -343,97 +343,170 @@
         </button>
       </div>
 
-      <!-- Drawer Tabs: Profile / Activity -->
+      <!-- Drawer Tabs: Details / Health / Activity -->
       <div class="drawer-tab-bar" role="tablist">
-        <button type="button" class="drawer-tab-btn active" id="tabBtnDonorProfile" onclick="switchDonorDrawerTab('profile')">Profile</button>
+        <button type="button" class="drawer-tab-btn active" id="tabBtnDonorDetails" onclick="switchDonorDrawerTab('details')">Details</button>
+        <button type="button" class="drawer-tab-btn" id="tabBtnDonorHealth" onclick="switchDonorDrawerTab('health')">Health</button>
         <button type="button" class="drawer-tab-btn" id="tabBtnDonorActivity" onclick="switchDonorDrawerTab('activity')">Activity</button>
       </div>
 
       <!-- Scrollable Body -->
       <div class="drawer-scroll-body">
-        <!-- Tab 1: Profile -->
-        <div class="drawer-tab-pane active" id="donorPaneProfile">
+        <!-- Tab 1: Details -->
+        <div class="drawer-tab-pane active" id="donorPaneDetails">
           <!-- 1. Account -->
           <div class="drawer-group">
             <h4 class="drawer-group-title">Account</h4>
             <dl class="drawer-dl">
-              <dt class="drawer-dt">Smart ID</dt>
+              <dt class="drawer-dt">Donor ID (Smart ID)</dt>
               <dd class="drawer-dd smart-id-mono" id="donor-val-smartId">-</dd>
-              <dt class="drawer-dt">Name</dt>
+              <dt class="drawer-dt">Full name</dt>
               <dd class="drawer-dd" id="donor-val-name">-</dd>
-              <dt class="drawer-dt">Age and gender</dt>
-              <dd class="drawer-dd" id="donor-val-ageGender">-</dd>
-              <dt class="drawer-dt">City and state</dt>
-              <dd class="drawer-dd" id="donor-val-cityState">-</dd>
+              <dt class="drawer-dt">Father / Guardian name</dt>
+              <dd class="drawer-dd" id="donor-val-fatherName">-</dd>
+              <dt class="drawer-dt">Date of birth &amp; age</dt>
+              <dd class="drawer-dd" id="donor-val-dobAge">-</dd>
+              <dt class="drawer-dt">Gender</dt>
+              <dd class="drawer-dd" id="donor-val-gender">-</dd>
               <dt class="drawer-dt">Registered on</dt>
               <dd class="drawer-dd" id="donor-val-registeredOn">-</dd>
               <dt class="drawer-dt">Last login</dt>
               <dd class="drawer-dd" id="donor-val-lastLogin">-</dd>
-              <dt class="drawer-dt">Availability</dt>
+              <dt class="drawer-dt">Account status</dt>
+              <dd class="drawer-dd" id="donor-val-status">-</dd>
+              <dt class="drawer-dt">Availability &amp; paused until</dt>
               <dd class="drawer-dd" id="donor-val-availability">-</dd>
             </dl>
           </div>
 
-          <!-- 2. Blood and health summary -->
+          <!-- 2. Contact (Direct unmasked values) -->
           <div class="drawer-group">
-            <h4 class="drawer-group-title">Blood and health summary</h4>
+            <h4 class="drawer-group-title">Contact</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Phone number</dt>
+              <dd class="drawer-dd" id="donor-val-phone">-</dd>
+              <dt class="drawer-dt">Email address</dt>
+              <dd class="drawer-dd">
+                <span id="donor-val-email">-</span>
+                <span id="donor-val-emailStatus" class="verified-badge-wrap"></span>
+              </dd>
+            </dl>
+          </div>
+
+          <!-- 3. Address -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Address</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">House / Street (line 1)</dt>
+              <dd class="drawer-dd" id="donor-val-line1">-</dd>
+              <dt class="drawer-dt">Locality</dt>
+              <dd class="drawer-dd" id="donor-val-locality">-</dd>
+              <dt class="drawer-dt">City</dt>
+              <dd class="drawer-dd" id="donor-val-city">-</dd>
+              <dt class="drawer-dt">District</dt>
+              <dd class="drawer-dd" id="donor-val-district">-</dd>
+              <dt class="drawer-dt">State</dt>
+              <dd class="drawer-dd" id="donor-val-state">-</dd>
+              <dt class="drawer-dt">PIN code</dt>
+              <dd class="drawer-dd" id="donor-val-pincode">-</dd>
+              <dt class="drawer-dt">Country</dt>
+              <dd class="drawer-dd" id="donor-val-country">India</dd>
+              <dt class="drawer-dt">Formatted address</dt>
+              <dd class="drawer-dd" id="donor-val-formattedAddress" style="font-weight: 500; color: #f8fafc;">-</dd>
+              <dt class="drawer-dt">Saved map location</dt>
+              <dd class="drawer-dd" id="donor-val-mapLocation">-</dd>
+              <dt class="drawer-dt">Registered city vs last seen</dt>
+              <dd class="drawer-dd" id="donor-val-cityVsLastSeen">-</dd>
+            </dl>
+          </div>
+
+          <!-- 4. Blood and donation -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Blood and donation</h4>
             <dl class="drawer-dl">
               <dt class="drawer-dt">Blood group</dt>
               <dd class="drawer-dd" id="donor-val-bloodGroup">-</dd>
+              <dt class="drawer-dt">Weight</dt>
+              <dd class="drawer-dd" id="donor-val-weight">-</dd>
               <dt class="drawer-dt">Total verified donations</dt>
               <dd class="drawer-dd" id="donor-val-totalDonations">-</dd>
               <dt class="drawer-dt">Last donation date</dt>
               <dd class="drawer-dd" id="donor-val-lastDonation">-</dd>
               <dt class="drawer-dt">Next eligible date</dt>
               <dd class="drawer-dd" id="donor-val-nextEligible">-</dd>
-              <dt class="drawer-dt">Last health check</dt>
-              <dd class="drawer-dd" id="donor-val-healthCheck">-</dd>
+              <dt class="drawer-dt">Gap in days</dt>
+              <dd class="drawer-dd" id="donor-val-gapDays">-</dd>
+              <dt class="drawer-dt">Current deferral</dt>
+              <dd class="drawer-dd" id="donor-val-deferral">-</dd>
             </dl>
           </div>
 
-          <!-- 3. Contact -->
+          <!-- 5. Preferences and consents -->
           <div class="drawer-group">
-            <h4 class="drawer-group-title">Contact</h4>
+            <h4 class="drawer-group-title">Preferences and consents</h4>
             <dl class="drawer-dl">
-              <dt class="drawer-dt">Email address</dt>
-              <dd class="drawer-dd">
-                <span id="donor-val-email" class="masked-field">-</span>
-                <button type="button" class="btn-reveal" id="btnRevealDonorEmail" onclick="revealDonorContact('email')">
-                  <i class="fas fa-eye"></i> <span>Reveal</span>
-                </button>
-              </dd>
-              <dt class="drawer-dt">Phone number</dt>
-              <dd class="drawer-dd">
-                <span id="donor-val-phone" class="masked-field">-</span>
-                <button type="button" class="btn-reveal" id="btnRevealDonorPhone" onclick="revealDonorContact('phone')">
-                  <i class="fas fa-eye"></i> <span>Reveal</span>
-                </button>
-              </dd>
-              <dt class="drawer-dt">Full address</dt>
-              <dd class="drawer-dd">
-                <span id="donor-val-address" class="masked-field">••••••••••••</span>
-                <button type="button" class="btn-reveal" id="btnRevealDonorAddress" onclick="revealDonorContact('address')">
-                  <i class="fas fa-eye"></i> <span>Reveal</span>
-                </button>
-              </dd>
-            </dl>
-          </div>
-
-          <!-- 4. Consents -->
-          <div class="drawer-group">
-            <h4 class="drawer-group-title">Consents</h4>
-            <dl class="drawer-dl">
+              <dt class="drawer-dt">Preferred language</dt>
+              <dd class="drawer-dd" id="donor-val-prefLanguage">-</dd>
+              <dt class="drawer-dt">Notification channels</dt>
+              <dd class="drawer-dd" id="donor-val-notifChannels">-</dd>
               <dt class="drawer-dt">Public search listing</dt>
               <dd class="drawer-dd" id="donor-val-publicSearch">-</dd>
-              <dt class="drawer-dt">Terms accepted</dt>
+              <dt class="drawer-dt">Terms version &amp; date</dt>
               <dd class="drawer-dd" id="donor-val-termsAccepted">-</dd>
-              <dt class="drawer-dt">Location shared</dt>
-              <dd class="drawer-dd" id="donor-val-locationShared">-</dd>
+              <dt class="drawer-dt">Privacy policy</dt>
+              <dd class="drawer-dd" id="donor-val-privacyPolicy">-</dd>
+              <dt class="drawer-dt">Location consent</dt>
+              <dd class="drawer-dd" id="donor-val-locationConsent">-</dd>
             </dl>
           </div>
         </div>
 
-        <!-- Tab 2: Activity -->
+        <!-- Tab 2: Health (Lazy Loaded, Audit Logged) -->
+        <div class="drawer-tab-pane" id="donorPaneHealth" style="display:none;">
+          <div class="health-notice-banner">
+            <i class="fas fa-shield-halved"></i>
+            <span>Health information access is recorded in administrative security audit logs.</span>
+          </div>
+
+          <!-- A. Latest Measured Vitals -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Latest Hospital Check Vitals</h4>
+            <dl class="drawer-dl">
+              <dt class="drawer-dt">Pulse rate</dt>
+              <dd class="drawer-dd" id="donor-health-pulse">-</dd>
+              <dt class="drawer-dt">Hemoglobin</dt>
+              <dd class="drawer-dd" id="donor-health-hemoglobin">-</dd>
+              <dt class="drawer-dt">Blood pressure</dt>
+              <dd class="drawer-dd" id="donor-health-bp">-</dd>
+              <dt class="drawer-dt">Body temperature</dt>
+              <dd class="drawer-dd" id="donor-health-temp">-</dd>
+              <dt class="drawer-dt">Body weight</dt>
+              <dd class="drawer-dd" id="donor-health-weight">-</dd>
+              <dt class="drawer-dt">Verified facility</dt>
+              <dd class="drawer-dd" id="donor-health-facility">-</dd>
+              <dt class="drawer-dt">Verified date</dt>
+              <dd class="drawer-dd" id="donor-health-date">-</dd>
+            </dl>
+          </div>
+
+          <!-- B. Last 5 Health Checks -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Last 5 Health Checks</h4>
+            <div id="donorHealthChecksContainer" class="health-checks-list">
+              <div style="color: #94a3b8; font-size: 13px;">Loading health checks...</div>
+            </div>
+          </div>
+
+          <!-- C. Registration Health Questionnaire Answers -->
+          <div class="drawer-group">
+            <h4 class="drawer-group-title">Registration Health Questionnaire (Decrypted)</h4>
+            <div id="donorHealthAnswersContainer" class="health-qn-list">
+              <div style="color: #94a3b8; font-size: 13px;">Loading health answers...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Activity (Paginated 20 per page) -->
         <div class="drawer-tab-pane" id="donorPaneActivity" style="display:none;">
           <div class="drawer-group" style="padding-bottom: 0;">
             <div id="donorActivityTimeline" class="drawer-timeline">
