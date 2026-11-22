@@ -510,6 +510,12 @@
             <p style="margin: 0 0 12px 0; font-size: 13px; color: #9b9a96; line-height: 1.45;">
               Your hospital check will appear here after your first visit. Bring your RED404 ID.
             </p>
+            <div>
+              <a href="donor-blood-banks.html" class="vitals-empty-link" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #38bdf8; text-decoration: underline; cursor: pointer;">
+                <i class="fa-solid fa-hospital"></i>
+                <span>Find nearby blood banks</span>
+              </a>
+            </div>
           </div>
         `;
         waitingEl.style.display = 'block';
