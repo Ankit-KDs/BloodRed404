@@ -479,12 +479,11 @@
     const checkDate = (latestCheck && (latestCheck.date || latestCheck.checkedAt)) ? (latestCheck.date || latestCheck.checkedAt.substring(0, 10)) : currentDonor.verifiedDate;
     const hospName = (latestCheck && latestCheck.hospitalName) ? latestCheck.hospitalName : currentDonor.verifiedFacility;
 
-    const hasRealVitals = (weightVal != null && weightVal > 0) ||
-      (pulseVal != null && pulseVal > 0) ||
-      (hbVal != null && hbVal > 0) ||
-      (bpVal && bpVal !== '--/--') ||
-      (tempVal != null && tempVal > 0) ||
-      Boolean(checkDate);
+    const hasRealVitals = Boolean(
+      (latestCheck && (latestCheck.hospitalName || latestCheck.date || latestCheck.checkedAt || latestCheck.pulse || latestCheck.hemoglobin)) ||
+      (currentDonor.verifiedFacility && currentDonor.verifiedDate) ||
+      (checkDate && hospName)
+    );
 
     const vitalsDetailsBox = document.querySelector('.vitals-details-box');
     const topMeta = document.getElementById('vitalsTopMeta') || document.querySelector('.vitals-top-meta');
