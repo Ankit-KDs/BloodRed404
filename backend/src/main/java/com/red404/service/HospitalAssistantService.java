@@ -754,19 +754,19 @@ public class HospitalAssistantService {
             Double lat = hosp != null && hosp.get("latitude") instanceof Number ? ((Number) hosp.get("latitude")).doubleValue() : null;
             Double lng = hosp != null && hosp.get("longitude") instanceof Number ? ((Number) hosp.get("longitude")).doubleValue() : null;
 
-            int requestId = requestDao.createRequest(
-                    hospitalId,
-                    "Emergency Patient",
-                    targetBlood,
-                    reqUnits,
-                    reqUrg,
-                    LocalDate.now().plusDays(2).toString(),
-                    lat,
-                    lng
-            );
+            Map<String, Object> reqPayload = new HashMap<>();
+            reqPayload.put("hospitalId", hospitalId);
+            reqPayload.put("patientName", "Emergency Patient");
+            reqPayload.put("bloodType", targetBlood);
+            reqPayload.put("unitsRequested", reqUnits);
+            reqPayload.put("urgencyLevel", reqUrg);
+            reqPayload.put("latitude", lat);
+            reqPayload.put("longitude", lng);
+            reqPayload.put("notificationRadius", 10);
+            int requestId = requestDao.insert(reqPayload);
 
             // Notify target donor
-            notificationDao.createNotification(requestId, donorId, 0.0);
+            notificationDao.notifyDonor(requestId, donorId, hospitalId, targetBlood, reqUnits, "Emergency Patient", "Assistant dispatch");
 
             out.put("success", true);
             out.put("requestId", requestId);
