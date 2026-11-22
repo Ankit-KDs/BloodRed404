@@ -134,6 +134,7 @@
 }
 
 .asst-header-title span {
+  display: none !important;
   font-size: 11px;
   color: var(--asst-text-muted);
   font-weight: 500;

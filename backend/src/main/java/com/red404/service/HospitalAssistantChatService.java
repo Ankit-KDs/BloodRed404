@@ -99,13 +99,10 @@ public class HospitalAssistantChatService {
     }
 
     public String getActiveModelInfo() {
-        if (hasGroqKey()) {
-            return "Groq (" + EnvConfig.get("GROQ_MODEL", "openai/gpt-oss-120b") + ")";
+        if (hasGroqKey() || hasGeminiKey()) {
+            return "Emergency Ready";
         }
-        if (hasGeminiKey()) {
-            return "Google Gemini (" + EnvConfig.get("GEMINI_MODEL", "gemini-3.8-flash") + ")";
-        }
-        return "AI Key Not Configured";
+        return "Not Configured";
     }
 
     public String getModelName() {

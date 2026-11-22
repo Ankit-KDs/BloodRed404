@@ -107,10 +107,8 @@
       <div class="asst-header">
         <div class="asst-header-title">
           <div class="asst-status-dot" id="asstStatusDot"></div>
-          <div>
-            <h3>RED404 Assistant</h3>
-            <span id="asstStatusLabel">Checking status...</span>
-          </div>
+          <h3>RED404 Assistant</h3>
+          <span id="asstStatusLabel" style="display: none;"></span>
         </div>
         <div class="asst-header-actions">
           <button type="button" class="asst-btn-clear" id="btnAsstClearChat" title="Clear chat history in this tab">Clear chat</button>
@@ -178,16 +176,19 @@
     const input = document.getElementById('asstInput');
     const sendBtn = document.getElementById('btnAsstSend');
 
-    if (!dot || !label) return;
+    if (!dot) return;
+
+    if (label) {
+      label.textContent = '';
+      label.style.display = 'none';
+    }
 
     if (isConfigured) {
       dot.className = 'asst-status-dot online';
-      label.textContent = activeModelInfo ? `Online • ${activeModelInfo}` : 'Online • Emergency Ready';
       if (input) input.disabled = false;
       if (sendBtn) sendBtn.disabled = false;
     } else {
       dot.className = 'asst-status-dot unconfigured';
-      label.textContent = 'AI Key Not Configured';
       if (input) input.disabled = false;
       if (sendBtn) sendBtn.disabled = false;
     }
