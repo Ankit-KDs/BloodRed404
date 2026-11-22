@@ -178,8 +178,8 @@
     const wrap = document.getElementById('asstMessagesWrap');
     if (!wrap) return;
 
-    // Fallback when ANTHROPIC_API_KEY is not set
-    if (!isConfigured) {
+    // Fallback when ANTHROPIC_API_KEY is not set and no chat history exists
+    if (!isConfigured && chatHistory.length === 0) {
       wrap.innerHTML = `
         <div class="asst-disabled-banner">
           <div class="asst-disabled-icon">
@@ -194,6 +194,28 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
             <span>Open Quick Check</span>
           </button>
+
+          <div style="margin-top: 18px; width: 100%;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; margin-bottom: 8px; text-align: center;">Quick Actions</div>
+            <div class="asst-followup-chips" style="justify-content: center;">
+              <button type="button" class="asst-followup-chip" data-asst-action="check_20km">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                <span>Check 20 km</span>
+              </button>
+              <button type="button" class="asst-followup-chip" data-asst-action="view_stock">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                <span>View stock</span>
+              </button>
+              <button type="button" class="asst-followup-chip" data-asst-action="plan_drive">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Plan donation drive</span>
+              </button>
+              <button type="button" class="asst-followup-chip" data-asst-action="open_find_donors">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Open in Find Donors</span>
+              </button>
+            </div>
+          </div>
         </div>
       `;
 
@@ -209,6 +231,7 @@
           }
         });
       }
+      wireFollowupChips(wrap);
       return;
     }
 
@@ -283,8 +306,13 @@
       `;
     }).join('');
 
-    // Wire follow-up suggestion chips
-    wrap.querySelectorAll('.asst-followup-chip').forEach(chip => {
+    wireFollowupChips(wrap);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function wireFollowupChips(container) {
+    if (!container) return;
+    container.querySelectorAll('.asst-followup-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const action = chip.getAttribute('data-asst-action');
         if (action === 'check_20km') {
@@ -296,7 +324,7 @@
             }
           } else {
             closeChatPanel();
-            if (window.Red404QuickCheck) {
+            if (window.Red404QuickCheck && typeof window.Red404QuickCheck.openDrawer === 'function') {
               window.Red404QuickCheck.openDrawer();
             }
           }
@@ -338,6 +366,7 @@
         }
       });
     });
+  }
 
     wrap.scrollTop = wrap.scrollHeight;
   }
