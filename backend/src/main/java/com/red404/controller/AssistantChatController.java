@@ -174,14 +174,4 @@ public class AssistantChatController {
 
         return ResponseEntity.ok(new ApiResponse(true, "Assistant response generated", data));
     }
-                    .body(new ApiResponse(false, result.error, result.error, result.errorCode, null));
-        }
-
-        Map<String, Object> respData = new LinkedHashMap<>();
-        respData.put("configured", result.configured);
-        respData.put("reply", result.reply);
-        respData.put("toolCalls", result.toolCalls);
-
-        return ResponseEntity.ok(new ApiResponse(true, "Assistant response generated", respData));
-    }
 }
