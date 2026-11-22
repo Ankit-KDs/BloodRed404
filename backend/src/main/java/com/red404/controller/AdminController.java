@@ -354,8 +354,9 @@ public class AdminController {
         String term = (search != null && !search.isBlank()) ? search.trim() : ((query != null && !query.isBlank()) ? query.trim() : null);
         if (term != null) {
             String s = "%" + term.toLowerCase() + "%";
-            whereClause.append(" AND (LOWER(d.name) LIKE ? OR LOWER(d.donor_id) LIKE ? OR LOWER(d.city) LIKE ? OR LOWER(d.phone) LIKE ? OR LOWER(d.email) LIKE ? OR LOWER(d.blood_type) LIKE ?)");
+            whereClause.append(" AND (LOWER(d.name) LIKE ? OR LOWER(d.donor_id) LIKE ? OR LOWER(d.city) LIKE ? OR LOWER(d.phone) LIKE ? OR LOWER(d.email) LIKE ? OR LOWER(d.blood_type) LIKE ? OR LOWER(COALESCE(d.address, '')) LIKE ? OR LOWER(COALESCE(d.locality, '')) LIKE ? OR LOWER(COALESCE(d.district, '')) LIKE ? OR LOWER(COALESCE(d.state, '')) LIKE ?)");
             params.add(s); params.add(s); params.add(s); params.add(s); params.add(s); params.add(s);
+            params.add(s); params.add(s); params.add(s); params.add(s);
         }
         if (bloodType != null && !bloodType.isBlank() && !"all".equalsIgnoreCase(bloodType.trim())) {
             whereClause.append(" AND UPPER(d.blood_type) = ?");
@@ -1009,7 +1010,7 @@ public class AdminController {
                     "SELECT d.id, 'DONATION_RECORDED' as action, CONCAT('Completed donation at ', COALESCE(h.hospital_name, 'Partner Blood Bank'), ' (', d.units, ' unit)') as details, 'Hospital Staff' as actor, CAST(d.donation_date AS CHAR(64)) as ev_time " +
                     " FROM donations d LEFT JOIN hospitals h ON d.hospital_id = h.id WHERE (d.donor_id = CAST(? AS CHAR) OR d.donor_id = (SELECT donor_id FROM donors WHERE id = ? LIMIT 1)) AND UPPER(d.status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')" +
                     "UNION ALL " +
-                    "SELECT n.id, CONCAT('REQUEST_', UPPER(n.status)) as action, CONCAT('Blood request #', n.request_id, ' for ', COALESCE(br.blood_type, 'blood'), ' (Status: ', n.status, ')') as details, 'Emergency Dispatcher' as actor, CAST(COALESCE(n.responded_at, n.created_at) AS CHAR(64)) as ev_time " +
+                    "SELECT n.id, CONCAT('REQUEST_', UPPER(n.status)) as action, CONCAT('Blood request #', n.request_id, ' for ', COALESCE(br.blood_type, 'blood'), ' (Status: ', n.status, ')') as details, 'Emergency Dispatcher' as actor, CAST(COALESCE(n.responded_at, n.notified_at) AS CHAR(64)) as ev_time " +
                     " FROM blood_request_notifications n LEFT JOIN blood_requests br ON n.request_id = br.id WHERE n.donor_id = ? " +
                     "UNION ALL " +
                     "SELECT 0 as id, 'LOGIN' as action, CONCAT('Donor session started from ', COALESCE(ip_address, 'web client')) as details, 'Donor' as actor, CAST(created_at AS CHAR(64)) as ev_time " +
