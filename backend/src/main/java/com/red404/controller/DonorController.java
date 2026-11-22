@@ -834,7 +834,15 @@ public class DonorController {
             donor.put("lastDonationSelfReported", JsonUtil.asDate(body, "lastDonation"));
             donor.put("availability", JsonUtil.textOrNull(body, "availability") == null ? "Available" : JsonUtil.text(body, "availability"));
             donor.put("availabilityPref", JsonUtil.textOrNull(body, "availabilityPref") == null ? "Any time" : JsonUtil.text(body, "availabilityPref"));
-            donor.put("address", JsonUtil.textOrNull(body, "address"));
+            String line1 = JsonUtil.textOrNull(body, "line1") != null ? JsonUtil.text(body, "line1") : JsonUtil.textOrNull(body, "address");
+            String locality = JsonUtil.textOrNull(body, "locality");
+            String district = JsonUtil.textOrNull(body, "district");
+            String country = JsonUtil.textOrNull(body, "country") != null ? JsonUtil.text(body, "country") : "India";
+            donor.put("line1", line1);
+            donor.put("address", line1 != null ? line1 : locality);
+            donor.put("locality", locality);
+            donor.put("district", district);
+            donor.put("country", country);
             donor.put("city", city);
             donor.put("state", state);
             donor.put("pincode", pincode);
@@ -1230,9 +1238,25 @@ public class DonorController {
                 fields.put("dob", (dobVal != null && !dobVal.isBlank()) ? dobVal.trim() : null);
             }
 
-            if (body.has("address")) {
-                String addrVal = JsonUtil.textOrNull(body, "address");
-                fields.put("address", (addrVal != null && !addrVal.isBlank()) ? addrVal.trim() : null);
+            if (body.has("line1") || body.has("address")) {
+                String l1 = JsonUtil.textOrNull(body, "line1") != null ? JsonUtil.text(body, "line1") : JsonUtil.textOrNull(body, "address");
+                fields.put("line1", (l1 != null && !l1.isBlank()) ? l1.trim() : null);
+                fields.put("address", (l1 != null && !l1.isBlank()) ? l1.trim() : null);
+            }
+
+            if (body.has("locality")) {
+                String loc = JsonUtil.textOrNull(body, "locality");
+                fields.put("locality", (loc != null && !loc.isBlank()) ? loc.trim() : null);
+            }
+
+            if (body.has("district")) {
+                String dist = JsonUtil.textOrNull(body, "district");
+                fields.put("district", (dist != null && !dist.isBlank()) ? dist.trim() : null);
+            }
+
+            if (body.has("country")) {
+                String ctry = JsonUtil.textOrNull(body, "country");
+                fields.put("country", (ctry != null && !ctry.isBlank()) ? ctry.trim() : "India");
             }
 
             if (body.has("city")) {
@@ -1245,9 +1269,10 @@ public class DonorController {
                 fields.put("state", (stateVal != null && !stateVal.isBlank()) ? stateVal.trim() : null);
             }
 
-            if (body.has("pincode")) {
-                String pinVal = JsonUtil.textOrNull(body, "pincode");
-                fields.put("pincode", (pinVal != null && !pinVal.isBlank()) ? pinVal.trim() : null);
+            if (body.has("pincode") || body.has("pin_code")) {
+                String pinVal = JsonUtil.textOrNull(body, "pincode") != null ? JsonUtil.text(body, "pincode") : JsonUtil.textOrNull(body, "pin_code");
+                if (pinVal != null) pinVal = pinVal.replaceAll("[^0-9]", "").trim();
+                fields.put("pincode", (pinVal != null && !pinVal.isBlank()) ? pinVal : null);
             }
 
             if (body.has("availability")) {

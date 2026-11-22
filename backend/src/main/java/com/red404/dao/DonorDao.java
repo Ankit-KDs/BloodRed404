@@ -61,12 +61,12 @@ public class DonorDao {
         ensureDonorColumnsExist();
         String sql = "INSERT INTO donors (" +
                 "donor_id, name, father_name, email, phone, dob, gender, password, blood_type, weight, " +
-                "last_donation, availability, address, city, state, pincode, latitude, longitude, zone, " +
+                "last_donation, availability, address, line1, locality, district, country, city, state, pincode, latitude, longitude, zone, " +
                 "allergies, conditions, medications, surgeries, donor_type, pulse, hemoglobin, blood_pressure, body_temp, " +
                 "verified_facility, verified_date, qr_token, sms_notif, push_notif, email_notif, " +
                 "hospital_review_needed, health_answers_json, availability_pref, last_donation_self_reported, email_verified, email_verified_at, " +
                 "blood_group_status, public_search_opt_in, public_display_name, public_consent_at" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             String name = str(donor.get("name")).trim();
@@ -118,6 +118,10 @@ public class DonorDao {
             setDate(ps, idx++, donor.get("lastDonation"));
             ps.setString(idx++, str(donor.getOrDefault("availability", "Available")));
             ps.setString(idx++, emptyToNull(str(donor.get("address"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("line1"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("locality"))));
+            ps.setString(idx++, emptyToNull(str(donor.get("district"))));
+            ps.setString(idx++, emptyToNull(str(donor.getOrDefault("country", "India"))));
             ps.setString(idx++, emptyToNull(str(donor.get("city"))));
             ps.setString(idx++, emptyToNull(str(donor.get("state"))));
             ps.setString(idx++, emptyToNull(str(donor.get("pincode"))));
@@ -485,9 +489,24 @@ public class DonorDao {
             setClauses.add("dob = ?");
             params.add(dob);
         }
-        if (fields.containsKey("address")) {
+        if (fields.containsKey("line1") || fields.containsKey("address")) {
+            String l1 = emptyToNull(str(fields.get("line1") != null ? fields.get("line1") : fields.get("address")));
+            setClauses.add("line1 = ?");
+            params.add(l1);
             setClauses.add("address = ?");
-            params.add(emptyToNull(str(fields.get("address"))));
+            params.add(l1);
+        }
+        if (fields.containsKey("locality")) {
+            setClauses.add("locality = ?");
+            params.add(emptyToNull(str(fields.get("locality"))));
+        }
+        if (fields.containsKey("district")) {
+            setClauses.add("district = ?");
+            params.add(emptyToNull(str(fields.get("district"))));
+        }
+        if (fields.containsKey("country")) {
+            setClauses.add("country = ?");
+            params.add(emptyToNull(str(fields.get("country"))));
         }
         if (fields.containsKey("city")) {
             setClauses.add("city = ?");
@@ -497,9 +516,11 @@ public class DonorDao {
             setClauses.add("state = ?");
             params.add(emptyToNull(str(fields.get("state"))));
         }
-        if (fields.containsKey("pincode")) {
+        if (fields.containsKey("pincode") || fields.containsKey("pin_code")) {
+            String pinVal = str(fields.get("pincode") != null ? fields.get("pincode") : fields.get("pin_code"));
+            String cleanPin = pinVal != null ? pinVal.replaceAll("[^0-9]", "").trim() : null;
             setClauses.add("pincode = ?");
-            params.add(emptyToNull(str(fields.get("pincode"))));
+            params.add(emptyToNull(cleanPin));
         }
         if (fields.containsKey("allergies")) {
             setClauses.add("allergies = ?");
@@ -706,6 +727,10 @@ public class DonorDao {
             ensureCol(conn, "public_search_opt_in", "BOOLEAN DEFAULT FALSE");
             ensureCol(conn, "public_display_name", "VARCHAR(100) NULL DEFAULT NULL");
             ensureCol(conn, "public_consent_at", "TIMESTAMP NULL DEFAULT NULL");
+            ensureCol(conn, "line1", "VARCHAR(255) NULL DEFAULT NULL");
+            ensureCol(conn, "locality", "VARCHAR(150) NULL DEFAULT NULL");
+            ensureCol(conn, "district", "VARCHAR(100) NULL DEFAULT NULL");
+            ensureCol(conn, "country", "VARCHAR(80) DEFAULT 'India'");
             ensureCol(conn, "hospital_review_needed", "BOOLEAN DEFAULT FALSE");
             ensureCol(conn, "health_answers_json", "TEXT NULL");
             ensureCol(conn, "availability_pref", "VARCHAR(50) DEFAULT 'Any time'");
@@ -1776,8 +1801,23 @@ public class DonorDao {
         donor.put("zone", rs.getString("zone"));
         donor.put("availability", rs.getString("availability"));
         donor.put("weight", rs.getObject("weight"));
-        donor.put("address", rs.getString("address"));
+        String l1 = null;
+        try { l1 = rs.getString("line1"); } catch (Exception ignored) {}
+        if (l1 == null || l1.isBlank()) l1 = rs.getString("address");
+        donor.put("line1", l1);
+        donor.put("address", l1);
+        try { donor.put("locality", rs.getString("locality")); } catch (Exception ignored) { donor.put("locality", null); }
+        try { donor.put("district", rs.getString("district")); } catch (Exception ignored) { donor.put("district", null); }
+        try { donor.put("country", rs.getString("country") != null ? rs.getString("country") : "India"); } catch (Exception ignored) { donor.put("country", "India"); }
+        donor.put("city", rs.getString("city"));
+        donor.put("state", rs.getString("state"));
         donor.put("pincode", rs.getString("pincode"));
+        donor.put("pin_code", rs.getString("pincode"));
+        donor.put("fullAddress", com.red404.util.AddressFormatter.formatAddress(
+                l1, (String)donor.get("locality"), (String)donor.get("city"),
+                (String)donor.get("district"), (String)donor.get("state"),
+                (String)donor.get("pincode"), (String)donor.get("country")
+        ));
         donor.put("latitude", rs.getObject("latitude"));
         donor.put("longitude", rs.getObject("longitude"));
         try {

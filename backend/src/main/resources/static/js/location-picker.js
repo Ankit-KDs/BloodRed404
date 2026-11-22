@@ -215,18 +215,29 @@
       const state = a.state || '';
       const pincode = a.postcode || '';
 
+      const houseNo = a.house_number || '';
+      const road = a.road || a.street || '';
+      const line1 = [houseNo, road].filter(Boolean).join(', ');
+      const district = a.county || a.state_district || a.district || '';
+
       const parts = [];
-      if (suburb) parts.push(suburb);
-      if (city && city !== suburb) parts.push(city);
+      if (line1) parts.push(line1);
+      if (suburb && !parts.includes(suburb)) parts.push(suburb);
+      if (city && !parts.includes(city)) parts.push(city);
+      if (district && district !== city && !parts.includes(district)) parts.push(district);
       if (state && !parts.includes(state)) parts.push(state);
 
       const areaName = parts.length > 0 ? parts.join(', ') : (data.display_name || 'Selected Location');
       return {
         areaName: areaName,
         fullAddress: data.display_name || areaName,
+        line1: line1,
+        locality: suburb,
+        district: district,
         city: city,
         state: state,
-        pincode: pincode
+        pincode: pincode,
+        components: a
       };
     }
 

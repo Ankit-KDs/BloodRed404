@@ -463,8 +463,8 @@ public class AdminController {
         if (!isAdmin(request)) return unauthorized();
 
         String sql = "SELECT d.id, d.donor_id, d.name, d.email, d.phone, d.dob, d.gender, d.blood_type, " +
-                "d.donor_type, d.availability, d.address, d.city, d.state, d.pincode, d.zone, " +
-                "d.location_updated_at, d.last_donation, d.created_at, " +
+                "d.donor_type, d.availability, d.address, d.line1, d.locality, d.district, d.city, d.state, d.pincode, d.country, d.zone, " +
+                "d.latitude, d.longitude, d.location_updated_at, d.last_donation, d.created_at, " +
                 "(SELECT COUNT(*) FROM donations WHERE (donor_id = d.donor_id OR donor_id = CAST(d.id AS CHAR)) AND UPPER(status) IN ('COMPLETED', 'APPROVED', 'VERIFIED', 'VERIFIED_INTAKE')) AS total_donations " +
                 "FROM donors d WHERE d.id = ?";
 
@@ -567,10 +567,25 @@ public class AdminController {
                     Map<String, Object> contact = new LinkedHashMap<>();
                     contact.put("maskedEmail", maskEmail(rs.getString("email")));
                     contact.put("maskedPhone", maskPhone(rs.getString("phone")));
-                    String rawAddr = rs.getString("address");
-                    boolean hasAddr = (rawAddr != null && !rawAddr.isBlank()) || (city != null && !city.isBlank()) || (rs.getString("pincode") != null && !rs.getString("pincode").isBlank());
+                    String l1 = rs.getString("line1");
+                    if (l1 == null || l1.isBlank()) l1 = rs.getString("address");
+                    String locality = rs.getString("locality");
+                    String district = rs.getString("district");
+                    String country = rs.getString("country") != null ? rs.getString("country") : "India";
+                    String pincode = rs.getString("pincode");
+                    String formattedAddr = com.red404.util.AddressFormatter.formatAddress(l1, locality, city, district, state, pincode, country);
+
+                    boolean hasAddr = (l1 != null && !l1.isBlank()) || (locality != null && !locality.isBlank()) || (city != null && !city.isBlank());
                     contact.put("maskedAddress", hasAddr ? "••••••••••••" : "Not provided");
                     contact.put("hasAddress", hasAddr);
+                    contact.put("line1", (l1 != null && !l1.isBlank()) ? l1 : "Not provided");
+                    contact.put("locality", (locality != null && !locality.isBlank()) ? locality : "Not provided");
+                    contact.put("city", (city != null && !city.isBlank()) ? city : "Not provided");
+                    contact.put("district", (district != null && !district.isBlank()) ? district : "Not provided");
+                    contact.put("state", (state != null && !state.isBlank()) ? state : "Not provided");
+                    contact.put("pincode", (pincode != null && !pincode.isBlank()) ? pincode : "Not provided");
+                    contact.put("country", country);
+                    contact.put("formattedAddress", (formattedAddr != null && !formattedAddr.isBlank() && !formattedAddr.equalsIgnoreCase("India")) ? formattedAddr : "Not provided");
                     data.put("contact", contact);
 
                     // Group 4: Consents (No coordinates)
@@ -633,26 +648,25 @@ public class AdminController {
         }
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name, email, phone, address, city, state, pincode FROM donors WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT donor_id, name, email, phone, address, line1, locality, district, city, state, pincode, country FROM donors WHERE id = ?")) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     String smartId = rs.getString("donor_id");
                     String rawValue;
                     if ("address".equals(field)) {
-                        String addr = rs.getString("address");
+                        String l1 = rs.getString("line1");
+                        if (l1 == null || l1.isBlank()) l1 = rs.getString("address");
+                        String locality = rs.getString("locality");
                         String city = rs.getString("city");
+                        String district = rs.getString("district");
                         String state = rs.getString("state");
                         String pin = rs.getString("pincode");
-                        List<String> parts = new ArrayList<>();
-                        if (addr != null && !addr.isBlank()) parts.add(addr.trim());
-                        if (city != null && !city.isBlank()) parts.add(city.trim());
-                        if (state != null && !state.isBlank()) parts.add(state.trim());
-                        if (pin != null && !pin.isBlank()) parts.add("PIN: " + pin.trim());
-                        parts.add("India");
-                        rawValue = ((addr != null && !addr.isBlank()) || (city != null && !city.isBlank()))
-                                ? String.join(", ", parts)
-                                : "Not provided";
+                        String country = rs.getString("country") != null ? rs.getString("country") : "India";
+                        rawValue = com.red404.util.AddressFormatter.formatAddress(l1, locality, city, district, state, pin, country);
+                        if (rawValue == null || rawValue.isBlank() || rawValue.equalsIgnoreCase("India")) {
+                            rawValue = "Not provided";
+                        }
                     } else if ("email".equals(field)) {
                         rawValue = rs.getString("email");
                     } else {

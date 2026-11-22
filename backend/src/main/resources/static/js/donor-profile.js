@@ -473,11 +473,11 @@
     const hospName = (latestCheck && latestCheck.hospitalName) ? latestCheck.hospitalName : currentDonor.verifiedFacility;
 
     const hasRealVitals = (weightVal != null && weightVal > 0) ||
-                          (pulseVal != null && pulseVal > 0) ||
-                          (hbVal != null && hbVal > 0) ||
-                          (bpVal && bpVal !== '--/--') ||
-                          (tempVal != null && tempVal > 0) ||
-                          Boolean(checkDate);
+      (pulseVal != null && pulseVal > 0) ||
+      (hbVal != null && hbVal > 0) ||
+      (bpVal && bpVal !== '--/--') ||
+      (tempVal != null && tempVal > 0) ||
+      Boolean(checkDate);
 
     const vitalsDetailsBox = document.querySelector('.vitals-details-box');
     const topMeta = document.getElementById('vitalsTopMeta') || document.querySelector('.vitals-top-meta');
@@ -619,8 +619,8 @@
     const hospName = currentDonor.verifiedFacility || 'Verified Hospital';
 
     const hasDonated = (currentDonor.totalDonations != null && currentDonor.totalDonations > 0) ||
-                       (Array.isArray(currentDonor.donations) && currentDonor.donations.length > 0) ||
-                       Boolean(lastDateStr);
+      (Array.isArray(currentDonor.donations) && currentDonor.donations.length > 0) ||
+      Boolean(lastDateStr);
 
     let formattedNextDate = 'soon';
     if (nextDateStr) {
@@ -995,8 +995,8 @@
     let qrVerifiedEl = document.getElementById('qrCardVerifiedLine');
     if (!qrVerifiedEl) {
       const qrCardFooter = document.querySelector('.qr-card-footer') ||
-                           document.querySelector('.donor-id-card-bottom') ||
-                           document.getElementById('donor-qr-token')?.parentElement;
+        document.querySelector('.donor-id-card-bottom') ||
+        document.getElementById('donor-qr-token')?.parentElement;
       if (qrCardFooter) {
         qrVerifiedEl = document.createElement('p');
         qrVerifiedEl.id = 'qrCardVerifiedLine';
@@ -1387,19 +1387,34 @@
         phoneInput.value = (currentDonor.phone && currentDonor.phone !== '9876543210') ? currentDonor.phone : '';
       }
       if (emailInput) emailInput.value = currentDonor.email || '';
-      if (addrInput) {
-        const addr = currentDonor.address || '';
-        addrInput.value = (addr.toLowerCase().includes('subharti') || addr.toLowerCase().includes('delhi road')) ? '' : addr;
-      }
+      const line1Input = document.getElementById('editDonorLine1');
+      const localityInput = document.getElementById('editDonorLocality');
+      const districtInput = document.getElementById('editDonorDistrict');
+      const cityInput = document.getElementById('editDonorCity');
+      const stateInput = document.getElementById('editDonorState');
+      const pincodeInput = document.getElementById('editDonorPincode');
+      const countryInput = document.getElementById('editDonorCountry');
+      const addrInput = document.getElementById('editDonorAddress');
+
+      if (line1Input) line1Input.value = currentDonor.line1 || currentDonor.address || '';
+      if (localityInput) localityInput.value = currentDonor.locality || '';
+      if (districtInput) districtInput.value = currentDonor.district || '';
       if (cityInput) {
         cityInput.value = (currentDonor.city && currentDonor.city !== 'Meerut') ? currentDonor.city : '';
       }
       if (stateInput) {
-        stateInput.value = (currentDonor.state && (currentDonor.state !== 'Uttar Pradesh' || currentDonor.city !== 'Meerut')) ? currentDonor.state : '';
+        const stVal = (currentDonor.state && (currentDonor.state !== 'Uttar Pradesh' || currentDonor.city !== 'Meerut')) ? currentDonor.state : '';
+        stateInput.value = stVal;
+        if (!stateInput.value && stVal) {
+          const opt = Array.from(stateInput.options).find(o => o.value.toLowerCase() === stVal.toLowerCase());
+          if (opt) opt.selected = true;
+        }
       }
       if (pincodeInput) {
         pincodeInput.value = (currentDonor.pincode && currentDonor.pincode !== '250002') ? currentDonor.pincode : '';
       }
+      if (countryInput) countryInput.value = currentDonor.country || 'India';
+      if (addrInput) addrInput.value = currentDonor.line1 || currentDonor.address || '';
       if (allergiesInput) allergiesInput.value = currentDonor.allergies || '';
 
       let condVal = currentDonor.conditions;
@@ -1512,7 +1527,7 @@
             initialLat: currentDonor.latitude || 28.3486,
             initialLng: currentDonor.longitude || 79.5619,
             initialAddress: currentAddr,
-            onConfirm: async function(data) {
+            onConfirm: async function (data) {
               if (data.lat && data.lng) {
                 currentDonor.latitude = data.lat;
                 currentDonor.longitude = data.lng;
@@ -1522,26 +1537,34 @@
                 noticeEl.textContent = displayArea;
                 noticeEl.style.color = '#38bdf8';
               }
-              if (data.address) {
-                currentDonor.address = data.address;
-                const addrInput = document.getElementById('editDonorAddress');
-                if (addrInput) addrInput.value = data.address;
+              const addrObj = data.components || data.addressDetails || {};
+              const houseNo = addrObj.house_number || '';
+              const road = addrObj.road || addrObj.street || '';
+              const line1Val = [houseNo, road].filter(Boolean).join(', ') || (data.line1 || '');
+              const suburb = addrObj.suburb || addrObj.neighbourhood || addrObj.subdivision || addrObj.locality || (data.locality || '');
+              const districtVal = addrObj.county || addrObj.state_district || addrObj.district || (data.district || '');
+
+              const line1Input = document.getElementById('editDonorLine1');
+              const localityInput = document.getElementById('editDonorLocality');
+              const districtInput = document.getElementById('editDonorDistrict');
+              const cityInput = document.getElementById('editDonorCity');
+              const stateInput = document.getElementById('editDonorState');
+              const pinInput = document.getElementById('editDonorPincode');
+              const addrInput = document.getElementById('editDonorAddress');
+
+              if (line1Val && line1Input) line1Input.value = line1Val;
+              if (suburb && localityInput) localityInput.value = suburb;
+              if (districtVal && districtInput) districtInput.value = districtVal;
+              if (data.city && cityInput) cityInput.value = data.city;
+              if (data.state && stateInput) {
+                stateInput.value = data.state;
+                if (!stateInput.value) {
+                  const opt = Array.from(stateInput.options).find(o => o.value.toLowerCase() === data.state.toLowerCase());
+                  if (opt) opt.selected = true;
+                }
               }
-              if (data.city) {
-                currentDonor.city = data.city;
-                const cityInput = document.getElementById('editDonorCity');
-                if (cityInput) cityInput.value = data.city;
-              }
-              if (data.state) {
-                currentDonor.state = data.state;
-                const stateInput = document.getElementById('editDonorState');
-                if (stateInput) stateInput.value = data.state;
-              }
-              if (data.pincode) {
-                currentDonor.pincode = data.pincode;
-                const pinInput = document.getElementById('editDonorPincode');
-                if (pinInput) pinInput.value = data.pincode;
-              }
+              if (data.pincode && pinInput) pinInput.value = data.pincode.replace(/\D/g, '').substring(0, 6);
+              if (addrInput) addrInput.value = line1Val || suburb || data.address || '';
 
               // Update profile immediately via API
               try {
@@ -1559,7 +1582,7 @@
                     pincode: data.pincode || ''
                   })
                 });
-              } catch (_) {}
+              } catch (_) { }
 
               // Update session storage
               try {
@@ -1576,7 +1599,7 @@
                   sessionStorage.setItem('red404_donor_session', JSON.stringify(s));
                   sessionStorage.setItem('donor_session', JSON.stringify(s));
                 }
-              } catch (_) {}
+              } catch (_) { }
 
               if (typeof showToast === 'function') {
                 showToast('Location saved', 'success', 2500);
@@ -1612,14 +1635,31 @@
                 const addrInput = document.getElementById('editDonorAddress');
                 const houseNo = addr.house_number || '';
                 const road = addr.road || addr.street || '';
-                const area = addr.suburb || addr.neighbourhood || addr.city_district || addr.locality || '';
-                const suggestedLocality = [houseNo, road, area].filter(Boolean).join(', ');
-                if (addrInput && !addrInput.value && suggestedLocality) {
-                  addrInput.value = suggestedLocality;
+                const line1Val = [houseNo, road].filter(Boolean).join(', ');
+                const area = addr.suburb || addr.neighbourhood || addr.city_district || addr.subdivision || addr.locality || '';
+                const cityVal = addr.city || addr.town || addr.village || addr.municipality || '';
+                const districtVal = addr.county || addr.state_district || addr.district || '';
+                const stateVal = addr.state || '';
+                const postVal = (addr.postcode || '').replace(/\D/g, '').substring(0, 6);
+
+                const line1Input = document.getElementById('editDonorLine1');
+                const localityInput = document.getElementById('editDonorLocality');
+                const districtInput = document.getElementById('editDonorDistrict');
+                const cityInput = document.getElementById('editDonorCity');
+                const stateInput = document.getElementById('editDonorState');
+                const pinInput = document.getElementById('editDonorPincode');
+                const addrInput = document.getElementById('editDonorAddress');
+
+                if (line1Val && line1Input && !line1Input.value) line1Input.value = line1Val;
+                if (area && localityInput && !localityInput.value) localityInput.value = area;
+                if (cityVal && cityInput && !cityInput.value) cityInput.value = cityVal;
+                if (districtVal && districtInput && !districtInput.value) districtInput.value = districtVal;
+                if (postVal && pinInput && !pinInput.value) pinInput.value = postVal;
+                if (stateVal && stateInput && !stateInput.value) {
+                  const opt = Array.from(stateInput.options).find(o => o.value.toLowerCase() === stateVal.toLowerCase());
+                  if (opt) opt.selected = true;
                 }
-                if (cityInput && !cityInput.value) cityInput.value = addr.city || addr.town || addr.county || '';
-                if (stateInput && !stateInput.value) stateInput.value = addr.state || '';
-                if (pinInput && !pinInput.value) pinInput.value = (addr.postcode || '').replace(/\D/g, '').substring(0, 6);
+                if (addrInput) addrInput.value = line1Val || area || '';
               }
             } catch (_) { }
           },
@@ -1655,6 +1695,30 @@
           const genderChosen = (document.getElementById('editDonorGender')?.value || '').trim();
           if (!genderChosen) {
             alert('Please select your gender (Male, Female, or Other).');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<span>Save changes</span>'; }
+            return;
+          }
+
+          const line1Chosen = (document.getElementById('editDonorLine1')?.value || '').trim();
+          const localityChosen = (document.getElementById('editDonorLocality')?.value || '').trim();
+          const districtChosen = (document.getElementById('editDonorDistrict')?.value || '').trim();
+          const cityChosen = (document.getElementById('editDonorCity')?.value || '').trim();
+          const stateChosen = (document.getElementById('editDonorState')?.value || '').trim();
+          const pinChosen = (document.getElementById('editDonorPincode')?.value || '').trim().replace(/\D/g, '');
+
+          if (!cityChosen) {
+            alert('City is required.');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<span>Save changes</span>'; }
+            return;
+          }
+          if (!stateChosen) {
+            alert('Please select your State.');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<span>Save changes</span>'; }
+            return;
+          }
+          if (!pinChosen || pinChosen.length !== 6) {
+            alert('Please enter a valid 6-digit PIN code.');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<span>Save changes</span>'; }
             return;
           }
 
@@ -1669,10 +1733,14 @@
             dob: (document.getElementById('editDonorDob')?.value || '').trim(),
             phone: (document.getElementById('editDonorPhone')?.value || '').trim(),
             email: (document.getElementById('editDonorEmail')?.value || '').trim() || currentDonor.email,
-            address: (document.getElementById('editDonorAddress')?.value || '').trim(),
-            city: (document.getElementById('editDonorCity')?.value || '').trim(),
-            state: (document.getElementById('editDonorState')?.value || '').trim(),
-            pincode: (document.getElementById('editDonorPincode')?.value || '').trim(),
+            line1: line1Chosen || null,
+            locality: localityChosen || null,
+            district: districtChosen || null,
+            city: cityChosen,
+            state: stateChosen,
+            pincode: pinChosen,
+            country: 'India',
+            address: line1Chosen || localityChosen || null,
             allergies: (document.getElementById('editDonorAllergies')?.value || '').trim(),
             conditions: (document.getElementById('editDonorConditions')?.value || '').trim(),
             medications: (document.getElementById('editDonorMedications')?.value || '').trim(),

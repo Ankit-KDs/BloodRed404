@@ -6,8 +6,11 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -353,9 +356,13 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         requiredColumns.put("availability", "VARCHAR(40) DEFAULT 'Available'");
         requiredColumns.put("paused_until", "DATE NULL DEFAULT NULL");
         requiredColumns.put("address", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("line1", "VARCHAR(255) NULL DEFAULT NULL");
+        requiredColumns.put("locality", "VARCHAR(150) NULL DEFAULT NULL");
+        requiredColumns.put("district", "VARCHAR(100) NULL DEFAULT NULL");
         requiredColumns.put("city", "VARCHAR(80) NULL DEFAULT NULL");
         requiredColumns.put("state", "VARCHAR(80) NULL DEFAULT NULL");
         requiredColumns.put("pincode", "VARCHAR(10) NULL DEFAULT NULL");
+        requiredColumns.put("country", "VARCHAR(80) DEFAULT 'India'");
         requiredColumns.put("latitude", "DOUBLE NULL DEFAULT NULL");
         requiredColumns.put("longitude", "DOUBLE NULL DEFAULT NULL");
         requiredColumns.put("location_updated_at", "TIMESTAMP NULL DEFAULT NULL");
@@ -408,7 +415,7 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
 
         // Explicitly ensure every nullable column has DEFAULT NULL so MySQL strict mode never fails
         String[] colsToSetNullDefault = {
-            "donor_id", "father_name", "dob", "gender", "weight", "last_donation", "address",
+            "donor_id", "father_name", "dob", "gender", "weight", "last_donation", "address", "line1", "locality", "district",
             "city", "state", "pincode", "latitude", "longitude", "location_updated_at", "zone", "pulse",
             "hemoglobin", "blood_pressure", "body_temp", "verified_facility", "verified_date",
             "allergies", "conditions", "medications", "surgeries", "donor_type", "qr_token"
@@ -512,6 +519,75 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
         try (Statement st = conn.createStatement()) {
             st.executeUpdate("ALTER TABLE donors ADD UNIQUE INDEX uq_donors_donor_id (donor_id)");
         } catch (Exception ignored) {}
+
+        // Migrate existing donor combined address strings to structured fields
+        migrateDonorStructuredAddresses(conn);
+    }
+
+    private void migrateDonorStructuredAddresses(Connection conn) {
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT id, address, line1, locality, city, district, state, pincode, country FROM donors")) {
+            List<Map<String, Object>> updateList = new ArrayList<>();
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String addr = rs.getString("address");
+                String line1 = rs.getString("line1");
+                String locality = rs.getString("locality");
+                String city = rs.getString("city");
+                String district = rs.getString("district");
+                String state = rs.getString("state");
+                String pin = rs.getString("pincode");
+                String country = rs.getString("country");
+
+                // Migrate if line1 is missing OR address contains duplicated patterns (e.g. "PIN:" or repeated city/state)
+                boolean needsRepair = (line1 == null || line1.isBlank()) ||
+                                      (district == null || district.isBlank()) ||
+                                      (addr != null && (addr.contains("PIN:") || addr.split(",").length > 4));
+                if (needsRepair && addr != null && !addr.isBlank()) {
+                    Map<String, String> parsed = com.red404.util.AddressFormatter.parseOldAddress(addr, city, state, pin);
+                    Map<String, Object> update = new HashMap<>();
+                    update.put("id", id);
+                    update.put("line1", parsed.get("line1"));
+                    update.put("locality", parsed.get("locality"));
+                    update.put("city", parsed.get("city"));
+                    update.put("district", parsed.get("district"));
+                    update.put("state", parsed.get("state"));
+                    update.put("pincode", parsed.get("pincode"));
+                    update.put("country", parsed.get("country"));
+                    updateList.add(update);
+                }
+            }
+
+            int changedCount = 0;
+            for (Map<String, Object> u : updateList) {
+                int id = (int) u.get("id");
+                String l1 = (String) u.get("line1");
+                String loc = (String) u.get("locality");
+                String c = (String) u.get("city");
+                String d = (String) u.get("district");
+                String s = (String) u.get("state");
+                String p = (String) u.get("pincode");
+                String ctry = (String) u.get("country");
+
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE donors SET line1 = ?, locality = ?, city = ?, district = ?, state = ?, pincode = ?, country = ?, address = COALESCE(?, address) WHERE id = ?")) {
+                    ps.setString(1, (l1 != null && !l1.isBlank()) ? l1 : null);
+                    ps.setString(2, (loc != null && !loc.isBlank()) ? loc : null);
+                    ps.setString(3, (c != null && !c.isBlank()) ? c : null);
+                    ps.setString(4, (d != null && !d.isBlank()) ? d : null);
+                    ps.setString(5, (s != null && !s.isBlank()) ? s : null);
+                    ps.setString(6, (p != null && !p.isBlank()) ? p : null);
+                    ps.setString(7, (ctry != null && !ctry.isBlank()) ? ctry : "India");
+                    ps.setString(8, (l1 != null && !l1.isBlank()) ? l1 : ((loc != null && !loc.isBlank()) ? loc : null));
+                    ps.setInt(9, id);
+                    ps.executeUpdate();
+                    changedCount++;
+                }
+            }
+            log.info("Structured address migration: successfully migrated {} donor records.", changedCount);
+        } catch (Exception e) {
+            log.warn("Notice during donor structured address migration: {}", e.getMessage());
+        }
     }
 
     private void migrateHospitalsTable(Connection conn) {

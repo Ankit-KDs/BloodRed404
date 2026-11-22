@@ -382,11 +382,27 @@
             </div>
           </div>
 
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div class="reg-form-group">
+              <label class="reg-label" for="line1">House / Flat / Street (Optional)</label>
+              <input type="text" id="line1" name="line1" class="reg-input" placeholder="e.g. House No. 42, Mall Road" />
+            </div>
+            <div class="reg-form-group">
+              <label class="reg-label" for="locality">Locality / Colony / Area (Optional)</label>
+              <input type="text" id="locality" name="locality" class="reg-input" placeholder="e.g. Tallital" />
+            </div>
+          </div>
+
           <div class="reg-grid-3">
             <div class="reg-form-group">
               <label class="reg-label" for="city">City <span class="reg-req">*</span></label>
-              <input type="text" id="city" name="city" class="reg-input" placeholder="e.g. Meerut" required />
+              <input type="text" id="city" name="city" class="reg-input" placeholder="e.g. Nainital" required />
               <div class="reg-error-msg" id="cityErr"></div>
+            </div>
+
+            <div class="reg-form-group">
+              <label class="reg-label" for="district">District (Optional)</label>
+              <input type="text" id="district" name="district" class="reg-input" placeholder="e.g. Nainital" />
             </div>
 
             <div class="reg-form-group">
@@ -425,19 +441,13 @@
               </select>
               <div class="reg-error-msg" id="stateErr"></div>
             </div>
-
-            <div class="reg-form-group">
-              <label class="reg-label" for="pincode">PIN Code <span class="reg-req">*</span></label>
-              <input type="text" id="pincode" name="pincode" class="reg-input" placeholder="e.g. 250001" maxlength="6" required />
-              <div class="reg-error-msg" id="pincodeErr"></div>
-            </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 140px; gap: 1rem; align-items: start;">
+          <div style="display: grid; grid-template-columns: 1fr 140px; gap: 1rem; align-items: start; margin-top: 1rem;">
             <div class="reg-form-group">
-              <label class="reg-label" for="locality">House / street / locality (Optional)</label>
-              <input type="text" id="locality" name="locality" class="reg-input" placeholder="e.g. House No. 42, Mall Road, Tallital" />
-              <div class="reg-helper">Optional. Stored securely and never shown to hospitals or public users.</div>
+              <label class="reg-label" for="pincode">PIN Code <span class="reg-req">*</span></label>
+              <input type="text" id="pincode" name="pincode" class="reg-input" placeholder="e.g. 263136" maxlength="6" required />
+              <div class="reg-error-msg" id="pincodeErr"></div>
             </div>
             <div class="reg-form-group">
               <label class="reg-label" for="regCountry">Country</label>
@@ -659,9 +669,11 @@
           if (r) r.checked = true;
         }
         if (draft.city) document.getElementById('city').value = draft.city;
+        if (draft.district && document.getElementById('district')) document.getElementById('district').value = draft.district;
         if (draft.state) document.getElementById('state').value = draft.state;
         if (draft.pincode) document.getElementById('pincode').value = draft.pincode;
         if (draft.locality) document.getElementById('locality').value = draft.locality;
+        if (draft.line1 && document.getElementById('line1')) document.getElementById('line1').value = draft.line1;
         if (draft.bloodType) selectBloodType(draft.bloodType);
         if (draft.weight) document.getElementById('weight').value = draft.weight;
       } catch (_) {}
@@ -676,10 +688,12 @@
           email: document.getElementById('email')?.value.trim().toLowerCase(),
           dob: document.getElementById('dob')?.value,
           gender: document.querySelector('input[name="gender"]:checked')?.value,
+          line1: document.getElementById('line1')?.value.trim(),
+          locality: document.getElementById('locality')?.value.trim(),
           city: document.getElementById('city')?.value.trim(),
+          district: document.getElementById('district')?.value.trim(),
           state: document.getElementById('state')?.value,
           pincode: document.getElementById('pincode')?.value.trim(),
-          locality: document.getElementById('locality')?.value.trim(),
           bloodType: document.getElementById('bloodType')?.value,
           weight: document.getElementById('weight')?.value
         };
@@ -972,18 +986,21 @@
               const post = addr.postcode || '';
               const houseNo = addr.house_number || '';
               const road = addr.road || addr.street || '';
-              const suggestedLocality = [houseNo, road, area].filter(Boolean).join(', ');
+              const line1Val = [houseNo, road].filter(Boolean).join(', ');
+              const suburb = addr.suburb || addr.neighbourhood || addr.city_district || addr.subdivision || addr.locality || '';
+              const cityVal = addr.city || addr.town || addr.village || addr.municipality || '';
+              const districtVal = addr.county || addr.state_district || addr.district || '';
+              const stateVal = addr.state || '';
+              const postVal = (addr.postcode || '').replace(/\D/g, '').substring(0, 6);
 
-              if (city && !document.getElementById('city').value) document.getElementById('city').value = city;
-              if (post && !document.getElementById('pincode').value) document.getElementById('pincode').value = post.replace(/\D/g, '').substring(0, 6);
-              if (state && !document.getElementById('state').value) {
-                const opt = Array.from(document.getElementById('state').options).find(o => o.value.toLowerCase() === state.toLowerCase());
+              if (line1Val && document.getElementById('line1') && !document.getElementById('line1').value) document.getElementById('line1').value = line1Val;
+              if (suburb && document.getElementById('locality') && !document.getElementById('locality').value) document.getElementById('locality').value = suburb;
+              if (cityVal && !document.getElementById('city').value) document.getElementById('city').value = cityVal;
+              if (districtVal && document.getElementById('district') && !document.getElementById('district').value) document.getElementById('district').value = districtVal;
+              if (postVal && !document.getElementById('pincode').value) document.getElementById('pincode').value = postVal;
+              if (stateVal && !document.getElementById('state').value) {
+                const opt = Array.from(document.getElementById('state').options).find(o => o.value.toLowerCase() === stateVal.toLowerCase());
                 if (opt) opt.selected = true;
-              }
-              if (suggestedLocality && !document.getElementById('locality').value) {
-                document.getElementById('locality').value = suggestedLocality;
-              } else if (area && !document.getElementById('locality').value) {
-                document.getElementById('locality').value = area;
               }
 
               resName.style.display = 'block';
@@ -1122,10 +1139,14 @@
           availabilityPref: document.getElementById('availabilityPref').value,
           pushNotif: document.getElementById('pushNotif').checked,
           emailNotif: document.getElementById('emailNotif').checked,
+          line1: document.getElementById('line1')?.value?.trim() || null,
+          locality: document.getElementById('locality')?.value?.trim() || null,
+          district: document.getElementById('district')?.value?.trim() || null,
           city: document.getElementById('city').value.trim(),
           state: document.getElementById('state').value,
           pincode: document.getElementById('pincode').value.trim(),
-          address: document.getElementById('locality').value.trim() || null,
+          country: 'India',
+          address: document.getElementById('line1')?.value?.trim() || document.getElementById('locality')?.value?.trim() || null,
           latitude: document.getElementById('lat').value ? parseFloat(document.getElementById('lat').value) : null,
           longitude: document.getElementById('lng').value ? parseFloat(document.getElementById('lng').value) : null,
           publicSearchOptIn: document.getElementById('publicSearchOptIn').checked,
