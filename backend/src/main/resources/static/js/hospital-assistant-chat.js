@@ -368,9 +368,6 @@
     });
   }
 
-    wrap.scrollTop = wrap.scrollHeight;
-  }
-
   async function handleSendMessage(e) {
     if (e && e.preventDefault) e.preventDefault();
     if (isSending || !isConfigured) return;
