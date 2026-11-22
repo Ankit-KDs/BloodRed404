@@ -53,7 +53,7 @@ import com.red404.service.PublicSearchService;
 import com.red404.service.RateLimitService;
 
 @RestController
-@RequestMapping({"/api/donors", "/api/donor"})
+@RequestMapping({ "/api/donors", "/api/donor" })
 public class DonorController {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DonorController.class);
@@ -64,13 +64,15 @@ public class DonorController {
         List<SseEmitter> list = donorEmitters.get(donorId);
         if (list != null) {
             list.remove(emitter);
-            if (list.isEmpty()) donorEmitters.remove(donorId);
+            if (list.isEmpty())
+                donorEmitters.remove(donorId);
         }
     }
 
     public static void broadcastDonorEvent(int donorId, String eventName, Object data) {
         List<SseEmitter> list = donorEmitters.get(donorId);
-        if (list == null || list.isEmpty()) return;
+        if (list == null || list.isEmpty())
+            return;
         List<SseEmitter> dead = new java.util.ArrayList<>();
         for (SseEmitter emitter : list) {
             try {
@@ -98,7 +100,7 @@ public class DonorController {
 
     // ======================== GET ========================
 
-    @GetMapping({"/profile", "/profile-data", "/me"})
+    @GetMapping({ "/profile", "/profile-data", "/me" })
     public ResponseEntity<ApiResponse> getProfile(
             @RequestParam(required = false) String donorId,
             @RequestParam(required = false) String email,
@@ -126,16 +128,19 @@ public class DonorController {
                 }
             }
 
-            String dId = loggedDonor.get("donorId") != null ? loggedDonor.get("donorId").toString() : loggedDonor.get("id").toString();
+            String dId = loggedDonor.get("donorId") != null ? loggedDonor.get("donorId").toString()
+                    : loggedDonor.get("id").toString();
             Map<String, Object> donorProfile = donorDao.findByIdOrDonorId(dId);
             if (donorProfile == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse(false, "Donor profile not found or account deleted."));
             }
 
-            // Decrypt application-level encrypted health questionnaire answers for the donor
+            // Decrypt application-level encrypted health questionnaire answers for the
+            // donor
             String encHealth = (String) donorProfile.get("health_answers_json");
-            if (encHealth == null) encHealth = (String) donorProfile.get("healthAnswersJson");
+            if (encHealth == null)
+                encHealth = (String) donorProfile.get("healthAnswersJson");
             if (encHealth != null) {
                 String dec = com.red404.util.AesGcmEncryptionUtil.decrypt(encHealth);
                 donorProfile.put("health_answers_json", dec);
@@ -150,14 +155,17 @@ public class DonorController {
                         String newQt = donorDao.generateOrGetQrToken(dNumId);
                         donorProfile.put("qrToken", newQt);
                         donorProfile.put("qr_token", newQt);
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
             DonorEligibilityService.attachEligibility(donorProfile);
 
             // Step 2 Requirement 3: Add "Health check history" (last 5).
-            // The API returns this only to the donor himself, never to other donors, public pages, or the admin directory.
-            String dCode = donorProfile.get("donorId") != null ? donorProfile.get("donorId").toString() : donorProfile.get("id").toString();
+            // The API returns this only to the donor himself, never to other donors, public
+            // pages, or the admin directory.
+            String dCode = donorProfile.get("donorId") != null ? donorProfile.get("donorId").toString()
+                    : donorProfile.get("id").toString();
             List<Map<String, Object>> checks = new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5);
             if (checks != null) {
                 for (Map<String, Object> c : checks) {
@@ -178,11 +186,12 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/health-checks", "/health-check-history"})
+    @GetMapping({ "/health-checks", "/health-check-history" })
     public ResponseEntity<ApiResponse> getHealthCheckHistory(HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            if (donor == null)
+                return unauthorized();
             String dCode = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
             List<Map<String, Object>> history = new com.red404.dao.HealthCheckDao().getHealthCheckHistory(dCode, 5);
             if (history != null) {
@@ -196,7 +205,7 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/scan", "/scan-profile"})
+    @GetMapping({ "/scan", "/scan-profile" })
     public ResponseEntity<ApiResponse> getScanProfile(
             @RequestParam(required = false) String token,
             @RequestParam(required = false) String donorId,
@@ -226,35 +235,35 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/qr-token", "/qr-pass"})
+    @GetMapping({ "/qr-token", "/qr-pass" })
     public ResponseEntity<ApiResponse> getQrPass(HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null || donor.get("id") == null) return unauthorized();
+            if (donor == null || donor.get("id") == null)
+                return unauthorized();
             int donorId = ((Number) donor.get("id")).intValue();
             String token = donorDao.generateOrGetQrToken(donorId);
             return ok("QR Pass Token generated", Map.of(
                     "token", token,
                     "qrPayload", "RED404:" + token,
-                    "ttlHours", 24
-            ));
+                    "ttlHours", 24));
         } catch (Exception e) {
             return serverError(e);
         }
     }
 
-    @PostMapping({"/qr-token/regenerate", "/regenerate-qr"})
+    @PostMapping({ "/qr-token/regenerate", "/regenerate-qr" })
     public ResponseEntity<ApiResponse> regenerateQrToken(HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null || donor.get("id") == null) return unauthorized();
+            if (donor == null || donor.get("id") == null)
+                return unauthorized();
             int donorId = ((Number) donor.get("id")).intValue();
             String token = donorDao.regenerateQrToken(donorId);
             return ok("QR Pass regenerated successfully. Previous pass has been invalidated.", Map.of(
                     "token", token,
                     "qrPayload", "RED404:" + token,
-                    "ttlHours", 24
-            ));
+                    "ttlHours", 24));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -265,11 +274,14 @@ public class DonorController {
         try {
             String token = JsonUtil.text(body, "token").trim();
             String donorId = JsonUtil.text(body, "donorId").trim();
-            if (donorId.isEmpty()) donorId = JsonUtil.text(body, "id").trim();
+            if (donorId.isEmpty())
+                donorId = JsonUtil.text(body, "id").trim();
             JsonNode dataNode = body.get("data");
             if (dataNode != null && !token.isBlank()) {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                Map<String, Object> dataMap = mapper.convertValue(dataNode, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                Map<String, Object> dataMap = mapper.convertValue(dataNode,
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                        });
                 donorDao.saveSnapshot(token, donorId, dataMap);
                 return ok("Snapshot frozen successfully", token);
             }
@@ -295,7 +307,7 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/availability", "/availability-search", "/public-availability"})
+    @GetMapping({ "/availability", "/availability-search", "/public-availability" })
     public ResponseEntity<?> searchPublicAvailability(
             @RequestParam(required = false, defaultValue = "ALL") String bloodGroup,
             @RequestParam(required = false, defaultValue = "10") double radius,
@@ -309,7 +321,8 @@ public class DonorController {
             Double latD = parseDouble(lat);
             Double lngD = parseDouble(lng);
             String manualLoc = (location != null && !location.isBlank()) ? location : pincode;
-            Map<String, Object> result = PublicSearchService.searchAvailability(bloodGroup, latD, lngD, radius, manualLoc, request, response);
+            Map<String, Object> result = PublicSearchService.searchAvailability(bloodGroup, latD, lngD, radius,
+                    manualLoc, request, response);
 
             if (result.containsKey("status") && ((Number) result.get("status")).intValue() == 429) {
                 int retryAfter = ((Number) result.getOrDefault("retryAfter", 60)).intValue();
@@ -332,30 +345,38 @@ public class DonorController {
     }
 
     private List<Map<String, Object>> sanitizePublicDonors(List<Map<String, Object>> rawList) {
-        if (rawList == null) return Collections.emptyList();
+        if (rawList == null)
+            return Collections.emptyList();
         List<Map<String, Object>> safe = new ArrayList<>();
         for (Map<String, Object> d : rawList) {
-            if (d == null) continue;
+            if (d == null)
+                continue;
             Map<String, Object> item = new HashMap<>();
             String donorId = (String) d.get("donorId");
-            if (donorId == null) donorId = (String) d.get("donor_id");
-            if (donorId == null && d.get("id") != null) donorId = "DNR-ANON-" + d.get("id");
+            if (donorId == null)
+                donorId = (String) d.get("donor_id");
+            if (donorId == null && d.get("id") != null)
+                donorId = "DNR-ANON-" + d.get("id");
             item.put("id", donorId);
             item.put("donorId", donorId);
 
             String rawName = (String) d.get("name");
-            if (rawName == null) rawName = (String) d.get("fullName");
+            if (rawName == null)
+                rawName = (String) d.get("fullName");
             item.put("name", com.red404.dao.BloodRequestNotificationDao.maskDonorName(rawName));
 
             String bType = (String) d.get("bloodType");
-            if (bType == null) bType = (String) d.get("blood_type");
-            if (bType == null) bType = (String) d.get("group");
+            if (bType == null)
+                bType = (String) d.get("blood_type");
+            if (bType == null)
+                bType = (String) d.get("group");
             item.put("bloodType", bType);
             item.put("group", bType);
             item.put("rh", (bType != null && bType.contains("-")) ? "RH-" : "RH+");
 
             Object dist = d.get("distKm");
-            if (dist == null) dist = d.get("distance");
+            if (dist == null)
+                dist = d.get("distance");
             item.put("distKm", dist);
             item.put("distance", dist);
 
@@ -372,7 +393,7 @@ public class DonorController {
         return safe;
     }
 
-    @GetMapping({"/platform-stats", "/system-stats"})
+    @GetMapping({ "/platform-stats", "/system-stats" })
     public ResponseEntity<ApiResponse> getPlatformStats() {
         try {
             return ok("Platform stats loaded", donorDao.getPlatformStats());
@@ -381,7 +402,7 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/donations", "/donation-history", "/history"})
+    @GetMapping({ "/donations", "/donation-history", "/history" })
     public ResponseEntity<ApiResponse> getDonations(
             @RequestParam(required = false) String donorId,
             HttpServletRequest request) {
@@ -390,13 +411,15 @@ public class DonorController {
             if (donor == null) {
                 return unauthorized();
             }
-            String sessionDonorId = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+            String sessionDonorId = donor.get("donorId") != null ? donor.get("donorId").toString()
+                    : donor.get("id").toString();
             if (donorId != null && !donorId.isBlank()) {
                 String paramId = donorId.trim();
                 String numId = donor.get("id") != null ? donor.get("id").toString() : "";
                 if (!paramId.equalsIgnoreCase(sessionDonorId) && !paramId.equalsIgnoreCase(numId)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body(new ApiResponse(false, "Forbidden: Access to another donor's donation records is denied."));
+                            .body(new ApiResponse(false,
+                                    "Forbidden: Access to another donor's donation records is denied."));
                 }
             }
             return ok("History loaded", donorDao.donationHistory(sessionDonorId));
@@ -409,9 +432,11 @@ public class DonorController {
     public ResponseEntity<ApiResponse> getDashboardStats(HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            if (donor == null)
+                return unauthorized();
             Map<String, Object> freshDonor = donorDao.findById((Integer) donor.get("id"));
-            if (freshDonor != null) donor = freshDonor;
+            if (freshDonor != null)
+                donor = freshDonor;
             Map<String, Object> elig = DonorEligibilityService.computeEligibility(donor);
             List<Map<String, Object>> history = donorDao.donationHistory((Integer) donor.get("id"));
             Map<String, Object> stats = new HashMap<>();
@@ -434,8 +459,10 @@ public class DonorController {
             stats.put("donorLevel", history.size() >= 5 ? "Active Donor" : "New Donor");
             stats.put("donorLevelNumber", 1);
             stats.put("donationsToNextLevel", Math.max(0, 5 - history.size()));
-            stats.put("publicSearchOptIn", donor.get("publicSearchOptIn") != null ? donor.get("publicSearchOptIn") : donor.get("public_search_opt_in"));
-            stats.put("publicConsentAt", donor.get("publicConsentAt") != null ? donor.get("publicConsentAt") : donor.get("public_consent_at"));
+            stats.put("publicSearchOptIn", donor.get("publicSearchOptIn") != null ? donor.get("publicSearchOptIn")
+                    : donor.get("public_search_opt_in"));
+            stats.put("publicConsentAt", donor.get("publicConsentAt") != null ? donor.get("publicConsentAt")
+                    : donor.get("public_consent_at"));
             stats.put("nextLevel", "Active Donor");
             stats.put("nextLevelThreshold", 5);
             return ok("Stats loaded", stats);
@@ -462,18 +489,18 @@ public class DonorController {
     @GetMapping("/notifications")
     public ResponseEntity<ApiResponse> getNotifications(HttpServletRequest request) {
         Map<String, Object> donor = requireDonor(request);
-        if (donor == null || donor.get("id") == null) return unauthorized();
+        if (donor == null || donor.get("id") == null)
+            return unauthorized();
         int donorId = ((Number) donor.get("id")).intValue();
         return ok("Notifications loaded", donorDao.getDonorNotifications(donorId));
     }
-
-
 
     @GetMapping("/blood-requests")
     public ResponseEntity<ApiResponse> getBloodRequests(HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            if (donor == null)
+                return unauthorized();
             if (!DonorEligibilityService.isEligible(donor)) {
                 return ok("Donor is currently not eligible for emergency blood requests", Collections.emptyList());
             }
@@ -485,7 +512,7 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/alerts", "/active-alerts"})
+    @GetMapping({ "/alerts", "/active-alerts" })
     public ResponseEntity<ApiResponse> getAlerts(
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
@@ -501,8 +528,10 @@ public class DonorController {
                 }
 
                 donorId = ((Number) donor.get("id")).intValue();
-                if (lat == null) lat = asDouble(donor.get("latitude"));
-                if (lng == null) lng = asDouble(donor.get("longitude"));
+                if (lat == null)
+                    lat = asDouble(donor.get("latitude"));
+                if (lng == null)
+                    lng = asDouble(donor.get("longitude"));
                 if (bloodGroup == null || bloodGroup.isBlank()) {
                     bloodGroup = (String) donor.get("bloodType");
                 }
@@ -510,13 +539,15 @@ public class DonorController {
 
             // First: Look for actual requests sent or broadcasted to this specific donor
             if (donorId != null) {
-                List<Map<String, Object>> notifs = new com.red404.dao.BloodRequestNotificationDao().getNotificationsForDonor(donorId, lat, lng);
+                List<Map<String, Object>> notifs = new com.red404.dao.BloodRequestNotificationDao()
+                        .getNotificationsForDonor(donorId, lat, lng);
                 if (!notifs.isEmpty()) {
                     return ok("Active alerts loaded", notifs);
                 }
             }
 
-            // Fallback: If no recipient notification records exist, return empty or matching active broadcasts
+            // Fallback: If no recipient notification records exist, return empty or
+            // matching active broadcasts
             List<Map<String, Object>> allRequests = requestDao.listActive();
             List<Map<String, Object>> result = new ArrayList<>();
 
@@ -545,7 +576,8 @@ public class DonorController {
                 req.put("zone", zone);
 
                 String currentStatus = (String) req.get("status");
-                if ("Active".equalsIgnoreCase(currentStatus) || "Open".equalsIgnoreCase(currentStatus) || "Pending".equalsIgnoreCase(currentStatus)) {
+                if ("Active".equalsIgnoreCase(currentStatus) || "Open".equalsIgnoreCase(currentStatus)
+                        || "Pending".equalsIgnoreCase(currentStatus)) {
                     req.put("status", "New");
                 }
 
@@ -561,7 +593,8 @@ public class DonorController {
             }
 
             // Sort by distance ascending
-            result.sort((a, b) -> Double.compare(((Number) a.getOrDefault("distanceKm", 0.0)).doubleValue(), ((Number) b.getOrDefault("distanceKm", 0.0)).doubleValue()));
+            result.sort((a, b) -> Double.compare(((Number) a.getOrDefault("distanceKm", 0.0)).doubleValue(),
+                    ((Number) b.getOrDefault("distanceKm", 0.0)).doubleValue()));
 
             return ok("Active alerts loaded", result);
         } catch (Exception e) {
@@ -569,26 +602,30 @@ public class DonorController {
         }
     }
 
-    // ======================== DONATION DRIVES & INVITATIONS ========================
+    // ======================== DONATION DRIVES & INVITATIONS
+    // ========================
 
     @GetMapping("/drives/invitations")
     public ResponseEntity<ApiResponse> getDriveInvitations(HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            if (donor == null)
+                return unauthorized();
 
             // Exclude paused donors from drive invitations (Group C.5)
             String avail = (String) donor.get("availability");
             Object isAvail = donor.get("available");
             Object pUntil = donor.get("paused_until");
-            boolean isPaused = (avail != null && (avail.equalsIgnoreCase("Paused") || avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy")))
+            boolean isPaused = (avail != null && (avail.equalsIgnoreCase("Paused")
+                    || avail.equalsIgnoreCase("Unavailable") || avail.equalsIgnoreCase("Busy")))
                     || (isAvail instanceof Boolean && !((Boolean) isAvail));
             if (!isPaused && pUntil != null) {
                 try {
                     if (java.time.LocalDate.parse(pUntil.toString()).isAfter(java.time.LocalDate.now())) {
                         isPaused = true;
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             if (isPaused) {
                 return ok("Donor availability is paused", Collections.emptyList());
@@ -599,7 +636,8 @@ public class DonorController {
             Double lat = asDouble(donor.get("latitude"));
             Double lng = asDouble(donor.get("longitude"));
 
-            List<Map<String, Object>> invitations = donationDriveDao.listUpcomingInvitationsForDonor(donorId, bloodType, lat, lng);
+            List<Map<String, Object>> invitations = donationDriveDao.listUpcomingInvitationsForDonor(donorId, bloodType,
+                    lat, lng);
             return ok("Drive invitations loaded", invitations);
         } catch (Exception e) {
             return serverError(e);
@@ -607,33 +645,42 @@ public class DonorController {
     }
 
     @PostMapping("/drives/{id}/rsvp")
-    public ResponseEntity<ApiResponse> rsvpDrive(@PathVariable int id, @RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> rsvpDrive(@PathVariable int id, @RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            if (donor == null)
+                return unauthorized();
 
             // Group C.5: Paused donor cannot RSVP to drives
             String avail = (String) donor.get("availability");
             Object availObj = donor.get("available");
-            boolean availBool = (availObj == null || Boolean.TRUE.equals(availObj) || "1".equals(String.valueOf(availObj)));
+            boolean availBool = (availObj == null || Boolean.TRUE.equals(availObj)
+                    || "1".equals(String.valueOf(availObj)));
             Object pausedUntilObj = donor.get("paused_until");
-            if (pausedUntilObj == null) pausedUntilObj = donor.get("pausedUntil");
-            boolean isPaused = (avail != null && ("paused".equalsIgnoreCase(avail) || "unavailable".equalsIgnoreCase(avail))) || !availBool;
+            if (pausedUntilObj == null)
+                pausedUntilObj = donor.get("pausedUntil");
+            boolean isPaused = (avail != null
+                    && ("paused".equalsIgnoreCase(avail) || "unavailable".equalsIgnoreCase(avail))) || !availBool;
             if (pausedUntilObj != null) {
                 try {
-                    java.time.LocalDate pausedUntil = java.time.LocalDate.parse(String.valueOf(pausedUntilObj).substring(0, 10));
+                    java.time.LocalDate pausedUntil = java.time.LocalDate
+                            .parse(String.valueOf(pausedUntilObj).substring(0, 10));
                     if (!pausedUntil.isBefore(java.time.LocalDate.now())) {
                         isPaused = true;
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             if (isPaused) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Your availability is currently paused. Resume availability to RSVP to donation drives."));
+                return ResponseEntity.badRequest().body(new ApiResponse(false,
+                        "Your availability is currently paused. Resume availability to RSVP to donation drives."));
             }
 
             String donorId = String.valueOf(donor.get("id"));
             String status = JsonUtil.textOrNull(body, "status");
-            if (status == null || status.isBlank()) status = "ATTENDING";
+            if (status == null || status.isBlank())
+                status = "ATTENDING";
             status = status.toUpperCase().trim();
             if (!status.equals("ATTENDING") && !status.equals("DECLINED")) {
                 status = "ATTENDING";
@@ -662,7 +709,8 @@ public class DonorController {
     }
 
     @PostMapping("/complete-mission")
-    public ResponseEntity<ApiResponse> completeMission(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> completeMission(@RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
         try {
             HttpSession session = request.getSession(false);
             if (session != null) {
@@ -695,11 +743,13 @@ public class DonorController {
         try {
             // Part 7: Rate limit - 10 donor registrations per hour per IP
             String clientIp = GeoLocationUtil.getClientIp(request);
-            RateLimitService.RateLimitResult regCheck = rateLimitService.checkLimit("register_donor_ip:" + clientIp, 10, 3600);
+            RateLimitService.RateLimitResult regCheck = rateLimitService.checkLimit("register_donor_ip:" + clientIp, 10,
+                    3600);
             if (!regCheck.allowed) {
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                         .header("Retry-After", String.valueOf(regCheck.retryAfterSeconds))
-                        .body(new ApiResponse(false, "Too many donor registrations from this network. Please try again later."));
+                        .body(new ApiResponse(false,
+                                "Too many donor registrations from this network. Please try again later."));
             }
 
             String firstName = JsonUtil.text(body, "firstName").trim();
@@ -716,7 +766,8 @@ public class DonorController {
             }
             if (!com.red404.util.SecurityValidationUtil.isValidEmail(email)) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "A valid email address is required (disposable email domains are not accepted)."));
+                        .body(new ApiResponse(false,
+                                "A valid email address is required (disposable email domains are not accepted)."));
             }
 
             String phone = JsonUtil.text(body, "phone").trim().replaceAll("\\s+", "").replaceAll("[-+]", "");
@@ -733,9 +784,11 @@ public class DonorController {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Password must be at least 8 characters."));
             }
-            if (PasswordUtil.isCommonPassword(password) || com.red404.util.SecurityValidationUtil.isCommonPassword(password)) {
+            if (PasswordUtil.isCommonPassword(password)
+                    || com.red404.util.SecurityValidationUtil.isCommonPassword(password)) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "The password you entered is too common. Please choose a more secure password."));
+                        .body(new ApiResponse(false,
+                                "The password you entered is too common. Please choose a more secure password."));
             }
 
             String gender = JsonUtil.text(body, "gender").trim();
@@ -770,13 +823,15 @@ public class DonorController {
                     emailVerificationService.validateAndConsumeToken(email, emailToken, "DONOR_REGISTRATION");
             if (!codeVerified) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Email verification required. Please verify the 6-digit code sent to your email."));
+                        .body(new ApiResponse(false,
+                                "Email verification required. Please verify the 6-digit code sent to your email."));
             }
 
             // Duplicate checks
             if (donorDao.emailOrPhoneExists(email, phone)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(new ApiResponse(false, "An account with this email or phone number is already registered. Please login."));
+                        .body(new ApiResponse(false,
+                                "An account with this email or phone number is already registered. Please login."));
             }
 
             // Health questions processing
@@ -788,7 +843,8 @@ public class DonorController {
             boolean travelOutside = JsonUtil.asBoolean(body, "travelOutside", false);
             boolean pregnantNursing = JsonUtil.asBoolean(body, "pregnantNursing", false);
             boolean chronicConditions = JsonUtil.asBoolean(body, "chronicConditions", false);
-            boolean hospitalReviewNeeded = feverNow || antibioticsNow || surgery6m || tattoo6m || vaccine4w || travelOutside || pregnantNursing || chronicConditions;
+            boolean hospitalReviewNeeded = feverNow || antibioticsNow || surgery6m || tattoo6m || vaccine4w
+                    || travelOutside || pregnantNursing || chronicConditions;
 
             Map<String, Object> healthMap = new LinkedHashMap<>();
             healthMap.put("feverNow", feverNow);
@@ -808,7 +864,9 @@ public class DonorController {
 
             String rawBloodType = JsonUtil.text(body, "bloodType").trim();
             String bloodType = rawBloodType.isEmpty() ? "Not sure" : rawBloodType;
-            String bloodGroupStatus = (bloodType.equalsIgnoreCase("Not sure") || bloodType.equalsIgnoreCase("UNKNOWN")) ? "unconfirmed" : "self_declared";
+            String bloodGroupStatus = (bloodType.equalsIgnoreCase("Not sure") || bloodType.equalsIgnoreCase("UNKNOWN"))
+                    ? "unconfirmed"
+                    : "self_declared";
 
             String city = JsonUtil.text(body, "city").trim();
             String state = JsonUtil.text(body, "state").trim();
@@ -832,9 +890,12 @@ public class DonorController {
             donor.put("weight", JsonUtil.asDouble(body, "weight"));
             donor.put("lastDonation", JsonUtil.asDate(body, "lastDonation"));
             donor.put("lastDonationSelfReported", JsonUtil.asDate(body, "lastDonation"));
-            donor.put("availability", JsonUtil.textOrNull(body, "availability") == null ? "Available" : JsonUtil.text(body, "availability"));
-            donor.put("availabilityPref", JsonUtil.textOrNull(body, "availabilityPref") == null ? "Any time" : JsonUtil.text(body, "availabilityPref"));
-            String line1 = JsonUtil.textOrNull(body, "line1") != null ? JsonUtil.text(body, "line1") : JsonUtil.textOrNull(body, "address");
+            donor.put("availability", JsonUtil.textOrNull(body, "availability") == null ? "Available"
+                    : JsonUtil.text(body, "availability"));
+            donor.put("availabilityPref", JsonUtil.textOrNull(body, "availabilityPref") == null ? "Any time"
+                    : JsonUtil.text(body, "availabilityPref"));
+            String line1 = JsonUtil.textOrNull(body, "line1") != null ? JsonUtil.text(body, "line1")
+                    : JsonUtil.textOrNull(body, "address");
             String locality = JsonUtil.textOrNull(body, "locality");
             String district = JsonUtil.textOrNull(body, "district");
             String country = JsonUtil.textOrNull(body, "country") != null ? JsonUtil.text(body, "country") : "India";
@@ -863,7 +924,8 @@ public class DonorController {
                 if (registeredDonor == null) {
                     registeredDonor = donor;
                 }
-                String donorIdStr = registeredDonor.get("donorId") != null ? registeredDonor.get("donorId").toString() : registeredDonor.get("id").toString();
+                String donorIdStr = registeredDonor.get("donorId") != null ? registeredDonor.get("donorId").toString()
+                        : registeredDonor.get("id").toString();
 
                 // Store consent record
                 consentDao.recordConsent("DONOR", donorIdStr, "v1.0", "v1.0", true, publicSearchOptIn, true,
@@ -881,20 +943,21 @@ public class DonorController {
                     String browser = UserAgentUtil.parseBrowser(ua);
                     String location = GeoLocationUtil.resolveLocation(ip);
                     sessionDao.recordSession(session.getId(), donorIdStr, "DONOR", ip, ua, device, browser, location);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 // Dispatch Design System Donor Welcome Email (Part 2 & 3)
                 try {
                     if (emailVerificationService != null && email != null && !email.isBlank()) {
                         String lang = JsonUtil.textOrNull(body, "language");
-                        if (lang == null) lang = JsonUtil.textOrNull(body, "lang");
+                        if (lang == null)
+                            lang = JsonUtil.textOrNull(body, "lang");
                         int dId = 0;
                         if (registeredDonor.get("id") instanceof Number) {
                             dId = ((Number) registeredDonor.get("id")).intValue();
                         }
                         emailVerificationService.sendDonorWelcomeEmail(
-                                dId, email, firstName, donorIdStr, bloodType, city, lang
-                        );
+                                dId, email, firstName, donorIdStr, bloodType, city, lang);
                     }
                 } catch (Exception ex) {
                     log.warn("Notice initiating donor welcome email: {}", ex.getMessage());
@@ -908,8 +971,7 @@ public class DonorController {
                 wrapper.put("nextSteps", List.of(
                         "Visit your nearest partner hospital to verify your blood group and baseline vitals.",
                         "Keep your notification preferences active to receive emergency requests nearby.",
-                        "Track your donation gap and eligibility status from your donor dashboard."
-                ));
+                        "Track your donation gap and eligibility status from your donor dashboard."));
                 return ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse(true, "Donor Registered Successfully!", wrapper));
             } else {
@@ -924,7 +986,8 @@ public class DonorController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
         try {
-            boolean isHtmlSubmit = request.getHeader("Accept") != null && request.getHeader("Accept").contains("text/html");
+            boolean isHtmlSubmit = request.getHeader("Accept") != null
+                    && request.getHeader("Accept").contains("text/html");
             String clientIp = GeoLocationUtil.getClientIp(request);
             String identifier = body != null ? JsonUtil.text(body, "identifier").trim() : "";
             if (identifier.isEmpty() && body != null) {
@@ -941,16 +1004,19 @@ public class DonorController {
             }
             String cleanId = identifier.toLowerCase();
 
-            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and 50 per IP
+            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and 50 per
+            // IP
             boolean ipLocked = rateLimitService.isExceeded("login_fail_ip:" + clientIp, 50, 900);
             boolean accLocked = rateLimitService.isExceeded("login_fail_donor:" + cleanId, 10, 900);
             if (ipLocked || accLocked) {
                 if (isHtmlSubmit) {
-                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=locked").build();
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=locked")
+                            .build();
                 }
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                         .header("Retry-After", "900")
-                        .body(new ApiResponse(false, "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
+                        .body(new ApiResponse(false,
+                                "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
             }
 
             String password = body != null ? JsonUtil.text(body, "password").trim() : "";
@@ -966,7 +1032,8 @@ public class DonorController {
                 rateLimitService.checkLimit("login_fail_ip:" + clientIp, 10, 900);
                 rateLimitService.checkLimit("login_fail_donor:" + cleanId, 10, 900);
                 if (isHtmlSubmit) {
-                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=invalid").build();
+                    return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=invalid")
+                            .build();
                 }
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Invalid credentials. Please try again."));
@@ -976,7 +1043,8 @@ public class DonorController {
             HttpSession session = request.getSession(true);
             session.setAttribute("user", donor);
             session.setAttribute("role", "DONOR");
-            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString() : donor.get("id").toString();
+            String donorIdStr = donor.get("donorId") != null ? donor.get("donorId").toString()
+                    : donor.get("id").toString();
 
             // Audit & track real-time session
             try {
@@ -998,14 +1066,19 @@ public class DonorController {
                     }
                 }
                 sessionDao.recordSession(session.getId(), donorIdStr, "DONOR", ip, ua, device, browser, location);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             if (isHtmlSubmit) {
                 String next = request.getParameter("next");
                 String target = "dashboard.html";
-                if (next != null && !next.isBlank() && !next.contains("://") && !next.startsWith("//") && !next.toLowerCase().startsWith("javascript:")) {
-                    Set<String> allowed = Set.of("dashboard.html", "/dashboard.html", "donor-profile.html", "/donor-profile.html", "donor-alerts.html", "/donor-alerts.html", "my-donations.html", "/my-donations.html");
-                    if (allowed.contains(next.trim())) target = next.trim();
+                if (next != null && !next.isBlank() && !next.contains("://") && !next.startsWith("//")
+                        && !next.toLowerCase().startsWith("javascript:")) {
+                    Set<String> allowed = Set.of("dashboard.html", "/dashboard.html", "donor-profile.html",
+                            "/donor-profile.html", "donor-alerts.html", "/donor-alerts.html", "my-donations.html",
+                            "/my-donations.html");
+                    if (allowed.contains(next.trim()))
+                        target = next.trim();
                 }
                 return ResponseEntity.status(HttpStatus.FOUND).header("Location", target).build();
             }
@@ -1029,7 +1102,8 @@ public class DonorController {
                 if (user instanceof Map<?, ?> donor && donor.get("id") != null) {
                     sessionDao.killSession(((Number) donor.get("id")).intValue(), "DONOR", session.getId());
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             session.invalidate();
         }
         return ok("Logged out successfully", null);
@@ -1039,7 +1113,8 @@ public class DonorController {
     public ResponseEntity<ApiResponse> changePassword(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            if (donor == null)
+                return unauthorized();
             boolean updated = donorDao.updatePassword(
                     (Integer) donor.get("id"),
                     JsonUtil.text(body, "currentPassword"),
@@ -1061,21 +1136,24 @@ public class DonorController {
     }
 
     @PostMapping("/blood-requests/{requestId}/accept")
-    public ResponseEntity<ApiResponse> acceptRequest(@PathVariable int requestId, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> acceptRequest(@PathVariable int requestId,
+            @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         return handleRequestAction(requestId, "Accepted", body, request);
     }
 
     @PostMapping("/blood-requests/{requestId}/decline")
-    public ResponseEntity<ApiResponse> declineRequest(@PathVariable int requestId, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> declineRequest(@PathVariable int requestId,
+            @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         return handleRequestAction(requestId, "Declined", body, request);
     }
 
     @PostMapping("/blood-requests/{requestId}/withdraw")
-    public ResponseEntity<ApiResponse> withdrawRequest(@PathVariable int requestId, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> withdrawRequest(@PathVariable int requestId,
+            @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) {
         return handleRequestAction(requestId, "Withdrawn", body, request);
     }
 
-    @PostMapping({"/donations/record", "/record-donation"})
+    @PostMapping({ "/donations/record", "/record-donation" })
     public ResponseEntity<ApiResponse> recordDonation(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             int donorId = JsonUtil.asInt(body, "donorId", 0);
@@ -1085,7 +1163,8 @@ public class DonorController {
                     donorId = ((Number) donor.get("id")).intValue();
                 }
             }
-            if (donorId <= 0) donorId = 1;
+            if (donorId <= 0)
+                donorId = 1;
             int hospitalId = JsonUtil.asInt(body, "hospitalId", 1);
             String bloodType = JsonUtil.textOrNull(body, "bloodType");
             int units = JsonUtil.asInt(body, "units", 1);
@@ -1098,7 +1177,8 @@ public class DonorController {
     }
 
     @PostMapping("/location")
-    public ResponseEntity<ApiResponse> updateLocation(@RequestBody(required = false) JsonNode body, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> updateLocation(@RequestBody(required = false) JsonNode body,
+            HttpServletRequest request) {
         try {
             if (body == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Location payload is required."));
@@ -1109,7 +1189,8 @@ public class DonorController {
 
             if (lat == null || lng == null || lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse(false, "Invalid coordinates. Latitude must be in [-90, 90] and longitude in [-180, 180]."));
+                        .body(new ApiResponse(false,
+                                "Invalid coordinates. Latitude must be in [-90, 90] and longitude in [-180, 180]."));
             }
 
             Integer donorId = null;
@@ -1152,7 +1233,8 @@ public class DonorController {
     public ResponseEntity<ApiResponse> updateAvailability(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null) return unauthorized();
+            if (donor == null)
+                return unauthorized();
             boolean available = JsonUtil.asBoolean(body, "available", true);
             donorDao.updateAvailability((Integer) donor.get("id"), available);
             return ok("Availability updated", Map.of("available", available));
@@ -1170,7 +1252,8 @@ public class DonorController {
                 targetId = ((Number) donor.get("id")).intValue();
             } else {
                 targetId = JsonUtil.asInt(body, "id", 0);
-                if (targetId <= 0) targetId = JsonUtil.asInt(body, "donorId", 0);
+                if (targetId <= 0)
+                    targetId = JsonUtil.asInt(body, "donorId", 0);
             }
             if (targetId <= 0) {
                 String email = JsonUtil.textOrNull(body, "email");
@@ -1186,11 +1269,14 @@ public class DonorController {
             }
 
             Map<String, Object> fields = new HashMap<>();
-            String nameVal = JsonUtil.textOrNull(body, "name") != null ? JsonUtil.text(body, "name") : JsonUtil.textOrNull(body, "fullName");
-            if (nameVal != null) fields.put("name", nameVal);
+            String nameVal = JsonUtil.textOrNull(body, "name") != null ? JsonUtil.text(body, "name")
+                    : JsonUtil.textOrNull(body, "fullName");
+            if (nameVal != null)
+                fields.put("name", nameVal);
 
             if (body.has("fatherName") || body.has("father_name")) {
-                String fNameVal = JsonUtil.textOrNull(body, "fatherName") != null ? JsonUtil.text(body, "fatherName") : JsonUtil.textOrNull(body, "father_name");
+                String fNameVal = JsonUtil.textOrNull(body, "fatherName") != null ? JsonUtil.text(body, "fatherName")
+                        : JsonUtil.textOrNull(body, "father_name");
                 fields.put("father_name", (fNameVal != null && !fNameVal.trim().isEmpty()) ? fNameVal.trim() : null);
             }
 
@@ -1200,23 +1286,30 @@ public class DonorController {
             }
 
             if (body.has("bloodType") || body.has("blood_type")) {
-                String bgVal = JsonUtil.textOrNull(body, "bloodType") != null ? JsonUtil.text(body, "bloodType") : JsonUtil.textOrNull(body, "blood_type");
+                String bgVal = JsonUtil.textOrNull(body, "bloodType") != null ? JsonUtil.text(body, "bloodType")
+                        : JsonUtil.textOrNull(body, "blood_type");
                 if (bgVal != null && !bgVal.isBlank()) {
                     String normBg = com.red404.util.BloodCompatibilityUtil.normalizeBloodGroup(bgVal);
                     if (normBg == null) {
-                        return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid blood group: " + bgVal + ". Must be one of A+, A-, B+, B-, AB+, AB-, O+, O-."));
+                        return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid blood group: " + bgVal
+                                + ". Must be one of A+, A-, B+, B-, AB+, AB-, O+, O-."));
                     }
                     Map<String, Object> currentRecord = donorDao.findById(targetId);
                     if (currentRecord != null) {
                         String currentBg = (String) currentRecord.get("bloodType");
                         String status = (String) currentRecord.get("bloodGroupStatus");
-                        if (status == null) status = "self_declared";
-                        int editCount = currentRecord.get("bloodGroupEditCount") instanceof Number ? ((Number) currentRecord.get("bloodGroupEditCount")).intValue() : 0;
+                        if (status == null)
+                            status = "self_declared";
+                        int editCount = currentRecord.get("bloodGroupEditCount") instanceof Number
+                                ? ((Number) currentRecord.get("bloodGroupEditCount")).intValue()
+                                : 0;
 
                         if (!normBg.equalsIgnoreCase(currentBg)) {
                             if ("hospital_verified".equalsIgnoreCase(status)) {
                                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false,
-                                        "Blood group has been verified by a hospital (" + currentRecord.get("bloodGroupVerifiedByHospitalName") + ") and cannot be edited directly. Please submit a correction request."));
+                                        "Blood group has been verified by a hospital ("
+                                                + currentRecord.get("bloodGroupVerifiedByHospitalName")
+                                                + ") and cannot be edited directly. Please submit a correction request."));
                             }
                             if (editCount >= 1) {
                                 return ResponseEntity.badRequest().body(new ApiResponse(false,
@@ -1224,7 +1317,8 @@ public class DonorController {
                             }
                             fields.put("blood_type", normBg);
                             fields.put("blood_group_edit_count", editCount + 1);
-                            bloodGroupAuditDao.insertAudit(targetId, currentBg, normBg, "donor", targetId, "Donor initial update");
+                            bloodGroupAuditDao.insertAudit(targetId, currentBg, normBg, "donor", targetId,
+                                    "Donor initial update");
                         }
                     }
                 }
@@ -1236,12 +1330,14 @@ public class DonorController {
             }
 
             if (body.has("dob") || body.has("dateOfBirth")) {
-                String dobVal = JsonUtil.textOrNull(body, "dob") != null ? JsonUtil.text(body, "dob") : JsonUtil.textOrNull(body, "dateOfBirth");
+                String dobVal = JsonUtil.textOrNull(body, "dob") != null ? JsonUtil.text(body, "dob")
+                        : JsonUtil.textOrNull(body, "dateOfBirth");
                 fields.put("dob", (dobVal != null && !dobVal.isBlank()) ? dobVal.trim() : null);
             }
 
             if (body.has("line1") || body.has("address")) {
-                String l1 = JsonUtil.textOrNull(body, "line1") != null ? JsonUtil.text(body, "line1") : JsonUtil.textOrNull(body, "address");
+                String l1 = JsonUtil.textOrNull(body, "line1") != null ? JsonUtil.text(body, "line1")
+                        : JsonUtil.textOrNull(body, "address");
                 fields.put("line1", (l1 != null && !l1.isBlank()) ? l1.trim() : null);
                 fields.put("address", (l1 != null && !l1.isBlank()) ? l1.trim() : null);
             }
@@ -1272,8 +1368,10 @@ public class DonorController {
             }
 
             if (body.has("pincode") || body.has("pin_code")) {
-                String pinVal = JsonUtil.textOrNull(body, "pincode") != null ? JsonUtil.text(body, "pincode") : JsonUtil.textOrNull(body, "pin_code");
-                if (pinVal != null) pinVal = pinVal.replaceAll("[^0-9]", "").trim();
+                String pinVal = JsonUtil.textOrNull(body, "pincode") != null ? JsonUtil.text(body, "pincode")
+                        : JsonUtil.textOrNull(body, "pin_code");
+                if (pinVal != null)
+                    pinVal = pinVal.replaceAll("[^0-9]", "").trim();
                 fields.put("pincode", (pinVal != null && !pinVal.isBlank()) ? pinVal : null);
             }
 
@@ -1289,7 +1387,8 @@ public class DonorController {
 
             if (body.has("conditions")) {
                 String conditionsVal = JsonUtil.textOrNull(body, "conditions");
-                fields.put("conditions", (conditionsVal != null && !conditionsVal.isBlank()) ? conditionsVal.trim() : null);
+                fields.put("conditions",
+                        (conditionsVal != null && !conditionsVal.isBlank()) ? conditionsVal.trim() : null);
             }
 
             if (body.has("medications")) {
@@ -1303,27 +1402,35 @@ public class DonorController {
             }
 
             if (body.has("qrToken") || body.has("qr_token")) {
-                String tokenVal = JsonUtil.textOrNull(body, "qrToken") != null ? JsonUtil.text(body, "qrToken") : JsonUtil.textOrNull(body, "qr_token");
+                String tokenVal = JsonUtil.textOrNull(body, "qrToken") != null ? JsonUtil.text(body, "qrToken")
+                        : JsonUtil.textOrNull(body, "qr_token");
                 fields.put("qr_token", tokenVal);
             }
 
-            // Clinical vitals (weight, pulse, hemoglobin, BP, temp), verified facility, and last donation
-            // are verified clinical records set by hospital staff during check-in only (Part 1, Requirement 1).
+            // Clinical vitals (weight, pulse, hemoglobin, BP, temp), verified facility, and
+            // last donation
+            // are verified clinical records set by hospital staff during check-in only
+            // (Part 1, Requirement 1).
             // Direct profile edits by donors ignore any values supplied for these fields.
 
             if (body.has("preferredLanguage") || body.has("preferred_language")) {
-                String lang = JsonUtil.textOrNull(body, "preferredLanguage") != null ? JsonUtil.text(body, "preferredLanguage") : JsonUtil.textOrNull(body, "preferred_language");
+                String lang = JsonUtil.textOrNull(body, "preferredLanguage") != null
+                        ? JsonUtil.text(body, "preferredLanguage")
+                        : JsonUtil.textOrNull(body, "preferred_language");
                 fields.put("preferred_language", (lang != null && !lang.isBlank()) ? lang.trim().toLowerCase() : "en");
             }
 
             if (body.has("smsNotif") || body.has("sms_notif")) {
-                fields.put("sms_notif", JsonUtil.asBoolean(body, body.has("smsNotif") ? "smsNotif" : "sms_notif", true));
+                fields.put("sms_notif",
+                        JsonUtil.asBoolean(body, body.has("smsNotif") ? "smsNotif" : "sms_notif", true));
             }
             if (body.has("emailNotif") || body.has("email_notif")) {
-                fields.put("email_notif", JsonUtil.asBoolean(body, body.has("emailNotif") ? "emailNotif" : "email_notif", true));
+                fields.put("email_notif",
+                        JsonUtil.asBoolean(body, body.has("emailNotif") ? "emailNotif" : "email_notif", true));
             }
             if (body.has("pushNotif") || body.has("push_notif")) {
-                fields.put("push_notif", JsonUtil.asBoolean(body, body.has("pushNotif") ? "pushNotif" : "push_notif", true));
+                fields.put("push_notif",
+                        JsonUtil.asBoolean(body, body.has("pushNotif") ? "pushNotif" : "push_notif", true));
             }
 
             if (body.has("latitude") && body.has("longitude")) {
@@ -1337,17 +1444,21 @@ public class DonorController {
             }
 
             if (body.has("publicSearchOptIn") || body.has("public_search_opt_in")) {
-                boolean optIn = body.has("publicSearchOptIn") ? JsonUtil.asBoolean(body, "publicSearchOptIn", false) : JsonUtil.asBoolean(body, "public_search_opt_in", false);
+                boolean optIn = body.has("publicSearchOptIn") ? JsonUtil.asBoolean(body, "publicSearchOptIn", false)
+                        : JsonUtil.asBoolean(body, "public_search_opt_in", false);
                 fields.put("public_search_opt_in", optIn);
                 com.red404.service.PublicSearchService.clearCache();
             }
             if (body.has("publicDisplayName") || body.has("public_display_name")) {
-                String dName = JsonUtil.textOrNull(body, "publicDisplayName") != null ? JsonUtil.text(body, "publicDisplayName") : JsonUtil.textOrNull(body, "public_display_name");
+                String dName = JsonUtil.textOrNull(body, "publicDisplayName") != null
+                        ? JsonUtil.text(body, "publicDisplayName")
+                        : JsonUtil.textOrNull(body, "public_display_name");
                 fields.put("public_display_name", (dName != null && !dName.isBlank()) ? dName.trim() : null);
                 com.red404.service.PublicSearchService.clearCache();
             }
 
-            // Clinical last_donation is written ONLY upon hospital check-in / verified donation completion.
+            // Clinical last_donation is written ONLY upon hospital check-in / verified
+            // donation completion.
             // Direct profile edits cannot arbitrarily modify last_donation.
 
             donorDao.updateProfile(targetId, fields);
@@ -1365,7 +1476,7 @@ public class DonorController {
         }
     }
 
-    @GetMapping({"/certificate", "/donations/certificate"})
+    @GetMapping({ "/certificate", "/donations/certificate" })
     public ResponseEntity<?> downloadCertificate(
             @RequestParam(required = false) String certId,
             @RequestParam(required = false) String refCode,
@@ -1381,34 +1492,44 @@ public class DonorController {
             }
             String donorName = donor.get("name") != null ? (String) donor.get("name") : "Clinical Blood Donor";
             String donorId = donor.get("donorId") != null ? (String) donor.get("donorId") : ("DNR-" + donor.get("id"));
-            String blood = bloodType != null && !bloodType.isBlank() ? bloodType : (donor.get("bloodType") != null ? (String) donor.get("bloodType") : "O+");
+            String blood = bloodType != null && !bloodType.isBlank() ? bloodType
+                    : (donor.get("bloodType") != null ? (String) donor.get("bloodType") : "O+");
             String hosp = hospital != null && !hospital.isBlank() ? hospital : "Verified Regional Trauma Center";
             String dDate = date != null && !date.isBlank() ? date : java.time.LocalDate.now().toString();
-            String code = refCode != null && !refCode.isBlank() ? refCode : (certId != null && !certId.isBlank() ? certId : "RED-" + (System.currentTimeMillis() % 100000));
+            String code = refCode != null && !refCode.isBlank() ? refCode
+                    : (certId != null && !certId.isBlank() ? certId : "RED-" + (System.currentTimeMillis() % 100000));
             String vol = volume != null && !volume.isBlank() ? volume : null;
             if (vol == null) {
                 int dNum = 0;
                 if (code.startsWith("RED-")) {
-                    try { dNum = Integer.parseInt(code.substring(4)); } catch (Exception ignored) {}
+                    try {
+                        dNum = Integer.parseInt(code.substring(4));
+                    } catch (Exception ignored) {
+                    }
                 }
                 if (dNum > 0) {
                     try (Connection c = DBConnection.getConnection();
-                         PreparedStatement cps = c.prepareStatement("SELECT donor_id, volume_ml FROM donations WHERE id = ?")) {
+                            PreparedStatement cps = c
+                                    .prepareStatement("SELECT donor_id, volume_ml FROM donations WHERE id = ?")) {
                         cps.setInt(1, dNum);
                         try (ResultSet crs = cps.executeQuery()) {
                             if (crs.next()) {
                                 String recordDonorId = crs.getString("donor_id");
                                 String myNumId = donor.get("id") != null ? donor.get("id").toString() : "";
                                 String myCode = donor.get("donorId") != null ? donor.get("donorId").toString() : "";
-                                if (recordDonorId != null && !recordDonorId.equalsIgnoreCase(myNumId) && !recordDonorId.equalsIgnoreCase(myCode)) {
+                                if (recordDonorId != null && !recordDonorId.equalsIgnoreCase(myNumId)
+                                        && !recordDonorId.equalsIgnoreCase(myCode)) {
                                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                            .body(new ApiResponse(false, "Forbidden: Certificate ownership verification failed."));
+                                            .body(new ApiResponse(false,
+                                                    "Forbidden: Certificate ownership verification failed."));
                                 }
                                 int dbVol = crs.getInt("volume_ml");
-                                if (dbVol > 0) vol = dbVol + " mL (1 Unit)";
+                                if (dbVol > 0)
+                                    vol = dbVol + " mL (1 Unit)";
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
             if (vol == null) {
@@ -1424,11 +1545,13 @@ public class DonorController {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_PDF);
                 headers.setContentLength(pdfBytes.length);
-                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"RED404-Certificate-" + code + ".pdf\"");
+                headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"RED404-Certificate-" + code + ".pdf\"");
                 return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
             }
 
-            String htmlCert = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>RED404 Clinical Rescue Certificate - " + code + "</title>"
+            String htmlCert = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>RED404 Clinical Rescue Certificate - "
+                    + code + "</title>"
                     + "<style>"
                     + "@page { size: landscape; margin: 0; }"
                     + "body { font-family: 'Inter', -apple-system, sans-serif; background: #0f1012; color: #ecebe8; margin: 0; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }"
@@ -1458,14 +1581,20 @@ public class DonorController {
                     + "<div class='cert-name'>" + donorName + "</div>"
                     + "<div class='cert-body'>In recognition of your voluntary and selfless clinical blood donation. Your contribution directly replenishes verified hospital reserves and saves human lives in emergency trauma situations.</div>"
                     + "<div class='cert-meta-grid'>"
-                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + blood + "</div><div class='cert-meta-lbl'>Blood Group</div></div>"
-                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + vol + "</div><div class='cert-meta-lbl'>Donation Volume</div></div>"
-                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + dDate + "</div><div class='cert-meta-lbl'>Donation Date</div></div>"
-                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + code + "</div><div class='cert-meta-lbl'>Record / Cert ID</div></div>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + blood
+                    + "</div><div class='cert-meta-lbl'>Blood Group</div></div>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + vol
+                    + "</div><div class='cert-meta-lbl'>Donation Volume</div></div>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + dDate
+                    + "</div><div class='cert-meta-lbl'>Donation Date</div></div>"
+                    + "<div class='cert-meta-item'><div class='cert-meta-val'>" + code
+                    + "</div><div class='cert-meta-lbl'>Record / Cert ID</div></div>"
                     + "</div>"
                     + "<div class='cert-footer'>"
-                    + "<div class='cert-sig'><div class='cert-sig-line'></div>Verified Hospital Authority<br><strong>" + hosp + "</strong></div>"
-                    + "<div class='cert-sig' style='text-align:right;'><div class='cert-sig-line' style='margin-left:auto;'></div>RED404 Medical Registry Authority<br>Smart ID: <strong>" + donorId + "</strong></div>"
+                    + "<div class='cert-sig'><div class='cert-sig-line'></div>Verified Hospital Authority<br><strong>"
+                    + hosp + "</strong></div>"
+                    + "<div class='cert-sig' style='text-align:right;'><div class='cert-sig-line' style='margin-left:auto;'></div>RED404 Medical Registry Authority<br>Smart ID: <strong>"
+                    + donorId + "</strong></div>"
                     + "</div>"
                     + "</div></div>"
                     + "<script>window.onload = function() { window.print(); };</script>"
@@ -1480,15 +1609,19 @@ public class DonorController {
         }
     }
 
-    @PostMapping({"/blood-group-correction-request", "/request-blood-group-correction"})
-    public ResponseEntity<ApiResponse> requestBloodGroupCorrection(@RequestBody JsonNode body, HttpServletRequest request) {
+    @PostMapping({ "/blood-group-correction-request", "/request-blood-group-correction" })
+    public ResponseEntity<ApiResponse> requestBloodGroupCorrection(@RequestBody JsonNode body,
+            HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null || donor.get("id") == null) return unauthorized();
+            if (donor == null || donor.get("id") == null)
+                return unauthorized();
             int donorId = ((Number) donor.get("id")).intValue();
             String requestedGroup = JsonUtil.textOrNull(body, "requestedGroup");
-            if (requestedGroup == null) requestedGroup = JsonUtil.textOrNull(body, "requestedBloodGroup");
-            if (requestedGroup == null) requestedGroup = JsonUtil.textOrNull(body, "bloodType");
+            if (requestedGroup == null)
+                requestedGroup = JsonUtil.textOrNull(body, "requestedBloodGroup");
+            if (requestedGroup == null)
+                requestedGroup = JsonUtil.textOrNull(body, "bloodType");
             String reason = JsonUtil.textOrNull(body, "reason");
 
             if (requestedGroup == null || requestedGroup.isBlank()) {
@@ -1496,23 +1629,29 @@ public class DonorController {
             }
             String normGroup = com.red404.util.BloodCompatibilityUtil.normalizeBloodGroup(requestedGroup);
             if (normGroup == null) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Invalid blood group format: " + requestedGroup));
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Invalid blood group format: " + requestedGroup));
             }
             if (reason == null || reason.trim().length() < 3) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Please provide a valid reason for the correction request."));
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse(false, "Please provide a valid reason for the correction request."));
             }
 
             Map<String, Object> currentRecord = donorDao.findById(donorId);
             String currentBg = currentRecord != null ? (String) currentRecord.get("bloodType") : null;
 
-            bloodGroupAuditDao.insertAudit(donorId, currentBg, normGroup, "donor_correction_request", donorId, reason.trim());
+            bloodGroupAuditDao.insertAudit(donorId, currentBg, normGroup, "donor_correction_request", donorId,
+                    reason.trim());
             donorDao.addDonorNotification(donorId, "Blood Group Correction Requested",
-                    "Your request to correct blood group to " + normGroup + " has been logged. Please present your laboratory cross-match documentation at your next hospital check-in.", "correction_request");
-            return ok("Correction request submitted successfully. Hospital staff will review and verify your blood group during check-in.", Map.of(
-                    "donorId", donorId,
-                    "currentGroup", currentBg != null ? currentBg : "Unknown",
-                    "requestedGroup", normGroup
-            ));
+                    "Your request to correct blood group to " + normGroup
+                            + " has been logged. Please present your laboratory cross-match documentation at your next hospital check-in.",
+                    "correction_request");
+            return ok(
+                    "Correction request submitted successfully. Hospital staff will review and verify your blood group during check-in.",
+                    Map.of(
+                            "donorId", donorId,
+                            "currentGroup", currentBg != null ? currentBg : "Unknown",
+                            "requestedGroup", normGroup));
         } catch (Exception e) {
             return serverError(e);
         }
@@ -1522,7 +1661,8 @@ public class DonorController {
     public ResponseEntity<ApiResponse> setAvailability(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null || donor.get("id") == null) return unauthorized();
+            if (donor == null || donor.get("id") == null)
+                return unauthorized();
             int donorId = ((Number) donor.get("id")).intValue();
 
             boolean available = JsonUtil.asBoolean(body, "available", true);
@@ -1531,25 +1671,27 @@ public class DonorController {
             if (pausedUntilStr != null && !pausedUntilStr.isBlank()) {
                 try {
                     pausedUntil = Date.valueOf(pausedUntilStr.trim());
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
 
             donorDao.updateAvailability(donorId, available, pausedUntil);
-            return ok("Availability status updated successfully", Map.of(
-                    "available", available,
-                    "availability", available ? "Available" : "Paused",
-                    "pausedUntil", pausedUntil != null ? pausedUntil.toString() : null
-            ));
+            Map<String, Object> respMap = new LinkedHashMap<>();
+            respMap.put("available", available);
+            respMap.put("availability", available ? "Available" : "Paused");
+            respMap.put("pausedUntil", pausedUntil != null ? pausedUntil.toString() : null);
+            return ok("Availability status updated successfully", respMap);
         } catch (Exception e) {
             return serverError(e);
         }
     }
 
-    @PostMapping({"/public-search-opt-in", "/opt-in"})
+    @PostMapping({ "/public-search-opt-in", "/opt-in" })
     public ResponseEntity<ApiResponse> togglePublicSearchOptIn(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             Map<String, Object> donor = requireDonor(request);
-            if (donor == null || donor.get("id") == null) return unauthorized();
+            if (donor == null || donor.get("id") == null)
+                return unauthorized();
             int donorId = ((Number) donor.get("id")).intValue();
 
             boolean optIn = body.has("optIn") ? JsonUtil.asBoolean(body, "optIn", false)
@@ -1576,7 +1718,7 @@ public class DonorController {
         }
     }
 
-    @PostMapping({"/intake-audit", "/verify-intake"})
+    @PostMapping({ "/intake-audit", "/verify-intake" })
     public ResponseEntity<ApiResponse> logIntakeAudit(@RequestBody JsonNode body, HttpServletRequest request) {
         try {
             int donorId = JsonUtil.asInt(body, "donorId", 1);
@@ -1602,36 +1744,45 @@ public class DonorController {
 
     // ======================== HELPERS ========================
 
-    private ResponseEntity<ApiResponse> handleRequestAction(int requestId, String status, Map<String, Object> body, HttpServletRequest request) {
+    private ResponseEntity<ApiResponse> handleRequestAction(int requestId, String status, Map<String, Object> body,
+            HttpServletRequest request) {
         try {
             int donorId = 0;
             if (body != null && body.containsKey("donorId") && body.get("donorId") != null) {
                 try {
                     donorId = Integer.parseInt(body.get("donorId").toString());
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             Map<String, Object> donor = requireDonor(request);
             if (donor != null && donor.get("id") != null && donorId <= 0) {
                 donorId = ((Number) donor.get("id")).intValue();
             }
-            if (donorId <= 0) return unauthorized();
+            if (donorId <= 0)
+                return unauthorized();
             if (donor == null) {
                 donor = donorDao.findById(donorId);
             }
 
             if ("Accepted".equalsIgnoreCase(status)) {
-                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorAccept(requestId, donorId);
+                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance()
+                        .handleDonorAccept(requestId, donorId);
                 Map<String, Object> bloodRequest = requestDao.findById(requestId);
-                if (bloodRequest == null) bloodRequest = new HashMap<>();
+                if (bloodRequest == null)
+                    bloodRequest = new HashMap<>();
                 bloodRequest.putAll(res);
                 return ok("Request accepted", bloodRequest);
             } else if ("Declined".equalsIgnoreCase(status)) {
-                String reason = body != null && body.containsKey("reason") ? String.valueOf(body.get("reason")) : "Donor declined";
-                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorDecline(requestId, donorId, reason);
+                String reason = body != null && body.containsKey("reason") ? String.valueOf(body.get("reason"))
+                        : "Donor declined";
+                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance()
+                        .handleDonorDecline(requestId, donorId, reason);
                 return ok("Request declined", res);
             } else if ("Withdrawn".equalsIgnoreCase(status)) {
-                String reason = body != null && body.containsKey("reason") ? String.valueOf(body.get("reason")) : "Donor withdrew";
-                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance().handleDonorWithdraw(requestId, donorId, reason);
+                String reason = body != null && body.containsKey("reason") ? String.valueOf(body.get("reason"))
+                        : "Donor withdrew";
+                Map<String, Object> res = com.red404.service.RequestLifecycleService.getInstance()
+                        .handleDonorWithdraw(requestId, donorId, reason);
                 return ok("Request withdrawn", res);
             }
 
@@ -1652,7 +1803,7 @@ public class DonorController {
         }
     }
 
-    @GetMapping(value = {"/events", "/stream-events"}, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = { "/events", "/stream-events" }, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamDonorEvents(HttpServletRequest request) {
         Map<String, Object> donor = requireDonor(request);
         Integer donorId = null;
@@ -1675,14 +1826,16 @@ public class DonorController {
 
         try {
             emitter.send(SseEmitter.event().name("connected").data(Map.of("donorId", did, "status", "connected")));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return emitter;
     }
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> requireDonor(HttpServletRequest request) {
-        // 1. Tab-isolated authentication via Authorization header, X-Red404-Token, or X-Donor-Id
+        // 1. Tab-isolated authentication via Authorization header, X-Red404-Token, or
+        // X-Donor-Id
         String authHeader = request.getHeader("Authorization");
         String token = request.getHeader("X-Red404-Token");
         if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -1692,15 +1845,19 @@ public class DonorController {
             String donorIdentifier = token.substring("SESSION-DONOR-".length()).trim();
             try {
                 Map<String, Object> donor = donorDao.findByIdOrDonorId(donorIdentifier);
-                if (donor != null) return donor;
-            } catch (Exception ignored) {}
+                if (donor != null)
+                    return donor;
+            } catch (Exception ignored) {
+            }
         }
         String xDonor = request.getHeader("X-Donor-Id");
         if (xDonor != null && !xDonor.isBlank()) {
             try {
                 Map<String, Object> donor = donorDao.findByIdOrDonorId(xDonor.trim());
-                if (donor != null) return donor;
-            } catch (Exception ignored) {}
+                if (donor != null)
+                    return donor;
+            } catch (Exception ignored) {
+            }
         }
 
         // 2. Fall back to HttpSession (for backward compatibility if no token passed)
@@ -1713,12 +1870,18 @@ public class DonorController {
 
     private List<Map<String, Object>> defaultBadges() {
         List<Map<String, Object>> badges = new ArrayList<>();
-        badges.add(Map.of("name", "First Savior", "description", "First verified donation", "icon", "🩸", "earned", false, "rule", "First verified donation"));
-        badges.add(Map.of("name", "Golden Hour Hero", "description", "Verified donation completed within 45 min", "icon", "⚡", "earned", false, "rule", "Response within 45 minutes"));
-        badges.add(Map.of("name", "Night Owl", "description", "Verified donation between 10 PM and 6 AM", "icon", "🦉", "earned", false, "rule", "Emergency donation at night"));
-        badges.add(Map.of("name", "Rare Vanguard", "description", "Rare Rh-negative verified donation", "icon", "🛡️", "earned", false, "rule", "Rare Rh-negative verified donation"));
-        badges.add(Map.of("name", "Life Giver V", "description", "5 verified donations", "icon", "💖", "earned", false, "rule", "5 verified donations"));
-        badges.add(Map.of("name", "Apex Guardian", "description", "10 verified donations", "icon", "👑", "earned", false, "rule", "10 verified donations"));
+        badges.add(Map.of("name", "First Savior", "description", "First verified donation", "icon", "🩸", "earned",
+                false, "rule", "First verified donation"));
+        badges.add(Map.of("name", "Golden Hour Hero", "description", "Verified donation completed within 45 min",
+                "icon", "⚡", "earned", false, "rule", "Response within 45 minutes"));
+        badges.add(Map.of("name", "Night Owl", "description", "Verified donation between 10 PM and 6 AM", "icon", "🦉",
+                "earned", false, "rule", "Emergency donation at night"));
+        badges.add(Map.of("name", "Rare Vanguard", "description", "Rare Rh-negative verified donation", "icon", "🛡️",
+                "earned", false, "rule", "Rare Rh-negative verified donation"));
+        badges.add(Map.of("name", "Life Giver V", "description", "5 verified donations", "icon", "💖", "earned", false,
+                "rule", "5 verified donations"));
+        badges.add(Map.of("name", "Apex Guardian", "description", "10 verified donations", "icon", "👑", "earned",
+                false, "rule", "10 verified donations"));
         return badges;
     }
 
@@ -1750,7 +1913,8 @@ public class DonorController {
     }
 
     private static Double parseDouble(String value) {
-        if (value == null || value.isBlank()) return null;
+        if (value == null || value.isBlank())
+            return null;
         try {
             return Double.parseDouble(value);
         } catch (NumberFormatException e) {
@@ -1762,4 +1926,3 @@ public class DonorController {
         return value instanceof Number ? ((Number) value).doubleValue() : null;
     }
 }
-
