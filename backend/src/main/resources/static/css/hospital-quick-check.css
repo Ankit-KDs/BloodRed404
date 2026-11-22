@@ -577,3 +577,95 @@
   color: #fff;
   border-color: #ef4444;
 }
+
+/* ============================================================
+   PART 4: RULE-BASED SUGGESTIONS ON RESULT CARD
+   ============================================================ */
+.qc-suggestions-card {
+  margin: 12px 0 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qc-suggestions-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.qc-suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: #e2e8f0;
+}
+
+.qc-suggestion-item.warning {
+  border-left-color: #f59e0b;
+}
+
+.qc-suggestion-item.critical {
+  border-left-color: #ef4444;
+}
+
+.qc-sugg-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.qc-sugg-action-btn {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.qc-sugg-action-btn:hover {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.qc-sugg-action-btn.amber {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+}
+
+.qc-sugg-action-btn.amber:hover {
+  background: #f59e0b;
+  color: #0f172a;
+}
+
+.qc-sugg-action-btn.red {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.qc-sugg-action-btn.red:hover {
+  background: #ef4444;
+  color: #ffffff;
+}

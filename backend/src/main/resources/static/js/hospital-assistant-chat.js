@@ -253,12 +253,91 @@
     }
 
     // Render message history
-    wrap.innerHTML = chatHistory.map(m => `
-      <div class="asst-message ${m.role}">
-        <div class="asst-bubble">${escapeHtml(m.content)}</div>
-        <div class="asst-time">${formatTime(m.time)}</div>
-      </div>
-    `).join('');
+    wrap.innerHTML = chatHistory.map((m, idx) => {
+      const isLastAssistant = (m.role === 'assistant' && idx === chatHistory.length - 1);
+      return `
+        <div class="asst-message ${m.role}">
+          <div class="asst-bubble">${escapeHtml(m.content)}</div>
+          <div class="asst-time">${formatTime(m.time)}</div>
+          ${isLastAssistant ? `
+            <div class="asst-followup-chips">
+              <button type="button" class="asst-followup-chip" data-asst-action="check_20km">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                <span>Check 20 km</span>
+              </button>
+              <button type="button" class="asst-followup-chip" data-asst-action="view_stock">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                <span>View stock</span>
+              </button>
+              <button type="button" class="asst-followup-chip" data-asst-action="plan_drive">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Plan donation drive</span>
+              </button>
+              <button type="button" class="asst-followup-chip" data-asst-action="open_find_donors">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Open in Find Donors</span>
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    // Wire follow-up suggestion chips
+    wrap.querySelectorAll('.asst-followup-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const action = chip.getAttribute('data-asst-action');
+        if (action === 'check_20km') {
+          if (isConfigured) {
+            const input = document.getElementById('asstInput');
+            if (input) {
+              input.value = "blood chahiye, kitne donors in 20 km radius, compatible bhi dikhao";
+              handleSendMessage();
+            }
+          } else {
+            closeChatPanel();
+            if (window.Red404QuickCheck) {
+              window.Red404QuickCheck.openDrawer();
+            }
+          }
+        } else if (action === 'view_stock') {
+          if (isConfigured) {
+            const input = document.getElementById('asstInput');
+            if (input) {
+              input.value = "What is our current hospital blood stock status?";
+              handleSendMessage();
+            }
+          } else {
+            closeChatPanel();
+            if (window.location.pathname.includes('hospital-dashboard.html')) {
+              if (typeof window.switchTab === 'function') window.switchTab('tab-stock');
+            } else {
+              window.location.href = 'hospital-dashboard.html#tab-stock';
+            }
+          }
+        } else if (action === 'plan_drive') {
+          closeChatPanel();
+          if (window.location.pathname.includes('hospital-dashboard.html')) {
+            if (typeof window.switchTab === 'function') window.switchTab('tab-dashboard');
+            const openDriveModal = document.getElementById('btnOpenPlanDriveModal');
+            if (openDriveModal) openDriveModal.click();
+            else {
+              const sec = document.getElementById('sectionDonationDrives');
+              if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+            }
+          } else {
+            window.location.href = 'hospital-dashboard.html#tab-dashboard';
+          }
+        } else if (action === 'open_find_donors') {
+          closeChatPanel();
+          if (window.location.pathname.includes('hospital-dashboard.html')) {
+            if (typeof window.switchTab === 'function') window.switchTab('tab-dispatch');
+          } else {
+            window.location.href = 'hospital-dashboard.html#tab-dispatch';
+          }
+        }
+      });
+    });
 
     wrap.scrollTop = wrap.scrollHeight;
   }

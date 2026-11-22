@@ -324,6 +324,39 @@
   align-self: flex-start;
 }
 
+/* Follow-up suggestion chips under assistant replies */
+.asst-followup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.asst-followup-chip {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.asst-followup-chip:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.asst-followup-chip svg {
+  color: #60a5fa;
+}
+
 /* Tool execution pills inside assistant reply */
 .asst-tool-pill {
   display: inline-flex;

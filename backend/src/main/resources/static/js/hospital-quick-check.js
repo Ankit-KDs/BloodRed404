@@ -50,7 +50,11 @@
       errorTitle: "Unable to retrieve availability data.",
       retry: "Retry",
       drawerTitle: "Quick Availability Check",
-      navBtnText: "Quick Check"
+      navBtnText: "Quick Check",
+      suggestionsTitle: "Suggestions",
+      useCompatibleAction: "Use compatible in search",
+      switch20kmAction: "Switch to 20 km",
+      planDriveAction: "Plan donation drive"
     },
     hi: {
       panelTitle: "त्वरित उपलब्धता जांच",
@@ -86,7 +90,11 @@
       errorTitle: "उपलब्धता डेटा प्राप्त करने में असमर्थ।",
       retry: "पुनः प्रयास करें",
       drawerTitle: "त्वरित उपलब्धता जांच",
-      navBtnText: "उपलब्धता जांचें"
+      navBtnText: "उपलब्धता जांचें",
+      suggestionsTitle: "सुझाव",
+      useCompatibleAction: "खोज में संगत शामिल करें",
+      switch20kmAction: "20 किमी पर बदलें",
+      planDriveAction: "रक्तदान शिविर की योजना बनाएं"
     }
   };
 
@@ -259,6 +267,121 @@
   }
 
   /**
+   * PART 4: Deterministic Rule-Based Suggestions computed strictly from tool JSON.
+   */
+  function computeRuleBasedSuggestions(avail, stock, requestedUnits) {
+    const suggestions = [];
+    if (!avail) return suggestions;
+
+    const bg = avail.bloodGroup || selectedGroup;
+    const radius = avail.radiusKm || selectedRadius;
+    const totalEligible = avail.totalEligible || 0;
+    const compGroups = avail.compatibleGroups || [];
+
+    const exactObj = compGroups.find(cg => cg.isExact || cg.group === bg);
+    const exactCount = exactObj ? exactObj.count : 0;
+
+    const compOnly = compGroups.filter(cg => !cg.isExact && cg.group !== bg && cg.count > 0);
+    const compCount = compOnly.reduce((acc, g) => acc + g.count, 0);
+    const compNames = compOnly.map(g => g.group).join(', ');
+
+    let groupStock = null;
+    if (stock && Array.isArray(stock.groups)) {
+      groupStock = stock.groups.find(g => g.group === bg);
+    }
+    const stockUnits = groupStock ? groupStock.units : 0;
+    const stockStatus = groupStock ? groupStock.status : 'OK';
+    const isStockLowOrCrit = stockStatus === 'Critical' || stockStatus === 'Low' || (groupStock && stockUnits <= (groupStock.lowThreshold || 4));
+
+    // Rule 1: exact count == 0 and compatible count > 0
+    if (exactCount === 0 && compCount > 0) {
+      const text = currentLang === 'hi'
+        ? `0 सटीक [${bg}] डोनर, लेकिन ${compCount} संगत डोनर मिले (${compNames})। संगत पर विचार करें।`
+        : `0 exact [${bg}] donors, but ${compCount} compatible donors found (${compNames}). Consider compatible.`;
+      const actionLabel = currentLang === 'hi' ? 'खोज में संगत शामिल करें' : 'Use compatible in search';
+      suggestions.push({
+        id: 'rule1',
+        type: 'info',
+        text: text,
+        actionLabel: actionLabel,
+        actionType: 'use_compatible'
+      });
+    }
+
+    // Rule 2: total eligible < requested units (or < 2 if units not given) and radius < 20 km
+    const reqU = requestedUnits || 2;
+    if (totalEligible > 0 && totalEligible < reqU && radius < 20) {
+      const text = currentLang === 'hi'
+        ? `${radius} किमी में केवल ${totalEligible} डोनर उपलब्ध हैं। 20 किमी तक विस्तार करें?`
+        : `Only ${totalEligible} donors within ${radius} km. Expand to 20 km?`;
+      const actionLabel = currentLang === 'hi' ? '20 किमी पर बदलें' : 'Switch to 20 km';
+      suggestions.push({
+        id: 'rule2',
+        type: 'warning',
+        text: text,
+        actionLabel: actionLabel,
+        actionType: 'switch_20km'
+      });
+    }
+
+    // Rule 3: our stock for the requested group is Low or Critical
+    if (isStockLowOrCrit) {
+      const text = currentLang === 'hi'
+        ? `हमारा [${bg}] स्टॉक ${stockStatus} (${stockUnits} यूनिट) है। योजना बनाते समय स्टॉक का ध्यान रखें।`
+        : `Our [${bg}] stock is ${stockStatus} (${stockUnits} units). Keep stock in mind when planning.`;
+      const actionLabel = currentLang === 'hi' ? 'रक्तदान शिविर की योजना बनाएं' : 'Plan donation drive';
+      suggestions.push({
+        id: 'rule3',
+        type: 'critical',
+        text: text,
+        actionLabel: actionLabel,
+        actionType: 'plan_drive'
+      });
+    }
+
+    // Rule 4: exact count == 0 and compatible count == 0
+    if (exactCount === 0 && compCount === 0) {
+      const text = currentLang === 'hi'
+        ? `${radius} किमी के भीतर कोई डोनर नहीं मिला। क्षेत्रीय ब्लड बैंकों से संपर्क करें या रिप्लेसमेंट शिविर की योजना बनाएं।`
+        : `No matching donors within ${radius} km. Contact regional blood banks or schedule a replacement drive.`;
+      const actionLabel = radius < 20
+        ? (currentLang === 'hi' ? '20 किमी पर बदलें' : 'Switch to 20 km')
+        : (currentLang === 'hi' ? 'रक्तदान शिविर की योजना बनाएं' : 'Plan donation drive');
+      suggestions.push({
+        id: 'rule4',
+        type: 'warning',
+        text: text,
+        actionLabel: actionLabel,
+        actionType: radius < 20 ? 'switch_20km' : 'plan_drive'
+      });
+    }
+
+    return suggestions;
+  }
+
+  function renderSuggestionsCard(prefix, suggestions) {
+    if (!suggestions || suggestions.length === 0) return '';
+    return `
+      <div class="qc-suggestions-card" id="${prefix}_suggestionsCard">
+        <div class="qc-suggestions-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span>${t('suggestionsTitle') || 'Suggestions'}</span>
+        </div>
+        ${suggestions.map((s, idx) => `
+          <div class="qc-suggestion-item ${s.type || ''}" id="${prefix}_suggItem_${idx}">
+            <div class="qc-sugg-text">${escapeHtml(s.text)}</div>
+            ${s.actionLabel ? `
+              <button type="button" class="qc-sugg-action-btn ${s.type === 'critical' ? 'red' : s.type === 'warning' ? 'amber' : ''}" data-action="${s.actionType}" id="${prefix}_suggBtn_${idx}">
+                ${escapeHtml(s.actionLabel)}
+              </button>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  /**
    * Renders Result Card directly from tool JSON.
    */
   function renderResultCard(prefix, avail, stock, durationMs) {
@@ -280,6 +403,9 @@
     const stockStatus = groupStock ? groupStock.status : 'OK';
     const isCriticalOrLow = stockStatus === 'Critical' || stockStatus === 'Low' || stockUnits <= (groupStock ? groupStock.lowThreshold : 4);
 
+    // Compute Part 4 Rule-based Suggestions
+    const suggestions = computeRuleBasedSuggestions(avail, stock, 1);
+
     // Empty state
     if (totalEligible === 0) {
       resBox.innerHTML = `
@@ -295,6 +421,9 @@
             </h4>
             ${renderStockPill(stockUnits, stockStatus)}
           </div>
+
+          <!-- Part 4 Rule-Based Suggestions -->
+          ${renderSuggestionsCard(prefix, suggestions)}
 
           <!-- Muted reasons accordion -->
           ${renderUnavailableAccordion(prefix, notAvailTotal, reasons)}
@@ -379,6 +508,9 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Part 4 Rule-Based Suggestions -->
+        ${renderSuggestionsCard(prefix, suggestions)}
 
         <!-- Expandable "Not available right now" section -->
         ${renderUnavailableAccordion(prefix, notAvailTotal, reasons)}
@@ -568,6 +700,52 @@
         } finally {
           findBtn.disabled = false;
         }
+      });
+    }
+
+    // PART 4: Wire suggestion action buttons (1-click, strictly read-only, never auto-dispatches)
+    const resBox = document.getElementById(`${prefix}_resultBox`);
+    if (resBox) {
+      resBox.querySelectorAll('.qc-sugg-action-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const action = btn.getAttribute('data-action');
+          if (action === 'switch_20km') {
+            selectedRadius = 20;
+            syncControlsAcrossPanels();
+            performQuickCheck(prefix);
+          } else if (action === 'use_compatible') {
+            includeCompatible = true;
+            syncControlsAcrossPanels();
+            const findBtn = document.getElementById(`${prefix}_btnFindDonors`);
+            if (findBtn) {
+              findBtn.click();
+            } else {
+              performQuickCheck(prefix);
+            }
+          } else if (action === 'plan_drive') {
+            const driveBtn = document.getElementById(`${prefix}_btnPlanDrive`);
+            if (driveBtn) {
+              driveBtn.click();
+            } else {
+              closeDrawer();
+              if (window.location.pathname.includes('hospital-dashboard.html')) {
+                if (typeof window.switchTab === 'function') {
+                  window.switchTab('tab-dashboard');
+                }
+                const openDriveModal = document.getElementById('btnOpenPlanDriveModal');
+                if (openDriveModal) {
+                  openDriveModal.click();
+                } else {
+                  const sec = document.getElementById('sectionDonationDrives');
+                  if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+                }
+              } else {
+                window.location.href = 'hospital-dashboard.html#tab-dashboard';
+              }
+            }
+          }
+        });
       });
     }
   }
@@ -834,6 +1012,7 @@
     closeDrawer: closeDrawer,
     setLanguage: setLanguage,
     performCheck: performQuickCheck,
-    applyPrefill: applyPrefillToFindDonorsForm
+    applyPrefill: applyPrefillToFindDonorsForm,
+    computeSuggestions: computeRuleBasedSuggestions
   };
 })();
