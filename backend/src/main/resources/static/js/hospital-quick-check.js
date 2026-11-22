@@ -187,6 +187,19 @@
     `;
   }
 
+  function getAuthHeaders() {
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Red404-Role': 'HOSPITAL'
+    };
+    const token = localStorage.getItem('red404_hospitalToken') || sessionStorage.getItem('token');
+    if (token) {
+      headers['X-Red404-Token'] = token;
+      headers['Authorization'] = 'Bearer ' + token;
+    }
+    return headers;
+  }
+
   /**
    * Executes donor_availability and get_stock in parallel.
    */
@@ -215,10 +228,8 @@
       const [availRes, stockRes] = await Promise.all([
         fetch('/api/hospital/assistant/tool/donor-availability', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Red404-Role': 'HOSPITAL'
-          },
+          headers: getAuthHeaders(),
+          credentials: 'include',
           body: JSON.stringify({
             bloodGroup: selectedGroup,
             radiusKm: selectedRadius,
@@ -228,10 +239,8 @@
 
         fetch('/api/hospital/assistant/tool/get-stock', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Red404-Role': 'HOSPITAL'
-          }
+          headers: getAuthHeaders(),
+          credentials: 'include'
         }).then(r => r.json())
       ]);
 
@@ -660,10 +669,8 @@
           // Call prepare_search tool
           const prepRes = await fetch('/api/hospital/assistant/tool/prepare-search', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Red404-Role': 'HOSPITAL'
-            },
+            headers: getAuthHeaders(),
+            credentials: 'include',
             body: JSON.stringify({
               bloodGroup: selectedGroup,
               radiusKm: selectedRadius,
@@ -694,8 +701,19 @@
           }
         } catch (e) {
           console.error('Error in prepare_search dispatch:', e);
-          if (typeof window.switchTab === 'function') {
-            window.switchTab('tab-dispatch');
+          const fallbackPrefill = {
+            bloodGroup: selectedGroup,
+            radiusKm: selectedRadius,
+            includeCompatible: includeCompatible
+          };
+          sessionStorage.setItem('red404_find_prefill', JSON.stringify(fallbackPrefill));
+          if (window.location.pathname.includes('hospital-dashboard.html')) {
+            if (typeof window.switchTab === 'function') {
+              window.switchTab('tab-dispatch');
+            }
+            applyPrefillToFindDonorsForm(fallbackPrefill);
+          } else {
+            window.location.href = 'hospital-dashboard.html#tab-dispatch';
           }
         } finally {
           findBtn.disabled = false;
@@ -762,6 +780,7 @@
     const r = document.querySelector(`input[name="dispBloodGroup"][value="${bg}"]`);
     if (r) {
       r.checked = true;
+      try { r.click(); } catch (_) {}
       r.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
