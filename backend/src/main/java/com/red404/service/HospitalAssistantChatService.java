@@ -100,10 +100,10 @@ public class HospitalAssistantChatService {
 
     public String getActiveModelInfo() {
         if (hasGroqKey()) {
-            return "Groq (" + EnvConfig.get("GROQ_MODEL", "llama-3.3-70b-versatile") + ")";
+            return "Groq (" + EnvConfig.get("GROQ_MODEL", "openai/gpt-oss-120b") + ")";
         }
         if (hasGeminiKey()) {
-            return "Google Gemini (" + EnvConfig.get("GEMINI_MODEL", "gemini-2.5-flash") + ")";
+            return "Google Gemini (" + EnvConfig.get("GEMINI_MODEL", "gemini-3.8-flash") + ")";
         }
         return "AI Key Not Configured";
     }
@@ -143,6 +143,18 @@ public class HospitalAssistantChatService {
         public final List<Map<String, Object>> toolCalls;
         public final String error;
         public final String errorCode;
+
+        public boolean isSuccess() { return success; }
+        public boolean isConfigured() { return configured; }
+        public String getReply() { return reply; }
+        public String getLanguage() { return language; }
+        public List<Map<String, Object>> getDonors() { return donors; }
+        public Map<String, Object> getStock() { return stock; }
+        public Map<String, Object> getRequests() { return requests; }
+        public List<String> getQuickFollowUps() { return quickFollowUps; }
+        public List<Map<String, Object>> getToolCalls() { return toolCalls; }
+        public String getError() { return error; }
+        public String getErrorCode() { return errorCode; }
 
         public ChatResult(
                 boolean success,
@@ -425,12 +437,12 @@ public class HospitalAssistantChatService {
         try {
             if (hasGroqKey()) {
                 String apiKey = EnvConfig.get("GROQ_API_KEY");
-                String model = EnvConfig.get("GROQ_MODEL", "llama-3.3-70b-versatile");
+                String model = EnvConfig.get("GROQ_MODEL", "openai/gpt-oss-120b");
                 String url = "https://api.groq.com/openai/v1/chat/completions";
                 llmReply = executeLlmToolLoop(url, apiKey, model, sanitizedMsg, browserHistory, hospitalId, matchingDonors, stockResult, requestsResult, recordedToolCalls);
             } else if (hasGeminiKey()) {
                 String apiKey = EnvConfig.get("GEMINI_API_KEY");
-                String model = EnvConfig.get("GEMINI_MODEL", "gemini-2.5-flash");
+                String model = EnvConfig.get("GEMINI_MODEL", "gemini-3.8-flash");
                 String url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
                 llmReply = executeLlmToolLoop(url, apiKey, model, sanitizedMsg, browserHistory, hospitalId, matchingDonors, stockResult, requestsResult, recordedToolCalls);
             }
@@ -440,7 +452,7 @@ public class HospitalAssistantChatService {
             if (hasGroqKey() && hasGeminiKey()) {
                 try {
                     String apiKey = EnvConfig.get("GEMINI_API_KEY");
-                    String model = EnvConfig.get("GEMINI_MODEL", "gemini-2.5-flash");
+                    String model = EnvConfig.get("GEMINI_MODEL", "gemini-3.8-flash");
                     String url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
                     llmReply = executeLlmToolLoop(url, apiKey, model, sanitizedMsg, browserHistory, hospitalId, matchingDonors, stockResult, requestsResult, recordedToolCalls);
                 } catch (Exception ex2) {

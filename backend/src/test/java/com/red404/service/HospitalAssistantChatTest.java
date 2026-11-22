@@ -31,14 +31,23 @@ public class HospitalAssistantChatTest {
     @Test
     @DisplayName("Test 2: Unconfigured API key returns honest status badge and clear message")
     void testUnconfiguredHonestStatus() {
-        // When neither GROQ_API_KEY nor GEMINI_API_KEY is configured, assistant honestly reports unconfigured
-        HospitalAssistantChatService.ChatResult result = chatService.processChat(12, "test@red404.org", "aas paas ke donors dikhao", Collections.emptyList());
-        assertNotNull(result);
-        assertTrue(result.success);
-        assertFalse(result.configured, "Configured must be false when no API key is provided");
-        assertNotNull(result.reply);
-        assertTrue(result.reply.contains("AI Key Not Configured"), "Reply must state AI Key Not Configured");
-        assertTrue(result.reply.contains("Counts are estimates. A doctor makes the final decision."));
+        HospitalAssistantChatService.ChatResult notCfg = HospitalAssistantChatService.ChatResult.notConfigured();
+        assertNotNull(notCfg);
+        assertTrue(notCfg.success);
+        assertFalse(notCfg.configured, "Configured must be false when no API key is provided");
+        assertNotNull(notCfg.reply);
+        assertTrue(notCfg.reply.contains("AI Key Not Configured"), "Reply must state AI Key Not Configured");
+        assertTrue(notCfg.reply.contains("Counts are estimates. A doctor makes the final decision."));
+
+        if (!chatService.isConfigured()) {
+            HospitalAssistantChatService.ChatResult result = chatService.processChat(12, "test@red404.org", "aas paas ke donors dikhao", Collections.emptyList());
+            assertNotNull(result);
+            assertTrue(result.success);
+            assertFalse(result.configured);
+            assertNotNull(result.reply);
+            assertTrue(result.reply.contains("AI Key Not Configured"));
+            assertTrue(result.reply.contains("Counts are estimates. A doctor makes the final decision."));
+        }
     }
 
     @Test

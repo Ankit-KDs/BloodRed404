@@ -38,14 +38,32 @@ public class AssistantChatController {
     @Autowired
     private HospitalAssistantChatService chatService;
 
+    public AssistantChatController() {}
+
+    public AssistantChatController(HospitalAssistantChatService chatService) {
+        this.chatService = chatService;
+    }
+
+    @SuppressWarnings("unchecked")
     private Integer extractVerifiedHospitalId(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        Map<String, Object> sessionHosp = session != null ? (Map<String, Object>) session.getAttribute("hospitalUser") : null;
+        Map<String, Object> sessionHosp = null;
+        if (session != null) {
+            Object hospObj = session.getAttribute("hospitalUser");
+            if (hospObj instanceof Map) {
+                sessionHosp = (Map<String, Object>) hospObj;
+            }
+        }
 
         Integer hospitalId = null;
-        if (sessionHosp != null && sessionHosp.get("id") instanceof Number num) {
-            hospitalId = num.intValue();
-        } else {
+        if (sessionHosp != null) {
+            Object idObj = sessionHosp.get("id");
+            if (idObj instanceof Number) {
+                hospitalId = ((Number) idObj).intValue();
+            }
+        }
+
+        if (hospitalId == null) {
             String authHeader = request.getHeader("Authorization");
             String token = request.getHeader("X-Red404-Token");
             if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -79,15 +97,18 @@ public class AssistantChatController {
     }
 
     private String extractUserIdentifier(HttpServletRequest request) {
+        if (request == null) return "unknown";
         HttpSession session = request.getSession(false);
         if (session != null) {
             Object hospUser = session.getAttribute("hospitalUser");
-            if (hospUser instanceof Map<?, ?> m) {
+            if (hospUser instanceof Map) {
+                Map<?, ?> m = (Map<?, ?>) hospUser;
                 Object email = m.get("email");
                 if (email != null) return email.toString();
             }
         }
-        return request.getRemoteAddr();
+        String remoteAddr = request.getRemoteAddr();
+        return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr : "anonymous";
     }
 
     /**
@@ -140,10 +161,10 @@ public class AssistantChatController {
             if (body.has("history") && body.get("history").isArray()) {
                 for (JsonNode h : body.get("history")) {
                     if (h.has("role") && h.has("content")) {
-                        browserHistory.add(Map.of(
-                                "role", h.get("role").asText(),
-                                "content", h.get("content").asText()
-                        ));
+                        Map<String, Object> historyItem = new LinkedHashMap<>();
+                        historyItem.put("role", h.get("role").asText());
+                        historyItem.put("content", h.get("content").asText());
+                        browserHistory.add(historyItem);
                     }
                 }
             }
@@ -155,15 +176,18 @@ public class AssistantChatController {
         }
 
         String userIdentifier = extractUserIdentifier(request);
-        ChatResult result = chatService.processChat(hospitalId, userIdentifier, message, browserHistory);
+        int validHospitalId = (hospitalId != null) ? hospitalId.intValue() : 0;
+        ChatResult result = chatService.processChat(validHospitalId, userIdentifier, message, browserHistory);
 
-        if (!result.success) {
-            if ("rate_limited".equals(result.errorCode) || "budget_exceeded".equals(result.errorCode)) {
+        if (result == null || !result.success) {
+            String err = (result != null && result.error != null) ? result.error : "Failed to process assistant request.";
+            String errCode = (result != null && result.errorCode != null) ? result.errorCode : "assistant_error";
+            if ("rate_limited".equals(errCode) || "budget_exceeded".equals(errCode)) {
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                        .body(new ApiResponse(false, result.error, result.error, result.errorCode, null));
+                        .body(new ApiResponse(false, err, err, errCode, null));
             }
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                    .body(new ApiResponse(false, result.error, result.error, result.errorCode, null));
+                    .body(new ApiResponse(false, err, err, errCode, null));
         }
 
         Map<String, Object> data = new LinkedHashMap<>();

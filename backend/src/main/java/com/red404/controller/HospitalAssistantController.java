@@ -47,8 +47,11 @@ public class HospitalAssistantController {
         Map<String, Object> sessionHosp = session != null ? (Map<String, Object>) session.getAttribute("hospitalUser") : null;
 
         Integer hospitalId = null;
-        if (sessionHosp != null && sessionHosp.get("id") instanceof Number num) {
-            hospitalId = num.intValue();
+        if (sessionHosp != null) {
+            Object idObj = sessionHosp.get("id");
+            if (idObj instanceof Number) {
+                hospitalId = ((Number) idObj).intValue();
+            }
         } else {
             // Check session bearer token
             String authHeader = request.getHeader("Authorization");
@@ -88,7 +91,8 @@ public class HospitalAssistantController {
         HttpSession session = request.getSession(false);
         if (session != null) {
             Object hospUser = session.getAttribute("hospitalUser");
-            if (hospUser instanceof Map<?, ?> m) {
+            if (hospUser instanceof Map) {
+                Map<?, ?> m = (Map<?, ?>) hospUser;
                 Object email = m.get("email");
                 if (email != null) return email.toString();
             }
