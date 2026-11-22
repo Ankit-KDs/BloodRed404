@@ -180,6 +180,11 @@ public class HospitalAssistantService {
                 }
 
                 Timestamp locUpdated = rs.getTimestamp("location_updated_at");
+                if (locUpdated == null) {
+                    try {
+                        locUpdated = rs.getTimestamp("created_at");
+                    } catch (Exception ignored) {}
+                }
                 if (locUpdated == null || (nowMs - locUpdated.getTime()) > (freshnessHours * 3600L * 1000L)) {
                     staleLocation++;
                     continue;
