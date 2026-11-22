@@ -1120,6 +1120,20 @@ public class DatabaseSchemaMigrator implements ApplicationRunner {
                     ")");
         } catch (Exception ignored) {}
         ensureIndex(conn, "donor_audit_logs", "idx_donor_audit_donor_created", "donor_id, created_at");
+
+        // 7. Assistant Tool Audit Logs table and index (Round 15)
+        try (Statement st = conn.createStatement()) {
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS assistant_tool_audits (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "hospital_id INT NOT NULL, " +
+                    "user_identifier VARCHAR(150) NOT NULL, " +
+                    "tool_name VARCHAR(50) NOT NULL, " +
+                    "parameters_json TEXT NULL, " +
+                    "result_counts_json TEXT NULL, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                    ")");
+        } catch (Exception ignored) {}
+        ensureIndex(conn, "assistant_tool_audits", "idx_asst_tool_hosp_created", "hospital_id, created_at");
     }
 
     private void ensureIndex(Connection conn, String tableName, String indexName, String columns) {

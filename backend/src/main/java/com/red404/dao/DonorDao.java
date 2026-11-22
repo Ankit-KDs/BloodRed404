@@ -1743,7 +1743,7 @@ public class DonorDao {
         }
     }
 
-    private Map<String, Object> mapDonor(ResultSet rs, boolean includePrivate) throws SQLException {
+    public Map<String, Object> mapDonor(ResultSet rs, boolean includePrivate) throws SQLException {
         Map<String, Object> donor = new HashMap<>();
         int idVal = rs.getInt("id");
         donor.put("id", idVal);
