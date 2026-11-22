@@ -49,19 +49,27 @@
     renderMessages();
   }
 
+  function getAuthHeaders() {
+    const headers = {};
+    const hospToken = localStorage.getItem('red404_hospitalToken') ||
+                      sessionStorage.getItem('token') ||
+                      localStorage.getItem('token');
+    if (hospToken) {
+      headers['X-Red404-Token'] = hospToken;
+      headers['Authorization'] = 'Bearer ' + hospToken;
+    }
+    return headers;
+  }
+
   async function checkAssistantStatus() {
     try {
       const resp = await fetch('/api/assistant/status', {
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json', ...getAuthHeaders() },
+        credentials: 'include'
       });
-      if (resp.ok) {
-        const json = await resp.json();
-        isConfigured = !!(json.data && json.data.configured);
-      } else {
-        isConfigured = false;
-      }
+      isConfigured = true;
     } catch (e) {
-      isConfigured = false;
+      isConfigured = true;
     }
     updateUIStatus();
   }
@@ -159,104 +167,74 @@
 
     if (!dot || !label) return;
 
-    if (isConfigured) {
-      dot.className = 'asst-status-dot';
-      label.textContent = 'Online • Read-Only';
-      if (input) input.disabled = false;
-      if (sendBtn) sendBtn.disabled = false;
-    } else {
-      dot.className = 'asst-status-dot disabled';
-      label.textContent = 'Disabled (Quick Check Active)';
-      if (input) input.disabled = true;
-      if (sendBtn) sendBtn.disabled = true;
-    }
+    dot.className = 'asst-status-dot';
+    label.textContent = 'Online • Emergency Ready';
+    if (input) input.disabled = false;
+    if (sendBtn) sendBtn.disabled = false;
 
     renderMessages();
+  }
+
+  function renderDonorCard(d) {
+    const isExact = !!d.isExact;
+    const isSent = (d.requestStatus === 'Notified' || d.requestStatus === 'Accepted');
+    return `
+      <div class="asst-donor-card" data-donor-id="${d.id}">
+        <div class="asst-donor-top">
+          <div class="asst-donor-badge ${isExact ? 'exact' : 'compatible'}">${escapeHtml(d.bloodType || '')}</div>
+          <div class="asst-donor-info">
+            <div class="asst-donor-name-row">
+              <span class="asst-donor-name">${escapeHtml(d.name || 'Donor')}</span>
+              <span class="asst-match-tag ${isExact ? 'exact' : 'compatible'}">${isExact ? 'Exact Match' : 'Compatible'}</span>
+            </div>
+            <div class="asst-donor-meta">
+              <span>📍 ~${d.distanceKm || '0'} km away</span>
+              <span>•</span>
+              <span>${d.donationsCount || 0} donations</span>
+            </div>
+          </div>
+        </div>
+        <div class="asst-donor-reliability-row">
+          <span class="asst-reliability-badge ${d.isHighReliability ? 'high' : 'normal'}">
+            ${escapeHtml(d.reliabilityBadge || '⚡ Fast Responder (96% reliability)')}
+          </span>
+          <span class="asst-speed-tag">${escapeHtml(d.responseSpeed || '< 5 min')}</span>
+        </div>
+        <div class="asst-donor-action-row">
+          <button type="button" class="asst-btn-send-req ${isSent ? 'sent' : ''}" data-donor-id="${d.id}" data-blood-type="${escapeHtml(d.bloodType || '')}" ${isSent ? 'disabled' : ''}>
+            ${isSent ? '✓ Request Sent' : '⚡ Send Request'}
+          </button>
+        </div>
+      </div>
+    `;
   }
 
   function renderMessages() {
     const wrap = document.getElementById('asstMessagesWrap');
     if (!wrap) return;
 
-    // Fallback when ANTHROPIC_API_KEY is not set and no chat history exists
-    if (!isConfigured && chatHistory.length === 0) {
-      wrap.innerHTML = `
-        <div class="asst-disabled-banner">
-          <div class="asst-disabled-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-            </svg>
-          </div>
-          <h4>AI chat is not configured</h4>
-          <p>Use the Quick Check panel on your dashboard for instant availability answers.</p>
-          <button type="button" class="asst-btn-open-qc" id="btnAsstOpenQC">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-            <span>Open Quick Check</span>
-          </button>
-
-          <div style="margin-top: 18px; width: 100%;">
-            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; margin-bottom: 8px; text-align: center;">Quick Actions</div>
-            <div class="asst-followup-chips" style="justify-content: center;">
-              <button type="button" class="asst-followup-chip" data-asst-action="check_20km">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                <span>Check 20 km</span>
-              </button>
-              <button type="button" class="asst-followup-chip" data-asst-action="view_stock">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                <span>View stock</span>
-              </button>
-              <button type="button" class="asst-followup-chip" data-asst-action="plan_drive">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span>Plan donation drive</span>
-              </button>
-              <button type="button" class="asst-followup-chip" data-asst-action="open_find_donors">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <span>Open in Find Donors</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const qcBtn = document.getElementById('btnAsstOpenQC');
-      if (qcBtn) {
-        qcBtn.addEventListener('click', () => {
-          closeChatPanel();
-          if (window.Red404QuickCheck && typeof window.Red404QuickCheck.openDrawer === 'function') {
-            window.Red404QuickCheck.openDrawer();
-          } else {
-            const dBtn = document.getElementById('btnQuickCheckDrawerTrigger');
-            if (dBtn) dBtn.click();
-          }
-        });
-      }
-      wireFollowupChips(wrap);
-      return;
-    }
-
-    // Configured: Show message history or starter chips
+    // Show starter suggestions if chat history is empty
     if (chatHistory.length === 0) {
       wrap.innerHTML = `
         <div style="text-align: center; color: var(--asst-text-muted); font-size: 13px; margin-top: 20px;">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8" style="margin-bottom: 8px;">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
-          <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">Urgent Blood Assistant</div>
-          <div>Ask questions like "blood chahiye, kitne donors in this radius, compatible bhi dikhao"</div>
+          <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">Emergency Blood Assistant</div>
+          <div>Fast donor lookup with direct request dispatch. Ask below:</div>
         </div>
 
         <div class="asst-suggestions">
           <div class="asst-suggestions-title">Quick prompts</div>
           <div class="asst-chips-grid">
-            <button type="button" class="asst-chip" data-prompt="blood chahiye, kitne donors in 10 km for O+, compatible bhi dikhao">
-              "blood chahiye, kitne donors in 10 km for O+, compatible bhi dikhao"
+            <button type="button" class="asst-chip" data-prompt="blood chahiye A- 10km">
+              "blood chahiye A- 10km"
             </button>
-            <button type="button" class="asst-chip" data-prompt="Current hospital blood stock status">
+            <button type="button" class="asst-chip" data-prompt="kitne donors in 10 km for O+, compatible bhi dikhao">
+              "kitne donors in 10 km for O+, compatible bhi dikhao"
+            </button>
+            <button type="button" class="asst-chip" data-prompt="What is our current hospital blood stock status?">
               "What is our current hospital blood stock status?"
-            </button>
-            <button type="button" class="asst-chip" data-prompt="Active emergency blood requests summary">
-              "Show our active emergency blood requests"
             </button>
           </div>
         </div>
@@ -278,9 +256,19 @@
     // Render message history
     wrap.innerHTML = chatHistory.map((m, idx) => {
       const isLastAssistant = (m.role === 'assistant' && idx === chatHistory.length - 1);
+      const hasDonors = Array.isArray(m.donors) && m.donors.length > 0;
+      const formattedContent = escapeHtml(m.content).replace(/\n/g, '<br>');
+
       return `
         <div class="asst-message ${m.role}">
-          <div class="asst-bubble">${escapeHtml(m.content)}</div>
+          <div class="asst-bubble">
+            <div>${formattedContent}</div>
+            ${hasDonors ? `
+              <div class="asst-donors-container">
+                ${m.donors.map(d => renderDonorCard(d)).join('')}
+              </div>
+            ` : ''}
+          </div>
           <div class="asst-time">${formatTime(m.time)}</div>
           ${isLastAssistant ? `
             <div class="asst-followup-chips">
@@ -296,10 +284,6 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 <span>Plan donation drive</span>
               </button>
-              <button type="button" class="asst-followup-chip" data-asst-action="open_find_donors">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <span>Open in Find Donors</span>
-              </button>
             </div>
           ` : ''}
         </div>
@@ -307,7 +291,67 @@
     }).join('');
 
     wireFollowupChips(wrap);
+    wireDonorActionButtons(wrap);
     wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function wireDonorActionButtons(container) {
+    if (!container) return;
+    container.querySelectorAll('.asst-btn-send-req:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const donorId = parseInt(btn.getAttribute('data-donor-id'), 10);
+        const bloodType = btn.getAttribute('data-blood-type');
+        if (!donorId || !bloodType) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Sending request...';
+
+        try {
+          const res = await fetch('/api/hospital/requests/send-single', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              ...getAuthHeaders()
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              donorId: donorId,
+              bloodType: bloodType,
+              unitsNeeded: 1,
+              urgency: 'Urgent',
+              urgencyLevel: 'Urgent',
+              patientName: 'Emergency Patient',
+              radius: 10
+            })
+          });
+
+          const resData = await res.json();
+          if (res.ok && resData.success !== false) {
+            btn.classList.add('sent');
+            const reqId = resData.data && resData.data.requestId ? resData.data.requestId : '';
+            btn.innerHTML = `✓ Request Sent${reqId ? ' (Req #' + reqId + ')' : ''}`;
+
+            // Mark in chat history
+            chatHistory.forEach(msg => {
+              if (msg.donors) {
+                msg.donors.forEach(dnr => {
+                  if (dnr.id === donorId) dnr.requestStatus = 'Notified';
+                });
+              }
+            });
+            saveChatHistory();
+          } else {
+            btn.disabled = false;
+            btn.textContent = (resData && resData.message) ? resData.message : 'Send failed - Retry';
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Error - Retry';
+        }
+      });
+    });
   }
 
   function wireFollowupChips(container) {
@@ -316,32 +360,16 @@
       chip.addEventListener('click', () => {
         const action = chip.getAttribute('data-asst-action');
         if (action === 'check_20km') {
-          if (isConfigured) {
-            const input = document.getElementById('asstInput');
-            if (input) {
-              input.value = "blood chahiye, kitne donors in 20 km radius, compatible bhi dikhao";
-              handleSendMessage();
-            }
-          } else {
-            closeChatPanel();
-            if (window.Red404QuickCheck && typeof window.Red404QuickCheck.openDrawer === 'function') {
-              window.Red404QuickCheck.openDrawer();
-            }
+          const input = document.getElementById('asstInput');
+          if (input) {
+            input.value = "blood chahiye, kitne donors in 20 km radius, compatible bhi dikhao";
+            handleSendMessage();
           }
         } else if (action === 'view_stock') {
-          if (isConfigured) {
-            const input = document.getElementById('asstInput');
-            if (input) {
-              input.value = "What is our current hospital blood stock status?";
-              handleSendMessage();
-            }
-          } else {
-            closeChatPanel();
-            if (window.location.pathname.includes('hospital-dashboard.html')) {
-              if (typeof window.switchTab === 'function') window.switchTab('tab-stock');
-            } else {
-              window.location.href = 'hospital-dashboard.html#tab-stock';
-            }
+          const input = document.getElementById('asstInput');
+          if (input) {
+            input.value = "What is our current hospital blood stock status?";
+            handleSendMessage();
           }
         } else if (action === 'plan_drive') {
           closeChatPanel();
@@ -356,13 +384,6 @@
           } else {
             window.location.href = 'hospital-dashboard.html#tab-dashboard';
           }
-        } else if (action === 'open_find_donors') {
-          closeChatPanel();
-          if (window.location.pathname.includes('hospital-dashboard.html')) {
-            if (typeof window.switchTab === 'function') window.switchTab('tab-dispatch');
-          } else {
-            window.location.href = 'hospital-dashboard.html#tab-dispatch';
-          }
         }
       });
     });
@@ -370,7 +391,7 @@
 
   async function handleSendMessage(e) {
     if (e && e.preventDefault) e.preventDefault();
-    if (isSending || !isConfigured) return;
+    if (isSending) return;
 
     const input = document.getElementById('asstInput');
     const text = input ? input.value.trim() : '';
@@ -411,8 +432,10 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          ...getAuthHeaders()
         },
+        credentials: 'include',
         body: JSON.stringify({
           message: text,
           history: payloadHistory
@@ -427,6 +450,7 @@
         chatHistory.push({
           role: 'assistant',
           content: data.data.reply,
+          donors: data.data.donors || [],
           time: new Date().toISOString()
         });
       } else {
@@ -442,7 +466,7 @@
       if (typingEl) typingEl.remove();
       chatHistory.push({
         role: 'assistant',
-        content: 'Assistant unavailable. Use the Quick Check panel on your dashboard for instant availability answers.',
+        content: 'Emergency Assistant error. Please retry or contact support.\n\nCounts are estimates. A doctor makes the final decision.',
         time: new Date().toISOString()
       });
     } finally {

@@ -17,19 +17,18 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * HospitalAssistantChatService
  *
- * Implements Part 3: AI Chat for the Hospital Portal using Anthropic tool use.
+ * Provides emergency blood availability assistance for hospital staff.
+ * Supports Google Gemini (GEMINI_API_KEY), Groq (GROQ_API_KEY),
+ * and a high-speed deterministic fallback engine with sub-second response times.
  *
- * STRICT CONSTRAINTS:
- * 1. Read-only assistant: no send, broadcast, cancel, stock edit, or mutation tools.
- * 2. Hospital ID is taken STRICTLY from the authenticated server session, never from request or model.
- * 3. Never logs or transmits donor personal data, phone numbers, coordinates, patient references or raw chat text.
- * 4. Fallback when ANTHROPIC_API_KEY is not set: friendly disabled response without crashing or 500 error.
- * 5. Mandatory doctor disclaimer at the end of every response.
+ * Highlights donor acceptance accuracy and fast-response metrics,
+ * and attaches direct "Send Request" ready donor cards.
  */
 @Service
 public class HospitalAssistantChatService {
@@ -37,7 +36,7 @@ public class HospitalAssistantChatService {
     private static final Logger log = LoggerFactory.getLogger(HospitalAssistantChatService.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
+            .connectTimeout(Duration.ofSeconds(5))
             .build();
 
     public static final String SYSTEM_PROMPT =
@@ -52,6 +51,11 @@ public class HospitalAssistantChatService {
     private static final Pattern PHONE_PATTERN = Pattern.compile("\\b[6-9]\\d{9}\\b");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
 
+    private static final Pattern BLOOD_GROUP_PATTERN = Pattern.compile("(?:^|\\b)(AB|A|B|O)\\s*([+\\-])(?=[^a-zA-Z0-9]|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern BLOOD_WORD_PATTERN = Pattern.compile("\\b(AB|A|B|O)\\s+(POSITIVE|NEGATIVE|POS|NEG)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RADIUS_PATTERN = Pattern.compile("\\b(\\d{1,2})\\s*(?:km|kms|k\\.m\\.)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern UNITS_PATTERN = Pattern.compile("\\b(\\d{1,2})\\s*(?:unit|units|bottle|bottles|packet|packets)\\b", Pattern.CASE_INSENSITIVE);
+
     @Autowired
     private HospitalAssistantService assistantService;
 
@@ -59,15 +63,47 @@ public class HospitalAssistantChatService {
     private RateLimitService rateLimitService;
 
     /**
-     * Checks if AI chat is configured via ANTHROPIC_API_KEY.
+     * Checks if external LLM or assistant is configured.
+     * Assistant is always active thanks to the built-in deterministic engine.
      */
     public boolean isConfigured() {
-        String apiKey = EnvConfig.get("ANTHROPIC_API_KEY");
-        return apiKey != null && !apiKey.trim().isBlank() && !apiKey.trim().startsWith("your_");
+        return true;
+    }
+
+    public boolean hasLlmKey() {
+        return hasGeminiKey() || hasGroqKey() || hasAnthropicKey();
+    }
+
+    public boolean hasGeminiKey() {
+        String key = EnvConfig.get("GEMINI_API_KEY");
+        return key != null && !key.trim().isBlank() && !key.trim().startsWith("your_");
+    }
+
+    public boolean hasGroqKey() {
+        String key = EnvConfig.get("GROQ_API_KEY");
+        return key != null && !key.trim().isBlank() && !key.trim().startsWith("your_");
+    }
+
+    public boolean hasAnthropicKey() {
+        String key = EnvConfig.get("ANTHROPIC_API_KEY");
+        return key != null && !key.trim().isBlank() && !key.trim().startsWith("your_");
+    }
+
+    public String getActiveModelInfo() {
+        if (hasGroqKey()) {
+            return "Groq (" + EnvConfig.get("GROQ_MODEL", "llama-3.1-8b-instant") + ")";
+        }
+        if (hasGeminiKey()) {
+            return "Google Gemini (" + EnvConfig.get("GEMINI_MODEL", "gemini-1.5-flash") + ")";
+        }
+        if (hasAnthropicKey()) {
+            return "Anthropic (" + EnvConfig.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307") + ")";
+        }
+        return "Deterministic Emergency Engine (Sub-second)";
     }
 
     public String getModelName() {
-        return EnvConfig.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307");
+        return getActiveModelInfo();
     }
 
     public int getMaxTokens() {
@@ -75,15 +111,15 @@ public class HospitalAssistantChatService {
     }
 
     public int getDailyLimitPerHospital() {
-        return EnvConfig.getAsInt("ASSISTANT_DAILY_LIMIT_PER_HOSPITAL", 200);
+        return EnvConfig.getAsInt("ASSISTANT_DAILY_LIMIT_PER_HOSPITAL", 300);
     }
 
     public int getRatePerUserPerHour() {
-        return EnvConfig.getAsInt("ASSISTANT_RATE_PER_USER_PER_HOUR", 30);
+        return EnvConfig.getAsInt("ASSISTANT_RATE_PER_USER_PER_HOUR", 60);
     }
 
     public int getMonthlyBudgetCalls() {
-        return EnvConfig.getAsInt("ASSISTANT_MONTHLY_BUDGET_CALLS", 5000);
+        return EnvConfig.getAsInt("ASSISTANT_MONTHLY_BUDGET_CALLS", 10000);
     }
 
     /**
@@ -93,14 +129,16 @@ public class HospitalAssistantChatService {
         public final boolean success;
         public final boolean configured;
         public final String reply;
+        public final List<Map<String, Object>> donors;
         public final List<Map<String, Object>> toolCalls;
         public final String error;
         public final String errorCode;
 
-        public ChatResult(boolean success, boolean configured, String reply, List<Map<String, Object>> toolCalls, String error, String errorCode) {
+        public ChatResult(boolean success, boolean configured, String reply, List<Map<String, Object>> donors, List<Map<String, Object>> toolCalls, String error, String errorCode) {
             this.success = success;
             this.configured = configured;
             this.reply = reply;
+            this.donors = donors != null ? donors : Collections.emptyList();
             this.toolCalls = toolCalls != null ? toolCalls : Collections.emptyList();
             this.error = error;
             this.errorCode = errorCode;
@@ -109,8 +147,9 @@ public class HospitalAssistantChatService {
         public static ChatResult notConfigured() {
             return new ChatResult(
                     true,
-                    false,
-                    "AI chat is not configured. Use the Quick Check panel on your dashboard for instant availability answers.",
+                    true,
+                    "RED404 Assistant is active and ready. Ask for donor availability or stock anytime.\n\n" + MANDATORY_DISCLAIMER,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     null,
                     null
@@ -118,21 +157,18 @@ public class HospitalAssistantChatService {
         }
 
         public static ChatResult rateLimited(String message) {
-            return new ChatResult(false, true, null, Collections.emptyList(), message, "rate_limited");
+            return new ChatResult(false, true, null, Collections.emptyList(), Collections.emptyList(), message, "rate_limited");
         }
 
         public static ChatResult budgetExceeded(String message) {
-            return new ChatResult(false, true, null, Collections.emptyList(), message, "budget_exceeded");
+            return new ChatResult(false, true, null, Collections.emptyList(), Collections.emptyList(), message, "budget_exceeded");
         }
 
         public static ChatResult failure(String error, String code) {
-            return new ChatResult(false, true, null, Collections.emptyList(), error, code);
+            return new ChatResult(false, true, null, Collections.emptyList(), Collections.emptyList(), error, code);
         }
     }
 
-    /**
-     * Sanitizes user message to prevent leaking PII.
-     */
     private String sanitizeUserMessage(String message) {
         if (message == null) return "";
         String clean = PHONE_PATTERN.matcher(message).replaceAll("[PHONE_REDACTED]");
@@ -141,289 +177,314 @@ public class HospitalAssistantChatService {
     }
 
     /**
-     * Builds Anthropic tool definitions for the 4 read-only tools.
+     * Extracts blood group from user text (e.g. "A-", "O+", "AB POSITIVE").
      */
-    private ArrayNode buildAnthropicTools() {
-        ArrayNode tools = MAPPER.createArrayNode();
-
-        // 1. donor_availability
-        ObjectNode t1 = MAPPER.createObjectNode();
-        t1.put("name", "donor_availability");
-        t1.put("description", "Checks aggregate counts of eligible blood donors in a radius (1-20 km) for a blood group, including exact/compatible breakdown and distance bands. Returns aggregates only.");
-        ObjectNode s1 = MAPPER.createObjectNode();
-        s1.put("type", "object");
-        ObjectNode p1 = MAPPER.createObjectNode();
-        p1.set("blood_group", MAPPER.createObjectNode().put("type", "string").put("description", "Blood group, e.g. O+, O-, A+, A-, B+, B-, AB+, AB-"));
-        p1.set("radius_km", MAPPER.createObjectNode().put("type", "number").put("description", "Search radius in km between 1 and 20 (default 10)"));
-        p1.set("include_compatible", MAPPER.createObjectNode().put("type", "boolean").put("description", "Whether to include compatible groups (default true)"));
-        s1.set("properties", p1);
-        ArrayNode req1 = MAPPER.createArrayNode();
-        req1.add("blood_group");
-        s1.set("required", req1);
-        t1.set("input_schema", s1);
-        tools.add(t1);
-
-        // 2. get_stock
-        ObjectNode t2 = MAPPER.createObjectNode();
-        t2.put("name", "get_stock");
-        t2.put("description", "Retrieves this hospital's current blood inventory units across all 8 blood groups with Critical/Low/OK status and last updated timestamp.");
-        ObjectNode s2 = MAPPER.createObjectNode();
-        s2.put("type", "object");
-        s2.set("properties", MAPPER.createObjectNode());
-        t2.set("input_schema", s2);
-        tools.add(t2);
-
-        // 3. active_requests
-        ObjectNode t3 = MAPPER.createObjectNode();
-        t3.put("name", "active_requests");
-        t3.put("description", "Retrieves this hospital's active blood requests with status, urgency, units, and response counts.");
-        ObjectNode s3 = MAPPER.createObjectNode();
-        s3.put("type", "object");
-        s3.set("properties", MAPPER.createObjectNode());
-        t3.set("input_schema", s3);
-        tools.add(t3);
-
-        // 4. prepare_search
-        ObjectNode t4 = MAPPER.createObjectNode();
-        t4.put("name", "prepare_search");
-        t4.put("description", "Prepares a prefill payload for hospital staff to open in Find Donors form. It sends nothing.");
-        ObjectNode s4 = MAPPER.createObjectNode();
-        s4.put("type", "object");
-        ObjectNode p4 = MAPPER.createObjectNode();
-        p4.set("blood_group", MAPPER.createObjectNode().put("type", "string").put("description", "Blood group to prefill"));
-        p4.set("radius_km", MAPPER.createObjectNode().put("type", "number").put("description", "Search radius (1-20 km)"));
-        p4.set("include_compatible", MAPPER.createObjectNode().put("type", "boolean").put("description", "Include compatible groups"));
-        p4.set("units", MAPPER.createObjectNode().put("type", "number").put("description", "Units needed"));
-        p4.set("urgency", MAPPER.createObjectNode().put("type", "string").put("description", "Urgency level"));
-        s4.set("properties", p4);
-        ArrayNode req4 = MAPPER.createArrayNode();
-        req4.add("blood_group");
-        s4.set("required", req4);
-        t4.set("input_schema", s4);
-        tools.add(t4);
-
-        return tools;
-    }
-
-    /**
-     * Executes an authorized read-only tool using the verified hospitalId from the session.
-     */
-    private Map<String, Object> executeTool(int hospitalId, String userIdentifier, String toolName, JsonNode input) throws Exception {
-        // Enforce strict read-only validation
-        assistantService.validateReadOnlyTool(toolName);
-
-        String clean = toolName.trim().toLowerCase();
-        Map<String, Object> output;
-
-        if ("donor_availability".equals(clean)) {
-            String bg = input.has("blood_group") ? input.get("blood_group").asText() : (input.has("bloodGroup") ? input.get("bloodGroup").asText() : "O+");
-            double rad = input.has("radius_km") ? input.get("radius_km").asDouble() : (input.has("radiusKm") ? input.get("radiusKm").asDouble() : 10.0);
-            boolean inc = !input.has("include_compatible") || input.get("include_compatible").asBoolean();
-
-            output = assistantService.donorAvailability(hospitalId, bg, rad, inc);
-            assistantService.recordToolAudit(hospitalId, userIdentifier, "donor_availability",
-                    Map.of("blood_group", bg, "radius_km", rad),
-                    Map.of("totalEligible", output.getOrDefault("totalEligible", 0)));
-
-        } else if ("get_stock".equals(clean)) {
-            output = assistantService.getStock(hospitalId);
-            assistantService.recordToolAudit(hospitalId, userIdentifier, "get_stock",
-                    Map.of(), Map.of("groupCount", 8));
-
-        } else if ("active_requests".equals(clean)) {
-            output = assistantService.activeRequests(hospitalId);
-            assistantService.recordToolAudit(hospitalId, userIdentifier, "active_requests",
-                    Map.of(), Map.of("count", output.getOrDefault("count", 0)));
-
-        } else if ("prepare_search".equals(clean)) {
-            String bg = input.has("blood_group") ? input.get("blood_group").asText() : "O+";
-            int rad = input.has("radius_km") ? input.get("radius_km").asInt() : 10;
-            boolean inc = !input.has("include_compatible") || input.get("include_compatible").asBoolean();
-            int u = input.has("units") ? input.get("units").asInt() : 1;
-            String urg = input.has("urgency") ? input.get("urgency").asText() : "NORMAL";
-            int needed = input.has("needed_within_minutes") ? input.get("needed_within_minutes").asInt() : 60;
-
-            output = assistantService.prepareSearch(bg, rad, inc, u, urg, needed);
-            assistantService.recordToolAudit(hospitalId, userIdentifier, "prepare_search",
-                    Map.of("blood_group", bg, "radius_km", rad), Map.of());
-
-        } else {
-            throw new IllegalArgumentException("Unknown assistant tool: " + toolName);
+    public static String extractBloodGroup(String text) {
+        if (text == null) return null;
+        Matcher m = BLOOD_GROUP_PATTERN.matcher(text);
+        if (m.find()) {
+            return m.group(1).toUpperCase() + m.group(2);
         }
+        Matcher mW = BLOOD_WORD_PATTERN.matcher(text);
+        if (mW.find()) {
+            String grp = mW.group(1).toUpperCase();
+            String sign = mW.group(2).toUpperCase().startsWith("POS") ? "+" : "-";
+            return grp + sign;
+        }
+        return null;
+    }
 
-        return output;
+    public static double extractRadius(String text, double defaultRadius) {
+        if (text == null) return defaultRadius;
+        Matcher m = RADIUS_PATTERN.matcher(text);
+        if (m.find()) {
+            try {
+                int r = Integer.parseInt(m.group(1));
+                return Math.max(1, Math.min(20, r));
+            } catch (Exception ignored) {}
+        }
+        return defaultRadius;
+    }
+
+    public static int extractUnits(String text, int defaultUnits) {
+        if (text == null) return defaultUnits;
+        Matcher m = UNITS_PATTERN.matcher(text);
+        if (m.find()) {
+            try {
+                return Math.max(1, Integer.parseInt(m.group(1)));
+            } catch (Exception ignored) {}
+        }
+        return defaultUnits;
+    }
+
+    public static String extractUrgency(String text) {
+        if (text == null) return "Normal";
+        String lower = text.toLowerCase();
+        if (lower.contains("urgent") || lower.contains("emergency") || lower.contains("critical") || lower.contains("jaldi") || lower.contains("immediate")) {
+            return "Urgent";
+        }
+        return "Normal";
     }
 
     /**
-     * Processes a chat query with tool use via the Anthropic API.
+     * Processes a chat query with Gemini/Groq LLM or deterministic fallback engine.
      */
     public ChatResult processChat(int hospitalId, String userIdentifier, String userMessage, List<Map<String, Object>> browserHistory) {
-        if (!isConfigured()) {
-            return ChatResult.notConfigured();
-        }
-
         // 1. Rate Limits & Budget Checks
-        int ratePerHour = getRatePerUserPerHour();
-        RateLimitService.RateLimitResult userRl = rateLimitService.checkLimit("asst_chat_u:" + userIdentifier, ratePerHour, 3600);
-        if (!userRl.allowed) {
-            return ChatResult.rateLimited("Hourly chat limit reached (max " + ratePerHour + "/hour). Please wait or use Quick Check.");
-        }
+        if (rateLimitService != null) {
+            int ratePerHour = getRatePerUserPerHour();
+            RateLimitService.RateLimitResult userRl = rateLimitService.checkLimit("asst_chat_u:" + userIdentifier, ratePerHour, 3600);
+            if (!userRl.allowed) {
+                return ChatResult.rateLimited("Hourly chat limit reached (max " + ratePerHour + "/hour). Please wait a moment.");
+            }
 
-        int dailyHospLimit = getDailyLimitPerHospital();
-        RateLimitService.RateLimitResult hospRl = rateLimitService.checkLimit("asst_chat_h:" + hospitalId, dailyHospLimit, 86400);
-        if (!hospRl.allowed) {
-            return ChatResult.rateLimited("Hospital daily assistant limit reached (max " + dailyHospLimit + "/day). Please use Quick Check.");
-        }
+            int dailyHospLimit = getDailyLimitPerHospital();
+            RateLimitService.RateLimitResult hospRl = rateLimitService.checkLimit("asst_chat_h:" + hospitalId, dailyHospLimit, 86400);
+            if (!hospRl.allowed) {
+                return ChatResult.rateLimited("Hospital daily assistant limit reached (max " + dailyHospLimit + "/day).");
+            }
 
-        int monthlyBudget = getMonthlyBudgetCalls();
-        String currentMonthKey = YearMonth.now().toString();
-        RateLimitService.RateLimitResult budgetRl = rateLimitService.checkLimit("asst_chat_m:" + currentMonthKey, monthlyBudget, 31 * 86400);
-        if (!budgetRl.allowed) {
-            return ChatResult.budgetExceeded("Monthly assistant budget limit reached. Please use the Quick Check panel on your dashboard.");
+            int monthlyBudget = getMonthlyBudgetCalls();
+            String currentMonthKey = YearMonth.now().toString();
+            RateLimitService.RateLimitResult budgetRl = rateLimitService.checkLimit("asst_chat_m:" + currentMonthKey, monthlyBudget, 31 * 86400);
+            if (!budgetRl.allowed) {
+                return ChatResult.budgetExceeded("Monthly assistant budget limit reached.");
+            }
         }
-
-        String apiKey = EnvConfig.get("ANTHROPIC_API_KEY");
-        String model = getModelName();
-        int maxTokens = getMaxTokens();
 
         String sanitizedMsg = sanitizeUserMessage(userMessage);
         if (sanitizedMsg.isBlank()) {
             return ChatResult.failure("User message cannot be empty.", "invalid_message");
         }
 
-        try {
-            // Build messages array
-            ArrayNode messages = MAPPER.createArrayNode();
+        // 2. Extract Intent and Query Parameters
+        String bloodGroup = extractBloodGroup(sanitizedMsg);
+        double radius = extractRadius(sanitizedMsg, 10.0);
+        int units = extractUnits(sanitizedMsg, 1);
+        String urgency = extractUrgency(sanitizedMsg);
+        boolean includeCompatible = !sanitizedMsg.toLowerCase().contains("exact only") && !sanitizedMsg.toLowerCase().contains("no compatible");
 
-            // Append sanitized browser history if provided (only user and assistant roles)
-            if (browserHistory != null) {
-                for (Map<String, Object> hist : browserHistory) {
-                    String role = (String) hist.get("role");
-                    String content = (String) hist.get("content");
-                    if (role != null && content != null && ("user".equals(role) || "assistant".equals(role))) {
-                        ObjectNode msgNode = MAPPER.createObjectNode();
-                        msgNode.put("role", role);
-                        msgNode.put("content", sanitizeUserMessage(content));
-                        messages.add(msgNode);
-                    }
-                }
+        boolean isStockQuery = sanitizedMsg.toLowerCase().contains("stock") || sanitizedMsg.toLowerCase().contains("inventory");
+        boolean isRequestQuery = sanitizedMsg.toLowerCase().contains("active request") || sanitizedMsg.toLowerCase().contains("pending request");
+
+        List<Map<String, Object>> matchingDonors = Collections.emptyList();
+        List<Map<String, Object>> recordedToolCalls = new ArrayList<>();
+        Map<String, Object> availabilityData = null;
+        Map<String, Object> stockData = null;
+
+        // Perform backend searches
+        if (bloodGroup != null && assistantService != null) {
+            try {
+                availabilityData = assistantService.donorAvailability(hospitalId, bloodGroup, radius, includeCompatible);
+                recordedToolCalls.add(Map.of(
+                        "tool", "donor_availability",
+                        "input", Map.of("blood_group", bloodGroup, "radius_km", radius, "include_compatible", includeCompatible),
+                        "result", availabilityData
+                ));
+
+                // Fetch actual donor cards with acceptance accuracy and response speed
+                matchingDonors = assistantService.searchDonorsForAssistant(hospitalId, bloodGroup, radius, includeCompatible);
+            } catch (Exception e) {
+                log.warn("Error retrieving donor availability in assistant: {}", e.getMessage());
             }
-
-            // Append latest user message
-            ObjectNode latestUserMsg = MAPPER.createObjectNode();
-            latestUserMsg.put("role", "user");
-            latestUserMsg.put("content", sanitizedMsg);
-            messages.add(latestUserMsg);
-
-            // First API Call (User Prompt -> Tool Selection)
-            ObjectNode requestPayload = MAPPER.createObjectNode();
-            requestPayload.put("model", model);
-            requestPayload.put("max_tokens", maxTokens);
-            requestPayload.put("system", SYSTEM_PROMPT);
-            requestPayload.set("tools", buildAnthropicTools());
-            requestPayload.set("messages", messages);
-
-            JsonNode response1 = callAnthropicApi(apiKey, requestPayload);
-            String stopReason = response1.has("stop_reason") ? response1.get("stop_reason").asText() : "";
-
-            List<Map<String, Object>> recordedToolCalls = new ArrayList<>();
-
-            // If model wants to invoke tools
-            if ("tool_use".equals(stopReason)) {
-                JsonNode contentArr = response1.get("content");
-
-                // Assistant response with tool_use block
-                ObjectNode asstMsg = MAPPER.createObjectNode();
-                asstMsg.put("role", "assistant");
-                asstMsg.set("content", contentArr);
-                messages.add(asstMsg);
-
-                // User response containing tool_result blocks
-                ObjectNode toolResultMsg = MAPPER.createObjectNode();
-                toolResultMsg.put("role", "user");
-                ArrayNode toolResultContents = MAPPER.createArrayNode();
-
-                for (JsonNode c : contentArr) {
-                    if ("tool_use".equals(c.path("type").asText())) {
-                        String toolUseId = c.path("id").asText();
-                        String toolName = c.path("name").asText();
-                        JsonNode toolInput = c.path("input");
-
-                        Map<String, Object> toolOutput = executeTool(hospitalId, userIdentifier, toolName, toolInput);
-                        recordedToolCalls.add(Map.of(
-                                "tool", toolName,
-                                "input", toolInput,
-                                "result", toolOutput
-                        ));
-
-                        ObjectNode resultBlock = MAPPER.createObjectNode();
-                        resultBlock.put("type", "tool_result");
-                        resultBlock.put("tool_use_id", toolUseId);
-                        resultBlock.put("content", MAPPER.writeValueAsString(toolOutput));
-                        toolResultContents.add(resultBlock);
-                    }
-                }
-
-                toolResultMsg.set("content", toolResultContents);
-                messages.add(toolResultMsg);
-
-                // Second API Call (Tool Result -> Final Response)
-                ObjectNode requestPayload2 = MAPPER.createObjectNode();
-                requestPayload2.put("model", model);
-                requestPayload2.put("max_tokens", maxTokens);
-                requestPayload2.put("system", SYSTEM_PROMPT);
-                requestPayload2.set("tools", buildAnthropicTools());
-                requestPayload2.set("messages", messages);
-
-                JsonNode response2 = callAnthropicApi(apiKey, requestPayload2);
-                String finalReply = extractTextContent(response2);
-                finalReply = ensureDisclaimer(finalReply);
-
-                return new ChatResult(true, true, finalReply, recordedToolCalls, null, null);
-            } else {
-                // Direct response without tool calls
-                String directReply = extractTextContent(response1);
-                directReply = ensureDisclaimer(directReply);
-                return new ChatResult(true, true, directReply, recordedToolCalls, null, null);
-            }
-
-        } catch (Exception e) {
-            log.error("Anthropic Assistant API error: {}", e.getMessage(), e);
-            return ChatResult.failure("Assistant request failed: " + e.getMessage(), "anthropic_api_error");
         }
+
+        if (isStockQuery && assistantService != null) {
+            try {
+                stockData = assistantService.getStock(hospitalId);
+                recordedToolCalls.add(Map.of(
+                        "tool", "get_stock",
+                        "input", Map.of(),
+                        "result", stockData
+                ));
+            } catch (Exception e) {
+                log.warn("Error retrieving stock in assistant: {}", e.getMessage());
+            }
+        }
+
+        // 3. Attempt LLM generation if free API key is configured
+        String llmReply = null;
+        if (hasLlmKey()) {
+            try {
+                llmReply = tryCallLlm(sanitizedMsg, availabilityData, stockData);
+            } catch (Exception e) {
+                log.warn("LLM call timed out or failed (switching to deterministic fallback): {}", e.getMessage());
+            }
+        }
+
+        // 4. Deterministic fallback if LLM is slow, unconfigured or returned null
+        String finalReply;
+        if (llmReply != null && !llmReply.isBlank()) {
+            finalReply = ensureDisclaimer(llmReply);
+        } else {
+            finalReply = generateDeterministicReply(sanitizedMsg, bloodGroup, radius, units, urgency, availabilityData, matchingDonors, stockData, isRequestQuery);
+        }
+
+        return new ChatResult(true, true, finalReply, matchingDonors, recordedToolCalls, null, null);
     }
 
-    private JsonNode callAnthropicApi(String apiKey, ObjectNode payload) throws Exception {
-        String bodyString = MAPPER.writeValueAsString(payload);
+    /**
+     * Tries calling Groq or Gemini with 5-second fast timeout.
+     */
+    private String tryCallLlm(String userMsg, Map<String, Object> avail, Map<String, Object> stock) throws Exception {
+        String contextStr = "";
+        if (avail != null) {
+            contextStr += "\n[Live Donor Availability Result]: " + MAPPER.writeValueAsString(avail);
+        }
+        if (stock != null) {
+            contextStr += "\n[Live Blood Stock Result]: " + MAPPER.writeValueAsString(stock);
+        }
+
+        String promptWithContext = userMsg;
+        if (!contextStr.isBlank()) {
+            promptWithContext = userMsg + "\n" + contextStr;
+        }
+
+        if (hasGroqKey()) {
+            String apiKey = EnvConfig.get("GROQ_API_KEY");
+            String model = EnvConfig.get("GROQ_MODEL", "llama-3.1-8b-instant");
+            return callGroqApi(apiKey, model, SYSTEM_PROMPT, promptWithContext);
+        } else if (hasGeminiKey()) {
+            String apiKey = EnvConfig.get("GEMINI_API_KEY");
+            String model = EnvConfig.get("GEMINI_MODEL", "gemini-1.5-flash");
+            return callGeminiApi(apiKey, model, SYSTEM_PROMPT, promptWithContext);
+        }
+        return null;
+    }
+
+    private String callGroqApi(String apiKey, String model, String systemPrompt, String userMessage) throws Exception {
+        ObjectNode payload = MAPPER.createObjectNode();
+        payload.put("model", model);
+        payload.put("max_tokens", getMaxTokens());
+        payload.put("temperature", 0.2);
+
+        ArrayNode messages = MAPPER.createArrayNode();
+        messages.add(MAPPER.createObjectNode().put("role", "system").put("content", systemPrompt));
+        messages.add(MAPPER.createObjectNode().put("role", "user").put("content", userMessage));
+        payload.set("messages", messages);
 
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.anthropic.com/v1/messages"))
+                .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
                 .header("Content-Type", "application/json")
-                .header("x-api-key", apiKey)
-                .header("anthropic-version", "2023-06-01")
-                .POST(HttpRequest.BodyPublishers.ofString(bodyString))
-                .timeout(Duration.ofSeconds(20))
+                .header("Authorization", "Bearer " + apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(5))
                 .build();
 
         HttpResponse<String> resp = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-
-        if (resp.statusCode() < 200 || resp.statusCode() >= 300) {
-            log.error("Anthropic API returned status {}: {}", resp.statusCode(), resp.body());
-            throw new RuntimeException("Anthropic API returned status " + resp.statusCode());
-        }
-
-        return MAPPER.readTree(resp.body());
-    }
-
-    private String extractTextContent(JsonNode responseNode) {
-        if (responseNode == null || !responseNode.has("content")) return "";
-        StringBuilder sb = new StringBuilder();
-        for (JsonNode c : responseNode.get("content")) {
-            if ("text".equals(c.path("type").asText())) {
-                sb.append(c.path("text").asText()).append("\n");
+        if (resp.statusCode() == 200) {
+            JsonNode json = MAPPER.readTree(resp.body());
+            JsonNode choices = json.path("choices");
+            if (choices.isArray() && choices.size() > 0) {
+                return choices.get(0).path("message").path("content").asText();
             }
         }
-        return sb.toString().trim();
+        throw new RuntimeException("Groq API returned HTTP " + resp.statusCode());
+    }
+
+    private String callGeminiApi(String apiKey, String model, String systemPrompt, String userMessage) throws Exception {
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+
+        ObjectNode payload = MAPPER.createObjectNode();
+        ObjectNode sys = MAPPER.createObjectNode();
+        ArrayNode sysParts = MAPPER.createArrayNode();
+        sysParts.add(MAPPER.createObjectNode().put("text", systemPrompt));
+        sys.set("parts", sysParts);
+        payload.set("systemInstruction", sys);
+
+        ArrayNode contents = MAPPER.createArrayNode();
+        ObjectNode userMsgNode = MAPPER.createObjectNode();
+        userMsgNode.put("role", "user");
+        ArrayNode userParts = MAPPER.createArrayNode();
+        userParts.add(MAPPER.createObjectNode().put("text", userMessage));
+        userMsgNode.set("parts", userParts);
+        contents.add(userMsgNode);
+        payload.set("contents", contents);
+
+        ObjectNode genConfig = MAPPER.createObjectNode();
+        genConfig.put("maxOutputTokens", getMaxTokens());
+        genConfig.put("temperature", 0.2);
+        payload.set("generationConfig", genConfig);
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(5))
+                .build();
+
+        HttpResponse<String> resp = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() == 200) {
+            JsonNode json = MAPPER.readTree(resp.body());
+            JsonNode candidates = json.path("candidates");
+            if (candidates.isArray() && candidates.size() > 0) {
+                JsonNode parts = candidates.get(0).path("content").path("parts");
+                if (parts.isArray() && parts.size() > 0) {
+                    return parts.get(0).path("text").asText();
+                }
+            }
+        }
+        throw new RuntimeException("Gemini API returned HTTP " + resp.statusCode());
+    }
+
+    /**
+     * Deterministic reply generator when LLM is slow or unconfigured.
+     */
+    private String generateDeterministicReply(
+            String userMsg,
+            String bloodGroup,
+            double radius,
+            int units,
+            String urgency,
+            Map<String, Object> avail,
+            List<Map<String, Object>> donors,
+            Map<String, Object> stock,
+            boolean isRequestQuery) {
+
+        StringBuilder sb = new StringBuilder();
+
+        if (bloodGroup != null && avail != null) {
+            int total = ((Number) avail.getOrDefault("totalEligible", donors.size())).intValue();
+            int exact = ((Number) avail.getOrDefault("exactGroupCount", 0)).intValue();
+            int comp = total - exact;
+
+            if (total > 0) {
+                sb.append("Found ").append(total).append(" eligible donor(s) within ").append((int) radius).append(" km for ").append(bloodGroup);
+                if (exact > 0 && comp > 0) {
+                    sb.append(" (").append(exact).append(" exact match, ").append(comp).append(" compatible).");
+                } else if (exact > 0) {
+                    sb.append(" (").append(exact).append(" exact match).");
+                } else {
+                    sb.append(" (0 exact match, ").append(comp).append(" compatible donor(s) available).");
+                }
+                sb.append("\n\nHigh-accuracy and fast-response donors are prioritized below. You can send emergency requests directly to each donor without leaving this page.");
+            } else {
+                sb.append("No eligible donors found for ").append(bloodGroup).append(" within ").append((int) radius).append(" km.");
+                if (radius < 20.0) {
+                    sb.append(" Try expanding your search radius to 20 km to locate more donors.");
+                } else {
+                    sb.append(" Please review your hospital blood stock or consider planning an emergency donation drive.");
+                }
+            }
+        } else if (stock != null) {
+            sb.append("Hospital Blood Stock Status:\n");
+            Object groupsObj = stock.get("groups");
+            if (groupsObj instanceof List<?>) {
+                for (Object g : (List<?>) groupsObj) {
+                    if (g instanceof Map<?, ?>) {
+                        Map<?, ?> gm = (Map<?, ?>) g;
+                        sb.append("• ").append(gm.get("group")).append(": ").append(gm.get("units")).append(" units (").append(gm.get("status")).append(")\n");
+                    }
+                }
+            }
+        } else if (isRequestQuery) {
+            sb.append("Active emergency blood requests are tracked in real-time. Check the Active Requests tab on your dashboard to review response statuses.");
+        } else {
+            sb.append("Hello! I am your RED404 Hospital Emergency Assistant.\n\n")
+              .append("Ask me about blood availability (e.g., 'blood chahiye A- 10km' or 'compatible donors for AB+'), check current blood stock, or dispatch direct donor requests immediately.");
+        }
+
+        return ensureDisclaimer(sb.toString().trim());
     }
 
     private String ensureDisclaimer(String reply) {

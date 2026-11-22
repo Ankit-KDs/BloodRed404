@@ -28,20 +28,30 @@ public class HospitalAssistantChatTest {
     }
 
     @Test
-    @DisplayName("Test 2: Unconfigured API key returns fallback without crash or 500")
+    @DisplayName("Test 2: Unconfigured API key returns fast deterministic fallback without crash or 500")
     void testUnconfiguredFallback() {
-        // When ANTHROPIC_API_KEY is not set or empty
+        // When external LLM API key is not set, deterministic emergency engine responds immediately
         HospitalAssistantChatService.ChatResult result = chatService.processChat(12, "test@red404.org", "blood chahiye O+", Collections.emptyList());
         assertNotNull(result);
         assertTrue(result.success);
-        assertFalse(result.configured);
-        assertTrue(result.reply.contains("AI chat is not configured"));
-        assertTrue(result.reply.contains("Quick Check panel"));
+        assertTrue(result.configured);
+        assertNotNull(result.reply);
+        assertTrue(result.reply.contains("Counts are estimates. A doctor makes the final decision."));
     }
 
     @Test
     @DisplayName("Test 3: Mandatory doctor disclaimer constant exists")
     void testMandatoryDisclaimer() {
         assertEquals("Counts are estimates. A doctor makes the final decision.", HospitalAssistantChatService.MANDATORY_DISCLAIMER);
+    }
+
+    @Test
+    @DisplayName("Test 4: Intent extraction utilities for blood group and radius")
+    void testIntentExtraction() {
+        assertEquals("O+", HospitalAssistantChatService.extractBloodGroup("blood chahiye O+ 10km"));
+        assertEquals("A-", HospitalAssistantChatService.extractBloodGroup("urgent A negative donor required"));
+        assertEquals("AB+", HospitalAssistantChatService.extractBloodGroup("compatible donors for AB+"));
+        assertEquals(20.0, HospitalAssistantChatService.extractRadius("donors in 20 km", 10.0));
+        assertEquals(5.0, HospitalAssistantChatService.extractRadius("radius 5km", 10.0));
     }
 }

@@ -50,6 +50,7 @@ public class HospitalAssistantService {
     private final HospitalDao hospitalDao = new HospitalDao();
     private final DonorDao donorDao = new DonorDao();
     private final BloodRequestDao requestDao = new BloodRequestDao();
+    private final com.red404.dao.BloodRequestNotificationDao notificationDao = new com.red404.dao.BloodRequestNotificationDao();
 
     @Autowired
     private RateLimitService rateLimitService;
@@ -456,6 +457,95 @@ public class HospitalAssistantService {
         } catch (Exception e) {
             log.warn("Notice recording assistant tool audit: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Searches matching exact and compatible donors for the assistant
+     * with reliability metrics, acceptance accuracy, and response speed.
+     * Highlights top-accuracy and fastest-response donors (Requirement 3 & 4).
+     */
+    public List<Map<String, Object>> searchDonorsForAssistant(int hospitalId, String bloodGroup, double radiusKm, boolean includeCompatible) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        try {
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            if (hosp == null) return result;
+            Double lat = hosp.get("latitude") instanceof Number ? ((Number) hosp.get("latitude")).doubleValue() : null;
+            Double lng = hosp.get("longitude") instanceof Number ? ((Number) hosp.get("longitude")).doubleValue() : null;
+            if (lat == null || lng == null || (lat == 0.0 && lng == 0.0)) {
+                return result;
+            }
+
+            Map<String, Object> searchRes = donorDao.searchMatchingDonorsForHospital(lat, lng, radiusKm, bloodGroup, hospitalId);
+            Object donorsObj = searchRes.get("donors");
+            if (donorsObj instanceof List<?>) {
+                for (Object item : (List<?>) donorsObj) {
+                    if (item instanceof Map<?, ?>) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> donorMap = (Map<String, Object>) item;
+                        boolean isExact = Boolean.TRUE.equals(donorMap.get("isExactMatch"));
+                        if (!includeCompatible && !isExact) {
+                            continue;
+                        }
+
+                        int donorId = ((Number) donorMap.get("id")).intValue();
+                        Map<String, Object> metrics = notificationDao.getDonorReliabilityMetrics(donorId);
+
+                        Map<String, Object> card = new LinkedHashMap<>();
+                        card.put("id", donorId);
+                        // Name: first name + last initial or public display name
+                        String name = (String) donorMap.get("publicDisplayName");
+                        if (name == null || name.isBlank()) {
+                            name = (String) donorMap.get("name");
+                            if (name != null) {
+                                String[] parts = name.trim().split("\\s+");
+                                if (parts.length > 1) {
+                                    name = parts[0] + " " + parts[parts.length - 1].charAt(0) + ".";
+                                } else {
+                                    name = parts[0];
+                                }
+                            } else {
+                                name = "Donor #" + donorId;
+                            }
+                        }
+                        card.put("name", name);
+                        card.put("bloodType", donorMap.get("bloodType"));
+                        card.put("isExact", isExact);
+                        card.put("distanceKm", donorMap.get("distanceKm"));
+                        card.put("distanceFormatted", donorMap.get("distanceFormatted"));
+                        card.put("requestStatus", donorMap.getOrDefault("requestStatus", "Available"));
+                        
+                        // Reliability and Acceptance metrics (Requirement 4)
+                        card.put("acceptanceRate", metrics.get("acceptanceRate"));
+                        card.put("acceptanceAccuracy", metrics.get("acceptanceAccuracy"));
+                        card.put("responseSpeed", metrics.get("responseSpeed"));
+                        card.put("reliabilityBadge", metrics.get("reliabilityBadge"));
+                        card.put("isHighReliability", metrics.get("isHighReliability"));
+                        card.put("donationsCount", metrics.get("donationsCount"));
+
+                        result.add(card);
+                    }
+                }
+            }
+
+            // Sort: Exact match first, high reliability first, closest distance first
+            result.sort((a, b) -> {
+                boolean exactA = Boolean.TRUE.equals(a.get("isExact"));
+                boolean exactB = Boolean.TRUE.equals(b.get("isExact"));
+                if (exactA != exactB) return exactA ? -1 : 1;
+
+                boolean relA = Boolean.TRUE.equals(a.get("isHighReliability"));
+                boolean relB = Boolean.TRUE.equals(b.get("isHighReliability"));
+                if (relA != relB) return relA ? -1 : 1;
+
+                double distA = ((Number) a.getOrDefault("distanceKm", 999.0)).doubleValue();
+                double distB = ((Number) b.getOrDefault("distanceKm", 999.0)).doubleValue();
+                return Double.compare(distA, distB);
+            });
+
+        } catch (Exception e) {
+            log.warn("Error in searchDonorsForAssistant for hospital {}: {}", hospitalId, e.getMessage());
+        }
+        return result;
     }
 
     private static Double asDouble(Object val) {

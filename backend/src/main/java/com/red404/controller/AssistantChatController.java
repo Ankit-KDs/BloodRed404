@@ -106,16 +106,14 @@ public class AssistantChatController {
         Map<String, Object> statusData = new LinkedHashMap<>();
         statusData.put("configured", configured);
         statusData.put("model", chatService.getModelName());
-        statusData.put("message", configured
-                ? "AI Assistant is active and ready."
-                : "AI chat is not configured. Use the Quick Check panel on your dashboard for instant availability answers.");
+        statusData.put("message", "AI Assistant is active and ready.");
 
         return ResponseEntity.ok(new ApiResponse(true, "Assistant status retrieved", statusData));
     }
 
     /**
-     * Requirement 2: POST /api/assistant.
-     * Uses Anthropic API with tool use.
+     * Requirement 2 & 3: POST /api/assistant.
+     * Uses Gemini/Groq API with sub-second deterministic fallback and direct donor dispatch capability.
      */
     @PostMapping({"/api/assistant", "/api/assistant/chat", "/api/hospital/assistant/chat"})
     public ResponseEntity<ApiResponse> handleChat(
@@ -130,14 +128,6 @@ public class AssistantChatController {
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse(false, "Access denied. Only logged-in staff of verified hospitals can access this assistant.", "Access denied", "unauthorized", null));
-        }
-
-        // Check if ANTHROPIC_API_KEY is configured
-        if (!chatService.isConfigured()) {
-            Map<String, Object> fallbackData = new LinkedHashMap<>();
-            fallbackData.put("configured", false);
-            fallbackData.put("reply", "AI chat is not configured. Use the Quick Check panel on your dashboard for instant availability answers.");
-            return ResponseEntity.ok(new ApiResponse(true, "AI chat is not configured.", fallbackData));
         }
 
         String message = "";
@@ -173,6 +163,17 @@ public class AssistantChatController {
                         .body(new ApiResponse(false, result.error, result.error, result.errorCode, null));
             }
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body(new ApiResponse(false, result.error, result.error, result.errorCode, null));
+        }
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("reply", result.reply);
+        data.put("configured", result.configured);
+        data.put("donors", result.donors);
+        data.put("toolCalls", result.toolCalls);
+
+        return ResponseEntity.ok(new ApiResponse(true, "Assistant response generated", data));
+    }
                     .body(new ApiResponse(false, result.error, result.error, result.errorCode, null));
         }
 
