@@ -8,34 +8,36 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for Part 3: AI Assistant Chat.
+ * Unit tests for Part 3: Real LLM Tool-Calling AI Agent.
  */
 public class HospitalAssistantChatTest {
 
     private final HospitalAssistantChatService chatService = new HospitalAssistantChatService();
 
     @Test
-    @DisplayName("Test 1: System prompt conforms strictly to requirement 3")
+    @DisplayName("Test 1: System prompt conforms strictly to real-time LLM emergency agent")
     void testSystemPromptRequirements() {
         String prompt = HospitalAssistantChatService.SYSTEM_PROMPT;
         assertNotNull(prompt);
-        assertTrue(prompt.contains("emergency blood assistant for hospital staff"));
-        assertTrue(prompt.contains("Answer urgent availability and compatibility questions"));
-        assertTrue(prompt.contains("Hindi and Hinglish supported"));
-        assertTrue(prompt.contains("Always use tools for donor counts and stock; never guess or make up numbers"));
-        assertTrue(prompt.contains("You cannot send requests, notify donors, broadcast, edit stock, or perform any action"));
+        assertTrue(prompt.contains("RED404's real-time Hospital AI Emergency Agent"));
+        assertTrue(prompt.contains("live hospital tools"));
+        assertTrue(prompt.contains("EXACT SAME LANGUAGE and STYLE"));
+        assertTrue(prompt.contains("Hindi in Devanagari, or Hinglish in Roman script"));
+        assertTrue(prompt.contains("NEVER hallucinate or invent numbers"));
+        assertTrue(prompt.contains("Blood group is OPTIONAL for donor search"));
         assertTrue(prompt.contains("Counts are estimates. A doctor makes the final decision."));
     }
 
     @Test
-    @DisplayName("Test 2: Unconfigured API key returns fast deterministic fallback without crash or 500")
-    void testUnconfiguredFallback() {
-        // When external LLM API key is not set, deterministic emergency engine responds immediately
-        HospitalAssistantChatService.ChatResult result = chatService.processChat(12, "test@red404.org", "blood chahiye O+", Collections.emptyList());
+    @DisplayName("Test 2: Unconfigured API key returns honest status badge and clear message")
+    void testUnconfiguredHonestStatus() {
+        // When neither GROQ_API_KEY nor GEMINI_API_KEY is configured, assistant honestly reports unconfigured
+        HospitalAssistantChatService.ChatResult result = chatService.processChat(12, "test@red404.org", "aas paas ke donors dikhao", Collections.emptyList());
         assertNotNull(result);
         assertTrue(result.success);
-        assertTrue(result.configured);
+        assertFalse(result.configured, "Configured must be false when no API key is provided");
         assertNotNull(result.reply);
+        assertTrue(result.reply.contains("AI Key Not Configured"), "Reply must state AI Key Not Configured");
         assertTrue(result.reply.contains("Counts are estimates. A doctor makes the final decision."));
     }
 
@@ -46,12 +48,27 @@ public class HospitalAssistantChatTest {
     }
 
     @Test
-    @DisplayName("Test 4: Intent extraction utilities for blood group and radius")
+    @DisplayName("Test 4: Intent extraction utilities for blood group and radius with optional blood group")
     void testIntentExtraction() {
         assertEquals("O+", HospitalAssistantChatService.extractBloodGroup("blood chahiye O+ 10km"));
         assertEquals("A-", HospitalAssistantChatService.extractBloodGroup("urgent A negative donor required"));
         assertEquals("AB+", HospitalAssistantChatService.extractBloodGroup("compatible donors for AB+"));
+        // Blood group is optional!
+        assertNull(HospitalAssistantChatService.extractBloodGroup("aas paas ke sare donors dikhao jo 5 km ke radius me hai"));
+        
         assertEquals(20.0, HospitalAssistantChatService.extractRadius("donors in 20 km", 10.0));
         assertEquals(5.0, HospitalAssistantChatService.extractRadius("radius 5km", 10.0));
+        assertEquals(10.0, HospitalAssistantChatService.extractRadius("aas paas ke donors", 10.0));
+    }
+
+    @Test
+    @DisplayName("Test 5: Multilingual language detector handles Hindi, Hinglish, and English")
+    void testLanguageDetection() {
+        assertEquals("hinglish", HospitalAssistantChatService.detectLanguage("aas paas ke sare donors dikhao jo 5 km ke radius me hai"));
+        assertEquals("hinglish", HospitalAssistantChatService.detectLanguage("O+ urgent chahiye 10 km me, jaldi accept karne wale dikhao"));
+        assertEquals("hinglish", HospitalAssistantChatService.detectLanguage("hamare hospital me kaunse blood group critical ya low hai aur koi bag expire ho raha hai kya?"));
+        assertEquals("hinglish", HospitalAssistantChatService.detectLanguage("aaj kitne active requests aur check-ins hai?"));
+        assertEquals("hi", HospitalAssistantChatService.detectLanguage("रक्तदाता दिखाओ जो पास में हैं"));
+        assertEquals("en", HospitalAssistantChatService.detectLanguage("Show all donors within 10 km"));
     }
 }

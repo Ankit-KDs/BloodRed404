@@ -1,14 +1,13 @@
 /**
  * hospital-assistant-chat.js
- * Implementation of Part 3: AI Chat for Hospital Portal.
+ * RED404 Hospital Portal AI Assistant Agent.
  *
- * SPECIFICATION RULES:
+ * SPECIFICATION:
  * 1. UI: "Ask assistant" button on all hospital pages opening a side panel (full screen on phones).
- * 2. Chat history lives in the browser tab only (sessionStorage); "Clear chat" button; nothing stored on the server.
- * 3. Server: POST /api/assistant.
- * 4. Fallback when ANTHROPIC_API_KEY is not set: friendly disabled state:
- *    "AI chat is not configured. Use the Quick Check panel on your dashboard for instant availability answers."
- *    No crash, no 500.
+ * 2. Chat history lives in browser tab only (sessionStorage); "Clear chat" button; nothing stored on server.
+ * 3. Server: POST /api/assistant. Uses Groq / Gemini with real tool calling against live MySQL data.
+ * 4. Honest status: Displays "AI Key Not Configured" if neither GROQ_API_KEY nor GEMINI_API_KEY is configured.
+ * 5. Direct Donor Request Dispatch: Render interactive donor cards with "⚡ Send Request" button.
  */
 
 (function () {
@@ -16,6 +15,7 @@
 
   const STORAGE_KEY = 'red404_assistant_chat_tab';
   let isConfigured = false;
+  let activeModelInfo = '';
   let chatHistory = [];
   let isSending = false;
 
@@ -67,9 +67,22 @@
         headers: { 'Accept': 'application/json', ...getAuthHeaders() },
         credentials: 'include'
       });
-      isConfigured = true;
+      if (resp.ok) {
+        const json = await resp.json();
+        if (json && json.data) {
+          isConfigured = !!json.data.configured;
+          activeModelInfo = json.data.model || '';
+        } else {
+          isConfigured = false;
+          activeModelInfo = '';
+        }
+      } else {
+        isConfigured = false;
+        activeModelInfo = '';
+      }
     } catch (e) {
-      isConfigured = true;
+      isConfigured = false;
+      activeModelInfo = '';
     }
     updateUIStatus();
   }
@@ -116,7 +129,7 @@
 
       <div class="asst-footer" id="asstFooter">
         <form id="asstChatForm" class="asst-input-row" onsubmit="return false;">
-          <input type="text" id="asstInput" class="asst-input" placeholder="Ask about blood availability, stock, requests..." autocomplete="off" />
+          <input type="text" id="asstInput" class="asst-input" placeholder="Ask about nearby donors, blood stock, active requests..." autocomplete="off" />
           <button type="submit" id="btnAsstSend" class="asst-btn-send" aria-label="Send message">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -167,10 +180,17 @@
 
     if (!dot || !label) return;
 
-    dot.className = 'asst-status-dot';
-    label.textContent = 'Online • Emergency Ready';
-    if (input) input.disabled = false;
-    if (sendBtn) sendBtn.disabled = false;
+    if (isConfigured) {
+      dot.className = 'asst-status-dot online';
+      label.textContent = activeModelInfo ? `Online • ${activeModelInfo}` : 'Online • Emergency Ready';
+      if (input) input.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+    } else {
+      dot.className = 'asst-status-dot unconfigured';
+      label.textContent = 'AI Key Not Configured';
+      if (input) input.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+    }
 
     renderMessages();
   }
@@ -213,28 +233,48 @@
     const wrap = document.getElementById('asstMessagesWrap');
     if (!wrap) return;
 
-    // Show starter suggestions if chat history is empty
+    // Show starter suggestions or unconfigured banner if chat history is empty
     if (chatHistory.length === 0) {
+      if (!isConfigured) {
+        wrap.innerHTML = `
+          <div class="asst-disabled-banner">
+            <div class="asst-disabled-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <h4 style="color: #fff; margin: 10px 0 4px; font-size: 14px;">AI Key Not Configured</h4>
+            <p style="color: var(--asst-text-muted); font-size: 12.5px; margin: 0 0 14px; line-height: 1.5;">Configure <code>GROQ_API_KEY</code> or <code>GEMINI_API_KEY</code> in server environment variables to enable the AI Assistant agent.</p>
+          </div>
+        `;
+        return;
+      }
+
       wrap.innerHTML = `
         <div style="text-align: center; color: var(--asst-text-muted); font-size: 13px; margin-top: 20px;">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8" style="margin-bottom: 8px;">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
-          <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">Emergency Blood Assistant</div>
-          <div>Fast donor lookup with direct request dispatch. Ask below:</div>
+          <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">Emergency Blood AI Agent</div>
+          <div>Live tool-calling agent across donors, stock, requests & check-ins. Ask below:</div>
         </div>
 
         <div class="asst-suggestions">
           <div class="asst-suggestions-title">Quick prompts</div>
           <div class="asst-chips-grid">
-            <button type="button" class="asst-chip" data-prompt="blood chahiye A- 10km">
-              "blood chahiye A- 10km"
+            <button type="button" class="asst-chip" data-prompt="aas paas ke sare donors dikhao jo 5 km ke radius me hai">
+              "aas paas ke sare donors dikhao jo 5 km ke radius me hai"
             </button>
-            <button type="button" class="asst-chip" data-prompt="kitne donors in 10 km for O+, compatible bhi dikhao">
-              "kitne donors in 10 km for O+, compatible bhi dikhao"
+            <button type="button" class="asst-chip" data-prompt="O+ urgent chahiye 10 km me, jaldi accept karne wale dikhao">
+              "O+ urgent chahiye 10 km me, jaldi accept karne wale dikhao"
             </button>
-            <button type="button" class="asst-chip" data-prompt="What is our current hospital blood stock status?">
-              "What is our current hospital blood stock status?"
+            <button type="button" class="asst-chip" data-prompt="hamare hospital me kaunse blood group critical ya low hai aur koi bag expire ho raha hai kya?">
+              "hamare hospital me kaunse blood group critical ya low hai aur koi bag expire ho raha hai kya?"
+            </button>
+            <button type="button" class="asst-chip" data-prompt="aaj kitne active requests aur check-ins hai?">
+              "aaj kitne active requests aur check-ins hai?"
             </button>
           </div>
         </div>
@@ -257,6 +297,7 @@
     wrap.innerHTML = chatHistory.map((m, idx) => {
       const isLastAssistant = (m.role === 'assistant' && idx === chatHistory.length - 1);
       const hasDonors = Array.isArray(m.donors) && m.donors.length > 0;
+      const followUps = Array.isArray(m.quickFollowUps) && m.quickFollowUps.length > 0 ? m.quickFollowUps : [];
       const formattedContent = escapeHtml(m.content).replace(/\n/g, '<br>');
 
       return `
@@ -270,20 +311,14 @@
             ` : ''}
           </div>
           <div class="asst-time">${formatTime(m.time)}</div>
-          ${isLastAssistant ? `
+          ${(isLastAssistant && followUps.length > 0) ? `
             <div class="asst-followup-chips">
-              <button type="button" class="asst-followup-chip" data-asst-action="check_20km">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                <span>Check 20 km</span>
-              </button>
-              <button type="button" class="asst-followup-chip" data-asst-action="view_stock">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                <span>View stock</span>
-              </button>
-              <button type="button" class="asst-followup-chip" data-asst-action="plan_drive">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span>Plan donation drive</span>
-              </button>
+              ${followUps.map(f => `
+                <button type="button" class="asst-followup-chip" data-prompt="${escapeHtml(f)}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                  <span>${escapeHtml(f)}</span>
+                </button>
+              `).join('')}
             </div>
           ` : ''}
         </div>
@@ -358,31 +393,12 @@
     if (!container) return;
     container.querySelectorAll('.asst-followup-chip').forEach(chip => {
       chip.addEventListener('click', () => {
-        const action = chip.getAttribute('data-asst-action');
-        if (action === 'check_20km') {
+        const prompt = chip.getAttribute('data-prompt');
+        if (prompt) {
           const input = document.getElementById('asstInput');
           if (input) {
-            input.value = "blood chahiye, kitne donors in 20 km radius, compatible bhi dikhao";
+            input.value = prompt;
             handleSendMessage();
-          }
-        } else if (action === 'view_stock') {
-          const input = document.getElementById('asstInput');
-          if (input) {
-            input.value = "What is our current hospital blood stock status?";
-            handleSendMessage();
-          }
-        } else if (action === 'plan_drive') {
-          closeChatPanel();
-          if (window.location.pathname.includes('hospital-dashboard.html')) {
-            if (typeof window.switchTab === 'function') window.switchTab('tab-dashboard');
-            const openDriveModal = document.getElementById('btnOpenPlanDriveModal');
-            if (openDriveModal) openDriveModal.click();
-            else {
-              const sec = document.getElementById('sectionDonationDrives');
-              if (sec) sec.scrollIntoView({ behavior: 'smooth' });
-            }
-          } else {
-            window.location.href = 'hospital-dashboard.html#tab-dashboard';
           }
         }
       });
@@ -422,8 +438,8 @@
     isSending = true;
 
     try {
-      // Build history payload for server (user & assistant roles only, no PII)
-      const payloadHistory = chatHistory.slice(-6).map(h => ({
+      // Build history payload for server (last 10 messages, user & assistant roles only, zero PII)
+      const payloadHistory = chatHistory.slice(-10).map(h => ({
         role: h.role,
         content: h.content
       }));
@@ -451,6 +467,9 @@
           role: 'assistant',
           content: data.data.reply,
           donors: data.data.donors || [],
+          stock: data.data.stock || null,
+          requests: data.data.requests || null,
+          quickFollowUps: data.data.quickFollowUps || [],
           time: new Date().toISOString()
         });
       } else {
@@ -520,7 +539,7 @@
     open: openChatPanel,
     close: closeChatPanel,
     clear: clearChatHistory,
-    getStatus: () => ({ configured: isConfigured, historyCount: chatHistory.length })
+    getStatus: () => ({ configured: isConfigured, model: activeModelInfo, historyCount: chatHistory.length })
   };
 
   if (document.readyState === 'loading') {

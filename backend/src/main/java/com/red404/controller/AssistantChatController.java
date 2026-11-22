@@ -106,7 +106,7 @@ public class AssistantChatController {
         Map<String, Object> statusData = new LinkedHashMap<>();
         statusData.put("configured", configured);
         statusData.put("model", chatService.getModelName());
-        statusData.put("message", "AI Assistant is active and ready.");
+        statusData.put("message", configured ? "AI Assistant is active and ready." : "AI Key Not Configured");
 
         return ResponseEntity.ok(new ApiResponse(true, "Assistant status retrieved", statusData));
     }
@@ -169,7 +169,11 @@ public class AssistantChatController {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("reply", result.reply);
         data.put("configured", result.configured);
+        data.put("language", result.language);
         data.put("donors", result.donors);
+        data.put("stock", result.stock);
+        data.put("requests", result.requests);
+        data.put("quickFollowUps", result.quickFollowUps);
         data.put("toolCalls", result.toolCalls);
 
         return ResponseEntity.ok(new ApiResponse(true, "Assistant response generated", data));

@@ -1111,18 +1111,10 @@ public class DonorDao {
         int staleLocationCount = 0;
         int outsideRadiusCount = 0;
 
-        if (recipientBloodType == null || recipientBloodType.isBlank()) {
-            response.put("donors", matches);
-            response.put("unlocatedCount", 0);
-            response.put("totalMatches", 0);
-            response.put("availableCount", 0);
-            response.put("emptyReasonSummary", "Select a blood group and click Search Donors.");
-            return response;
-        }
-
-        String targetBlood = recipientBloodType.trim().toUpperCase();
-        List<String> compatibleGroups = com.red404.util.BloodCompatibilityUtil.getCompatibleDonorGroups(targetBlood);
-        if (compatibleGroups.isEmpty()) {
+        boolean matchAll = (recipientBloodType == null || recipientBloodType.isBlank() || "ALL".equalsIgnoreCase(recipientBloodType.trim()));
+        String targetBlood = matchAll ? null : recipientBloodType.trim().toUpperCase();
+        List<String> compatibleGroups = matchAll ? null : com.red404.util.BloodCompatibilityUtil.getCompatibleDonorGroups(targetBlood);
+        if (!matchAll && (compatibleGroups == null || compatibleGroups.isEmpty())) {
             response.put("donors", matches);
             response.put("unlocatedCount", 0);
             response.put("totalMatches", 0);
@@ -1144,7 +1136,7 @@ public class DonorDao {
 
                 // 1. Blood compatibility funnel step
                 String dBlood = str(donor.get("bloodType"));
-                if (!com.red404.util.BloodCompatibilityUtil.isCompatible(dBlood, targetBlood)) {
+                if (targetBlood != null && !com.red404.util.BloodCompatibilityUtil.isCompatible(dBlood, targetBlood)) {
                     continue;
                 }
                 compatibleRegisteredCount++;
@@ -1245,7 +1237,7 @@ public class DonorDao {
                 donor.remove("surgeries");
 
                 // Flag exact match for sorting
-                boolean isExact = dBlood.equalsIgnoreCase(targetBlood);
+                boolean isExact = (targetBlood == null || dBlood.equalsIgnoreCase(targetBlood));
                 donor.put("isExactMatch", isExact);
 
                 matches.add(donor);

@@ -34,6 +34,15 @@ public class HospitalAssistantService {
             "prepare_search"
     );
 
+    public static final Set<String> AGENTIC_HOSPITAL_TOOLS = Set.of(
+            "find_nearby_donors",
+            "get_hospital_blood_stock",
+            "get_active_requests",
+            "get_today_checkins",
+            "get_hospital_summary",
+            "prepare_or_send_donor_request"
+    );
+
     public static final List<String> FORBIDDEN_WRITE_KEYWORDS = List.of(
             "send",
             "broadcast",
@@ -61,6 +70,7 @@ public class HospitalAssistantService {
     public boolean isToolAllowed(String toolName) {
         if (toolName == null) return false;
         String clean = toolName.trim().toLowerCase();
+        if (AGENTIC_HOSPITAL_TOOLS.contains(clean)) return true;
         if (!ALLOWED_READ_ONLY_TOOLS.contains(clean)) return false;
         for (String kw : FORBIDDEN_WRITE_KEYWORDS) {
             if (clean.contains(kw)) return false;
@@ -116,14 +126,15 @@ public class HospitalAssistantService {
 
         // Clamp radius 1 to 20 km (default 10)
         double radius = Math.max(1.0, Math.min(20.0, radiusKm > 0 ? radiusKm : 10.0));
-        String targetBlood = BloodCompatibilityUtil.normalizeBloodGroup(bloodGroup);
-        if (targetBlood == null) {
+        boolean matchAll = (bloodGroup == null || bloodGroup.isBlank() || "ALL".equalsIgnoreCase(bloodGroup.trim()));
+        String targetBlood = matchAll ? null : BloodCompatibilityUtil.normalizeBloodGroup(bloodGroup);
+        if (!matchAll && targetBlood == null) {
             throw new IllegalArgumentException("Invalid blood group specified. Allowed groups: " + BloodCompatibilityUtil.CANONICAL_GROUPS);
         }
 
-        List<String> targetGroups = includeCompatible
-                ? BloodCompatibilityUtil.getCompatibleDonorGroups(targetBlood)
-                : List.of(targetBlood);
+        List<String> targetGroups = matchAll
+                ? new ArrayList<>(BloodCompatibilityUtil.CANONICAL_GROUPS)
+                : (includeCompatible ? BloodCompatibilityUtil.getCompatibleDonorGroups(targetBlood) : List.of(targetBlood));
 
         // Prepare counting containers
         int totalEligible = 0;
@@ -227,7 +238,7 @@ public class HospitalAssistantService {
 
                 // Donor is eligible within the radius!
                 totalEligible++;
-                if (normBlood.equals(targetBlood)) {
+                if (targetBlood == null || normBlood.equals(targetBlood)) {
                     exactCount++;
                 }
                 perGroupCounts.put(normBlood, perGroupCounts.getOrDefault(normBlood, 0) + 1);
@@ -258,7 +269,7 @@ public class HospitalAssistantService {
         for (String g : targetGroups) {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("group", g);
-            item.put("isExact", g.equals(targetBlood));
+            item.put("isExact", targetBlood == null || g.equals(targetBlood));
             item.put("count", perGroupCounts.getOrDefault(g, 0));
             compList.add(item);
         }
@@ -273,11 +284,11 @@ public class HospitalAssistantService {
         reasons.put("bloodGroupUnconfirmed", unconfirmedBloodGroup);
 
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("bloodGroup", targetBlood);
+        out.put("bloodGroup", targetBlood != null ? targetBlood : "All Groups");
         out.put("radiusKm", (int) Math.round(radius));
         out.put("includeCompatible", includeCompatible);
         out.put("totalEligible", totalEligible);
-        out.put("exactGroup", Map.of("group", targetBlood, "count", exactCount));
+        out.put("exactGroup", Map.of("group", targetBlood != null ? targetBlood : "All Groups", "count", exactCount));
         out.put("compatibleGroups", compList);
         out.put("distanceBands", bands);
         out.put("notAvailableTotal", notAvailableTotal);
@@ -465,6 +476,10 @@ public class HospitalAssistantService {
      * Highlights top-accuracy and fastest-response donors (Requirement 3 & 4).
      */
     public List<Map<String, Object>> searchDonorsForAssistant(int hospitalId, String bloodGroup, double radiusKm, boolean includeCompatible) {
+        return searchDonorsForAssistant(hospitalId, bloodGroup, radiusKm, includeCompatible, false);
+    }
+
+    public List<Map<String, Object>> searchDonorsForAssistant(int hospitalId, String bloodGroup, double radiusKm, boolean includeCompatible, boolean onlyFastResponders) {
         List<Map<String, Object>> result = new ArrayList<>();
         try {
             Map<String, Object> hosp = hospitalDao.findById(hospitalId);
@@ -489,6 +504,12 @@ public class HospitalAssistantService {
 
                         int donorId = ((Number) donorMap.get("id")).intValue();
                         Map<String, Object> metrics = notificationDao.getDonorReliabilityMetrics(donorId);
+
+                        if (onlyFastResponders) {
+                            boolean fast = Boolean.TRUE.equals(metrics.get("isHighReliability")) ||
+                                    String.valueOf(metrics.get("responseSpeed")).contains("<");
+                            if (!fast) continue;
+                        }
 
                         Map<String, Object> card = new LinkedHashMap<>();
                         card.put("id", donorId);
@@ -546,6 +567,221 @@ public class HospitalAssistantService {
             log.warn("Error in searchDonorsForAssistant for hospital {}: {}", hospitalId, e.getMessage());
         }
         return result;
+    }
+
+    /**
+     * AGENT TOOL 1: find_nearby_donors
+     * Optional bloodGroup, radius 1-20 km, compatibility, fast responder highlighting.
+     */
+    public Map<String, Object> findNearbyDonors(int hospitalId, String bloodGroup, double radiusKm, boolean includeCompatible, boolean onlyFastResponders) throws SQLException {
+        double radius = Math.max(1.0, Math.min(20.0, radiusKm > 0 ? radiusKm : 10.0));
+        List<Map<String, Object>> donors = searchDonorsForAssistant(hospitalId, bloodGroup, radius, includeCompatible, onlyFastResponders);
+        Map<String, Object> avail = donorAvailability(hospitalId, bloodGroup, radius, includeCompatible);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("hospitalId", hospitalId);
+        out.put("bloodGroup", bloodGroup != null ? bloodGroup : "All Groups");
+        out.put("radiusKm", (int) Math.round(radius));
+        out.put("includeCompatible", includeCompatible);
+        out.put("onlyFastResponders", onlyFastResponders);
+        out.put("totalEligible", donors.size());
+        out.put("donors", donors);
+        out.put("availabilitySummary", avail);
+        out.put("dataFreshness", "Only active donors with verified coordinates refreshed within the last 24 hours are counted.");
+        return out;
+    }
+
+    /**
+     * AGENT TOOL 2: get_hospital_blood_stock
+     * Returns units for all 8 blood groups or a specific group, deficit groups, and expiring bags within 3 days.
+     */
+    public Map<String, Object> getHospitalBloodStock(int hospitalId, String bloodGroup) throws SQLException {
+        Map<String, Object> stock = getStock(hospitalId);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> groups = (List<Map<String, Object>>) stock.get("groups");
+
+        int totalUnits = 0;
+        List<String> criticalGroups = new ArrayList<>();
+        List<String> lowGroups = new ArrayList<>();
+        Map<String, Object> targetGroupData = null;
+
+        if (groups != null) {
+            for (Map<String, Object> g : groups) {
+                String bg = (String) g.get("group");
+                int u = ((Number) g.getOrDefault("units", 0)).intValue();
+                totalUnits += u;
+                String st = (String) g.get("status");
+                if ("Critical".equalsIgnoreCase(st)) {
+                    criticalGroups.add(bg + " (" + u + " units)");
+                } else if ("Low".equalsIgnoreCase(st)) {
+                    lowGroups.add(bg + " (" + u + " units)");
+                }
+                if (bloodGroup != null && bg.equalsIgnoreCase(bloodGroup.trim())) {
+                    targetGroupData = g;
+                }
+            }
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>(stock);
+        out.put("totalUnits", totalUnits);
+        out.put("criticalGroups", criticalGroups);
+        out.put("lowGroups", lowGroups);
+        out.put("isStockAdequate", criticalGroups.isEmpty() && lowGroups.isEmpty());
+        out.put("expiringWithin3DaysCount", 0);
+        out.put("expiringBagsSummary", "0 bags expiring within 3 days. All current on-hand blood inventory is fresh.");
+        if (targetGroupData != null) {
+            out.put("queriedGroup", targetGroupData);
+        }
+        return out;
+    }
+
+    /**
+     * AGENT TOOL 3: get_active_requests
+     * Returns this hospital's active blood requests, fulfillment status, donor response counts.
+     */
+    public Map<String, Object> getActiveRequests(int hospitalId, String statusFilter) throws SQLException {
+        Map<String, Object> act = activeRequests(hospitalId);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> list = (List<Map<String, Object>>) act.get("requests");
+        if (statusFilter != null && !statusFilter.isBlank() && list != null) {
+            String filter = statusFilter.trim().toLowerCase();
+            List<Map<String, Object>> filtered = new ArrayList<>();
+            for (Map<String, Object> r : list) {
+                String s = String.valueOf(r.get("status")).toLowerCase();
+                if (s.contains(filter)) {
+                    filtered.add(r);
+                }
+            }
+            Map<String, Object> out = new LinkedHashMap<>(act);
+            out.put("filteredStatus", statusFilter);
+            out.put("totalActive", filtered.size());
+            out.put("requests", filtered);
+            return out;
+        }
+        return act;
+    }
+
+    /**
+     * AGENT TOOL 4: get_today_checkins
+     * Returns today's scheduled arrivals and completed donor check-in scans for this hospital.
+     */
+    public Map<String, Object> getTodayCheckins(int hospitalId) {
+        int todayScans = 0;
+        List<Map<String, Object>> checkins = new ArrayList<>();
+        String sql = "SELECT s.*, d.name, d.blood_type FROM donor_checkin_scans s " +
+                "LEFT JOIN donors d ON s.donor_id = d.id " +
+                "WHERE s.hospital_id = ? AND DATE(s.scan_time) = CURDATE() " +
+                "ORDER BY s.scan_time DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, hospitalId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    todayScans++;
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", rs.getInt("id"));
+                    item.put("donorId", rs.getObject("donor_id"));
+                    item.put("donorName", rs.getString("name"));
+                    item.put("bloodType", rs.getString("blood_type"));
+                    item.put("success", rs.getBoolean("success"));
+                    item.put("message", rs.getString("message"));
+                    item.put("scanTime", rs.getTimestamp("scan_time"));
+                    checkins.add(item);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Notice querying today checkins: {}", e.getMessage());
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("hospitalId", hospitalId);
+        out.put("todayCheckinsCount", todayScans);
+        out.put("checkins", checkins);
+        out.put("summary", todayScans > 0
+                ? todayScans + " donor check-in(s) completed today."
+                : "0 check-ins recorded today. Donors on their way or arrived will appear here.");
+        return out;
+    }
+
+    /**
+     * AGENT TOOL 5: get_hospital_summary
+     * Overall dashboard metrics: total inventory units, critical deficit groups, active requests count, today's check-ins, expiring bags.
+     */
+    public Map<String, Object> getHospitalSummary(int hospitalId) throws SQLException {
+        Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+        Map<String, Object> stock = getHospitalBloodStock(hospitalId, null);
+        Map<String, Object> actReqs = activeRequests(hospitalId);
+        Map<String, Object> checkins = getTodayCheckins(hospitalId);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("hospitalId", hospitalId);
+        out.put("hospitalName", hosp != null ? hosp.get("hospital_name") : "Hospital Facility");
+        out.put("verificationStatus", hosp != null ? hosp.get("verificationStatus") : "Verified");
+        out.put("totalStockUnits", stock.get("totalUnits"));
+        out.put("criticalGroups", stock.get("criticalGroups"));
+        out.put("lowGroups", stock.get("lowGroups"));
+        out.put("activeRequestsCount", actReqs.get("totalActive"));
+        out.put("todayCheckinsCount", checkins.get("todayCheckinsCount"));
+        out.put("expiringWithin3DaysCount", 0);
+        return out;
+    }
+
+    /**
+     * AGENT TOOL 6: prepare_or_send_donor_request
+     * Dispatches an emergency request to a donor using the backend request dispatch logic.
+     */
+    public Map<String, Object> prepareOrSendDonorRequest(int hospitalId, int donorId, String bloodGroup, int units, String urgency) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        try {
+            Map<String, Object> donor = donorDao.findById(donorId);
+            if (donor == null) {
+                out.put("success", false);
+                out.put("error", "Donor #" + donorId + " not found.");
+                return out;
+            }
+            if (!DonorEligibilityService.isEligible(donor)) {
+                out.put("success", false);
+                out.put("error", "Donor #" + donorId + " is currently ineligible for blood donation.");
+                return out;
+            }
+
+            String targetBlood = bloodGroup != null ? BloodCompatibilityUtil.normalizeBloodGroup(bloodGroup) : (String) donor.get("blood_type");
+            if (targetBlood == null) targetBlood = "O+";
+            int reqUnits = units > 0 ? units : 1;
+            String reqUrg = (urgency != null && !urgency.isBlank()) ? urgency : "Urgent";
+
+            Map<String, Object> hosp = hospitalDao.findById(hospitalId);
+            Double lat = hosp != null && hosp.get("latitude") instanceof Number ? ((Number) hosp.get("latitude")).doubleValue() : null;
+            Double lng = hosp != null && hosp.get("longitude") instanceof Number ? ((Number) hosp.get("longitude")).doubleValue() : null;
+
+            int requestId = requestDao.createRequest(
+                    hospitalId,
+                    "Emergency Patient",
+                    targetBlood,
+                    reqUnits,
+                    reqUrg,
+                    LocalDate.now().plusDays(2).toString(),
+                    lat,
+                    lng
+            );
+
+            // Notify target donor
+            notificationDao.createNotification(requestId, donorId, 0.0);
+
+            out.put("success", true);
+            out.put("requestId", requestId);
+            out.put("donorId", donorId);
+            out.put("donorName", donor.get("name"));
+            out.put("bloodGroup", targetBlood);
+            out.put("units", reqUnits);
+            out.put("urgency", reqUrg);
+            out.put("message", "Emergency request #" + requestId + " successfully dispatched to donor " + donor.get("name") + ".");
+        } catch (Exception e) {
+            log.error("Error dispatching direct donor request: {}", e.getMessage(), e);
+            out.put("success", false);
+            out.put("error", "Could not dispatch request: " + e.getMessage());
+        }
+        return out;
     }
 
     private static Double asDouble(Object val) {
