@@ -410,13 +410,6 @@ public class PublicSearchService {
                 // Donor is eligible, active, matching, and within radius
                 totalEligibleInRadius++;
 
-                // Opt-in check for public listing
-                Object optInObj = getVal(donorMap, "public_search_opt_in", "PUBLIC_SEARCH_OPT_IN");
-                boolean isOptedIn = Boolean.TRUE.equals(optInObj) || "true".equalsIgnoreCase(String.valueOf(optInObj));
-                if (!isOptedIn) {
-                    continue; // Only opted-in donors are displayed in results
-                }
-
                 // Privacy: display name is strictly first name + last initial (e.g. "Oggy C.")
                 String rawName = (String) getVal(donorMap, "name", "NAME");
                 String displayName = deriveDisplayName(rawName);
@@ -474,11 +467,9 @@ public class PublicSearchService {
         // if >= 3: "{count} eligible donors nearby"
         String eligibleNearbyDisplay;
         if (totalEligibleInRadius <= 0) {
-            eligibleNearbyDisplay = "No eligible donors found within " + (int) radiusKm + " km.";
-        } else if (totalEligibleInRadius < 3) {
-            eligibleNearbyDisplay = "Fewer than 3 donors nearby";
+            eligibleNearbyDisplay = "No donors found within " + (int) radiusKm + " km. Try a larger radius or another city.";
         } else {
-            eligibleNearbyDisplay = totalEligibleInRadius + " eligible donors nearby";
+            eligibleNearbyDisplay = totalEligibleInRadius == 1 ? "1 eligible donor nearby" : (totalEligibleInRadius + " eligible donors nearby");
         }
 
         String locationOffDisplay = "";

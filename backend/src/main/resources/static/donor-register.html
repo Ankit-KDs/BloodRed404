@@ -470,17 +470,6 @@
             <input type="hidden" id="lng" name="lng" />
           </div>
 
-          <!-- Public Donor Search Opt-In Toggle -->
-          <div class="reg-form-group" style="margin-top: 1.5rem; padding: 1.25rem; background-color: var(--reg-surface); border: 1px solid var(--reg-border); border-radius: 8px;">
-            <label class="reg-check-label" style="padding: 0; background: none; border: none;">
-              <input type="checkbox" id="publicSearchOptIn" name="publicSearchOptIn" />
-              <span><strong>Show me in public donor directory (Optional)</strong></span>
-            </label>
-            <div class="reg-helper" style="margin-left: 28px; margin-top: 4px;">
-              Default is OFF. When enabled, only your blood group, first name, and approximate locality are visible to patients searching for donors. Your direct contact info and exact coordinates are never shown.
-            </div>
-          </div>
-
           <div class="reg-actions">
             <button type="button" class="reg-btn reg-btn-secondary" onclick="proceedToStep(2)">
               <i class="fas fa-arrow-left"></i> Back to Health
@@ -520,7 +509,7 @@
           <div class="reg-form-group" style="border-top: 1px solid var(--reg-border); padding-top: 1.25rem;">
             <label class="reg-check-label" style="padding: 0; background: none; border: none; margin-bottom: 0.75rem;">
               <input type="checkbox" id="termsConsent" name="termsConsent" required />
-              <span>I agree to the <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-blue);">Terms of Service</a> and <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-blue);">Privacy Policy</a>. <span class="reg-req">*</span></span>
+              <span>I agree to the <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-blue);">Terms of Service</a> and <a href="javascript:void(0)" onclick="openMiniFooterModal('privacy')" style="color: var(--reg-blue);">Privacy Policy</a>. Your first name, last initial, blood group, approximate distance and number of donations appear in RED404's public donor search. Hospitals see your phone number only after you accept a request. You can hide yourself any time by pausing your availability. <span class="reg-req">*</span></span>
             </label>
             <div class="reg-error-msg" id="termsConsentErr"></div>
 
@@ -1149,7 +1138,8 @@
           address: document.getElementById('line1')?.value?.trim() || document.getElementById('locality')?.value?.trim() || null,
           latitude: document.getElementById('lat').value ? parseFloat(document.getElementById('lat').value) : null,
           longitude: document.getElementById('lng').value ? parseFloat(document.getElementById('lng').value) : null,
-          publicSearchOptIn: document.getElementById('publicSearchOptIn').checked,
+          publicSearchOptIn: true,
+          publicConsentAt: new Date().toISOString(),
           emailToken: emailVerificationToken,
           feverNow: document.querySelector('input[name="feverNow"]:checked')?.value === 'yes',
           antibioticsNow: document.querySelector('input[name="antibioticsNow"]:checked')?.value === 'yes',

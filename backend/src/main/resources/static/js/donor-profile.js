@@ -495,7 +495,23 @@
 
     if (!hasRealVitals) {
       if (waitingEl) {
-        waitingEl.textContent = 'Waiting for hospital check';
+        waitingEl.innerHTML = `
+          <div class="vitals-empty-state-card" style="display: flex; flex-direction: column; justify-content: center; min-height: 150px; padding: 6px 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <i class="fa-solid fa-notes-medical" style="color: #38bdf8; font-size: 16px;"></i>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 600; color: #ecebe8;">No health check yet</h3>
+            </div>
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: #9b9a96; line-height: 1.45;">
+              Your hospital check will appear here after your first visit. Bring your RED404 ID.
+            </p>
+            <div>
+              <a href="blood-banks.html" class="vitals-empty-link" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #38bdf8; text-decoration: underline; cursor: pointer;">
+                <i class="fa-solid fa-hospital"></i>
+                <span>Find nearby blood banks</span>
+              </a>
+            </div>
+          </div>
+        `;
         waitingEl.style.display = 'block';
       }
       if (topMeta) topMeta.style.display = 'none';
@@ -974,6 +990,8 @@
     currentDonor.donor_id = smartDonorId;
     const uniqueIdStr = smartDonorId;
     if (idEl) idEl.textContent = uniqueIdStr;
+    const idUnderQr = document.getElementById('donorSmartIdUnderQr');
+    if (idUnderQr) idUnderQr.textContent = uniqueIdStr;
 
     // 2. Token Management & QR Render (Part 6: Opaque token with zero PII)
     const storageKey = 'red404_qr_token_donor_' + (currentDonor.id || '1');
@@ -1091,12 +1109,22 @@
         };
         setTimeout(ensureSingleDisplay, 20);
       } else {
-        container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:100%;height:100%;max-width:${size}px;max-height:${size}px;margin:0 auto;border-radius:8px;" />`;
+        renderQrFallback(container, scanUrl, size);
       }
     } catch (e) {
       console.warn('QR Code generation notice:', e);
-      container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(scanUrl)}" alt="Scannable QR Code" style="display:block;width:100%;height:100%;max-width:${size}px;max-height:${size}px;margin:0 auto;border-radius:8px;" />`;
+      renderQrFallback(container, scanUrl, size);
     }
+  }
+
+  function renderQrFallback(container, scanUrl, size) {
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:${size}px;width:${size}px;max-width:100%;box-sizing:border-box;padding:12px;text-align:center;background:#ffffff;border-radius:8px;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:22px;color:#e5383b;margin-bottom:6px;"></i>
+        <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:8px;">QR unavailable. Try again</div>
+        <button type="button" class="btn-retry-qr" onclick="renderIntakeQRCode('${scanUrl}')" style="padding:4px 14px;font-size:12px;font-weight:600;background:#e5383b;color:#ffffff;border:none;border-radius:4px;cursor:pointer;">Retry</button>
+      </div>
+    `;
   }
 
   function renderIntakeQRCode(scanUrl) {
@@ -1390,11 +1418,7 @@
       const line1Input = document.getElementById('editDonorLine1');
       const localityInput = document.getElementById('editDonorLocality');
       const districtInput = document.getElementById('editDonorDistrict');
-      const cityInput = document.getElementById('editDonorCity');
-      const stateInput = document.getElementById('editDonorState');
-      const pincodeInput = document.getElementById('editDonorPincode');
       const countryInput = document.getElementById('editDonorCountry');
-      const addrInput = document.getElementById('editDonorAddress');
 
       if (line1Input) line1Input.value = currentDonor.line1 || currentDonor.address || '';
       if (localityInput) localityInput.value = currentDonor.locality || '';
@@ -1466,19 +1490,6 @@
       if (notifSmsInput) notifSmsInput.checked = currentDonor.smsNotif !== false;
       if (notifEmailInput) notifEmailInput.checked = currentDonor.emailNotif !== false;
       if (notifPushInput) notifPushInput.checked = currentDonor.pushNotif !== false;
-
-      const optInInput = document.getElementById('editPublicSearchOptIn');
-      const dispNameInput = document.getElementById('editPublicDisplayName');
-      const dispWrapper = document.getElementById('publicDisplayNameWrapper');
-      const isOpted = currentDonor.publicSearchOptIn === true || currentDonor.public_search_opt_in === true;
-      if (optInInput) {
-        optInInput.checked = isOpted;
-        optInInput.onchange = () => {
-          if (dispWrapper) dispWrapper.style.display = optInInput.checked ? 'block' : 'none';
-        };
-      }
-      if (dispWrapper) dispWrapper.style.display = isOpted ? 'block' : 'none';
-      if (dispNameInput) dispNameInput.value = currentDonor.publicDisplayName || currentDonor.public_display_name || '';
 
       editModal.style.display = 'flex';
       editModal.classList.add('active');
@@ -1629,6 +1640,9 @@
               if (res.ok) {
                 const geo = await res.json();
                 const addr = geo.address || {};
+                const line1Input = document.getElementById('editDonorLine1');
+                const localityInput = document.getElementById('editDonorLocality');
+                const districtInput = document.getElementById('editDonorDistrict');
                 const cityInput = document.getElementById('editDonorCity');
                 const stateInput = document.getElementById('editDonorState');
                 const pinInput = document.getElementById('editDonorPincode');
@@ -1641,14 +1655,6 @@
                 const districtVal = addr.county || addr.state_district || addr.district || '';
                 const stateVal = addr.state || '';
                 const postVal = (addr.postcode || '').replace(/\D/g, '').substring(0, 6);
-
-                const line1Input = document.getElementById('editDonorLine1');
-                const localityInput = document.getElementById('editDonorLocality');
-                const districtInput = document.getElementById('editDonorDistrict');
-                const cityInput = document.getElementById('editDonorCity');
-                const stateInput = document.getElementById('editDonorState');
-                const pinInput = document.getElementById('editDonorPincode');
-                const addrInput = document.getElementById('editDonorAddress');
 
                 if (line1Val && line1Input && !line1Input.value) line1Input.value = line1Val;
                 if (area && localityInput && !localityInput.value) localityInput.value = area;
@@ -1749,8 +1755,8 @@
             smsNotif: document.getElementById('editDonorSmsNotif')?.checked ?? true,
             emailNotif: document.getElementById('editDonorEmailNotif')?.checked ?? true,
             pushNotif: document.getElementById('editDonorPushNotif')?.checked ?? true,
-            publicSearchOptIn: document.getElementById('editPublicSearchOptIn')?.checked ?? false,
-            publicDisplayName: (document.getElementById('editPublicDisplayName')?.value || '').trim() || null,
+            publicSearchOptIn: currentDonor.publicSearchOptIn ?? currentDonor.public_search_opt_in ?? true,
+            publicDisplayName: currentDonor.publicDisplayName || currentDonor.public_display_name || null,
             latitude: currentDonor.latitude,
             longitude: currentDonor.longitude,
             qrToken: newToken

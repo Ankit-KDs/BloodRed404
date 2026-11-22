@@ -77,6 +77,26 @@ public class RateLimitService {
         return checkInMemoryLimit(key, maxRequests, windowSeconds);
     }
 
+    /**
+     * Checks if a limit has been exceeded WITHOUT incrementing the counter.
+     */
+    public boolean isExceeded(String key, int maxRequests, int windowSeconds) {
+        long now = System.currentTimeMillis();
+        long windowMs = windowSeconds * 1000L;
+        WindowCounter counter = IN_MEMORY_LIMITS.get(key);
+        if (counter == null || (now - counter.windowStart) > windowMs) {
+            return false;
+        }
+        return counter.count.get() >= maxRequests;
+    }
+
+    /**
+     * Resets a rate limit counter (e.g. after a successful login).
+     */
+    public void resetLimit(String key) {
+        IN_MEMORY_LIMITS.remove(key);
+    }
+
     private RateLimitResult checkInMemoryLimit(String key, int maxRequests, int windowSeconds) {
         long now = System.currentTimeMillis();
         long windowMs = windowSeconds * 1000L;

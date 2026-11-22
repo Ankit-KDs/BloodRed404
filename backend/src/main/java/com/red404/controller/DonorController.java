@@ -818,7 +818,7 @@ public class DonorController {
                         .body(new ApiResponse(false, "Valid city, state, and 6-digit PIN code are required."));
             }
 
-            boolean publicSearchOptIn = JsonUtil.asBoolean(body, "publicSearchOptIn", false);
+            boolean publicSearchOptIn = JsonUtil.asBoolean(body, "publicSearchOptIn", true);
 
             Map<String, Object> donor = new HashMap<>();
             donor.put("name", (firstName + " " + lastName).trim());
@@ -855,6 +855,7 @@ public class DonorController {
             donor.put("healthAnswersJson", com.red404.util.AesGcmEncryptionUtil.encrypt(healthAnswersJson));
             donor.put("emailVerified", true);
             donor.put("publicSearchOptIn", publicSearchOptIn);
+            donor.put("publicConsentAt", new java.sql.Timestamp(System.currentTimeMillis()));
             donor.put("publicDisplayName", firstName);
 
             if (donorDao.insert(donor)) {
@@ -941,15 +942,14 @@ public class DonorController {
             String cleanId = identifier.toLowerCase();
 
             // Part 7: Check lockout - 10 failures per 15 min (900s) per account and per IP
-            RateLimitService.RateLimitResult ipLock = rateLimitService.checkLimit("login_lock_ip:" + clientIp, 10, 900);
-            RateLimitService.RateLimitResult accLock = rateLimitService.checkLimit("login_lock_donor:" + cleanId, 10, 900);
-            if (!ipLock.allowed || !accLock.allowed) {
-                long retryAfter = Math.max(ipLock.retryAfterSeconds, accLock.retryAfterSeconds);
+            boolean ipLocked = rateLimitService.isExceeded("login_fail_ip:" + clientIp, 10, 900);
+            boolean accLocked = rateLimitService.isExceeded("login_fail_donor:" + cleanId, 10, 900);
+            if (ipLocked || accLocked) {
                 if (isHtmlSubmit) {
                     return ResponseEntity.status(HttpStatus.FOUND).header("Location", "donor-login.html?error=locked").build();
                 }
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                        .header("Retry-After", String.valueOf(retryAfter))
+                        .header("Retry-After", "900")
                         .body(new ApiResponse(false, "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
             }
 
@@ -971,6 +971,8 @@ public class DonorController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Invalid credentials. Please try again."));
             }
+            // Successful login resets failure counter
+            rateLimitService.resetLimit("login_fail_donor:" + cleanId);
             HttpSession session = request.getSession(true);
             session.setAttribute("user", donor);
             session.setAttribute("role", "DONOR");

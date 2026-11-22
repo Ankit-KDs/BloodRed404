@@ -38,6 +38,15 @@ public class SystemController {
         }
     }
 
+    @GetMapping({"/health", "/ping"})
+    public ResponseEntity<ApiResponse> getHealth() {
+        Map<String, Object> h = new LinkedHashMap<>();
+        h.put("status", "UP");
+        h.put("service", "RED404");
+        h.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(new ApiResponse(true, "RED404 System Health: UP", h));
+    }
+
     @GetMapping({"/donation-gaps", "/config/donation-gaps"})
     public ResponseEntity<ApiResponse> getDonationGaps() {
         try {

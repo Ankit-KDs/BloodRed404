@@ -30,6 +30,17 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         // Default welcome page
         registry.addViewController("/").setViewName("forward:/index.html");
+
+        // Route aliases and canonical redirects
+        registry.addViewController("/public-search.html").setViewName("forward:/blood-availability-search.html");
+        registry.addViewController("/public-search").setViewName("forward:/blood-availability-search.html");
+        registry.addViewController("/eligibility.html").setViewName("forward:/eligibility-checker.html");
+        registry.addViewController("/who-can-donate.html").setViewName("forward:/eligibility-checker.html");
+        registry.addViewController("/eligibility").setViewName("forward:/eligibility-checker.html");
+        registry.addViewController("/privacy.html").setViewName("forward:/privacy-policy.html");
+        registry.addViewController("/privacy").setViewName("forward:/privacy-policy.html");
+        registry.addViewController("/contact.html").setViewName("redirect:/index.html#contact");
+        registry.addViewController("/contact").setViewName("redirect:/index.html#contact");
     }
 }
 

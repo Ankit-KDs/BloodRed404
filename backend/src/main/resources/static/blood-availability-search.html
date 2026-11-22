@@ -857,14 +857,12 @@
         const eligibleCount = typeof data.eligibleNearbyCount === 'number' ? data.eligibleNearbyCount : (data.totalEligibleCount || 0);
         const locationOffCount = data.locationOffCount || 0;
 
-        // Line 1: "N eligible donors nearby" (fewer-than-3 rule: if 0 < count < 3, say "Fewer than 3 donors nearby")
+        // Line 1: "N eligible donors nearby" (strictly without "fewer-than-3" when listed)
         let line1Text = '';
         if (eligibleCount === 0) {
-          line1Text = isHi ? `${radius} किमी दायरे में कोई पात्र रक्तदाता नहीं मिला` : `No eligible donors found within ${radius} km`;
-        } else if (eligibleCount < 3) {
-          line1Text = isHi ? 'नजदीक 3 से कम रक्तदाता' : 'Fewer than 3 donors nearby';
+          line1Text = isHi ? `${radius} किमी दायरे में कोई रक्तदाता नहीं मिला। दायरा बढ़ाकर देखें या कोई अन्य शहर आज़माएं।` : `No donors found within ${radius} km. Try a larger radius or another city.`;
         } else {
-          line1Text = isHi ? `${eligibleCount} पात्र रक्तदाता नजदीक` : `${eligibleCount} eligible donors nearby`;
+          line1Text = isHi ? `${eligibleCount} पात्र रक्तदाता नजदीक` : `${eligibleCount === 1 ? '1 eligible donor nearby' : eligibleCount + ' eligible donors nearby'}`;
         }
 
         let locOffText = '';
@@ -877,15 +875,10 @@
           countText.innerHTML = `<span>${escapeHtml(line1Text)}</span>${locOffText ? ` <span style="font-weight: 400; color: #9b9a96; font-size: 13px; margin-left: 6px;">${escapeHtml(locOffText)}</span>` : ''}`;
         }
 
-        // Empty state: no opted-in donors found
+        // Empty state: no eligible donors found
         if (donors.length === 0) {
-          const emptyTitle = eligibleCount > 0
-            ? (isHi ? 'रक्तदाता सार्वजनिक सूची में शामिल नहीं हैं' : 'No Listed Donors in this Area')
-            : (isHi ? 'इस दायरे में कोई पात्र रक्तदाता नहीं मिला' : 'No Eligible Donors Found in this Area');
-
-          const emptyDesc = eligibleCount > 0
-            ? (isHi ? 'नजदीकी रक्तदाताओं ने सार्वजनिक सूची में दिखने का विकल्प नहीं चुना है। केवल अस्पताल ही रक्तदाताओं से संपर्क कर सकते हैं।' : 'Donors nearby have not chosen to be listed. Only hospitals can contact donors.')
-            : (isHi ? 'दायरा बढ़ाकर देखें या कोई अन्य शहर / पिन कोड दर्ज करें।' : `No eligible donors found within ${radius} km. Try searching another city or PIN code.`);
+          const emptyTitle = isHi ? `${radius} किमी दायरे में कोई रक्तदाता नहीं मिला` : `No donors found within ${radius} km`;
+          const emptyDesc = isHi ? `दायरा बढ़ाकर देखें या कोई अन्य शहर / पिन कोड दर्ज करें।` : `No donors found within ${radius} km. Try a larger radius or another city.`;
 
           const isMaxRadius = radius >= 20;
 
