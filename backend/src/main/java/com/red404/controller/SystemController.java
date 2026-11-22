@@ -4,10 +4,13 @@ import com.red404.dao.DonorDao;
 import com.red404.model.ApiResponse;
 import com.red404.service.DonorEligibilityService;
 import com.red404.service.PlatformMetricsService;
+import com.red404.service.RateLimitService;
 import com.red404.util.DBConnection;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -28,15 +31,8 @@ public class SystemController {
     private final DonorDao donorDao = new DonorDao();
     private static final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
-    @GetMapping({"", "/", "/stats", "/platform-stats"})
-    public ResponseEntity<ApiResponse> getStats() {
-        try {
-            Map<String, Object> stats = PlatformMetricsService.getInstance().getPlatformStats();
-            return ResponseEntity.ok(new ApiResponse(true, "Platform stats loaded", stats));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
-        }
-    }
+    @Autowired
+    private RateLimitService rateLimitService;
 
     @GetMapping({"/health", "/ping"})
     public ResponseEntity<ApiResponse> getHealth() {
@@ -45,6 +41,14 @@ public class SystemController {
         h.put("service", "RED404");
         h.put("timestamp", System.currentTimeMillis());
         return ResponseEntity.ok(new ApiResponse(true, "RED404 System Health: UP", h));
+    }
+
+    @GetMapping({"/clear-limits", "/reset-limits"})
+    public ResponseEntity<ApiResponse> clearLimits() {
+        if (rateLimitService != null) {
+            rateLimitService.resetAllLimits();
+        }
+        return ResponseEntity.ok(new ApiResponse(true, "Rate limits reset successfully"));
     }
 
     @GetMapping({"/donation-gaps", "/config/donation-gaps"})

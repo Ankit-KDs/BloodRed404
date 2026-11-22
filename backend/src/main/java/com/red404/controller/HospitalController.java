@@ -1550,16 +1550,15 @@ public class HospitalController {
                 email = request.getParameter("hospLoginEmail").trim().toLowerCase();
             }
 
-            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and per IP
-            RateLimitService.RateLimitResult ipLock = rateLimitService.checkLimit("login_lock_ip:" + clientIp, 10, 900);
-            RateLimitService.RateLimitResult accLock = rateLimitService.checkLimit("login_lock_hosp:" + email, 10, 900);
-            if (!ipLock.allowed || !accLock.allowed) {
-                long retryAfter = Math.max(ipLock.retryAfterSeconds, accLock.retryAfterSeconds);
+            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and 50 per IP
+            boolean ipLocked = rateLimitService.isExceeded("login_fail_ip:" + clientIp, 50, 900);
+            boolean accLocked = rateLimitService.isExceeded("login_fail_hosp:" + email, 10, 900);
+            if (ipLocked || accLocked) {
                 if (isHtmlSubmit) {
                     return ResponseEntity.status(HttpStatus.FOUND).header("Location", "hospital-login.html?error=locked").build();
                 }
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                        .header("Retry-After", String.valueOf(retryAfter))
+                        .header("Retry-After", "900")
                         .body(new ApiResponse(false, "Too many failed login attempts. Temporarily locked for 15 minutes. Please try again later."));
             }
 
@@ -1573,7 +1572,7 @@ public class HospitalController {
 
             Map<String, Object> hospital = hospitalDao.findByLogin(email, password);
             if (hospital == null) {
-                rateLimitService.checkLimit("login_fail_ip:" + clientIp, 10, 900);
+                rateLimitService.checkLimit("login_fail_ip:" + clientIp, 50, 900);
                 rateLimitService.checkLimit("login_fail_hosp:" + email, 10, 900);
                 if (isHtmlSubmit) {
                     return ResponseEntity.status(HttpStatus.FOUND).header("Location", "hospital-login.html?error=invalid").build();
@@ -1581,6 +1580,8 @@ public class HospitalController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse(false, "Invalid credentials for hospital account."));
             }
+            // Successful login resets failure counter
+            rateLimitService.resetLimit("login_fail_hosp:" + email);
             HttpSession session = request.getSession(true);
             session.setAttribute("hospitalUser", hospital);
             session.setAttribute("role", "HOSPITAL");

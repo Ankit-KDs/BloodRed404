@@ -97,6 +97,13 @@ public class RateLimitService {
         IN_MEMORY_LIMITS.remove(key);
     }
 
+    /**
+     * Resets all rate limits (maintenance / lockout recovery).
+     */
+    public void resetAllLimits() {
+        IN_MEMORY_LIMITS.clear();
+    }
+
     private RateLimitResult checkInMemoryLimit(String key, int maxRequests, int windowSeconds) {
         long now = System.currentTimeMillis();
         long windowMs = windowSeconds * 1000L;

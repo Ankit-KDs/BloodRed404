@@ -267,9 +267,16 @@
       if (currentDonor.email) qParams.set('email', currentDonor.email);
       if (currentDonor.id) qParams.set('donorId', currentDonor.id);
       const qStr = qParams.toString() ? '?' + qParams.toString() : '';
-      let res = await fetch(`/api/donor/profile-data${qStr}`, { cache: 'no-store', credentials: 'include' });
+      const reqHeaders = {};
+      const tok = sessionStorage.getItem('red404_token') || localStorage.getItem('red404_token') || (session ? session.token : null) || (currentDonor.id ? 'SESSION-DONOR-' + currentDonor.id : null);
+      if (tok) {
+        reqHeaders['Authorization'] = 'Bearer ' + tok;
+        reqHeaders['X-Red404-Token'] = tok;
+      }
+      if (currentDonor.id) reqHeaders['X-Donor-Id'] = String(currentDonor.id);
+      let res = await fetch(`/api/donor/profile-data${qStr}`, { headers: reqHeaders, cache: 'no-store', credentials: 'include' });
       if (!res.ok && res.status !== 404 && res.status !== 401) {
-        res = await fetch(`/api/donor/profile${qStr}`, { cache: 'no-store', credentials: 'include' });
+        res = await fetch(`/api/donor/profile${qStr}`, { headers: reqHeaders, cache: 'no-store', credentials: 'include' });
       }
       if (res.status === 401 || res.status === 404) {
         try {

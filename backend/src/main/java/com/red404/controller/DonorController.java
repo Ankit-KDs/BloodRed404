@@ -941,8 +941,8 @@ public class DonorController {
             }
             String cleanId = identifier.toLowerCase();
 
-            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and per IP
-            boolean ipLocked = rateLimitService.isExceeded("login_fail_ip:" + clientIp, 10, 900);
+            // Part 7: Check lockout - 10 failures per 15 min (900s) per account and 50 per IP
+            boolean ipLocked = rateLimitService.isExceeded("login_fail_ip:" + clientIp, 50, 900);
             boolean accLocked = rateLimitService.isExceeded("login_fail_donor:" + cleanId, 10, 900);
             if (ipLocked || accLocked) {
                 if (isHtmlSubmit) {
