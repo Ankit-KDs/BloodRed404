@@ -971,25 +971,12 @@
   }
 
   /**
-   * Inserts the "Quick Check" button into the navbar if present.
+   * Quick Check button removed from hospital navbar per design requirement.
    */
   function injectNavbarDrawerButton() {
-    const navActions = document.querySelector('.hosp-nav-actions');
-    if (navActions && !document.getElementById('btnQuickCheckDrawerTrigger')) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn-nav-quick-check';
-      btn.id = 'btnQuickCheckDrawerTrigger';
-      btn.setAttribute('aria-label', t('quickCheckBtn'));
-      btn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 14 14"></polyline>
-        </svg>
-        <span>${t('navBtnText')}</span>
-      `;
-      btn.addEventListener('click', openDrawer);
-      navActions.insertBefore(btn, navActions.firstChild);
+    const existing = document.getElementById('btnQuickCheckDrawerTrigger');
+    if (existing) {
+      existing.remove();
     }
   }
 

@@ -84,7 +84,7 @@
     loadHospitalsDirectory();
   });
 
-  // ==================== 1. AUTH HEADER & DONOR AWARENESS ====================
+  // ==================== 1. DONOR SESSION FOR NEAR-ME ====================
   function initAuthHeader() {
     try {
       const raw = localStorage.getItem('donor_session') || localStorage.getItem('red404_donor_session');
@@ -92,79 +92,7 @@
         const parsed = JSON.parse(raw);
         donorUser = parsed.user || parsed;
       }
-      if (!donorUser) {
-        const p = new URLSearchParams(window.location.search);
-        if (p.get('donor') === '1' || p.get('donor') === 'chinmay') {
-          donorUser = {
-            id: 1,
-            name: 'Chinmay Joshi',
-            donorId: 'DNR-1511-D232',
-            email: 'chinmay.joshi@example.com',
-            latitude: 29.35,
-            longitude: 79.55,
-            city: 'Bhimtal',
-            state: 'Uttarakhand'
-          };
-        }
-      }
     } catch (_) { }
-
-    const publicBtns = document.getElementById('publicNavButtons');
-    const donorMenu = document.getElementById('donorNavMenu');
-
-    if (donorUser && donorUser.id) {
-      if (publicBtns) publicBtns.style.display = 'none';
-      if (donorMenu) donorMenu.style.display = 'inline-block';
-
-      const dName = donorUser.name || donorUser.fullName || 'Donor';
-      const nameEl = document.getElementById('donorNavName');
-      const subEl = document.getElementById('donorNavSub');
-      const initialsEl = document.getElementById('donorNavInitials');
-
-      if (nameEl) nameEl.textContent = dName;
-      if (subEl) subEl.textContent = donorUser.donorId || donorUser.donor_id || 'Registered Donor';
-      if (initialsEl) {
-        const parts = dName.trim().split(/\s+/);
-        initialsEl.textContent = parts.length > 1
-          ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-          : parts[0].substring(0, 2).toUpperCase();
-      }
-
-      // Dropdown toggle
-      const avatarBtn = document.getElementById('donorAvatarBtn');
-      const dropdownPanel = document.getElementById('donorDropdownPanel');
-      if (avatarBtn && dropdownPanel) {
-        avatarBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const isOpen = dropdownPanel.style.display === 'block';
-          dropdownPanel.style.display = isOpen ? 'none' : 'block';
-          avatarBtn.setAttribute('aria-expanded', String(!isOpen));
-        });
-
-        document.addEventListener('click', () => {
-          dropdownPanel.style.display = 'none';
-          avatarBtn.setAttribute('aria-expanded', 'false');
-        });
-      }
-
-      const logoutBtn = document.getElementById('donorNavLogoutBtn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-          if (window.Red404Security && typeof window.Red404Security.logout === 'function') {
-            await window.Red404Security.logout('DONOR');
-          } else {
-            try {
-              localStorage.removeItem('donor_session');
-              localStorage.removeItem('red404_donor_session');
-            } catch (_) { }
-            window.location.replace('donor-login.html');
-          }
-        });
-      }
-    } else {
-      if (publicBtns) publicBtns.style.display = 'flex';
-      if (donorMenu) donorMenu.style.display = 'none';
-    }
   }
 
   // ==================== 2. STATE & CITY DROPDOWNS ====================

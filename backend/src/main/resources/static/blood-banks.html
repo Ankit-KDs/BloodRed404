@@ -65,30 +65,8 @@
           <button type="button" class="lang-toggle-btn" data-lang="hi">HI</button>
         </div>
 
-        <!-- Default Public Actions -->
-        <div id="publicNavButtons" class="nav-btn-group">
-          <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
-          <a href="hospital-login.html" class="btn btn-primary" data-i18n="nav.hospitalLogin">Hospital Login</a>
-        </div>
-
-        <!-- Authenticated Donor Menu (Only visible if donor session is active) -->
-        <div id="donorNavMenu" class="donor-user-menu" style="display: none; position: relative;">
-          <button type="button" class="donor-avatar-btn" id="donorAvatarBtn" aria-expanded="false" aria-label="Donor menu">
-            <span class="avatar-initials" id="donorNavInitials">DJ</span>
-          </button>
-          <div class="donor-dropdown-panel" id="donorDropdownPanel" style="display: none;">
-            <div class="dropdown-header">
-              <span class="dropdown-name" id="donorNavName">Donor</span>
-              <span class="dropdown-sub" id="donorNavSub">Registered Donor</span>
-            </div>
-            <div class="dropdown-divider"></div>
-            <a href="dashboard.html" class="dropdown-item"><i class="fas fa-columns"></i> Dashboard</a>
-            <a href="donor-profile.html" class="dropdown-item"><i class="fas fa-user-circle"></i> My Profile</a>
-            <a href="donation-history.html" class="dropdown-item"><i class="fas fa-history"></i> Donation History</a>
-            <div class="dropdown-divider"></div>
-            <button type="button" class="dropdown-item dropdown-logout-btn" id="donorNavLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-          </div>
-        </div>
+        <a href="donor-login.html" class="btn btn-outline" data-i18n="nav.donorLogin">Donor Login</a>
+        <a href="hospital-login.html" class="btn btn-primary" data-i18n="nav.hospitalLogin">Hospital Login</a>
       </div>
 
       <div class="hamburger" id="hamburger" aria-label="Toggle navigation">
@@ -102,8 +80,8 @@
     <!-- Header Section -->
     <header class="directory-header">
       <div class="header-content">
-        <h1 class="directory-title section-title">Verified Blood Bank Directory</h1>
-        <p class="directory-subtitle section-subtitle">
+        <h1 class="directory-title">Verified Blood Bank Directory</h1>
+        <p class="directory-subtitle">
           Real-time blood stock and reserves across verified partner hospitals. Available to the public with no login required.
         </p>
       </div>

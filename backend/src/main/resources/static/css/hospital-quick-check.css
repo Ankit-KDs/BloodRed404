@@ -555,27 +555,10 @@
   color: #fff;
 }
 
-/* Navbar Trigger Button */
-.btn-nav-quick-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
-  border-radius: 6px;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  margin-right: 6px;
-}
-
-.btn-nav-quick-check:hover {
-  background: rgba(239, 68, 68, 0.25);
-  color: #fff;
-  border-color: #ef4444;
+/* Navbar Trigger Button - Removed from navbar per requirement */
+.btn-nav-quick-check,
+#btnQuickCheckDrawerTrigger {
+  display: none !important;
 }
 
 /* ============================================================
