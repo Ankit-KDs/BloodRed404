@@ -1676,6 +1676,7 @@ public class DonorController {
             }
 
             donorDao.updateAvailability(donorId, available, pausedUntil);
+            com.red404.service.PublicSearchService.invalidateCache();
             Map<String, Object> respMap = new LinkedHashMap<>();
             respMap.put("available", available);
             respMap.put("availability", available ? "Available" : "Paused");

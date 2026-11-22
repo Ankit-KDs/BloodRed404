@@ -105,6 +105,10 @@ public class PublicSearchService {
     // 10-Second Aggregate Cache
     private static final Map<String, CacheEntry> publicCache = new ConcurrentHashMap<>();
 
+    public static void invalidateCache() {
+        publicCache.clear();
+    }
+
     private static class CacheEntry {
         final Map<String, Object> data;
         final long expiresAt;
@@ -350,10 +354,11 @@ public class PublicSearchService {
                     Object pausedUntilObj = getVal(donorMap, "paused_until", "PAUSED_UNTIL");
                     if (pausedUntilObj instanceof java.sql.Date) {
                         java.sql.Date pDate = (java.sql.Date) pausedUntilObj;
-                        if (pDate.after(new java.util.Date())) {
+                        if (!pDate.before(new java.util.Date())) {
                             continue;
                         }
-                    } else if (pausedUntilObj != null) {
+                    } else {
+                        // Paused indefinitely or not expired: immediately exclude from public search
                         continue;
                     }
                 }

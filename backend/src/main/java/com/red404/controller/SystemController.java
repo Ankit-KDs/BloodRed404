@@ -48,6 +48,7 @@ public class SystemController {
         if (rateLimitService != null) {
             rateLimitService.resetAllLimits();
         }
+        com.red404.service.PublicSearchService.invalidateCache();
         return ResponseEntity.ok(new ApiResponse(true, "Rate limits reset successfully"));
     }
 
